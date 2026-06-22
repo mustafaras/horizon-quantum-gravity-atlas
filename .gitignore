@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# build / scratch artifacts
+scraps/
+*.zip
+.thumbnail
+.*.thumbnail.png
+
+# logs
+npm-debug.log*
+yarn-error.log*

@@ -1,0 +1,30 @@
+{
+  "name": "horizon-quantum-gravity-atlas",
+  "version": "1.1.0",
+  "description": "An interactive, scientifically rigorous atlas of quantum gravity — live simulations and cinematic 3D scenes from the Standard Model to the Planck frontier.",
+  "homepage": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mustafaras/horizon-quantum-gravity-atlas.git"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "dev": "npx --yes serve .",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "physics",
+    "quantum-gravity",
+    "quantum-field-theory",
+    "general-relativity",
+    "standard-model",
+    "visualization",
+    "threejs",
+    "webgl",
+    "education",
+    "interactive"
+  ],
+  "license": "MIT",
+  "private": false
+}
