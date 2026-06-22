@@ -8,6 +8,7 @@
 
 <p>
   <a href="https://mustafaras.github.io/horizon-quantum-gravity-atlas/"><img alt="live demo" src="https://img.shields.io/badge/GitHub%20Pages-live-34d399?style=for-the-badge&labelColor=0b1020&logo=githubpages&logoColor=white" /></a>
+  <a href="https://github.com/mustafaras/horizon-quantum-gravity-atlas/actions/workflows/quality.yml"><img alt="repository quality" src="https://img.shields.io/github/actions/workflow/status/mustafaras/horizon-quantum-gravity-atlas/quality.yml?branch=main&style=for-the-badge&label=quality&labelColor=0b1020" /></a>
   <a href="#run-locally"><img alt="runtime" src="https://img.shields.io/badge/runtime-static%20web%20app-34d399?style=for-the-badge&labelColor=0b1020" /></a>
   <a href="#technical-architecture"><img alt="renderer" src="https://img.shields.io/badge/renderer-Three.js%20%2B%20Canvas-54aeff?style=for-the-badge&labelColor=0b1020&logo=threedotjs&logoColor=white" /></a>
   <a href="#scientific-status-system"><img alt="status" src="https://img.shields.io/badge/claims-status%20labeled-ffb454?style=for-the-badge&labelColor=0b1020" /></a>
@@ -38,7 +39,11 @@
 <p align="center">
   <a href="#visual-atlas">Visual Atlas</a>
   ·
+  <a href="#social-preview-and-install-metadata">Social Preview</a>
+  ·
   <a href="#scientific-thesis">Scientific Thesis</a>
+  ·
+  <a href="#scientific-validity-matrix">Validity Matrix</a>
   ·
   <a href="#architecture-preview">Architecture Preview</a>
   ·
@@ -111,11 +116,32 @@ It loads React, Babel, Three.js, and KaTeX from CDN URLs declared in `index.html
 
 ---
 
+## Social Preview and Install Metadata
+
+<p align="center">
+  <img src="docs/social/og-image.png" alt="HORIZON social preview card with a black-hole accretion disk, scientific badges, and field equations" width="100%" />
+</p>
+
+The repository includes a dedicated Open Graph image for GitHub, LinkedIn, X, Discord, and other social previews.
+
+The app also includes a web manifest and install icons, so browser surfaces can present it as a polished standalone scientific atlas instead of a raw static page.
+
+| Asset | Purpose |
+|---|---|
+| `docs/social/og-image.png` | 1200x630 social sharing preview |
+| `manifest.webmanifest` | install metadata, theme color, app scope, and icon registry |
+| `docs/icons/icon-192.png` | Android and PWA launcher icon |
+| `docs/icons/icon-512.png` | high-resolution launcher and maskable icon |
+| `docs/icons/apple-touch-icon.png` | iOS home-screen icon |
+| `docs/icons/favicon-16.png` / `docs/icons/favicon-32.png` | PNG fallbacks for browsers that do not prefer the SVG favicon |
+
+---
+
 ## Visual Atlas
 
 All screenshots below were captured from the running application, not from static mockups.
 
-The new screenshot set intentionally favors animated, visual, and simulation-heavy panels.
+The screenshot set intentionally functions as a cinematic gallery: each frame should show a scientific visualization, an active module state, and a meaningful physical interpretation.
 
 Black-hole screenshots are included prominently because the black-hole module is the strongest visual bridge between general relativity, quantum field theory, thermodynamics, entropy, and holography.
 
@@ -318,6 +344,25 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 | Schematic | visual or pedagogical model, not a literal observation | spacetime grid, collider event display, Planck foam rendering |
 | Conjectural | researched but not experimentally confirmed | string theory, LQG, asymptotic safety, holographic universality |
 | Open problem | unresolved conceptual or empirical issue | information paradox, cosmological constant, problem of time |
+
+---
+
+## Scientific Validity Matrix
+
+This matrix separates what the app visualizes from what physics currently justifies.
+
+It is deliberately conservative: strong visuals are not allowed to upgrade the epistemic status of a claim.
+
+| Module | Primary visual surface | Highest status used | Scientific guardrail |
+|---|---|---|---|
+| Standard Model | particle architecture and interaction map | Established physics | gravity is explicitly outside the Standard Model gauge group |
+| Quantum Field Theory | field excitation and scattering laboratory | Established / Effective theory | diagrams are perturbative terms, not literal particle movies |
+| Gauge Symmetry and RG Flow | local symmetry and running couplings | Established / Effective theory | coupling evolution is contextualized by scale and scheme |
+| General Relativity | curvature, geodesics, lensing, gravitational waves | Established physics | rubber-sheet scenes are spatial slices, not full spacetime |
+| Planck Frontier | scale ladder and Planck foam rendering | Schematic / Open problem | Planck-scale structure is not presented as observed |
+| Theory Comparator | string theory, LQG, asymptotic safety, EFT, holography | Conjectural / Effective theory | no candidate program is ranked as experimentally confirmed |
+| Black Holes | horizon, accretion, entropy, temperature, Page curve | Established / Effective / Open problem | raymarching is cinematic, while Hawking radiation remains unobserved |
+| Experiment | collider events, gravitational waves, cosmological constraints | Established physics / Constraint | experiments constrain models; they do not detect quantum gravity directly |
 
 ---
 
@@ -854,10 +899,25 @@ horizon-quantum-gravity-atlas/
 ├── Quantum Gravity Atlas.html
 ├── README.md
 ├── LICENSE
+├── manifest.webmanifest
 ├── package.json
 ├── tweaks-panel.jsx
+├── .github/
+│   └── workflows/
+│       └── quality.yml
 ├── docs/
-│   └── screenshots/
+│   ├── diagrams/
+│   │   ├── 01-architecture-preview.svg
+│   │   ├── 02-atlas-state-flow.svg
+│   │   ├── 03-module-render-sequence.svg
+│   │   └── ...
+│   ├── icons/
+│   │   ├── favicon-16.png
+│   │   ├── favicon-32.png
+│   │   ├── apple-touch-icon.png
+│   │   ├── icon-192.png
+│   │   └── icon-512.png
+│   ├── screenshots/
 │       ├── 01-black-hole-kerr-raymarch.png
 │       ├── 02-holographic-boundary-bulk.png
 │       ├── 03-qft-feynman-collision.png
@@ -867,6 +927,10 @@ horizon-quantum-gravity-atlas/
 │       ├── 07-gravitational-wave-inspiral.png
 │       ├── 08-theory-constellation.png
 │       └── 09-mobile-black-hole-lab.png
+│   └── social/
+│       └── og-image.png
+├── scripts/
+│   └── validate-repo.mjs
 └── js/
     ├── app.jsx
     ├── atlas-stage.jsx
@@ -895,6 +959,33 @@ horizon-quantum-gravity-atlas/
 | fallback simulations | Canvas 2D | analytical and low-support rendering |
 | persistence | `localStorage` | selected view and tweak settings |
 | deployment | static hosting | GitHub Pages compatible |
+
+---
+
+## Quality Gates
+
+The repository includes a lightweight validation suite for the README, metadata, diagrams, screenshots, icons, and social preview assets.
+
+```bash
+npm run validate
+```
+
+The same check runs in GitHub Actions through `.github/workflows/quality.yml`.
+
+The validation currently enforces:
+
+- no dynamic diagram fences in the README;
+- all README local image paths exist;
+- at least nine cinematic screenshots are referenced;
+- at least eleven static SVG diagrams are referenced;
+- Open Graph and Twitter card metadata exists in both HTML entry files;
+- `manifest.webmanifest` is valid JSON and points to real icons;
+- PNG assets have the expected dimensions;
+- diagram SVG files are structurally complete.
+
+This is not a physics test suite.
+
+It is a repository-presentation guardrail that prevents broken academic packaging, missing assets, and GitHub README rendering regressions.
 
 ---
 
@@ -1179,6 +1270,15 @@ No server rewrite rules are required.
 No database is required.
 
 No environment variables are required.
+
+The deployed app includes:
+
+- canonical URL metadata;
+- Open Graph and Twitter large-card metadata;
+- a 1200x630 social preview image;
+- SVG and PNG favicon paths;
+- Apple touch icon metadata;
+- install metadata through `manifest.webmanifest`.
 
 ---
 
@@ -1889,6 +1989,10 @@ The following audit manifest records what the document is expected to contain.
 | epistemic caveats | applied | Scientific Position and Academic Integrity Notes |
 | local run instructions | applied | Run Locally |
 | static deployment notes | applied | Deployment |
+| social preview metadata | applied | Social Preview and Install Metadata |
+| install icon manifest | applied | `manifest.webmanifest` and `docs/icons/` |
+| automated repository quality gate | applied | `.github/workflows/quality.yml` |
+| scientific validity matrix | applied | Scientific Validity Matrix |
 | reference layer | applied | References |
 | citation block | applied | Citation |
 | screenshot reproducibility | applied | Screenshot Reproduction Guide |
@@ -1922,6 +2026,7 @@ They are not substitutes for the README body.
 The badge block communicates:
 
 - static runtime;
+- GitHub Actions repository quality status;
 - Three.js and Canvas rendering;
 - status-labeled claims;
 - MIT licensing;
@@ -1941,7 +2046,7 @@ When a formula changes, update both the formula section and the symbol table.
 
 When a claim becomes outdated, update the status label first.
 
-When a new research program is added, add it to the theory comparator and the mind map.
+When a new research program is added, add it to the theory comparator and the static theory map.
 
 When an experimental claim is added, specify the measurement channel.
 

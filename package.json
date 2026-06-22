@@ -11,7 +11,9 @@
   "scripts": {
     "start": "npx --yes serve .",
     "dev": "npx --yes serve .",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "validate": "node scripts/validate-repo.mjs",
+    "check": "npm run validate"
   },
   "keywords": [
     "physics",
