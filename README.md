@@ -44,7 +44,7 @@
   ·
   <a href="#mathematical-formulations">Mathematical Formulations</a>
   ·
-  <a href="#mermaid-diagram-pack">Mermaid Diagram Pack</a>
+  <a href="#static-diagram-pack">Static Diagram Pack</a>
   ·
   <a href="#run-locally">Run Locally</a>
   ·
@@ -274,84 +274,17 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 
 ## Architecture Preview
 
-```mermaid
-flowchart LR
-  classDef source fill:#0f172a,stroke:#64748b,color:#e2e8f0,stroke-width:1px;
-  classDef physics fill:#11291f,stroke:#34d399,color:#dcfce7,stroke-width:1px;
-  classDef render fill:#111827,stroke:#54aeff,color:#dbeafe,stroke-width:1px;
-  classDef status fill:#33220d,stroke:#ffb454,color:#fff7ed,stroke-width:1px;
-  classDef app fill:#241235,stroke:#b388ff,color:#f5e8ff,stroke-width:1px;
+<p align="center">
+  <img src="docs/diagrams/01-architecture-preview.svg" alt="HORIZON architecture preview" width="100%" />
+</p>
 
-  subgraph Theory["Scientific Content Layer"]
-    SM["Standard Model particle data"]:::source
-    QFT["Field theory equations"]:::physics
-    GR["Einstein geometry"]:::physics
-    BH["Black-hole thermodynamics"]:::physics
-    EXP["Experimental constraints"]:::source
-  end
+<p align="center">
+  <img src="docs/diagrams/02-atlas-state-flow.svg" alt="Atlas module state flow" width="100%" />
+</p>
 
-  subgraph Runtime["Interactive Runtime"]
-    React["React 18 UMD"]:::app
-    Babel["Babel Standalone"]:::app
-    Three["Three.js Scene3D"]:::render
-    Canvas["Canvas 2D fallbacks"]:::render
-    KaTeX["KaTeX formulas"]:::render
-  end
-
-  subgraph Experience["Atlas Experience"]
-    Modules["Eight scientific modules"]:::app
-    Tweaks["Learning and rendering controls"]:::app
-    Badges["Epistemic status badges"]:::status
-    Screens["Cinematic visual atlas"]:::render
-  end
-
-  SM --> Modules
-  QFT --> Modules
-  GR --> Modules
-  BH --> Modules
-  EXP --> Modules
-  React --> Modules
-  Babel --> React
-  Three --> Screens
-  Canvas --> Screens
-  KaTeX --> Badges
-  Modules --> Badges
-  Modules --> Tweaks
-  Modules --> Screens
-```
-
-```mermaid
-stateDiagram-v2
-  [*] --> Overview
-  Overview --> StandardModel: particle architecture
-  StandardModel --> QFT: fields before particles
-  QFT --> GaugeRG: interactions and running couplings
-  GaugeRG --> GeneralRelativity: gravity as geometry
-  GeneralRelativity --> PlanckFrontier: quantization obstruction
-  PlanckFrontier --> Approaches: candidate completions
-  Approaches --> BlackHoles: entropy and information
-  BlackHoles --> Experiment: observational constraints
-  Experiment --> OpenProblems: what remains unknown
-  OpenProblems --> Overview: restart the atlas
-```
-
-```mermaid
-sequenceDiagram
-  actor Reader
-  participant Nav as Atlas navigation
-  participant Module as Scientific module
-  participant Scene as Scene3D / Canvas
-  participant Eq as Formula cards
-  participant Status as Epistemic badge layer
-
-  Reader->>Nav: select module
-  Nav->>Module: mount scientific chapter
-  Module->>Scene: build interactive visualization
-  Module->>Eq: render equations and symbol definitions
-  Eq->>Status: attach domain-of-validity label
-  Scene->>Status: attach visual-status label
-  Status-->>Reader: established / effective / schematic / conjectural / open
-```
+<p align="center">
+  <img src="docs/diagrams/03-module-render-sequence.svg" alt="Module render sequence" width="100%" />
+</p>
 
 ---
 
@@ -372,21 +305,9 @@ sequenceDiagram
 
 ## Scientific Status System
 
-```mermaid
-flowchart TB
-  classDef est fill:#092016,stroke:#5ee6a8,color:#d7ffe9;
-  classDef eff fill:#07202a,stroke:#46d4e0,color:#dffbff;
-  classDef sch fill:#2a1e08,stroke:#ffb454,color:#fff3d8;
-  classDef con fill:#211433,stroke:#b388ff,color:#f5e8ff;
-  classDef open fill:#351315,stroke:#ff7b72,color:#ffe1df;
-
-  A["Claim or visualization"] --> B{What supports it?}
-  B -->|laboratory or observational confirmation| C["Established physics"]:::est
-  B -->|controlled low-energy or approximate domain| D["Effective theory"]:::eff
-  B -->|pedagogical rendering of an abstract concept| E["Schematic"]:::sch
-  B -->|serious but unconfirmed research framework| F["Conjectural"]:::con
-  B -->|known unresolved question| G["Open problem"]:::open
-```
+<p align="center">
+  <img src="docs/diagrams/04-status-taxonomy.svg" alt="Scientific status taxonomy" width="100%" />
+</p>
 
 ### Label Semantics
 
@@ -874,114 +795,37 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 
 ---
 
-## Mermaid Diagram Pack
+## Static Diagram Pack
 
 ### Quantum Gravity Problem Stack
 
-```mermaid
-flowchart TB
-  classDef established fill:#0b2217,stroke:#5ee6a8,color:#eafff4;
-  classDef obstruction fill:#2a1808,stroke:#ffb454,color:#fff3d8;
-  classDef frontier fill:#25133a,stroke:#b388ff,color:#f4e8ff;
-  classDef experiment fill:#071e2a,stroke:#46d4e0,color:#e2fbff;
-
-  SM["Standard Model\nquantum fields + gauge symmetry"]:::established
-  QFT["Quantum Field Theory\namplitudes, propagators, renormalization"]:::established
-  GR["General Relativity\ndynamical spacetime geometry"]:::established
-  Clash["Structural clash\nQFT assumes a background\nGR makes the background dynamical"]:::obstruction
-  Planck["Planck frontier\nE/E_P expansion loses predictive power"]:::obstruction
-  Programs["Candidate programs\nstrings · loops · asymptotic safety · holography"]:::frontier
-  BH["Black holes\nentropy · horizons · information"]:::frontier
-  Data["Experimental constraints\ncolliders · GW · cosmology · EHT"]:::experiment
-
-  SM --> QFT
-  QFT --> Clash
-  GR --> Clash
-  Clash --> Planck
-  Planck --> Programs
-  Programs --> BH
-  BH --> Data
-  Data -. constrains .-> Programs
-```
+<p align="center">
+  <img src="docs/diagrams/05-problem-stack.svg" alt="Quantum gravity problem stack" width="100%" />
+</p>
 
 ### Black-Hole Information Flow
 
-```mermaid
-sequenceDiagram
-  participant Collapse as Gravitational collapse
-  participant Horizon as Event horizon
-  participant QFT as Quantum fields on curved spacetime
-  participant Radiation as Hawking radiation
-  participant Entropy as Radiation entropy
-  participant Unitarity as Quantum unitarity
-
-  Collapse->>Horizon: trapped region forms
-  Horizon->>QFT: define modes on curved background
-  QFT->>Radiation: thermal spectrum at infinity
-  Radiation->>Entropy: entropy appears to increase
-  Entropy->>Unitarity: tension with pure-state evolution
-  Unitarity-->>Radiation: Page curve required if evolution is unitary
-```
+<p align="center">
+  <img src="docs/diagrams/06-black-hole-information-flow.svg" alt="Black-hole information flow" width="100%" />
+</p>
 
 ### Renderer Pipeline
 
-```mermaid
-flowchart LR
-  HTML["index.html"] --> Scripts["script tags\nReact · Babel · Three.js · KaTeX"]
-  Scripts --> App["app.jsx\nview router + tweaks"]
-  App --> Module["scientific module"]
-  Module --> Scene3D["Scene3D\ncamera · labels · picking · controls"]
-  Module --> Canvas["Canvas 2D\nanalytical fallback"]
-  Module --> Formula["FormulaCard\nKaTeX + symbol definitions"]
-  Scene3D --> WebGL["WebGL output\nbloom + labels + motion"]
-  Canvas --> Fallback["fallback visualization"]
-  Formula --> Status["epistemic status labels"]
-  WebGL --> User["interactive atlas"]
-  Fallback --> User
-  Status --> User
-```
+<p align="center">
+  <img src="docs/diagrams/07-renderer-pipeline.svg" alt="Renderer pipeline" width="100%" />
+</p>
 
 ### Theory Comparator Map
 
-```mermaid
-mindmap
-  root((Quantum Gravity))
-    String theory
-      extended objects
-      graviton mode
-      extra dimensions
-      AdS/CFT
-      landscape problem
-    Loop quantum gravity
-      background independence
-      spin networks
-      discrete geometry spectra
-      semiclassical limit problem
-    Asymptotic safety
-      UV fixed point
-      nonperturbative RG
-      truncation dependence
-    EFT gravity
-      reliable below Planck scale
-      higher curvature expansion
-      no UV completion
-    Holography
-      boundary degrees of freedom
-      entropy area law
-      special spacetime settings
-```
+<p align="center">
+  <img src="docs/diagrams/08-theory-comparator-map.svg" alt="Theory comparator map" width="100%" />
+</p>
 
 ### Screenshot Reproducibility Flow
 
-```mermaid
-flowchart LR
-  Server["Local HTTP server\n127.0.0.1:8000"] --> Browser["Chromium / Chrome"]
-  Browser --> State["localStorage view key\nqga-view"]
-  State --> Module["target module"]
-  Module --> Wait["render wait\nWebGL + animation"]
-  Wait --> Capture["PNG screenshot"]
-  Capture --> README["README visual atlas"]
-```
+<p align="center">
+  <img src="docs/diagrams/09-screenshot-reproducibility-flow.svg" alt="Screenshot reproducibility flow" width="100%" />
+</p>
 
 ---
 
@@ -1270,23 +1114,9 @@ HORIZON avoids that by making the epistemic state part of the UI.
 
 ## User Experience Model
 
-```mermaid
-flowchart TB
-  Reader["Reader"] --> Question["What am I trying to understand?"]
-  Question --> Particle["What are the known fields?"]
-  Question --> Geometry["What is spacetime geometry?"]
-  Question --> Conflict["Why do QFT and GR clash?"]
-  Question --> Candidate["What could replace the current picture?"]
-  Question --> Constraint["What does experiment actually say?"]
-
-  Particle --> ModuleSM["Module 01"]
-  Particle --> ModuleQFT["Module 02"]
-  Geometry --> ModuleGR["Module 04"]
-  Conflict --> ModulePlanck["Module 05"]
-  Candidate --> ModuleApproaches["Module 06"]
-  Candidate --> ModuleBH["Module 07"]
-  Constraint --> ModuleExp["Module 08"]
-```
+<p align="center">
+  <img src="docs/diagrams/10-user-experience-model.svg" alt="User experience model" width="100%" />
+</p>
 
 ---
 
@@ -1694,19 +1524,9 @@ The README makes this explicit to avoid overclaiming.
 
 ### Appendix H — Information Paradox Decision Tree
 
-```mermaid
-flowchart TB
-  A["Black hole forms from pure state"] --> B["Semiclassical horizon emits Hawking radiation"]
-  B --> C{"Radiation exactly thermal?"}
-  C -->|yes| D["Information apparently lost"]
-  C -->|no| E["Correlations encode information"]
-  D --> F{"Quantum mechanics modified?"}
-  E --> G["Unitary evaporation possible"]
-  F -->|yes| H["non-unitary evolution"]
-  F -->|no| I["semiclassical approximation incomplete"]
-  I --> J["Page curve, islands, holography, microstates"]
-  G --> J
-```
+<p align="center">
+  <img src="docs/diagrams/11-information-paradox-decision-tree.svg" alt="Information paradox decision tree" width="100%" />
+</p>
 
 ### Appendix I — Experimental Constraint Taxonomy
 
@@ -1780,11 +1600,13 @@ Status: established semiclassical formula, unresolved microstate interpretation
 | gravitational wave sheet | high | mistaken for quantum-gravity signal | frame as GR-confirming observation |
 | theory constellation | medium-high | mistaken for ranking | state no winner implied |
 
-### Appendix M — Mermaid Rendering Notes
+### Appendix M — Static Diagram Rendering Notes
 
-GitHub renders Mermaid directly in Markdown.
+Markdown-native diagram blocks can depend on GitHub's rich-display asset pipeline.
 
-The README uses Mermaid diagrams for:
+This repository uses committed SVG diagrams instead.
+
+The README uses static SVG diagrams for:
 
 - architecture flow;
 - state transitions;
@@ -1794,7 +1616,7 @@ The README uses Mermaid diagrams for:
 - theory comparison;
 - screenshot reproducibility.
 
-The diagrams are intentionally not too dense.
+The diagrams are intentionally not too dense and are stored under `docs/diagrams/`.
 
 They should support scanning.
 
@@ -1885,8 +1707,8 @@ It includes:
 - dense shields.io badge cluster;
 - long-form scientific thesis;
 - visual atlas;
-- Mermaid architecture;
-- Mermaid state diagrams;
+- static SVG architecture;
+- static SVG state and flow diagrams;
 - mathematical formulation section;
 - status taxonomy;
 - module matrix;
@@ -2062,7 +1884,7 @@ The following audit manifest records what the document is expected to contain.
 | visual-first screenshot set | applied | Visual Atlas |
 | black-hole screenshots | applied | hero image and Visual Atlas rows |
 | shields.io badges | applied | centered badge cluster |
-| Mermaid diagrams | applied | architecture, state, status, theory, renderer, information-flow diagrams |
+| static SVG diagrams | applied | architecture, state, status, theory, renderer, information-flow diagrams |
 | mathematical formulation | applied | Standard Model, QFT, GR, Planck, black-hole equations |
 | epistemic caveats | applied | Scientific Position and Academic Integrity Notes |
 | local run instructions | applied | Run Locally |
@@ -2137,7 +1959,7 @@ When the app gains URL state, update the Screenshot Reproduction Guide.
 
 - [ ] Every screenshot path resolves.
 
-- [ ] Mermaid diagrams render without syntax errors.
+- [ ] static SVG diagrams render without syntax errors.
 
 - [ ] Badges do not imply CI/test status that the repository does not actually have.
 
@@ -2173,7 +1995,7 @@ It uses equations to keep the visuals honest.
 
 It uses status labels to keep the reader oriented.
 
-It uses Mermaid diagrams to expose the architecture of the explanation.
+It uses static SVG diagrams to expose the architecture of the explanation.
 
 It uses screenshots from the running application to prove the experience exists.
 

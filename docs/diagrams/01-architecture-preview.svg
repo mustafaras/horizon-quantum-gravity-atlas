@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" width="1200" height="650" role="img" aria-label="HORIZON Architecture Preview">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#05080f"/><stop offset="1" stop-color="#10162a"/></linearGradient>
+  <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#46d4e0"/></marker>
+</defs>
+<rect width="100%" height="100%" rx="18" fill="url(#bg)"/>
+<text x="40" y="48" fill="#e8eef8" font-family="Space Grotesk,Segoe UI,Arial" font-size="26" font-weight="700">HORIZON Architecture Preview</text>
+<text x="40" y="76" fill="#93a1ba" font-family="IBM Plex Mono,Consolas,monospace" font-size="13">scientific content -&gt; runtime rendering -&gt; atlas experience</text>
+<rect x="70" y="110" width="280" height="34" rx="17" fill="#5ee6a8" opacity="0.16" stroke="#5ee6a8"/>
+<text x="210" y="132" text-anchor="middle" fill="#e8eef8" font-family="IBM Plex Mono,Consolas,monospace" font-size="13" font-weight="700">Scientific Content</text><rect x="460" y="110" width="280" height="34" rx="17" fill="#54aeff" opacity="0.16" stroke="#54aeff"/>
+<text x="600" y="132" text-anchor="middle" fill="#e8eef8" font-family="IBM Plex Mono,Consolas,monospace" font-size="13" font-weight="700">Interactive Runtime</text><rect x="850" y="110" width="280" height="34" rx="17" fill="#b388ff" opacity="0.16" stroke="#b388ff"/>
+<text x="990" y="132" text-anchor="middle" fill="#e8eef8" font-family="IBM Plex Mono,Consolas,monospace" font-size="13" font-weight="700">Atlas Experience</text><rect x="60" y="170" width="300" height="56" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="210" y="194" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Standard Model</text>
+<text x="210" y="212" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">particle data</text>
+<rect x="60" y="248" width="300" height="56" rx="12" fill="#0f172a" stroke="#46d4e0" stroke-width="1.6"/>
+<text x="210" y="272" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">QFT equations</text>
+<text x="210" y="290" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">fields + amplitudes</text>
+<rect x="60" y="326" width="300" height="56" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="210" y="350" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Einstein geometry</text>
+<text x="210" y="368" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">metric + curvature</text>
+<rect x="60" y="404" width="300" height="56" rx="12" fill="#0f172a" stroke="#ff7b72" stroke-width="1.6"/>
+<text x="210" y="428" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Black-hole</text>
+<text x="210" y="446" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">thermodynamics</text>
+<rect x="60" y="482" width="300" height="56" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="210" y="506" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Experimental</text>
+<text x="210" y="524" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">constraints</text>
+<rect x="450" y="170" width="300" height="56" rx="12" fill="#0f172a" stroke="#54aeff" stroke-width="1.6"/>
+<text x="600" y="203" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">React 18 UMD</text>
+<rect x="450" y="248" width="300" height="56" rx="12" fill="#0f172a" stroke="#54aeff" stroke-width="1.6"/>
+<text x="600" y="281" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Babel Standalone</text>
+<rect x="450" y="326" width="300" height="56" rx="12" fill="#0f172a" stroke="#54aeff" stroke-width="1.6"/>
+<text x="600" y="359" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Three.js Scene3D</text>
+<rect x="450" y="404" width="300" height="56" rx="12" fill="#0f172a" stroke="#54aeff" stroke-width="1.6"/>
+<text x="600" y="437" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Canvas 2D fallbacks</text>
+<rect x="450" y="482" width="300" height="56" rx="12" fill="#0f172a" stroke="#54aeff" stroke-width="1.6"/>
+<text x="600" y="515" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">KaTeX formulas</text>
+<rect x="840" y="190" width="300" height="62" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="990" y="217" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Eight scientific</text>
+<text x="990" y="235" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">modules</text>
+<rect x="840" y="282" width="300" height="62" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="990" y="309" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Learning + rendering</text>
+<text x="990" y="327" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">controls</text>
+<rect x="840" y="374" width="300" height="62" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="990" y="401" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Epistemic status</text>
+<text x="990" y="419" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">badges</text>
+<rect x="840" y="466" width="300" height="62" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="990" y="493" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Cinematic visual</text>
+<text x="990" y="511" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">atlas</text>
+<line x1="360" y1="198" x2="450" y2="198" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="360" y1="276" x2="450" y2="276" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="360" y1="354" x2="450" y2="354" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="360" y1="432" x2="450" y2="432" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="360" y1="510" x2="450" y2="510" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="750" y1="218" x2="840" y2="221" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="750" y1="296" x2="840" y2="313" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="750" y1="374" x2="840" y2="405" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><line x1="750" y1="452" x2="840" y2="497" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/></svg>

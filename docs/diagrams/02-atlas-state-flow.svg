@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 760" width="980" height="760" role="img" aria-label="Atlas Module State Flow">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#05080f"/><stop offset="1" stop-color="#10162a"/></linearGradient>
+  <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#46d4e0"/></marker>
+</defs>
+<rect width="100%" height="100%" rx="18" fill="url(#bg)"/>
+<text x="40" y="48" fill="#e8eef8" font-family="Space Grotesk,Segoe UI,Arial" font-size="26" font-weight="700">Atlas Module State Flow</text>
+<text x="40" y="76" fill="#93a1ba" font-family="IBM Plex Mono,Consolas,monospace" font-size="13">the conceptual path through the application</text>
+<rect x="120" y="105" width="300" height="60" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="270" y="140" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Overview</text>
+<line x1="420" y1="135" x2="540" y2="135" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="540" y="105" width="300" height="60" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="690" y="140" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Standard Model</text>
+<line x1="840" y1="135" x2="120" y2="255" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="120" y="225" width="300" height="60" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="270" y="260" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Quantum Field Theory</text>
+<line x1="420" y1="255" x2="540" y2="255" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="540" y="225" width="300" height="60" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="690" y="260" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Gauge + RG Flow</text>
+<line x1="840" y1="255" x2="120" y2="375" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="120" y="345" width="300" height="60" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="270" y="380" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">General Relativity</text>
+<line x1="420" y1="375" x2="540" y2="375" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="540" y="345" width="300" height="60" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="690" y="380" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Planck Frontier</text>
+<line x1="840" y1="375" x2="120" y2="495" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="120" y="465" width="300" height="60" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="270" y="500" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Theory Comparator</text>
+<line x1="420" y1="495" x2="540" y2="495" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="540" y="465" width="300" height="60" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="690" y="500" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Black Holes</text>
+<line x1="840" y1="495" x2="120" y2="615" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="120" y="585" width="300" height="60" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="270" y="620" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Experiment</text>
+<line x1="420" y1="615" x2="540" y2="615" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="540" y="585" width="300" height="60" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="690" y="620" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Open Problems</text>
+</svg>
