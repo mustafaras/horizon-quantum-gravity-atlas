@@ -226,9 +226,9 @@ No screenshot should imply that conjectural physics is experimentally observed.
 </tr>
 <tr>
 <td width="50%">
-<img src="docs/screenshots/12-gw-theatre.png" alt="GW Signal Analysis Theatre with dual-detector generated strain traces, inspiral-merger-ringdown phase ribbon, live STFT spectrogram of the chirp, and chirp-mass readouts" width="100%" />
+<img src="docs/screenshots/12-gw-theatre.png" alt="GW Signal Analysis Theatre mid-playback: dual-detector strain revealed up to a glowing playhead, STFT spectrogram with the analytic chirp track, transport bar with speed control, and component-mass sliders" width="100%" />
 <br/>
-<sub><strong>GW signal analysis theatre</strong> — seeded dual-detector chirp with an inspiral/merger/ringdown phase ribbon and a live Hann-STFT spectrogram; the rising chirp track is computed from the displayed samples, not drawn on.</sub>
+<sub><strong>GW signal analysis theatre</strong> — seeded dual-detector chirp with animated playback: a transport bar (play/pause, replay, 0.5–4× speed) sweeps a playhead across both instruments, the strain reveals progressively with a merger flash at coalescence, and the Hann-STFT spectrogram overlays the exact leading-order frequency track. Drag the playhead or any trace to scrub; hover for a live t·h·f crosshair readout; component masses and seed are slider-controlled and URL-encoded.</sub>
 </td>
 <td width="50%">
 <img src="docs/screenshots/12b-gw-theatre-real.png" alt="GW theatre in GWOSC observation mode showing downsampled calibrated GW150914 H1 strain with GPS time axis, provenance links, and effective-rate Nyquist disclosure" width="100%" />
@@ -240,7 +240,7 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <td width="50%">
 <img src="docs/screenshots/13-gw-theatre-mobile.png" alt="Mobile GW signal analysis theatre with stacked strain and spectrogram instrument panels" width="100%" />
 <br/>
-<sub><strong>Mobile analysis theatre</strong> — strain and time–frequency panels stack without horizontal overflow; the seeded simulation remains fully usable offline.</sub>
+<sub><strong>Mobile analysis theatre</strong> — transport, strain, and time–frequency panels stack without horizontal overflow; playback, scrubbing, and the seeded simulation remain fully usable offline.</sub>
 </td>
 <td width="50%"></td>
 </tr>
@@ -1030,9 +1030,9 @@ It is a repository-presentation guardrail that prevents broken academic packagin
 
 ## Reproducible sharing and data modes
 
-The active module, learning pathway, black-hole mass/spin, gravitational-wave controls, and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
+The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
-Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
+Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. An animated playback engine sweeps a shared playhead across both instruments — with play/pause, replay, 0.5–4× speed, drag-to-scrub on the progress bar or any trace, a hover crosshair reporting time, strain, and instantaneous frequency, and a merger flash at coalescence — while component-mass sliders (m₁, m₂, URL-encoded as `gwm1`/`gwm2`) reshape the waveform live. Playback is presentation-only: the underlying signals stay seed-deterministic, and animation pauses when the OS requests reduced motion. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
@@ -1093,7 +1093,7 @@ The screenshot set emphasizes visual and animated modules:
 | `09-mobile-black-hole-lab.png` | `bh` | responsive black-hole module |
 | `10-kerr-observatory-layers.png` | `bh` | Kerr observatory with exact-coordinate radii map |
 | `11-kerr-observatory-mobile.png` | `bh` | mobile Kerr observatory, collapsible map |
-| `12-gw-theatre.png` | `exp` | GW analysis theatre: dual strain, phase ribbon, STFT spectrogram |
+| `12-gw-theatre.png` | `exp` | GW analysis theatre mid-playback: dual strain, playhead, STFT + chirp track, transport |
 | `12b-gw-theatre-real.png` | `exp` | GWOSC real-observation mode with provenance |
 | `13-gw-theatre-mobile.png` | `exp` | mobile GW theatre, stacked instrument panels |
 

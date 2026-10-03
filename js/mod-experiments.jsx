@@ -863,14 +863,22 @@ function useFontsReady() {
   return ready;
 }
 
-function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
+function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub }) {
   const cvRef = useRef(null);
+  const [hover, setHover] = useState(null);
   const fontsReady = useFontsReady();
+  const PADL = 46, PADR = 12;
+  const duration = mode === "real" && realData ? realData.duration : GW_GEN_DURATION;
+  const toTime = (e) => {
+    const r = cvRef.current.getBoundingClientRect();
+    const pw = r.width - PADL - PADR;
+    return Math.min(1, Math.max(0, (e.clientX - r.left - PADL) / pw)) * duration;
+  };
   useEffect(() => {
     const cv = cvRef.current; if (!cv) return;
     const { ctx, w, h } = gwSetupCanvas(cv, 220);
     ctx.clearRect(0, 0, w, h);
-    const padL = 46, padR = 12, padT = 26, padB = 34;
+    const padL = PADL, padR = PADR, padT = 26, padB = 34;
     const pw = w - padL - padR, ph = h - padT - padB;
     const mid = padT + ph / 2;
     ctx.font = "9.5px IBM Plex Mono";
@@ -884,22 +892,43 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
     }
     ctx.beginPath(); ctx.moveTo(padL, mid); ctx.lineTo(padL + pw, mid);
     ctx.strokeStyle = "rgba(148,176,224,0.16)"; ctx.stroke();
-    const drawTrace = (samples, color, glow) => {
+    const tracePath = (samples, amax, upto) => {
       const n = samples.length;
-      let amax = 1e-9;
-      for (let i = 0; i < n; i++) { const a = Math.abs(samples[i]); if (a > amax) amax = a; }
-      ctx.strokeStyle = color; ctx.lineWidth = 1.3;
-      ctx.shadowColor = glow ? color : "transparent"; ctx.shadowBlur = glow ? 6 : 0;
+      const end = upto == null ? n : Math.max(2, Math.min(n, upto));
       ctx.beginPath();
-      for (let i = 0; i < n; i++) {
+      for (let i = 0; i < end; i++) {
         const x = padL + (i / (n - 1)) * pw;
         const y = mid - (samples[i] / amax) * ph * 0.44;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      ctx.stroke(); ctx.shadowBlur = 0;
     };
+    const maxAbs = (samples) => {
+      let amax = 1e-9;
+      for (let i = 0; i < samples.length; i++) { const a = Math.abs(samples[i]); if (a > amax) amax = a; }
+      return amax;
+    };
+    const drawTrace = (samples, color, glow, upto) => {
+      const amax = maxAbs(samples);
+      ctx.strokeStyle = color; ctx.lineWidth = 1.3;
+      ctx.shadowColor = glow ? color : "transparent"; ctx.shadowBlur = glow ? 6 : 0;
+      tracePath(samples, amax, upto);
+      ctx.stroke(); ctx.shadowBlur = 0;
+      return amax;
+    };
+    const drawHead = (samples, amax, upto, color) => {
+      const n = samples.length;
+      const i = Math.max(0, Math.min(n - 1, upto - 1));
+      const x = padL + (i / (n - 1)) * pw;
+      const y = mid - (samples[i] / amax) * ph * 0.44;
+      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 2 * Math.PI); ctx.fill();
+      ctx.shadowBlur = 0;
+    };
+    const frac = Math.min(1, Math.max(0, playT / duration));
+    const hasData = (mode === "generated" && genH1) || (mode === "real" && realData);
     if (mode === "generated" && genH1) {
       const n = genH1.samples.length;
+      const upto = Math.round(frac * (n - 1)) + 1;
       const tMerge = genH1.mergerIndex / genH1.sampleRate;
       const X = (t) => padL + (t / genH1.duration) * pw;
       // phase ribbon: inspiral → merger → ringdown
@@ -916,8 +945,22 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
       ctx.strokeStyle = "rgba(255,189,102,0.5)"; ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(X(tMerge), padT); ctx.lineTo(X(tMerge), padT + ph); ctx.stroke();
       ctx.setLineDash([]);
-      drawTrace(genL1.samples, "rgba(255,189,102,0.75)", false);
-      drawTrace(genH1.samples, "rgba(90,185,255,0.95)", true);
+      // ghost of the full signal, then the live revealed portion
+      drawTrace(genL1.samples, "rgba(255,189,102,0.16)", false);
+      drawTrace(genH1.samples, "rgba(90,185,255,0.16)", false);
+      drawTrace(genL1.samples, "rgba(255,189,102,0.75)", false, upto);
+      const amaxH1 = drawTrace(genH1.samples, "rgba(90,185,255,0.95)", true, upto);
+      if (frac < 1) drawHead(genH1.samples, amaxH1, upto, "rgba(160,220,255,1)");
+      // merger flash, decaying after the playhead crosses coalescence
+      if (playT >= tMerge) {
+        const flash = Math.max(0, 1 - (playT - tMerge) / 0.45);
+        if (flash > 0) {
+          const g = ctx.createRadialGradient(X(tMerge), mid, 0, X(tMerge), mid, 110);
+          g.addColorStop(0, "rgba(255,205,130," + (0.5 * flash).toFixed(3) + ")");
+          g.addColorStop(1, "rgba(255,205,130,0)");
+          ctx.fillStyle = g; ctx.fillRect(padL, padT, pw, ph);
+        }
+      }
       // axis labels
       ctx.fillStyle = "rgba(148,176,224,0.6)";
       for (let t = 0; t <= genH1.duration; t++) ctx.fillText(t.toFixed(0) + "s", X(t) - 6, padT + ph + 30);
@@ -927,8 +970,27 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
       ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("H1 Hanford", padL + pw - 178, 13);
       ctx.fillStyle = "rgba(255,189,102,0.85)"; ctx.fillRect(padL + pw - 104, 8, 14, 3);
       ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("L1 +7 ms", padL + pw - 86, 13);
+      // hover crosshair with live readout
+      if (hover != null) {
+        const hi = Math.max(0, Math.min(n - 1, Math.round((hover / genH1.duration) * (n - 1))));
+        const hx = X(hover);
+        ctx.strokeStyle = "rgba(220,235,255,0.35)"; ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
+        ctx.setLineDash([]);
+        const fHz = genH1.freqTrack ? genH1.freqTrack[hi] : 0;
+        const txt = "t " + hover.toFixed(2) + " s · h " + genH1.samples[hi].toFixed(2) + (fHz > 0 ? " · f " + fHz.toFixed(0) + " Hz" : "");
+        const tw = ctx.measureText(txt).width + 14;
+        const bx = Math.min(hx + 8, padL + pw - tw - 4);
+        ctx.fillStyle = "rgba(7,12,21,0.92)"; ctx.strokeStyle = "rgba(90,185,255,0.4)";
+        ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
+        ctx.fillStyle = "rgba(205,229,255,0.95)"; ctx.fillText(txt, bx + 7, padT + 18);
+      }
     } else if (mode === "real" && realData) {
-      drawTrace(realData.samples, "rgba(70,212,224,0.95)", true);
+      const n = realData.samples.length;
+      const upto = Math.round(frac * (n - 1)) + 1;
+      drawTrace(realData.samples, "rgba(70,212,224,0.16)", false);
+      const amax = drawTrace(realData.samples, "rgba(70,212,224,0.95)", true, upto);
+      if (frac < 1) drawHead(realData.samples, amax, upto, "rgba(160,240,244,1)");
       const effRate = realData.samples.length / realData.duration;
       ctx.fillStyle = "rgba(148,176,224,0.6)";
       ctx.fillText("GPS " + realData.start.toFixed(0), padL, padT + ph + 30);
@@ -937,11 +999,32 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
       ctx.fillText(realData.samples.length + " pts · " + effRate.toFixed(0) + " Hz effective", padL + pw, padT + 12);
       ctx.textAlign = "left";
       ctx.fillText("h(t) · calibrated strain, normalized", 8, padT + 10);
+      if (hover != null) {
+        const hi = Math.max(0, Math.min(n - 1, Math.round((hover / realData.duration) * (n - 1))));
+        const hx = padL + (hover / realData.duration) * pw;
+        ctx.strokeStyle = "rgba(220,235,255,0.35)"; ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
+        ctx.setLineDash([]);
+        const txt = "GPS " + (realData.start + hover).toFixed(2) + " · h " + realData.samples[hi].toFixed(2);
+        const tw = ctx.measureText(txt).width + 14;
+        const bx = Math.min(hx + 8, padL + pw - tw - 4);
+        ctx.fillStyle = "rgba(7,12,21,0.92)"; ctx.strokeStyle = "rgba(70,212,224,0.4)";
+        ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
+        ctx.fillStyle = "rgba(205,245,248,0.95)"; ctx.fillText(txt, bx + 7, padT + 18);
+      }
     } else {
       ctx.fillStyle = "rgba(148,176,224,0.55)";
       ctx.fillText(mode === "real" ? "Awaiting GWOSC observation — load or check network." : "Preparing seeded waveform…", padL + 10, mid);
     }
-  }, [mode, genH1, genL1, realData, detector, fontsReady]);
+    // playhead
+    if (hasData && frac > 0) {
+      const px = padL + frac * pw;
+      ctx.strokeStyle = "rgba(235,244,255,0.55)"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(px, padT - 4); ctx.lineTo(px, padT + ph); ctx.stroke();
+      ctx.fillStyle = "rgba(235,244,255,0.8)";
+      ctx.beginPath(); ctx.moveTo(px - 4, padT - 4); ctx.lineTo(px + 4, padT - 4); ctx.lineTo(px, padT + 2); ctx.closePath(); ctx.fill();
+    }
+  }, [mode, genH1, genL1, realData, detector, fontsReady, playT, hover, duration]);
   return (
     <figure className="gw-panel">
       <figcaption>
@@ -950,27 +1033,28 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
           ? <span className="badge badge-effective">GENERATED · SEEDED</span>
           : <span className="badge badge-established">OBSERVATION · GWOSC</span>}
       </figcaption>
-      <canvas ref={cvRef} style={{ width: "100%", height: 220, display: "block" }}
-        aria-label="Gravitational-wave strain versus time"></canvas>
+      <canvas ref={cvRef} style={{ width: "100%", height: 220, display: "block", touchAction: "none" }}
+        aria-label="Gravitational-wave strain versus time; drag to scrub the playhead"
+        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onScrub(toTime(e)); }}
+        onPointerMove={(e) => { if (e.buttons & 1) onScrub(toTime(e)); else setHover(toTime(e)); }}
+        onPointerLeave={() => setHover(null)}></canvas>
     </figure>
   );
 }
 
-/* Time-frequency map: Hann STFT of the displayed strain, brand colormap. */
-function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, note }) {
+/* Time-frequency map: Hann STFT of the displayed strain, brand colormap.
+   Pre-renders to an offscreen canvas; the live draw reveals frames up to the
+   shared playhead and overlays the analytic frequency track when available. */
+function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, note, playT, duration, freqTrack }) {
   const cvRef = useRef(null);
   const fontsReady = useFontsReady();
   const spec = useMemo(() => {
     if (!samples || samples.length < windowSize * 2) return null;
     return window.QGA_PHYSICS.stftSpectrogram(samples, { sampleRate, windowSize, hopSize });
   }, [samples, sampleRate, windowSize, hopSize]);
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv || !spec) return;
-    const { ctx, w, h } = gwSetupCanvas(cv, 190);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 46, padR = 66, padT = 12, padB = 26;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    const img = ctx.createImageData(spec.frames, spec.bins);
+  const off = useMemo(() => {
+    if (!spec) return null;
+    const img = new ImageData(spec.frames, spec.bins);
     const floor = spec.maxDb - 46;
     for (let f = 0; f < spec.frames; f++) {
       for (let b = 0; b < spec.bins; b++) {
@@ -982,12 +1066,49 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
         img.data[px * 4] = r; img.data[px * 4 + 1] = g; img.data[px * 4 + 2] = bl; img.data[px * 4 + 3] = 255;
       }
     }
-    const off = document.createElement("canvas");
-    off.width = spec.frames; off.height = spec.bins;
-    off.getContext("2d").putImageData(img, 0, 0);
+    const c = document.createElement("canvas");
+    c.width = spec.frames; c.height = spec.bins;
+    c.getContext("2d").putImageData(img, 0, 0);
+    return c;
+  }, [spec]);
+  useEffect(() => {
+    const cv = cvRef.current; if (!cv || !spec || !off) return;
+    const { ctx, w, h } = gwSetupCanvas(cv, 190);
+    ctx.clearRect(0, 0, w, h);
+    const padL = 46, padR = 66, padT = 12, padB = 26;
+    const pw = w - padL - padR, ph = h - padT - padB;
+    const frac = Math.min(1, Math.max(0, playT / duration));
+    // ghost of the full map, then the live revealed portion
     ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.2;
     ctx.drawImage(off, padL, padT, pw, ph);
+    ctx.globalAlpha = 1;
+    const srcW = frac * spec.frames;
+    if (srcW > 0.5) ctx.drawImage(off, 0, 0, srcW, spec.bins, padL, padT, frac * pw, ph);
+    // analytic chirp track, drawn only up to the playhead
+    if (freqTrack && frac > 0) {
+      const n = freqTrack.length;
+      const upto = Math.round(frac * (n - 1));
+      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 1.2;
+      ctx.shadowColor = "rgba(70,212,224,0.9)"; ctx.shadowBlur = 5;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i <= upto; i += 4) {
+        const f = freqTrack[i];
+        if (f <= 0) continue;
+        const x = padL + (i / (n - 1)) * pw;
+        const y = padT + ph - Math.min(1, f / spec.nyquist) * ph;
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
     ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.strokeRect(padL, padT, pw, ph);
+    // playhead
+    if (frac > 0) {
+      const px = padL + frac * pw;
+      ctx.strokeStyle = "rgba(235,244,255,0.55)"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + ph); ctx.stroke();
+    }
     // frequency axis (linear, up to Nyquist)
     ctx.font = "9.5px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.65)";
     const ny = spec.nyquist;
@@ -1010,9 +1131,9 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
     }
     ctx.fillStyle = "rgba(148,176,224,0.65)";
     ctx.fillText(spec.maxDb.toFixed(0), lgX + lgW + 4, padT + 8);
-    ctx.fillText(floor.toFixed(0), lgX + lgW + 4, padT + ph);
+    ctx.fillText((spec.maxDb - 46).toFixed(0), lgX + lgW + 4, padT + ph);
     ctx.fillText("dB", lgX + 2, padT + ph + 12);
-  }, [spec, label, fontsReady]);
+  }, [spec, off, label, fontsReady, playT, duration, freqTrack]);
   return (
     <figure className="gw-panel">
       <figcaption>
@@ -1036,12 +1157,42 @@ function GWAnalysisTheatre() {
 
   const genH1 = useMemo(() => window.QGA_PHYSICS.generatedChirp({
     seed: atlasState.seed, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
-    m1: GW_GEN_M1, m2: GW_GEN_M2, mergerAt: GW_GEN_MERGER,
-  }), [atlasState.seed]);
+    m1: atlasState.gwM1, m2: atlasState.gwM2, mergerAt: GW_GEN_MERGER,
+  }), [atlasState.seed, atlasState.gwM1, atlasState.gwM2]);
   const genL1 = useMemo(() => window.QGA_PHYSICS.generatedChirp({
     seed: atlasState.seed * 2 + 101, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
-    m1: GW_GEN_M1, m2: GW_GEN_M2, mergerAt: GW_GEN_MERGER, delaySeconds: GW_H1L1_DELAY,
-  }), [atlasState.seed]);
+    m1: atlasState.gwM1, m2: atlasState.gwM2, mergerAt: GW_GEN_MERGER, delaySeconds: GW_H1L1_DELAY,
+  }), [atlasState.seed, atlasState.gwM1, atlasState.gwM2]);
+
+  /* Live playback transport: one rAF clock drives both panels. Presentation
+     only — the underlying signals stay seed-deterministic. */
+  const duration = mode === "real" ? (realData ? realData.duration : atlasState.gwDuration) : GW_GEN_DURATION;
+  const [playT, setPlayT] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const reducedMotion = useMemo(() =>
+    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  useEffect(() => {
+    if (!playing) return undefined;
+    let raf = 0, last = performance.now();
+    const tick = (now) => {
+      const dt = (now - last) / 1000; last = now;
+      setPlayT((t) => Math.min(duration, t + dt * speed));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, speed, duration]);
+  useEffect(() => { if (playing && playT >= duration) setPlaying(false); }, [playT, playing, duration]);
+  // restart the performance whenever the signal itself changes
+  useEffect(() => {
+    setPlayT(0);
+    setPlaying(!reducedMotion);
+  }, [mode, atlasState.seed, atlasState.gwM1, atlasState.gwM2, realData, reducedMotion]);
+  const togglePlay = () => {
+    if (!playing && playT >= duration) setPlayT(0);
+    setPlaying(!playing);
+  };
 
   useEffect(() => () => realLoadRef.current?.abort(), []);
   const loadReal = async () => {
@@ -1074,7 +1225,7 @@ function GWAnalysisTheatre() {
   };
   useEffect(() => { if (mode === "real") loadReal(); }, [atlasState.gwDetector, atlasState.gwStart, atlasState.gwDuration]);
 
-  const mc = window.QGA_PHYSICS.chirpMass(GW_GEN_M1, GW_GEN_M2);
+  const mc = window.QGA_PHYSICS.chirpMass(atlasState.gwM1, atlasState.gwM2);
   const tC20 = window.QGA_PHYSICS.timeToCoalescence(20, mc);
   const realEffRate = realData ? realData.samples.length / realData.duration : 0;
   const specSamples = mode === "real" && realData ? realData.samples : genH1.samples;
@@ -1126,11 +1277,43 @@ function GWAnalysisTheatre() {
             <button className="btn" onClick={loadReal}>Reload</button>
           </div>
         ) : (
-          <div className="kerr-control-group" aria-label="Generation seed">
+          <div className="kerr-control-group" aria-label="Binary masses and generation seed">
+            <SliderRow label="m₁" min={5} max={120} step={1} value={atlasState.gwM1}
+              onChange={(v) => setAtlasState({ gwM1: v })} format={(v) => v + " M☉"}></SliderRow>
+            <SliderRow label="m₂" min={5} max={120} step={1} value={atlasState.gwM2}
+              onChange={(v) => setAtlasState({ gwM2: v })} format={(v) => v + " M☉"}></SliderRow>
             <SliderRow label="seed" min={1} max={9999} step={1} value={atlasState.seed}
               onChange={(v) => setAtlasState({ seed: v })} format={(v) => "#" + v}></SliderRow>
           </div>
         )}
+      </div>
+
+      <div className="gw-transport" aria-label="Signal playback transport">
+        <button className="gw-play-btn" onClick={togglePlay}
+          aria-label={playing ? "Pause playback" : "Play signal"}>{playing ? "❚❚" : "▶"}</button>
+        <button className="gw-replay-btn" onClick={() => { setPlayT(0); setPlaying(!reducedMotion); }}
+          aria-label="Replay from the start">↺</button>
+        <div className="gw-progress" role="slider" aria-label="Playback position"
+          aria-valuemin={0} aria-valuemax={duration} aria-valuenow={Number(playT.toFixed(2))}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            const r = e.currentTarget.getBoundingClientRect();
+            setPlayT(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
+          }}
+          onPointerMove={(e) => {
+            if (!(e.buttons & 1)) return;
+            const r = e.currentTarget.getBoundingClientRect();
+            setPlayT(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
+          }}>
+          <div className="gw-progress-fill" style={{ width: (100 * Math.min(1, playT / duration)) + "%" }}></div>
+        </div>
+        <span className="gw-time">t = {playT.toFixed(2)} / {duration.toFixed(1)} s</span>
+        <div className="gw-speed" aria-label="Playback speed">
+          {[0.5, 1, 2, 4].map((s) => (
+            <button key={s} className={"kerr-chip" + (speed === s ? " on" : "")} aria-pressed={speed === s}
+              onClick={() => setSpeed(s)}>{s}×</button>
+          ))}
+        </div>
       </div>
       {mode === "real" ? (
         <div className="viz-toolbar">
@@ -1142,9 +1325,10 @@ function GWAnalysisTheatre() {
       ) : null}
 
       <GWStrainPanel mode={mode} genH1={genH1} genL1={genL1} realData={realData}
-        detector={atlasState.gwDetector}></GWStrainPanel>
+        detector={atlasState.gwDetector} playT={playT} onScrub={setPlayT}></GWStrainPanel>
       <GWSpectrogramPanel samples={specSamples} sampleRate={specRate}
-        windowSize={specWindow} hopSize={specHop}
+        windowSize={specWindow} hopSize={specHop} playT={playT} duration={duration}
+        freqTrack={mode === "generated" ? genH1.freqTrack : null}
         label={mode === "real" ? atlasState.gwEvent + " " + atlasState.gwDetector : "H1 · seed " + atlasState.seed}
         note={mode === "real"
           ? "STFT of downsampled preview · Nyquist " + (specRate / 2).toFixed(0) + " Hz — full chirp band needs the 4 kHz product"
@@ -1156,7 +1340,7 @@ function GWAnalysisTheatre() {
             <header><h4>Signal</h4><span>leading-order quadrupole · teaching model</span></header>
             <div className="kerr-rgrid">
               <KerrReadout lead label="chirp mass ℳ" value={mc.toFixed(1)} unit="M☉"
-                formula="(m₁m₂)^⅗ / (m₁+m₂)^⅕ · 36+29 M☉"></KerrReadout>
+                formula={"(m₁m₂)^⅗ / (m₁+m₂)^⅕ · " + atlasState.gwM1 + "+" + atlasState.gwM2 + " M☉"}></KerrReadout>
               <KerrReadout label="t_c from 20 Hz" value={tC20.toFixed(2)} unit="s"
                 formula="(5/256)(πf)^−⁸ᐟ³ (Gℳ/c³)^−⁵ᐟ³"></KerrReadout>
               <KerrReadout label="H1→L1 offset" value="7" unit="ms"

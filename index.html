@@ -493,7 +493,45 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   font: 400 9px/1.4 var(--font-mono); letter-spacing: 0.03em;
   color: rgba(148,176,224,0.62); text-align: right;
 }
-.gw-panel canvas { background: rgba(5,8,14,0.55); }
+.gw-panel canvas { background: rgba(5,8,14,0.55); cursor: crosshair; }
+.gw-transport {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+}
+.gw-play-btn {
+  width: 36px; height: 36px; flex: none; border-radius: 50%;
+  border: 1px solid rgba(90,185,255,0.55); cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, rgba(90,185,255,0.38), rgba(10,16,28,0.95));
+  color: #dff1ff; font-size: 12px; line-height: 1;
+  box-shadow: 0 0 14px rgba(90,185,255,0.35), inset 0 0 8px rgba(90,185,255,0.2);
+  transition: box-shadow 0.2s ease, transform 0.12s ease;
+}
+.gw-play-btn:hover { box-shadow: 0 0 22px rgba(90,185,255,0.6), inset 0 0 10px rgba(90,185,255,0.3); }
+.gw-play-btn:active { transform: scale(0.94); }
+.gw-replay-btn {
+  width: 28px; height: 28px; flex: none; border-radius: 50%;
+  border: 1px solid var(--line); background: rgba(9,15,26,0.8);
+  color: rgba(170,195,230,0.9); font-size: 13px; line-height: 1; cursor: pointer;
+}
+.gw-replay-btn:hover { color: var(--text); border-color: rgba(148,176,224,0.42); }
+.gw-progress {
+  flex: 1; height: 10px; border-radius: 5px; cursor: pointer; touch-action: none;
+  background: rgba(148,176,224,0.12); overflow: hidden;
+  border: 1px solid rgba(148,176,224,0.1);
+}
+.gw-progress-fill {
+  height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, #2a6fb8, #46d4e0 70%, #ffbd66);
+  box-shadow: 0 0 10px rgba(70,212,224,0.55);
+}
+.gw-time {
+  flex: none; min-width: 128px; text-align: right;
+  font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em;
+  color: rgba(170,195,230,0.92); font-variant-numeric: tabular-nums;
+}
+.gw-speed { flex: none; display: flex; gap: 4px; }
+.gw-speed .kerr-chip { padding: 3px 8px; font-size: 10px; }
 .gw-event-input {
   width: 128px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
   background: rgba(9,15,26,0.8); color: var(--ink);
@@ -505,6 +543,8 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .gw-panel figcaption { flex-direction: column; align-items: flex-start; gap: 5px; }
   .gw-panel-note { text-align: left; }
   .gw-event-input { width: 100%; }
+  .gw-transport { flex-wrap: wrap; }
+  .gw-time { min-width: 0; flex: 1; text-align: right; }
 }
 
 /* ---------- Particle table ---------- */

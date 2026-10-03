@@ -2,19 +2,19 @@
 const QGA_DEFAULT_STATE = {
   view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
-  gwStart: 1126259446, gwDuration: 16, seed: 42,
+  gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
-  gwDuration: "gwt", seed: "seed",
+  gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
   view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "seed"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed"];
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
@@ -32,6 +32,7 @@ function qgaReadState(search = window.location.search) {
   state.bhMass = qgaClamp(state.bhMass, 0, 9); state.bhSpin = qgaClamp(state.bhSpin, 0, 0.998);
   state.gwStart = qgaClamp(Math.round(state.gwStart), 1126259000, 1126260000);
   state.gwDuration = qgaClamp(Math.round(state.gwDuration), 1, 32); state.seed = Math.trunc(state.seed) || 42;
+  state.gwM1 = qgaClamp(Math.round(state.gwM1), 5, 200); state.gwM2 = qgaClamp(Math.round(state.gwM2), 5, 200);
   state.gwEvent = /^[A-Za-z0-9_-]{3,40}$/.test(state.gwEvent) ? state.gwEvent : QGA_DEFAULT_STATE.gwEvent;
   return state;
 }

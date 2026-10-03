@@ -79,6 +79,7 @@ export function generatedChirp({
   };
   const delay = Math.round(delaySeconds * sampleRate);
   const samples = new Float64Array(n);
+  const freqTrack = new Float32Array(n);
   let phase = 0, prevTau = Math.max(0.02, mergerAt);
   const mergerIndex = Math.min(n - 1, Math.round(mergerAt * sampleRate) + delay);
   for (let i = 0; i < n; i++) {
@@ -90,13 +91,15 @@ export function generatedChirp({
       phase += 2 * Math.PI * f * (prevTau - tau);
       prevTau = tau;
       h = Math.min(1, Math.pow(f / 220, 2 / 3)) * Math.cos(phase);
+      freqTrack[i] = f;
     } else if (t >= mergerAt) {
       const tr = t - mergerAt;
       h = Math.exp(-tr / ringdownTau) * Math.cos(phase + 2 * Math.PI * ringdownFreq * tr);
+      freqTrack[i] = ringdownFreq;
     }
     samples[i] = h + noiseRms * gauss();
   }
-  return { samples, sampleRate, duration, mergerIndex, chirpMass: mc, model: "leading-order-quadrupole+ringdown" };
+  return { samples, freqTrack, sampleRate, duration, mergerIndex, chirpMass: mc, model: "leading-order-quadrupole+ringdown" };
 }
 
 /* Hann-windowed STFT magnitude spectrogram in dB (naive DFT; bounded inputs only).

@@ -76,6 +76,22 @@ test("generated chirp is seed-reproducible and bounded", () => {
   assert.equal(delayed.mergerIndex - a.mergerIndex, Math.round(0.007 * a.sampleRate));
 });
 
+test("chirp frequency track rises through the inspiral and locks to the ringdown", () => {
+  const { freqTrack, mergerIndex, sampleRate } = generatedChirp({ seed: 7, m1: 36, m2: 29 });
+  assert.equal(freqTrack.length, Math.round(sampleRate * 4));
+  // monotonic non-decreasing across the inspiral (up to the merger sample)
+  for (let i = 1; i < mergerIndex; i++) {
+    if (freqTrack[i - 1] === 0) continue; // pre-signal delay region
+    assert.ok(freqTrack[i] >= freqTrack[i - 1], "frequency must not decrease during inspiral");
+  }
+  assert.ok(freqTrack[0] > 10 && freqTrack[0] < 60); // starts in the LIGO band
+  assert.ok(freqTrack[mergerIndex - 1] > freqTrack[0]); // chirps upward
+  assert.equal(freqTrack[mergerIndex], 190); // damped-sinusoid ringdown frequency
+  // component masses reshape the track: heavier binary chirps lower at fixed tau
+  const heavy = generatedChirp({ seed: 7, m1: 80, m2: 60 });
+  assert.ok(heavy.freqTrack[Math.round(sampleRate)] < freqTrack[Math.round(sampleRate)]);
+});
+
 test("STFT spectrogram localizes a pure tone in the correct bin", () => {
   const sampleRate = 512, windowSize = 128, hopSize = 32, n = 1024;
   const toneFreq = 96; // exact bin: 96 = b·512/128 → b = 24
