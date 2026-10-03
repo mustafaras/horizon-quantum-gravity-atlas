@@ -473,6 +473,40 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .kerr-validity-body dt { padding-bottom: 2px; border-bottom: none; }
 }
 
+/* ---------- GW signal analysis theatre ---------- */
+.gw-theatre { display: flex; flex-direction: column; gap: 10px; }
+.gw-panel {
+  margin: 0; border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+  overflow: hidden;
+}
+.gw-panel figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  background: rgba(9,15,26,0.6);
+}
+.gw-panel-title {
+  font: 600 10px/1 var(--font-mono); letter-spacing: 0.18em;
+  color: rgba(205,219,241,0.9);
+}
+.gw-panel-note {
+  font: 400 9px/1.4 var(--font-mono); letter-spacing: 0.03em;
+  color: rgba(148,176,224,0.62); text-align: right;
+}
+.gw-panel canvas { background: rgba(5,8,14,0.55); }
+.gw-event-input {
+  width: 128px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+  background: rgba(9,15,26,0.8); color: var(--ink);
+  font: 500 11px/1.2 var(--font-mono); letter-spacing: 0.04em;
+}
+.gw-event-input:focus { outline: 1px solid rgba(90,185,255,0.5); border-color: rgba(90,185,255,0.5); }
+.gw-theatre .kerr-instrument-bar .ctl-row { min-width: 200px; }
+@media (max-width: 760px) {
+  .gw-panel figcaption { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .gw-panel-note { text-align: left; }
+  .gw-event-input { width: 100%; }
+}
+
 /* ---------- Particle table ---------- */
 .pt-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
 @media (max-width: 860px) { .pt-wrap { grid-template-columns: 1fr; } }

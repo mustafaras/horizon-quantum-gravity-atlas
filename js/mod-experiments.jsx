@@ -816,29 +816,241 @@ function InvariantMassLab() {
   );
 }
 
-function GWDataControls() {
+/* ---------- GW signal analysis theatre ---------- */
+const GW_GEN_RATE = 512, GW_GEN_DURATION = 4, GW_GEN_MERGER = 3.4;
+const GW_H1L1_DELAY = 0.007; // illustrative H1→L1 light-travel offset across the ~3000 km baseline
+const GW_GEN_M1 = 36, GW_GEN_M2 = 29; // GW150914-like teaching binary (M☉)
+
+/* Brand spectrogram ramp: night → deep blue → cyan → amber → white. */
+const GW_COLORMAP = [
+  [0.0, [7, 11, 19]], [0.32, [14, 42, 74]], [0.55, [22, 107, 140]],
+  [0.75, [70, 212, 224]], [0.9, [255, 189, 102]], [1.0, [255, 255, 255]],
+];
+function gwColormap(t) {
+  const x = Math.min(1, Math.max(0, t));
+  for (let i = 1; i < GW_COLORMAP.length; i++) {
+    if (x <= GW_COLORMAP[i][0]) {
+      const [t0, c0] = GW_COLORMAP[i - 1], [t1, c1] = GW_COLORMAP[i];
+      const f = (x - t0) / (t1 - t0);
+      return [c0[0] + (c1[0] - c0[0]) * f, c0[1] + (c1[1] - c0[1]) * f, c0[2] + (c1[2] - c0[2]) * f];
+    }
+  }
+  return GW_COLORMAP[GW_COLORMAP.length - 1][1];
+}
+
+function gwSetupCanvas(cv, height) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth, h = height || cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  }
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+/* Strain scope: dual-detector generated traces with phase ribbon, or a single
+   GWOSC observation trace with GPS axis. */
+function useFontsReady() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (live) setReady(true); });
+    }
+    return () => { live = false; };
+  }, []);
+  return ready;
+}
+
+function GWStrainPanel({ mode, genH1, genL1, realData, detector }) {
+  const cvRef = useRef(null);
+  const fontsReady = useFontsReady();
+  useEffect(() => {
+    const cv = cvRef.current; if (!cv) return;
+    const { ctx, w, h } = gwSetupCanvas(cv, 220);
+    ctx.clearRect(0, 0, w, h);
+    const padL = 46, padR = 12, padT = 26, padB = 34;
+    const pw = w - padL - padR, ph = h - padT - padB;
+    const mid = padT + ph / 2;
+    ctx.font = "9.5px IBM Plex Mono";
+    // frame + grid
+    ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.lineWidth = 1;
+    ctx.strokeRect(padL, padT, pw, ph);
+    ctx.strokeStyle = "rgba(148,176,224,0.07)";
+    for (let i = 1; i < 4; i++) {
+      const y = padT + (ph * i) / 4;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(padL, mid); ctx.lineTo(padL + pw, mid);
+    ctx.strokeStyle = "rgba(148,176,224,0.16)"; ctx.stroke();
+    const drawTrace = (samples, color, glow) => {
+      const n = samples.length;
+      let amax = 1e-9;
+      for (let i = 0; i < n; i++) { const a = Math.abs(samples[i]); if (a > amax) amax = a; }
+      ctx.strokeStyle = color; ctx.lineWidth = 1.3;
+      ctx.shadowColor = glow ? color : "transparent"; ctx.shadowBlur = glow ? 6 : 0;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const x = padL + (i / (n - 1)) * pw;
+        const y = mid - (samples[i] / amax) * ph * 0.44;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+    };
+    if (mode === "generated" && genH1) {
+      const n = genH1.samples.length;
+      const tMerge = genH1.mergerIndex / genH1.sampleRate;
+      const X = (t) => padL + (t / genH1.duration) * pw;
+      // phase ribbon: inspiral → merger → ringdown
+      const ribY = padT + ph + 8, ribH = 7;
+      const m0 = X(Math.max(0, tMerge - 0.12)), m1 = X(tMerge + 0.02);
+      ctx.fillStyle = "rgba(90,185,255,0.28)"; ctx.fillRect(padL, ribY, m0 - padL, ribH);
+      ctx.fillStyle = "rgba(255,189,102,0.55)"; ctx.fillRect(m0, ribY, m1 - m0, ribH);
+      ctx.fillStyle = "rgba(181,140,255,0.35)"; ctx.fillRect(m1, ribY, padL + pw - m1, ribH);
+      ctx.fillStyle = "rgba(170,195,230,0.75)";
+      ctx.fillText("INSPIRAL", padL + 6, ribY + ribH + 11);
+      ctx.fillStyle = "rgba(255,189,102,0.9)"; ctx.fillText("MERGER", m0 - 8, ribY + ribH + 11);
+      ctx.fillStyle = "rgba(181,140,255,0.85)"; ctx.fillText("RINGDOWN", Math.min(m1 + 6, padL + pw - 66), ribY + ribH + 11);
+      // merger marker
+      ctx.strokeStyle = "rgba(255,189,102,0.5)"; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(X(tMerge), padT); ctx.lineTo(X(tMerge), padT + ph); ctx.stroke();
+      ctx.setLineDash([]);
+      drawTrace(genL1.samples, "rgba(255,189,102,0.75)", false);
+      drawTrace(genH1.samples, "rgba(90,185,255,0.95)", true);
+      // axis labels
+      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      for (let t = 0; t <= genH1.duration; t++) ctx.fillText(t.toFixed(0) + "s", X(t) - 6, padT + ph + 30);
+      ctx.fillText("h(t) · normalized", 8, padT + 10);
+      // legend
+      ctx.fillStyle = "rgba(90,185,255,0.95)"; ctx.fillRect(padL + pw - 196, 8, 14, 3);
+      ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("H1 Hanford", padL + pw - 178, 13);
+      ctx.fillStyle = "rgba(255,189,102,0.85)"; ctx.fillRect(padL + pw - 104, 8, 14, 3);
+      ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("L1 +7 ms", padL + pw - 86, 13);
+    } else if (mode === "real" && realData) {
+      drawTrace(realData.samples, "rgba(70,212,224,0.95)", true);
+      const effRate = realData.samples.length / realData.duration;
+      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillText("GPS " + realData.start.toFixed(0), padL, padT + ph + 30);
+      ctx.textAlign = "right";
+      ctx.fillText("GPS " + (realData.start + realData.duration).toFixed(0), padL + pw, padT + ph + 30);
+      ctx.fillText(realData.samples.length + " pts · " + effRate.toFixed(0) + " Hz effective", padL + pw, padT + 12);
+      ctx.textAlign = "left";
+      ctx.fillText("h(t) · calibrated strain, normalized", 8, padT + 10);
+    } else {
+      ctx.fillStyle = "rgba(148,176,224,0.55)";
+      ctx.fillText(mode === "real" ? "Awaiting GWOSC observation — load or check network." : "Preparing seeded waveform…", padL + 10, mid);
+    }
+  }, [mode, genH1, genL1, realData, detector, fontsReady]);
+  return (
+    <figure className="gw-panel">
+      <figcaption>
+        <span className="gw-panel-title">STRAIN h(t)</span>
+        {mode === "generated"
+          ? <span className="badge badge-effective">GENERATED · SEEDED</span>
+          : <span className="badge badge-established">OBSERVATION · GWOSC</span>}
+      </figcaption>
+      <canvas ref={cvRef} style={{ width: "100%", height: 220, display: "block" }}
+        aria-label="Gravitational-wave strain versus time"></canvas>
+    </figure>
+  );
+}
+
+/* Time-frequency map: Hann STFT of the displayed strain, brand colormap. */
+function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, note }) {
+  const cvRef = useRef(null);
+  const fontsReady = useFontsReady();
+  const spec = useMemo(() => {
+    if (!samples || samples.length < windowSize * 2) return null;
+    return window.QGA_PHYSICS.stftSpectrogram(samples, { sampleRate, windowSize, hopSize });
+  }, [samples, sampleRate, windowSize, hopSize]);
+  useEffect(() => {
+    const cv = cvRef.current; if (!cv || !spec) return;
+    const { ctx, w, h } = gwSetupCanvas(cv, 190);
+    ctx.clearRect(0, 0, w, h);
+    const padL = 46, padR = 66, padT = 12, padB = 26;
+    const pw = w - padL - padR, ph = h - padT - padB;
+    const img = ctx.createImageData(spec.frames, spec.bins);
+    const floor = spec.maxDb - 46;
+    for (let f = 0; f < spec.frames; f++) {
+      for (let b = 0; b < spec.bins; b++) {
+        const db = spec.magnitudes[f * spec.bins + b];
+        const t = Math.min(1, Math.max(0, (db - floor) / (spec.maxDb - floor)));
+        const [r, g, bl] = gwColormap(t);
+        // b = 0 (DC) at the bottom of the panel
+        const px = (spec.bins - 1 - b) * spec.frames + f;
+        img.data[px * 4] = r; img.data[px * 4 + 1] = g; img.data[px * 4 + 2] = bl; img.data[px * 4 + 3] = 255;
+      }
+    }
+    const off = document.createElement("canvas");
+    off.width = spec.frames; off.height = spec.bins;
+    off.getContext("2d").putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, padL, padT, pw, ph);
+    ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.strokeRect(padL, padT, pw, ph);
+    // frequency axis (linear, up to Nyquist)
+    ctx.font = "9.5px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.65)";
+    const ny = spec.nyquist;
+    const ticks = ny >= 200 ? [32, 64, 128, 192, 256].filter((f) => f <= ny) : [ny / 4, ny / 2, (3 * ny) / 4];
+    for (const f of ticks) {
+      const y = padT + ph - (f / ny) * ph;
+      ctx.fillText(f.toFixed(0), 12, y + 3);
+      ctx.strokeStyle = "rgba(148,176,224,0.08)";
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+    }
+    ctx.fillText("Hz", 12, padT - 2);
+    const t0 = spec.times[0], t1 = spec.times[spec.times.length - 1];
+    ctx.fillText(label + " · " + t0.toFixed(1) + "–" + t1.toFixed(1) + " s window", padL, h - 8);
+    // colormap legend
+    const lgX = padL + pw + 10, lgW = 12;
+    for (let i = 0; i < ph; i++) {
+      const [r, g, b] = gwColormap(1 - i / ph);
+      ctx.fillStyle = "rgb(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + ")";
+      ctx.fillRect(lgX, padT + i, lgW, 1.5);
+    }
+    ctx.fillStyle = "rgba(148,176,224,0.65)";
+    ctx.fillText(spec.maxDb.toFixed(0), lgX + lgW + 4, padT + 8);
+    ctx.fillText(floor.toFixed(0), lgX + lgW + 4, padT + ph);
+    ctx.fillText("dB", lgX + 2, padT + ph + 12);
+  }, [spec, label, fontsReady]);
+  return (
+    <figure className="gw-panel">
+      <figcaption>
+        <span className="gw-panel-title">TIME–FREQUENCY</span>
+        <span className="gw-panel-note">{note}</span>
+      </figcaption>
+      <canvas ref={cvRef} style={{ width: "100%", height: 190, display: "block" }}
+        aria-label="Short-time Fourier transform spectrogram of the displayed strain"></canvas>
+    </figure>
+  );
+}
+
+function GWAnalysisTheatre() {
   const [atlasState, setAtlasState] = useQGAState();
-  const initial = atlasState;
-  const [mode, setMode] = useState(initial.gwMode);
-  const [event, setEvent] = useState(initial.gwEvent);
-  const [status, setStatus] = useState(mode === "generated" ? "Seeded local waveform" : "");
+  const mode = atlasState.gwMode;
+  const [status, setStatus] = useState(mode === "generated" ? "Seeded local waveform — same seed reproduces this exact signal." : "");
   const [provenance, setProvenance] = useState(null);
   const [realData, setRealData] = useState(null);
   const realLoadRef = useRef(null);
   const gpsEnd = atlasState.gwStart + atlasState.gwDuration;
-  const processing = mode === "real"
-    ? "Real mode fetches one bounded GWOSC calibrated strain file, gzip-decodes it, and downsamples it for this preview."
-    : "Generated mode plots a local/seeded teaching waveform; it is not a detector observation.";
+
+  const genH1 = useMemo(() => window.QGA_PHYSICS.generatedChirp({
+    seed: atlasState.seed, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
+    m1: GW_GEN_M1, m2: GW_GEN_M2, mergerAt: GW_GEN_MERGER,
+  }), [atlasState.seed]);
+  const genL1 = useMemo(() => window.QGA_PHYSICS.generatedChirp({
+    seed: atlasState.seed * 2 + 101, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
+    m1: GW_GEN_M1, m2: GW_GEN_M2, mergerAt: GW_GEN_MERGER, delaySeconds: GW_H1L1_DELAY,
+  }), [atlasState.seed]);
+
   useEffect(() => () => realLoadRef.current?.abort(), []);
-  useEffect(() => setMode(atlasState.gwMode), [atlasState.gwMode]);
-  useEffect(() => setEvent(atlasState.gwEvent), [atlasState.gwEvent]);
   const loadReal = async () => {
     realLoadRef.current?.abort();
     const controller = new AbortController();
     realLoadRef.current = controller;
     setStatus("Loading bounded GWOSC strain…"); setProvenance(null); setRealData(null);
     try {
-      const result = await QGA_FETCH_GWOSC(event, {
+      const result = await QGA_FETCH_GWOSC(atlasState.gwEvent, {
         detector: atlasState.gwDetector, start: atlasState.gwStart, duration: atlasState.gwDuration,
         signal: controller.signal,
       });
@@ -846,42 +1058,173 @@ function GWDataControls() {
       setStatus("GWOSC observation loaded; preview is downsampled calibrated strain.");
     } catch (error) {
       if (error?.name === "AbortError") return;
-      setStatus("GWOSC unavailable; using seeded generated data.");
+      setStatus("GWOSC unavailable; the seeded generated signal below remains usable.");
     } finally {
       if (realLoadRef.current === controller) realLoadRef.current = null;
     }
   };
   const changeMode = (next) => {
-    setMode(next); setAtlasState({ gwMode: next, gwEvent: event });
+    setAtlasState({ gwMode: next });
     if (next === "real") loadReal();
     else {
       realLoadRef.current?.abort(); realLoadRef.current = null;
-      setRealData(null); setProvenance(null); setStatus("Seeded local waveform");
+      setRealData(null); setProvenance(null);
+      setStatus("Seeded local waveform — same seed reproduces this exact signal.");
     }
   };
-  useEffect(() => { if (initial.gwMode === "real" && mode === "real") loadReal(); }, []);
-  const preview = realData?.samples?.length ? (() => {
-    const max = Math.max(...realData.samples.map((v) => Math.abs(v))) || 1;
-    return realData.samples.map((value, index) => {
-      const x = (index / Math.max(1, realData.samples.length - 1)) * 100;
-      const y = 50 - (value / max) * 42;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    }).join(" ");
-  })() : "";
-  return <div className="panel" style={{ marginBottom: 12 }}>
-    <div className="viz-toolbar"><label className="ctl-label" htmlFor="gw-mode">Data mode</label><select id="gw-mode" value={mode} onChange={(e) => changeMode(e.target.value)}><option value="generated">Generated (seeded)</option><option value="real">GWOSC v2 calibrated strain</option></select><label className="ctl-label" htmlFor="gw-event">Event</label><input id="gw-event" value={event} onChange={(e) => { setEvent(e.target.value); setAtlasState({ gwEvent: e.target.value }); }} /><label className="ctl-label" htmlFor="gw-detector">Detector</label><select id="gw-detector" value={atlasState.gwDetector} onChange={(e) => setAtlasState({ gwDetector: e.target.value })}><option>H1</option><option>L1</option><option>V1</option></select><SliderRow label="start GPS" min={1126259000} max={1126260000} step={1} value={atlasState.gwStart} onChange={(v) => setAtlasState({ gwStart: v })}></SliderRow><SliderRow label="duration" min={1} max={32} step={1} value={atlasState.gwDuration} onChange={(v) => setAtlasState({ gwDuration: v })}></SliderRow><SliderRow label="seed" min={1} max={9999} step={1} value={atlasState.seed} onChange={(v) => setAtlasState({ seed: v })}></SliderRow>{mode === "real" ? <button className="btn" onClick={loadReal}>Load observation</button> : null}</div>
-    <p className="small dim" style={{ marginBottom: 6 }}>Detector: <strong>{atlasState.gwDetector}</strong> · GPS time range: <strong>{atlasState.gwStart}–{gpsEnd}</strong> ({atlasState.gwDuration}s) · strain h(t): <strong>dimensionless</strong></p>
-    <p className="small dim" style={{ marginBottom: 6 }}>Processing: {processing}</p>
-    {mode === "real" && realData ? <div style={{ margin: "8px 0", border: "1px solid var(--line)", borderRadius: 8, padding: 8 }}>
-      <div className="small"><span className="badge badge-established">OBSERVATION</span> {event} · {atlasState.gwDetector} · calibrated strain h(t)</div>
-      <svg viewBox="0 0 100 100" role="img" aria-label="Downsampled real GWOSC strain preview" style={{ width: "100%", height: 96, display: "block", marginTop: 6 }}>
-        <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(148,176,224,0.25)" />
-        <polyline points={preview} fill="none" stroke="var(--cyan)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-      </svg>
-      <div className="small dim">Real observation preview · GPS {realData.start}–{realData.start + realData.duration} · {realData.sampleRate} samples/s source · {realData.samples.length} plotted points · normalized display amplitude</div>
-    </div> : null}
-    <p className="small dim" aria-live="polite" style={{ marginBottom: 0 }}>{status}</p>{provenance ? <p className="small dim" style={{ marginBottom: 0 }}>Provenance: {provenance.source} · <a href={provenance.url} target="_blank" rel="noreferrer">strain listing</a> · <a href={provenance.downloadUrl} target="_blank" rel="noreferrer">data file</a></p> : null}
-  </div>;
+  useEffect(() => { if (mode === "real") loadReal(); }, [atlasState.gwDetector, atlasState.gwStart, atlasState.gwDuration]);
+
+  const mc = window.QGA_PHYSICS.chirpMass(GW_GEN_M1, GW_GEN_M2);
+  const tC20 = window.QGA_PHYSICS.timeToCoalescence(20, mc);
+  const realEffRate = realData ? realData.samples.length / realData.duration : 0;
+  const specSamples = mode === "real" && realData ? realData.samples : genH1.samples;
+  const specRate = mode === "real" && realData ? realEffRate : GW_GEN_RATE;
+  const specWindow = mode === "real" ? 64 : 128;
+  const specHop = mode === "real" ? 8 : 24;
+
+  return (
+    <div className="viz-frame gw-theatre">
+      <div className="kerr-observatory-head">
+        <div className="kerr-head-plate">
+          <div className="kerr-head-ident">GW<span>OBS</span></div>
+          <div>
+            <h3>Signal Analysis Theatre</h3>
+            <p>Strain and time–frequency read of a compact-binary chirp — seeded simulation or bounded GWOSC observation.</p>
+          </div>
+        </div>
+        <div className="kerr-head-state">
+          {mode === "generated"
+            ? <span className="badge badge-effective">Generated teaching signal</span>
+            : <span className="badge badge-established">Real detector observation</span>}
+          <div className="kerr-state-line">
+            {mode === "generated"
+              ? "ℳ = " + mc.toFixed(1) + " M☉ · seed " + atlasState.seed + " · " + GW_GEN_RATE + " Hz"
+              : atlasState.gwEvent + " · " + atlasState.gwDetector + " · GPS " + atlasState.gwStart + "+" + atlasState.gwDuration + "s"}
+          </div>
+        </div>
+      </div>
+
+      <div className="kerr-instrument-bar">
+        <div className="kerr-control-group" aria-label="Data mode">
+          <span className="kerr-control-label">Source</span>
+          <button className={"kerr-chip" + (mode === "generated" ? " on" : "")} aria-pressed={mode === "generated"}
+            onClick={() => changeMode("generated")}>Generated</button>
+          <button className={"kerr-chip" + (mode === "real" ? " on" : "")} aria-pressed={mode === "real"}
+            onClick={() => changeMode("real")}>GWOSC real</button>
+        </div>
+        {mode === "real" ? (
+          <div className="kerr-control-group" aria-label="Observation selection">
+            <span className="kerr-control-label">Event</span>
+            <input className="gw-event-input" value={atlasState.gwEvent} aria-label="GWOSC event name"
+              onChange={(e) => setAtlasState({ gwEvent: e.target.value })} />
+            <span className="kerr-control-label">Detector</span>
+            {["H1", "L1", "V1"].map((d) => (
+              <button key={d} className={"kerr-chip" + (atlasState.gwDetector === d ? " on" : "")}
+                aria-pressed={atlasState.gwDetector === d}
+                onClick={() => setAtlasState({ gwDetector: d })}>{d}</button>
+            ))}
+            <button className="btn" onClick={loadReal}>Reload</button>
+          </div>
+        ) : (
+          <div className="kerr-control-group" aria-label="Generation seed">
+            <SliderRow label="seed" min={1} max={9999} step={1} value={atlasState.seed}
+              onChange={(v) => setAtlasState({ seed: v })} format={(v) => "#" + v}></SliderRow>
+          </div>
+        )}
+      </div>
+      {mode === "real" ? (
+        <div className="viz-toolbar">
+          <SliderRow label="start GPS" min={1126259000} max={1126260000} step={1} value={atlasState.gwStart}
+            onChange={(v) => setAtlasState({ gwStart: v })}></SliderRow>
+          <SliderRow label="duration" min={1} max={32} step={1} value={atlasState.gwDuration}
+            onChange={(v) => setAtlasState({ gwDuration: v })} format={(v) => v + " s"}></SliderRow>
+        </div>
+      ) : null}
+
+      <GWStrainPanel mode={mode} genH1={genH1} genL1={genL1} realData={realData}
+        detector={atlasState.gwDetector}></GWStrainPanel>
+      <GWSpectrogramPanel samples={specSamples} sampleRate={specRate}
+        windowSize={specWindow} hopSize={specHop}
+        label={mode === "real" ? atlasState.gwEvent + " " + atlasState.gwDetector : "H1 · seed " + atlasState.seed}
+        note={mode === "real"
+          ? "STFT of downsampled preview · Nyquist " + (specRate / 2).toFixed(0) + " Hz — full chirp band needs the 4 kHz product"
+          : "Hann STFT " + specWindow + "/" + specHop + " · not a Q-transform"}></GWSpectrogramPanel>
+
+      <div className="kerr-deck">
+        {mode === "generated" ? (
+          <section className="kerr-rgroup">
+            <header><h4>Signal</h4><span>leading-order quadrupole · teaching model</span></header>
+            <div className="kerr-rgrid">
+              <KerrReadout lead label="chirp mass ℳ" value={mc.toFixed(1)} unit="M☉"
+                formula="(m₁m₂)^⅗ / (m₁+m₂)^⅕ · 36+29 M☉"></KerrReadout>
+              <KerrReadout label="t_c from 20 Hz" value={tC20.toFixed(2)} unit="s"
+                formula="(5/256)(πf)^−⁸ᐟ³ (Gℳ/c³)^−⁵ᐟ³"></KerrReadout>
+              <KerrReadout label="H1→L1 offset" value="7" unit="ms"
+                formula="illustrative · ~3000 km baseline"></KerrReadout>
+              <KerrReadout label="noise" value="seeded Gaussian"
+                formula="not a measured detector PSD"></KerrReadout>
+            </div>
+          </section>
+        ) : (
+          <section className="kerr-rgroup">
+            <header><h4>Observation</h4><span>GWOSC API v2 · bounded fetch</span></header>
+            <div className="kerr-rgrid">
+              <KerrReadout lead label="event" value={atlasState.gwEvent}
+                formula="catalog name, auto-versioned"></KerrReadout>
+              <KerrReadout label="detector / range" value={atlasState.gwDetector}
+                unit={"GPS " + atlasState.gwStart + "–" + gpsEnd}
+                formula="calibrated strain h(t), dimensionless"></KerrReadout>
+              <KerrReadout label="preview points" value={realData ? realData.samples.length : "—"}
+                unit={realData ? realEffRate.toFixed(0) + " Hz eff." : ""}
+                formula="≤1200 pts, uniform downsample"></KerrReadout>
+              <KerrReadout label="source rate" value={realData ? (realData.sampleRate / 1000).toFixed(0) : "—"} unit="kHz"
+                formula="GWOSC 4 kHz TXT product"></KerrReadout>
+            </div>
+          </section>
+        )}
+      </div>
+
+      <details className="kerr-validity">
+        <summary>
+          <span>Assumptions, validity &amp; uncertainty</span>
+          <span className="kerr-check ok">{mode === "generated" ? "seeded · reproducible" : "bounded · provenanced"}</span>
+        </summary>
+        <div className="kerr-validity-body">
+          <dl>
+            <dt>Generated mode</dt>
+            <dd>
+              Leading-order quadrupole inspiral with the exact radiation-reaction scalings
+              f<sub>gw</sub> ∝ (t<sub>c</sub>−t)<sup>−3/8</sup> and h ∝ f<sup>2/3</sup>, plus a damped-sinusoid
+              ringdown. It is a teaching waveform: no spins, no higher post-Newtonian orders, not numerical
+              relativity. Noise is seeded Gaussian — the same seed reproduces the exact signal — and is
+              <em> not</em> a measured LIGO noise PSD. The 7 ms H1→L1 offset is an illustrative light-travel
+              time across the ~3000 km baseline.
+            </dd>
+            <dt>Real mode (GWOSC)</dt>
+            <dd>
+              One bounded calibrated-strain file per selection from the official GWOSC API v2
+              (gwosc.org/api/v2/docs), gzip-decoded in the browser and uniformly downsampled to ≤1200 points.
+              The preview's effective rate ({mode === "real" && realData ? realEffRate.toFixed(0) + " Hz" : "rate"})
+              sets the spectrogram Nyquist limit; the full 35–350 Hz chirp band requires the complete 4 kHz
+              product, which this static client deliberately does not download.
+            </dd>
+            <dt>Spectrogram</dt>
+            <dd>
+              Hann-windowed short-time Fourier transform computed live in the browser from the displayed
+              samples. It is not a Q-transform and is not whitened; the rising chirp track is nevertheless
+              clearly visible in the generated signal.
+            </dd>
+          </dl>
+          {provenance ? (
+            <p className="small dim" style={{ marginBottom: 0 }}>
+              Provenance: {provenance.source} · <a href={provenance.url} target="_blank" rel="noreferrer">strain listing</a> · <a href={provenance.downloadUrl} target="_blank" rel="noreferrer">data file</a> · retrieved {provenance.retrievedAt}
+            </p>
+          ) : null}
+        </div>
+      </details>
+      <p className="small dim" aria-live="polite" style={{ margin: "6px 2px 0" }}>{status}</p>
+    </div>
+  );
 }
 
 function ModuleExp({ go }) {
@@ -911,7 +1254,7 @@ function ModuleExp({ go }) {
       </Section>
 
       <Section title="Gravitational waves">
-        <GWDataControls></GWDataControls>
+        <GWAnalysisTheatre></GWAnalysisTheatre>
         <p>
           LIGO's 2016 detection of GW150914 opened an observational channel on strong-field gravity. Merger waveforms
           test general relativity in its most violent regime — and so far the theory passes. Some quantum gravity

@@ -224,6 +224,26 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <sub><strong>Mobile geometry instrument</strong> — the exact-coordinate radii map starts collapsed on small screens and remains available from a compact in-scene control, preserving the lensing view without discarding scientific context.</sub>
 </td>
 </tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/12-gw-theatre.png" alt="GW Signal Analysis Theatre with dual-detector generated strain traces, inspiral-merger-ringdown phase ribbon, live STFT spectrogram of the chirp, and chirp-mass readouts" width="100%" />
+<br/>
+<sub><strong>GW signal analysis theatre</strong> — seeded dual-detector chirp with an inspiral/merger/ringdown phase ribbon and a live Hann-STFT spectrogram; the rising chirp track is computed from the displayed samples, not drawn on.</sub>
+</td>
+<td width="50%">
+<img src="docs/screenshots/12b-gw-theatre-real.png" alt="GW theatre in GWOSC observation mode showing downsampled calibrated GW150914 H1 strain with GPS time axis, provenance links, and effective-rate Nyquist disclosure" width="100%" />
+<br/>
+<sub><strong>Real observation mode</strong> — bounded GWOSC API v2 calibrated strain (GW150914·H1 preview) with GPS axis, provenance links, and an explicit effective-rate Nyquist limit for the downsampled preview.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/13-gw-theatre-mobile.png" alt="Mobile GW signal analysis theatre with stacked strain and spectrogram instrument panels" width="100%" />
+<br/>
+<sub><strong>Mobile analysis theatre</strong> — strain and time–frequency panels stack without horizontal overflow; the seeded simulation remains fully usable offline.</sub>
+</td>
+<td width="50%"></td>
+</tr>
 </table>
 
 ---
@@ -832,6 +852,8 @@ This is a triumph of general relativity.
 
 It is not a direct detection of quantum gravity.
 
+**Limit:** the Signal Analysis Theatre's generated waveform is a leading-order quadrupole teaching model (no spins, no higher post-Newtonian orders, not numerical relativity) with seeded Gaussian noise that is not a measured detector PSD; its spectrogram is a Hann STFT, not a Q-transform, and the GWOSC preview is a downsampled excerpt whose effective rate — not the full 4 kHz product — bounds the displayed frequency range.
+
 ### 11. Collider Constraints
 
 The LHC probes energies around the TeV scale.
@@ -938,7 +960,12 @@ horizon-quantum-gravity-atlas/
 │       ├── 06-collider-event-display.png
 │       ├── 07-gravitational-wave-inspiral.png
 │       ├── 08-theory-constellation.png
-│       └── 09-mobile-black-hole-lab.png
+│       ├── 09-mobile-black-hole-lab.png
+│       ├── 10-kerr-observatory-layers.png
+│       ├── 11-kerr-observatory-mobile.png
+│       ├── 12-gw-theatre.png
+│       ├── 12b-gw-theatre-real.png
+│       └── 13-gw-theatre-mobile.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1005,7 +1032,7 @@ It is a repository-presentation guardrail that prevents broken academic packagin
 
 The active module, learning pathway, black-hole mass/spin, gravitational-wave controls, and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
-Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave panel offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable.
+Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
@@ -1064,6 +1091,11 @@ The screenshot set emphasizes visual and animated modules:
 | `07-gravitational-wave-inspiral.png` | `exp` | binary inspiral and gravitational waves |
 | `08-theory-constellation.png` | `approaches` | quantum-gravity program map |
 | `09-mobile-black-hole-lab.png` | `bh` | responsive black-hole module |
+| `10-kerr-observatory-layers.png` | `bh` | Kerr observatory with exact-coordinate radii map |
+| `11-kerr-observatory-mobile.png` | `bh` | mobile Kerr observatory, collapsible map |
+| `12-gw-theatre.png` | `exp` | GW analysis theatre: dual strain, phase ribbon, STFT spectrogram |
+| `12b-gw-theatre-real.png` | `exp` | GWOSC real-observation mode with provenance |
+| `13-gw-theatre-mobile.png` | `exp` | mobile GW theatre, stacked instrument panels |
 
 Capture criteria:
 

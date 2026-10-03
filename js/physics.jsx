@@ -26,5 +26,77 @@ const QGA_PHYSICS = {
     let state = (Number(seed) >>> 0) || 1;
     return () => { state = (1664525 * state + 1013904223) >>> 0; return state / 4294967296; };
   },
+  /* Leading-order binary-inspiral teaching model — mirrors js/physics.mjs exactly. */
+  chirpMass(m1Solar, m2Solar) {
+    const m1 = Number(m1Solar), m2 = Number(m2Solar);
+    return Math.pow(m1 * m2, 3 / 5) / Math.pow(m1 + m2, 1 / 5);
+  },
+  timeToCoalescence(freqHz, chirpMassSolar) {
+    const f = Number(freqHz), mc = Number(chirpMassSolar) * 4.92563989396e-6;
+    return (5 / 256) * Math.pow(Math.PI * f, -8 / 3) * Math.pow(mc, -5 / 3);
+  },
+  inspiralFrequency(tauSeconds, chirpMassSolar) {
+    const tau = Math.max(1e-6, Number(tauSeconds));
+    const mc = Number(chirpMassSolar) * 4.92563989396e-6;
+    return (1 / Math.PI) * Math.pow(5 / (256 * tau), 3 / 8) * Math.pow(mc, -5 / 8);
+  },
+  generatedChirp({
+    seed = 42, sampleRate = 512, duration = 4, m1 = 36, m2 = 29,
+    mergerAt = 3.4, noiseRms = 0.35, delaySeconds = 0, ringdownFreq = 190, ringdownTau = 0.06,
+  } = {}) {
+    const n = Math.max(8, Math.round(sampleRate * duration));
+    const mc = this.chirpMass(m1, m2);
+    const rng = this.seededRng(seed);
+    const gauss = () => {
+      const u = Math.max(1e-12, rng()), v = rng();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+    const delay = Math.round(delaySeconds * sampleRate);
+    const samples = new Float64Array(n);
+    let phase = 0, prevTau = Math.max(0.02, mergerAt);
+    const mergerIndex = Math.min(n - 1, Math.round(mergerAt * sampleRate) + delay);
+    for (let i = 0; i < n; i++) {
+      const t = i / sampleRate - delaySeconds;
+      let h = 0;
+      if (t >= 0 && t < mergerAt) {
+        const tau = mergerAt - t;
+        const f = this.inspiralFrequency(tau, mc);
+        phase += 2 * Math.PI * f * (prevTau - tau);
+        prevTau = tau;
+        h = Math.min(1, Math.pow(f / 220, 2 / 3)) * Math.cos(phase);
+      } else if (t >= mergerAt) {
+        const tr = t - mergerAt;
+        h = Math.exp(-tr / ringdownTau) * Math.cos(phase + 2 * Math.PI * ringdownFreq * tr);
+      }
+      samples[i] = h + noiseRms * gauss();
+    }
+    return { samples, sampleRate, duration, mergerIndex, chirpMass: mc, model: "leading-order-quadrupole+ringdown" };
+  },
+  stftSpectrogram(samples, { sampleRate = 512, windowSize = 128, hopSize = 24 } = {}) {
+    const n = samples.length;
+    const bins = windowSize / 2;
+    const frames = Math.max(1, Math.floor((n - windowSize) / hopSize) + 1);
+    const hann = new Float64Array(windowSize);
+    for (let k = 0; k < windowSize; k++) hann[k] = 0.5 * (1 - Math.cos((2 * Math.PI * k) / (windowSize - 1)));
+    const magnitudes = new Float32Array(frames * bins);
+    let maxDb = -Infinity;
+    for (let f = 0; f < frames; f++) {
+      const base = f * hopSize;
+      for (let b = 0; b < bins; b++) {
+        let re = 0, im = 0;
+        const w = (2 * Math.PI * b) / windowSize;
+        for (let k = 0; k < windowSize; k++) {
+          const v = samples[base + k] * hann[k];
+          re += v * Math.cos(w * k); im -= v * Math.sin(w * k);
+        }
+        const db = 20 * Math.log10(Math.hypot(re, im) / windowSize + 1e-12);
+        magnitudes[f * bins + b] = db;
+        if (db > maxDb) maxDb = db;
+      }
+    }
+    const times = Array.from({ length: frames }, (_, f) => (f * hopSize + windowSize / 2) / sampleRate);
+    const freqs = Array.from({ length: bins }, (_, b) => (b * sampleRate) / windowSize);
+    return { magnitudes, frames, bins, times, freqs, maxDb, nyquist: sampleRate / 2 };
+  },
 };
 window.QGA_PHYSICS = QGA_PHYSICS;
