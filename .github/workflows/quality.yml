@@ -23,5 +23,8 @@ jobs:
         with:
           node-version: 22
 
+      - name: Run focused physics tests
+        run: npm test
+
       - name: Run repository validation
         run: npm run validate

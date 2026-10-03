@@ -12,6 +12,7 @@
     "start": "npx --yes serve .",
     "dev": "npx --yes serve .",
     "serve": "python3 -m http.server 8000",
+    "test": "node --test test/*.test.mjs",
     "validate": "node scripts/validate-repo.mjs",
     "check": "npm run validate"
   },

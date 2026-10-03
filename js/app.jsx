@@ -81,6 +81,12 @@ const QGA_VIEW_HUE = {
   glossary: 226, refs: 226, open: 226,
 };
 
+const QGA_STATE_DEFAULTS = window.QGA_DEFAULT_STATE || {
+  view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
+  gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
+  gwStart: 1126259446, gwDuration: 16, seed: 42,
+};
+
 function NavList({ view, go }) {
   return (
     <div>
@@ -123,19 +129,23 @@ function PathwaySelector({ value, onChange }) {
 function App() {
   const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
+  const [atlasState, setAtlasState] = useQGAState();
   const [view, setView] = useState(() => {
     try {
-      const v = localStorage.getItem("qga-view");
+      const v = qgaReadState().view;
       return v && QGA_VIEWS[v] ? v : "overview";
     } catch (e) { return "overview"; }
   });
+  const stateView = atlasState.view;
+  useEffect(() => { if (stateView !== view) setView(stateView); }, [stateView]); // eslint-disable-line
   const [menuOpen, setMenuOpen] = useState(false);
   const contentRef = useRef(null);
 
   const go = (id) => {
     setView(id);
-    setMenuOpen(false);
+    setAtlasState({ view: id }, { replace: false });
     try { localStorage.setItem("qga-view", id); } catch (e) {}
+    setMenuOpen(false);
     if (contentRef.current) contentRef.current.scrollTop = 0;
     window.scrollTo(0, 0);
   };
@@ -144,8 +154,8 @@ function App() {
   const effMotion = prm ? "reduced" : t.motion;
   const settings = useMemo(() => ({
     vizMode: t.vizMode, motion: effMotion, detail3d: t.detail3d,
-    labels3d: !!t.labels3d, annotations3d: !!t.annotations3d, pathway: t.pathway,
-  }), [t.vizMode, effMotion, t.detail3d, t.labels3d, t.annotations3d, t.pathway]);
+    labels3d: !!t.labels3d, annotations3d: !!t.annotations3d, pathway: atlasState.pathway,
+  }), [t.vizMode, effMotion, t.detail3d, t.labels3d, t.annotations3d, atlasState.pathway]);
 
   // apply tweaks to CSS custom properties + motion attribute
   useEffect(() => {
@@ -177,7 +187,7 @@ function App() {
             </div>
           </div>
           <NavList view={view} go={go}></NavList>
-          <PathwaySelector value={t.pathway} onChange={(v) => setTweak("pathway", v)}></PathwaySelector>
+          <PathwaySelector value={atlasState.pathway} onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></PathwaySelector>
           <div className="sidebar-foot">
             Scientific status labels mark every claim.<br></br>
             No quantum gravity theory is experimentally confirmed.
@@ -185,6 +195,8 @@ function App() {
         </nav>
         <div className="topbar">
           <span className="topbar-title">HORIZON</span>
+          <button className="btn" onClick={async () => { try { await QGA_COPY_LINK(qgaReadState()); } catch (e) {} }}>Copy link</button>
+          <button className="btn" onClick={() => QGA_EXPORT_JSON(qgaReadState())}>Export JSON</button>
           <button className="menu-btn" onClick={() => setMenuOpen(true)}>MODULES ☰</button>
         </div>
         <main className="content" ref={contentRef}>
@@ -200,7 +212,7 @@ function App() {
             <button className="menu-btn" onClick={() => setMenuOpen(false)}>CLOSE ✕</button>
           </div>
           <NavList view={view} go={go}></NavList>
-          <PathwaySelector value={t.pathway} onChange={(v) => setTweak("pathway", v)}></PathwaySelector>
+          <PathwaySelector value={atlasState.pathway} onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></PathwaySelector>
         </div>
       ) : null}
       <TweaksPanel>
@@ -219,9 +231,9 @@ function App() {
         <TweakToggle label="Annotations" value={t.annotations3d}
           onChange={(v) => setTweak("annotations3d", v)}></TweakToggle>
         <TweakSection label="Learning"></TweakSection>
-        <TweakRadio label="Pathway" value={t.pathway}
+        <TweakRadio label="Pathway" value={atlasState.pathway}
           options={["beginner", "student", "advanced"]}
-          onChange={(v) => setTweak("pathway", v)}></TweakRadio>
+          onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></TweakRadio>
         <TweakSection label="Theme"></TweakSection>
         <TweakColor label="Accent" value={t.accent}
           options={["#54aeff", "#46d4e0", "#ff7b72", "#ffb454"]}

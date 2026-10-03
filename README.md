@@ -212,6 +212,18 @@ No decorative-only hero art.
 No screenshot should imply that conjectural physics is experimentally observed.
 </td>
 </tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/10-kerr-observatory-layers.png" alt="Kerr Black Hole Observatory at high spin with exact coordinate-radius map, geometry layers, camera presets, lensing scene, and thermodynamic readouts" width="100%" />
+<br/>
+<sub><strong>Kerr geometry observatory</strong> — live high-spin view with horizon, equatorial ergosphere, prograde/retrograde photon-orbit and ISCO layers. The map uses Kerr coordinate radii; the image remains an explicitly approximate raymarch.</sub>
+</td>
+<td width="50%">
+<img src="docs/screenshots/11-kerr-observatory-mobile.png" alt="Mobile Kerr observatory with a compact control for the collapsible exact-coordinate radii map" width="100%" />
+<br/>
+<sub><strong>Mobile geometry instrument</strong> — the exact-coordinate radii map starts collapsed on small screens and remains available from a compact in-scene control, preserving the lensing view without discarding scientific context.</sub>
+</td>
+</tr>
 </table>
 
 ---
@@ -964,7 +976,7 @@ horizon-quantum-gravity-atlas/
 
 ## Quality Gates
 
-The repository includes a lightweight validation suite for the README, metadata, diagrams, screenshots, icons, and social preview assets.
+The repository includes a lightweight validation suite for the README, metadata, diagrams, screenshots, icons, and social preview assets, plus focused Node tests for the pure physics/reproducibility helpers.
 
 ```bash
 npm run validate
@@ -988,6 +1000,14 @@ This is not a physics test suite.
 It is a repository-presentation guardrail that prevents broken academic packaging, missing assets, and GitHub README rendering regressions.
 
 ---
+
+## Reproducible sharing and data modes
+
+The active module, learning pathway, black-hole mass/spin, gravitational-wave controls, and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
+
+Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave panel offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable.
+
+The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
 ## Run Locally
 

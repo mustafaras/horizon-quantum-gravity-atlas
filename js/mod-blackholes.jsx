@@ -76,12 +76,225 @@ function PageCurvePlot() {
     aria-label="Page curve: entanglement entropy of Hawking radiation rising then falling for unitary evaporation"></canvas></div>;
 }
 
+const KERR_CAMERA_PRESETS = {
+  edge: { radius: 30, theta: 0.35, phi: 1.31, minR: 12, maxR: 60 },
+  polar: { radius: 30, theta: 0.25, phi: 0.18, minR: 12, maxR: 60 },
+  photon: { radius: 16, theta: 0.5, phi: 1.12, minR: 12, maxR: 60 },
+  wide: { radius: 44, theta: -0.45, phi: 1.2, minR: 12, maxR: 60 },
+};
+
+const KERR_CURVES = [
+  { key: "isco", sense: "retro", color: "#b388ff", dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
+  { key: "isco", sense: "pro", color: "#54aeff", dash: "", width: 1.9, label: "ISCO prograde", read: (g) => g.rIsco },
+  { key: "photon", sense: "retro", color: "#ffb454", dash: "3 4", width: 1.1, label: "Photon retrograde", read: (g) => g.rPhotonRetrograde },
+  { key: "photon", sense: "pro", color: "#ffd38a", dash: "", width: 1.9, label: "Photon prograde", read: (g) => g.rPhoton },
+  { key: "ergo", sense: "", color: "#46d4e0", dash: "", width: 1.6, label: "Ergosurface (eq.)", read: (g) => g.rErgoEquator, fill: "rgba(70,212,224,0.07)" },
+  { key: "horizon", sense: "", color: "#ff7b72", dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: "rgba(4,7,13,0.97)" },
+];
+
+function KerrGeometryMap({ geometry, layers, open, onToggle }) {
+  const cx = 118, cy = 110, span = 94;
+  const visible = KERR_CURVES.filter((curve) => layers[curve.key]);
+  const widest = visible.reduce((acc, curve) => Math.max(acc, curve.read(geometry)), 2);
+  const domain = Math.max(4, Math.ceil(widest));
+  const px = (radius) => span * radius / domain;
+  const tickStep = domain > 12 ? 4 : domain > 6 ? 2 : 1;
+  const ticks = [];
+  for (let r = tickStep; r <= domain; r += tickStep) ticks.push(r);
+
+  if (!open) {
+    return (
+      <button className="kerr-map-toggle" type="button" aria-expanded="false" onClick={onToggle}>
+        <span className="kerr-map-toggle-icon" aria-hidden="true"></span>
+        <span><strong>Radii map</strong><small>Show exact Kerr geometry</small></span>
+      </button>
+    );
+  }
+
+  return (
+    <figure className="kerr-map" aria-label="Exact Kerr equatorial coordinate-radius figure">
+      <figcaption className="kerr-map-head">
+        <span className="kerr-map-ident">
+          <span className="kerr-map-id">FIG.1</span>
+          <span className="kerr-map-title">Equatorial Kerr radii</span>
+        </span>
+        <span className="kerr-map-head-tools">
+          <span className="kerr-map-unit">R / r<sub>g</sub></span>
+          <button type="button" className="kerr-map-close" aria-label="Hide Kerr radii map"
+            aria-expanded="true" onClick={onToggle}>Hide</button>
+        </span>
+      </figcaption>
+      <svg viewBox="0 0 236 232" role="img"
+        aria-label={"Nested Kerr radii in units of GM over c squared, plotted to " + domain + " GM/c²"}>
+        <defs>
+          <radialGradient id="kerr-scope-field" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#10243c" stopOpacity="0.42"></stop>
+            <stop offset="68%" stopColor="#08111f" stopOpacity="0.18"></stop>
+            <stop offset="100%" stopColor="#02060c" stopOpacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx={cx} cy={cy} r={span} fill="url(#kerr-scope-field)"
+          stroke="rgba(148,176,224,0.18)" strokeWidth="0.7"></circle>
+        <line x1={cx - span - 10} y1={cy} x2={cx + span + 10} y2={cy} className="kerr-axis"></line>
+        <line x1={cx} y1={cy - span - 10} x2={cx} y2={cy + span + 10} className="kerr-axis"></line>
+        <text x={cx - span + 6} y={cy - span + 12} className="kerr-scope-label">RETROGRADE</text>
+        <text x={cx + span - 6} y={cy + span - 8} className="kerr-scope-label kerr-scope-label-end">PROGRADE</text>
+        {ticks.map((r) => (
+          <g key={r}>
+            <line x1={cx + px(r)} y1={cy - 3} x2={cx + px(r)} y2={cy + 3} className="kerr-tick"></line>
+            <text x={cx + px(r)} y={cy + 13} className="kerr-tick-label">{r}</text>
+          </g>
+        ))}
+        {visible.map((curve, index) => (
+          <circle key={index} cx={cx} cy={cy} r={px(curve.read(geometry))}
+            fill={curve.fill || "none"} stroke={curve.color} strokeWidth={curve.width}
+            strokeDasharray={curve.dash}></circle>
+        ))}
+        <circle cx={cx} cy={cy} r="1.8" fill="#e8eef8"></circle>
+        <g className="kerr-spin-mark">
+          <path d={"M " + (cx + 56) + " " + (cy - 72) + " a 46 46 0 0 1 26 22"} fill="none"
+            stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
+          <path d={"M " + (cx + 82) + " " + (cy - 50) + " l -6 -1 l 1 6"} fill="none"
+            stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
+          <text x={cx + 50} y={cy - 78} className="kerr-tick-label">a★ {geometry.a.toFixed(2)}</text>
+        </g>
+        <line x1={cx - span} y1={cy + span + 24} x2={cx - span + px(tickStep)} y2={cy + span + 24}
+          stroke="rgba(205,219,241,0.6)" strokeWidth="1.3"></line>
+        <line x1={cx - span} y1={cy + span + 20} x2={cx - span} y2={cy + span + 28}
+          stroke="rgba(205,219,241,0.6)" strokeWidth="1"></line>
+        <line x1={cx - span + px(tickStep)} y1={cy + span + 20} x2={cx - span + px(tickStep)} y2={cy + span + 28}
+          stroke="rgba(205,219,241,0.6)" strokeWidth="1"></line>
+        <text x={cx - span + px(tickStep) + 24} y={cy + span + 27} className="kerr-tick-label">
+          {tickStep} GM/c²
+        </text>
+      </svg>
+      <table className="kerr-map-legend">
+        <tbody>
+          {visible.map((curve, index) => (
+            <tr key={index}>
+              <td>
+                <svg width="16" height="6" aria-hidden="true">
+                  <line x1="0" y1="3" x2="16" y2="3" stroke={curve.color}
+                    strokeWidth={curve.width} strokeDasharray={curve.dash}></line>
+                </svg>
+              </td>
+              <th scope="row">{curve.label}</th>
+              <td className="kerr-legend-value">{curve.read(geometry).toFixed(3)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="kerr-map-note">Boyer–Lindquist coordinate radii, exact Kerr · not image-plane distances</p>
+    </figure>
+  );
+}
+
+function KerrReadout({ label, value, unit, formula, lead, pair }) {
+  return (
+    <div className={"kerr-readout" + (lead ? " lead" : "")}>
+      <div className="kerr-readout-label">
+        {label}{pair && unit ? <span className="in-unit"> · {unit}</span> : null}
+      </div>
+      {pair ? (
+        <div className="kerr-readout-pair">
+          {pair.map(([sense, amount]) => (
+            <div key={sense}>
+              <span className="sense">{sense}</span>
+              <span className="amount">{amount}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="kerr-readout-value">{value}{unit ? <span className="unit">{unit}</span> : null}</div>
+      )}
+      <div className="kerr-readout-formula">{formula}</div>
+    </div>
+  );
+}
+
+function KerrValidity({ geometry }) {
+  const limit = window.QGA_PHYSICS.kerrGeometry(0);
+  const checks = [
+    ["r₊ → 2", limit.rPlus, 2],
+    ["ISCO → 6", limit.rIsco, 6],
+    ["photon → 3", limit.rPhoton, 3],
+    ["T_H / T_Schw → 1", limit.temperatureFactor, 1],
+  ];
+  const allPass = checks.every(([, got, want]) => Math.abs(got - want) < 1e-9);
+  return (
+    <details className="kerr-validity">
+      <summary>
+        <span>Assumptions, validity &amp; uncertainty</span>
+        <span className={"kerr-check" + (allPass ? " ok" : " bad")}>
+          {allPass ? "Schwarzschild limit verified" : "limit check failed"}
+        </span>
+      </summary>
+      <div className="kerr-validity-body">
+        <dl>
+          <dt>Exact, closed form</dt>
+          <dd>
+            Horizon, equatorial ergosurface, photon orbits and ISCO follow the standard equatorial Kerr
+            expressions (Bardeen, Press &amp; Teukolsky 1972). They are evaluated analytically, not fitted,
+            and are reported in geometrised units <Eq tex="GM/c^2"></Eq>.
+          </dd>
+          <dt>Approximation</dt>
+          <dd>
+            The raymarched image uses a Schwarzschild-based geodesic approximation with visual spin cues.
+            It is a teaching render, not a ray-traced Kerr image; frame dragging is not integrated.
+          </dd>
+          <dt>Semiclassical</dt>
+          <dd>
+            Hawking temperature and Bekenstein–Hawking entropy assume a stationary black hole in the
+            semiclassical regime, with no backreaction and no surrounding matter. Hawking radiation has
+            never been observed. Evaporation time is an order-of-magnitude estimate only.
+          </dd>
+          <dt>Self-check at a★ = 0</dt>
+          <dd className="kerr-limit-row">
+            {checks.map(([name, got]) => (
+              <span key={name}>{name} = {got.toFixed(3)}</span>
+            ))}
+          </dd>
+        </dl>
+        <p className="kerr-validity-state">
+          Current state: a★ = {geometry.a.toFixed(3)} · r₊ = {geometry.rPlus.toFixed(3)} ·
+          ergoregion width = {(geometry.rErgoEquator - geometry.rPlus).toFixed(3)} GM/c²
+        </p>
+      </div>
+    </details>
+  );
+}
+
 /* ---------- 3D black hole laboratory ---------- */
 function BlackHoleLab3D() {
-  const [logM, setLogM] = useState(1);
-  const [aStar, setAStar] = useState(0);
+  const [atlasState, setAtlasState] = useQGAState();
+  const [cameraPreset, setCameraPreset] = useState("edge");
+  const [layers, setLayers] = useState({ horizon: true, ergo: true, photon: true, isco: true });
+  const mapPreferenceKey = useRef(
+    window.matchMedia("(max-width: 760px)").matches
+      ? "qga-kerr-map-open-mobile"
+      : "qga-kerr-map-open-desktop"
+  ).current;
+  const [mapOpen, setMapOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem(mapPreferenceKey);
+      if (stored !== null) return stored === "true";
+    } catch (error) {
+      console.warn("Kerr map preference could not be read.", error);
+    }
+    return mapPreferenceKey.endsWith("-desktop");
+  });
+  const logM = atlasState.bhMass;
+  const aStar = atlasState.bhSpin;
   const logRef = useRef(logM); logRef.current = logM;
   const spinRef = useRef(aStar); spinRef.current = aStar;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(mapPreferenceKey, String(mapOpen));
+    } catch (error) {
+      console.warn("Kerr map preference could not be saved.", error);
+    }
+  }, [mapOpen, mapPreferenceKey]);
 
   const build = (ctx) => {
     const { THREE, scene } = ctx;
@@ -194,12 +407,11 @@ function BlackHoleLab3D() {
     quad.renderOrder = -10;
     scene.add(quad);
 
-    ctx.label("event horizon  r = rₛ", () => ({ x: 0, y: -2.5, z: 0 }), "s3d-quiet");
-    ctx.label("lensed accretion disk", () => ({ x: 8.0, y: 0.6, z: 0 }), "s3d-quiet");
-    ctx.label("photon ring", () => ({ x: -2.6, y: 2.7, z: 0 }), "s3d-quiet");
+    ctx.label("event horizon", () => ({ x: 0, y: -2.5, z: 0 }), "s3d-quiet");
+    ctx.label("photon ring", () => ({ x: -2.8, y: 2.9, z: 0 }), "s3d-quiet");
     ctx.annotation("S = k_B A / 4 l_P² — entropy scales with horizon AREA, not volume",
       () => ({ x: 0, y: -4.2, z: 0 }));
-    ctx.annotation("disk light is gravitationally lensed — the far side wraps over and under the shadow",
+    ctx.annotation("the far side of the disk wraps over and under the shadow",
       () => ({ x: 0, y: 5.2, z: 0 }));
 
     const worldUp = new THREE.Vector3(0, 1, 0);
@@ -226,66 +438,123 @@ function BlackHoleLab3D() {
   };
 
   const M = Math.pow(10, logM);
-  const rs_km = 2.95 * M;
-  // --- exact Kerr geometry (units of GM/c² = M; a = a★ ∈ [0,1]) ---
-  const a = Math.min(0.998, aStar);
-  const rPlus = 1 + Math.sqrt(Math.max(0, 1 - a * a));          // outer horizon
-  const rErgo = 2;                                              // ergosphere at equator
-  // Bardeen ISCO (prograde)
-  const Z1 = 1 + Math.cbrt(1 - a * a) * (Math.cbrt(1 + a) + Math.cbrt(1 - a));
-  const Z2 = Math.sqrt(3 * a * a + Z1 * Z1);
-  const rIsco = 3 + Z2 - Math.sqrt(Math.max(0, (3 - Z1) * (3 + Z1 + 2 * Z2)));
-  const rPhoton = 2 * (1 + Math.cos((2 / 3) * Math.acos(-a))); // prograde photon orbit
-  // Kerr surface gravity → temperature factor relative to Schwarzschild (a=0 → 1; extremal → 0)
-  const kappa = (rPlus - 1) / (rPlus * rPlus + a * a);
-  const tempFactor = kappa / 0.25;
-  const T_H = (6.17e-8 / M) * tempFactor;
-  const S = 1.05e77 * M * M * (rPlus / 2);                      // horizon area ∝ r_+ (Kerr)
+  const rs_km = window.QGA_PHYSICS.schwarzschildRadius(M);
+  const kerr = window.QGA_PHYSICS.kerrGeometry(aStar);
+  const a = kerr.a;
+  const rPlus = kerr.rPlus;          // outer horizon
+  const rIsco = kerr.rIsco;
+  const rPhoton = kerr.rPhoton;
+  const tempFactor = kerr.temperatureFactor;
+  const T_H = window.QGA_PHYSICS.hawkingTemperature(M, a);
+  const S = window.QGA_PHYSICS.blackHoleEntropyAreaUnits(M, a);
   const t_ev = 2.1e67 * M * M * M;
 
   return (
     <div className="viz-frame">
+      <div className="kerr-observatory-head">
+        <div className="kerr-head-plate">
+          <div className="kerr-head-ident">KERR<span>OBS</span></div>
+          <div>
+            <h3>Black Hole Observatory</h3>
+            <p>An approximate lensing render read against exact Kerr coordinate radii.</p>
+          </div>
+        </div>
+        <div className="kerr-head-state">
+          <span className="badge badge-effective">Kerr geometry + approximate raymarch</span>
+          <div className="kerr-state-line">
+            M = {sciNotation(M, 2)} M☉ · a★ = {aStar.toFixed(3)} · r₊ = {rPlus.toFixed(3)} GM/c²
+          </div>
+        </div>
+      </div>
       <div className="viz-toolbar">
-        <SliderRow label="black hole mass" min={0} max={9} step={0.05} value={logM} onChange={setLogM}
+        <SliderRow label="black hole mass" min={0} max={9} step={0.05} value={logM} onChange={(v) => setAtlasState({ bhMass: v })}
           format={(v) => sciNotation(Math.pow(10, v), 2) + " M☉"}></SliderRow>
-        <SliderRow label="spin a★" min={0} max={0.998} step={0.002} value={aStar} onChange={setAStar}
+        <SliderRow label="spin a★" min={0} max={0.998} step={0.002} value={aStar} onChange={(v) => setAtlasState({ bhSpin: v })}
           format={(v) => v.toFixed(3)}></SliderRow>
       </div>
-      <Scene3D height={460} aria="Three-dimensional black hole with accretion disk, photon ring, and physical readouts"
-        initial={{ radius: 30, theta: 0.35, phi: 1.31, minR: 12, maxR: 60 }}
-        build={build} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
-      <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
-        <div className="readout"><div className="readout-label">outer horizon r₊ (Kerr)</div>
-          <div className="readout-value">{rPlus.toFixed(3)}<span className="unit">GM/c²</span></div></div>
-        <div className="readout"><div className="readout-label">ISCO (prograde)</div>
-          <div className="readout-value">{rIsco.toFixed(2)}<span className="unit">GM/c²</span></div></div>
-        <div className="readout"><div className="readout-label">photon orbit / ergosphere</div>
-          <div className="readout-value">{rPhoton.toFixed(2)} / {rErgo.toFixed(0)}<span className="unit">GM/c²</span></div></div>
-        <div className="readout"><div className="readout-label">Hawking temperature T_H</div>
-          <div className="readout-value">{sciNotation(T_H)}<span className="unit">K</span></div></div>
-        <div className="readout"><div className="readout-label">Schwarzschild radius r_s</div>
-          <div className="readout-value">{sciNotation(rs_km)}<span className="unit">km</span></div></div>
-        <div className="readout"><div className="readout-label">Entropy S / k_B</div>
-          <div className="readout-value">{sciNotation(S, 2)}</div></div>
-        <div className="readout"><div className="readout-label">Evaporation time (order of mag.)</div>
-          <div className="readout-value">{sciNotation(t_ev, 2)}<span className="unit">yr</span></div></div>
-        <div className="readout"><div className="readout-label">spin a★ · T_H / T_Schw</div>
-          <div className="readout-value">{a.toFixed(3)} · {tempFactor.toFixed(2)}</div></div>
+      <div className="kerr-instrument-bar">
+        <div className="kerr-control-group" aria-label="Geometry layers">
+          <span className="kerr-control-label">Geometry</span>
+          {[
+            ["horizon", "Horizon"], ["ergo", "Ergosphere"], ["photon", "Photon orbit"], ["isco", "ISCO"],
+          ].map(([key, label]) => (
+            <button key={key} className={"kerr-chip" + (layers[key] ? " on" : "")}
+              aria-pressed={layers[key]} onClick={() => setLayers((current) => ({ ...current, [key]: !current[key] }))}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="kerr-control-group" aria-label="Camera presets">
+          <span className="kerr-control-label">Camera</span>
+          {[
+            ["edge", "Disk edge"], ["polar", "Polar"], ["photon", "Photon ring"], ["wide", "Wide field"],
+          ].map(([key, label]) => (
+            <button key={key} className={"kerr-chip" + (cameraPreset === key ? " on" : "")}
+              aria-pressed={cameraPreset === key} onClick={() => setCameraPreset(key)}>{label}</button>
+          ))}
+        </div>
       </div>
+      <Scene3D height={460} aria="Three-dimensional black hole with accretion disk, photon ring, and physical readouts"
+        initial={KERR_CAMERA_PRESETS[cameraPreset]} deps={[cameraPreset]}
+        overlay={<KerrGeometryMap geometry={kerr} layers={layers} open={mapOpen}
+          onToggle={() => setMapOpen((current) => !current)}></KerrGeometryMap>}
+        build={build} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
+      <div className="kerr-deck">
+        <section className="kerr-rgroup">
+          <header>
+            <h4>Geometry</h4>
+            <span>exact Kerr · Boyer–Lindquist · GM/c²</span>
+          </header>
+          <div className="kerr-rgrid">
+            <KerrReadout lead label="outer horizon r₊" value={rPlus.toFixed(3)} unit="GM/c²"
+              formula="M + √(M² − a²)"></KerrReadout>
+            <KerrReadout label="ergosurface (equator)" value={kerr.rErgoEquator.toFixed(3)} unit="GM/c²"
+              formula="r = 2GM/c², spin-independent"></KerrReadout>
+            <KerrReadout lead label="ISCO" unit="GM/c²"
+              pair={[["prograde", rIsco.toFixed(3)], ["retrograde", kerr.rIscoRetrograde.toFixed(3)]]}
+              formula="3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))"></KerrReadout>
+            <KerrReadout label="photon orbit" unit="GM/c²"
+              pair={[["prograde", rPhoton.toFixed(3)], ["retrograde", kerr.rPhotonRetrograde.toFixed(3)]]}
+              formula="2[1 + cos(⅔ arccos(∓a★))]"></KerrReadout>
+            <KerrReadout label="Schwarzschild radius r_s" value={sciNotation(rs_km)} unit="km"
+              formula="2GM/c²"></KerrReadout>
+            <KerrReadout label="spin a★" value={a.toFixed(3)}
+              formula="a★ = Jc/GM², extremal at 1"></KerrReadout>
+          </div>
+        </section>
+        <section className="kerr-rgroup">
+          <header>
+            <h4>Thermodynamics</h4>
+            <span>semiclassical · never observed</span>
+          </header>
+          <div className="kerr-rgrid">
+            <KerrReadout lead label="Hawking temperature T_H" value={sciNotation(T_H)} unit="K"
+              formula="T_H = ħκ / 2πck_B"></KerrReadout>
+            <KerrReadout label="T_H / T_Schw at this spin" value={tempFactor.toFixed(3)}
+              formula="κ(a) / κ(0), → 0 at extremality"></KerrReadout>
+            <KerrReadout lead label="entropy S / k_B" value={sciNotation(S, 2)}
+              formula="S = A c³ / 4Għ"></KerrReadout>
+            <KerrReadout label="evaporation time" value={sciNotation(t_ev, 2)} unit="yr"
+              formula="∝ M³, order of magnitude"></KerrReadout>
+          </div>
+        </section>
+      </div>
+      <KerrValidity geometry={kerr}></KerrValidity>
       <div className="grid-2" style={{ marginTop: 6 }}>
         <HawkingSpectrumPlot logM={logM} tempFactor={tempFactor}></HawkingSpectrumPlot>
         <PageCurvePlot></PageCurvePlot>
       </div>
       <VizCaption status="schematic">
-        The raymarched lensing is a Schwarzschild approximation, but the readouts are exact Kerr geometry: the outer
-        horizon <Eq tex="r_+ = M + \sqrt{M^2 - a^2}"></Eq> shrinks with spin, the prograde
-        <strong> ISCO</strong> falls from 6 to 1 <Eq tex="GM/c^2"></Eq> as <Eq tex="a_\star\!:0\to1"></Eq> (Bardeen
-        1972) — letting matter orbit closer and radiate more efficiently — and the surface gravity, hence Hawking
-        temperature, falls to zero at extremality. Note the inversions: doubling the mass doubles r_s, quadruples the
-        entropy, and <em>halves</em> the temperature — black holes have negative specific heat. The two plots show the
-        thermal <strong>Hawking spectrum</strong> and the <strong>Page curve</strong> — the entanglement entropy of
-        the radiation that any unitary (information-preserving) evaporation must follow. Hawking radiation has never
-        been directly observed.
+        Spin reshapes the geometry. The outer horizon <Eq tex="r_+ = M + \sqrt{M^2 - a^2}"></Eq> shrinks as the hole
+        spins up, the prograde <strong>ISCO</strong> falls from 6 to 1 <Eq tex="GM/c^2"></Eq> as
+        <Eq tex="a_\star\!:0\to1"></Eq> (Bardeen 1972) while retrograde orbits move outward — which is why prograde
+        matter orbits closer and radiates more efficiently. The equatorial stationary-limit surface stays
+        at <Eq tex="r=2GM/c^2"></Eq>, so spin opens the ergoregion between it and the horizon, and the surface
+        gravity (hence Hawking temperature) falls to zero at extremality. Mass inverts the thermodynamics: doubling
+        it doubles r_s, quadruples the entropy and <em>halves</em> the temperature — black holes have negative
+        specific heat. The two plots show the thermal <strong>Hawking spectrum</strong> and the
+        <strong> Page curve</strong>, the entanglement entropy any unitary evaporation must follow. See the validity
+        panel above for what is exact here and what is approximated.
       </VizCaption>
     </div>
   );

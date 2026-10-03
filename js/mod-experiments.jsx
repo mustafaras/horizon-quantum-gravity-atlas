@@ -1,8 +1,9 @@
 // mod-experiments.jsx — Module 08: Experimental and Observational Frontiers
 /* ---------- Collider event explorer ---------- */
-function makeEvent() {
+function makeEvent(seed = Date.now()) {
+  const random = QGA_SEEDED(seed);
   const tracks = [];
-  const rand = (a, b) => a + Math.random() * (b - a);
+  const rand = (a, b) => a + random() * (b - a);
   // two jets, roughly back-to-back
   const jetPhi = rand(0, Math.PI * 2);
   for (const [base, n] of [[jetPhi, 4 + Math.floor(rand(0, 3))], [jetPhi + Math.PI + rand(-0.4, 0.4), 3 + Math.floor(rand(0, 3))]]) {
@@ -16,7 +17,7 @@ function makeEvent() {
   // isolated leptons / tracks
   const nl = 1 + Math.floor(rand(0, 2));
   for (let i = 0; i < nl; i++) {
-    const mu = Math.random() < 0.5;
+    const mu = random() < 0.5;
     tracks.push({
       type: mu ? "muon" : "electron", phi: rand(0, Math.PI * 2), curve: rand(-0.7, 0.7) * (mu ? 0.4 : 1), reach: mu ? 1.0 : 0.62,
       info: mu
@@ -25,7 +26,7 @@ function makeEvent() {
     });
   }
   // photon(s)
-  if (Math.random() < 0.75) {
+  if (random() < 0.75) {
     tracks.push({
       type: "photon", phi: rand(0, Math.PI * 2), curve: 0, reach: 0.62,
       info: "Photon candidate — an electromagnetic-calorimeter cluster with no associated inner track (dashed: it leaves no hits in the tracker because it is neutral).",
@@ -56,7 +57,7 @@ function trackPoint(tr, f, R) {
 }
 
 function ColliderEvent() {
-  const [ev, setEv] = useState(makeEvent);
+  const [ev, setEv] = useState(() => makeEvent(qgaReadState().seed));
   const [sel, setSel] = useState(null);
   const evRef = useRef(ev); evRef.current = ev;
   const selRef = useRef(sel); selRef.current = sel;
@@ -140,7 +141,7 @@ function ColliderEvent() {
       <canvas ref={sim.canvasRef} className="viz-canvas" style={{ height: 380, cursor: "pointer" }}
         onClick={onClick}></canvas>
       <SimBar sim={sim}>
-        <button className="btn primary" onClick={() => { setEv(makeEvent()); setSel(null); sim.reset(); sim.setPlaying(true); }}>New collision</button>
+        <button className="btn primary" onClick={() => { setEv(makeEvent(qgaReadState().seed)); setSel(null); sim.reset(); sim.setPlaying(true); }}>New collision</button>
       </SimBar>
       {selTr ? (
         <div className="viz-toolbar viz-toolbar-bottom">
@@ -264,11 +265,12 @@ function GWInspiral() {
 
 /* ---------- 3D collider event display ---------- */
 const TRACK_HEX = { jet: 0x6fd0e0, electron: 0x6ba6ff, muon: 0xb98af0, photon: 0xe0b35a, met: 0xd96a5a };
-function makeEvent3D() {
-  return makeEvent().map((tr) => ({ ...tr, eta: tr.type === "met" ? 0 : (Math.random() * 1.6 - 0.8) }));
+function makeEvent3D(seed = Date.now()) {
+  const random = QGA_SEEDED(seed);
+  return makeEvent(seed).map((tr) => ({ ...tr, eta: tr.type === "met" ? 0 : (random() * 1.6 - 0.8) }));
 }
 function ColliderEvent3D() {
-  const [ev, setEv] = useState(makeEvent3D);
+  const [ev, setEv] = useState(() => makeEvent3D(qgaReadState().seed));
   const [sel, setSel] = useState(null);
   const selRef = useRef(sel); selRef.current = sel;
 
@@ -385,7 +387,7 @@ function ColliderEvent3D() {
   return (
     <div className="viz-frame">
       <div className="viz-toolbar">
-        <button className="btn primary" onClick={() => { setEv(makeEvent3D()); setSel(null); }}>New collision</button>
+        <button className="btn primary" onClick={() => { setEv(makeEvent3D(qgaReadState().seed)); setSel(null); }}>New collision</button>
         {sel !== null ? <button className="btn" onClick={() => setSel(null)}>Clear selection</button> : null}
       </div>
       <Scene3D height={440} aria="Three-dimensional collider event display; click a track to identify it"
@@ -691,18 +693,19 @@ function GWInspiral3D() {
 /* ---------- invariant-mass reconstruction: how a particle is "discovered" ---------- */
 const IM_MIN = 60, IM_MAX = 120, IM_BINS = 40, IM_BW = (IM_MAX - IM_MIN) / IM_BINS;
 const MZ = 91.1876, GZ = 2.4952; // PDG Z⁰ mass & width (GeV)
-function sampleDielectronMass(pSig) {
-  if (Math.random() < pSig) {
+function sampleDielectronMass(pSig, random = Math.random) {
+  if (random() < pSig) {
     // relativistic-ish Breit–Wigner (Cauchy core) around the Z mass + detector smearing
-    const bw = MZ + (GZ / 2) * Math.tan(Math.PI * (Math.random() - 0.5));
-    const smear = (Math.random() + Math.random() + Math.random() - 1.5) * 1.6; // ~Gaussian resolution
+    const bw = MZ + (GZ / 2) * Math.tan(Math.PI * (random() - 0.5));
+    const smear = (random() + random() + random() - 1.5) * 1.6; // ~Gaussian resolution
     return bw + smear;
   }
   // Drell–Yan / combinatorial continuum: falling spectrum across the window
-  return IM_MIN + (-22 * Math.log(1 - Math.random() * 0.985));
+  return IM_MIN + (-22 * Math.log(1 - random() * 0.985));
 }
 function InvariantMassLab() {
   const [bins, setBins] = useState(() => new Array(IM_BINS).fill(0));
+  const randomRef = useRef(QGA_SEEDED(qgaReadState().seed));
   const [total, setTotal] = useState(0);
   const [pSig, setPSig] = useState(0.16);
   const pSigRef = useRef(pSig); pSigRef.current = pSig;
@@ -712,7 +715,7 @@ function InvariantMassLab() {
     setBins((prev) => {
       const next = prev.slice();
       for (let i = 0; i < n; i++) {
-        const m = sampleDielectronMass(pSigRef.current);
+        const m = sampleDielectronMass(pSigRef.current, randomRef.current);
         if (m >= IM_MIN && m < IM_MAX) next[Math.floor((m - IM_MIN) / IM_BW)]++;
       }
       return next;
@@ -813,6 +816,74 @@ function InvariantMassLab() {
   );
 }
 
+function GWDataControls() {
+  const [atlasState, setAtlasState] = useQGAState();
+  const initial = atlasState;
+  const [mode, setMode] = useState(initial.gwMode);
+  const [event, setEvent] = useState(initial.gwEvent);
+  const [status, setStatus] = useState(mode === "generated" ? "Seeded local waveform" : "");
+  const [provenance, setProvenance] = useState(null);
+  const [realData, setRealData] = useState(null);
+  const realLoadRef = useRef(null);
+  const gpsEnd = atlasState.gwStart + atlasState.gwDuration;
+  const processing = mode === "real"
+    ? "Real mode fetches one bounded GWOSC calibrated strain file, gzip-decodes it, and downsamples it for this preview."
+    : "Generated mode plots a local/seeded teaching waveform; it is not a detector observation.";
+  useEffect(() => () => realLoadRef.current?.abort(), []);
+  useEffect(() => setMode(atlasState.gwMode), [atlasState.gwMode]);
+  useEffect(() => setEvent(atlasState.gwEvent), [atlasState.gwEvent]);
+  const loadReal = async () => {
+    realLoadRef.current?.abort();
+    const controller = new AbortController();
+    realLoadRef.current = controller;
+    setStatus("Loading bounded GWOSC strain…"); setProvenance(null); setRealData(null);
+    try {
+      const result = await QGA_FETCH_GWOSC(event, {
+        detector: atlasState.gwDetector, start: atlasState.gwStart, duration: atlasState.gwDuration,
+        signal: controller.signal,
+      });
+      setRealData(result); setProvenance(result.provenance);
+      setStatus("GWOSC observation loaded; preview is downsampled calibrated strain.");
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      setStatus("GWOSC unavailable; using seeded generated data.");
+    } finally {
+      if (realLoadRef.current === controller) realLoadRef.current = null;
+    }
+  };
+  const changeMode = (next) => {
+    setMode(next); setAtlasState({ gwMode: next, gwEvent: event });
+    if (next === "real") loadReal();
+    else {
+      realLoadRef.current?.abort(); realLoadRef.current = null;
+      setRealData(null); setProvenance(null); setStatus("Seeded local waveform");
+    }
+  };
+  useEffect(() => { if (initial.gwMode === "real" && mode === "real") loadReal(); }, []);
+  const preview = realData?.samples?.length ? (() => {
+    const max = Math.max(...realData.samples.map((v) => Math.abs(v))) || 1;
+    return realData.samples.map((value, index) => {
+      const x = (index / Math.max(1, realData.samples.length - 1)) * 100;
+      const y = 50 - (value / max) * 42;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(" ");
+  })() : "";
+  return <div className="panel" style={{ marginBottom: 12 }}>
+    <div className="viz-toolbar"><label className="ctl-label" htmlFor="gw-mode">Data mode</label><select id="gw-mode" value={mode} onChange={(e) => changeMode(e.target.value)}><option value="generated">Generated (seeded)</option><option value="real">GWOSC v2 calibrated strain</option></select><label className="ctl-label" htmlFor="gw-event">Event</label><input id="gw-event" value={event} onChange={(e) => { setEvent(e.target.value); setAtlasState({ gwEvent: e.target.value }); }} /><label className="ctl-label" htmlFor="gw-detector">Detector</label><select id="gw-detector" value={atlasState.gwDetector} onChange={(e) => setAtlasState({ gwDetector: e.target.value })}><option>H1</option><option>L1</option><option>V1</option></select><SliderRow label="start GPS" min={1126259000} max={1126260000} step={1} value={atlasState.gwStart} onChange={(v) => setAtlasState({ gwStart: v })}></SliderRow><SliderRow label="duration" min={1} max={32} step={1} value={atlasState.gwDuration} onChange={(v) => setAtlasState({ gwDuration: v })}></SliderRow><SliderRow label="seed" min={1} max={9999} step={1} value={atlasState.seed} onChange={(v) => setAtlasState({ seed: v })}></SliderRow>{mode === "real" ? <button className="btn" onClick={loadReal}>Load observation</button> : null}</div>
+    <p className="small dim" style={{ marginBottom: 6 }}>Detector: <strong>{atlasState.gwDetector}</strong> · GPS time range: <strong>{atlasState.gwStart}–{gpsEnd}</strong> ({atlasState.gwDuration}s) · strain h(t): <strong>dimensionless</strong></p>
+    <p className="small dim" style={{ marginBottom: 6 }}>Processing: {processing}</p>
+    {mode === "real" && realData ? <div style={{ margin: "8px 0", border: "1px solid var(--line)", borderRadius: 8, padding: 8 }}>
+      <div className="small"><span className="badge badge-established">OBSERVATION</span> {event} · {atlasState.gwDetector} · calibrated strain h(t)</div>
+      <svg viewBox="0 0 100 100" role="img" aria-label="Downsampled real GWOSC strain preview" style={{ width: "100%", height: 96, display: "block", marginTop: 6 }}>
+        <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(148,176,224,0.25)" />
+        <polyline points={preview} fill="none" stroke="var(--cyan)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="small dim">Real observation preview · GPS {realData.start}–{realData.start + realData.duration} · {realData.sampleRate} samples/s source · {realData.samples.length} plotted points · normalized display amplitude</div>
+    </div> : null}
+    <p className="small dim" aria-live="polite" style={{ marginBottom: 0 }}>{status}</p>{provenance ? <p className="small dim" style={{ marginBottom: 0 }}>Provenance: {provenance.source} · <a href={provenance.url} target="_blank" rel="noreferrer">strain listing</a> · <a href={provenance.downloadUrl} target="_blank" rel="noreferrer">data file</a></p> : null}
+  </div>;
+}
+
 function ModuleExp({ go }) {
   return (
     <article>
@@ -840,6 +911,7 @@ function ModuleExp({ go }) {
       </Section>
 
       <Section title="Gravitational waves">
+        <GWDataControls></GWDataControls>
         <p>
           LIGO's 2016 detection of GW150914 opened an observational channel on strong-field gravity. Merger waveforms
           test general relativity in its most violent regime — and so far the theory passes. Some quantum gravity
