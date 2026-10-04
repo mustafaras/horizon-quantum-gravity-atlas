@@ -14,6 +14,10 @@ scraps/
 .thumbnail
 .*.thumbnail.png
 
+# local tooling / QA artifacts
+.impeccable/
+.playwright-mcp/
+
 # logs
 npm-debug.log*
 yarn-error.log*
