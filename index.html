@@ -1183,6 +1183,235 @@ body { background:
 .fey-phys-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acc); margin-bottom: 8px; }
 .fey-phys-card .katex { color: var(--head); }
 .fey-phys-note { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
+/* ---- causal spacetime laboratory ---- */
+.causal-lab {
+  --causal-pair: #8ce7ff;
+  overflow: hidden;
+  border-color: rgba(84,174,255,0.34);
+  background:
+    radial-gradient(900px 430px at 52% 22%, rgba(34,78,142,0.15), transparent 68%),
+    rgba(7,11,19,0.94);
+}
+.causal-lab.causal-spacelike { --causal-pair: #ff9d8f; }
+.causal-lab.causal-null { --causal-pair: #ffdd8a; }
+.causal-head { background: linear-gradient(180deg, rgba(8,17,31,0.98), rgba(5,10,19,0.92)); }
+.causal-custom-chip {
+  align-self: center; padding: 4px 8px; border: 1px dashed rgba(148,176,224,0.34); border-radius: 3px;
+  color: rgba(205,219,241,0.72); font: 500 8px/1 var(--font-mono);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.causal-frame-control {
+  display: grid; grid-template-columns: minmax(280px, 1fr) auto; gap: 18px;
+  align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(84,174,255,0.05), rgba(4,8,15,0.72) 58%);
+}
+.causal-beta-control {
+  display: grid; grid-template-columns: auto minmax(150px, 1fr) 76px; gap: 12px; align-items: center;
+}
+.causal-beta-control > label {
+  font: 500 9px/1 var(--font-mono); letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(205,219,241,0.82);
+}
+.causal-beta-number, .causal-coordinate-input input {
+  width: 100%; border: 1px solid rgba(148,176,224,0.28); border-radius: 4px;
+  background: rgba(3,8,15,0.8); color: #eaf2ff; padding: 6px 7px;
+  font: 500 11px/1 var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.causal-beta-number:focus-visible, .causal-coordinate-input input:focus-visible {
+  outline: 2px solid var(--acc); outline-offset: 2px; border-color: transparent;
+}
+.causal-frame-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.causal-motion-note {
+  width: 100%; text-align: right; color: rgba(148,176,224,0.56);
+  font: 400 8px/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.causal-stage-wrap {
+  position: relative; overflow-x: auto; overflow-y: hidden;
+  background: radial-gradient(80% 100% at 50% 42%, rgba(18,38,72,0.5), rgba(3,7,13,0.96));
+  scrollbar-color: rgba(84,174,255,0.34) transparent;
+}
+.causal-diagram {
+  display: block; width: 100%; height: auto; min-height: 410px;
+  touch-action: none; user-select: none;
+}
+.causal-sky { fill: #040811; }
+.causal-plot-bg { fill: rgba(9,16,29,0.78); stroke: rgba(148,176,224,0.2); stroke-width: 1; }
+.causal-grid-line { stroke: rgba(120,160,220,0.11); stroke-width: 1; }
+.causal-axis { stroke: rgba(202,221,250,0.68); stroke-width: 1.7; }
+.causal-axis-labels text, .causal-axis-title, .causal-worldline-label,
+.causal-boost-label, .causal-cone-label {
+  fill: rgba(170,192,222,0.7); font: 10px var(--font-mono); text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+.causal-axis-title {
+  fill: rgba(228,239,255,0.88); font-size: 11px; letter-spacing: 0.08em; text-anchor: end;
+}
+.causal-worldline-label, .causal-cone-label {
+  fill: rgba(148,176,224,0.64); font-size: 8.5px; text-anchor: start; letter-spacing: 0.04em;
+}
+.causal-cone-label { fill: rgba(111,183,237,0.58); }
+.causal-null-boundary {
+  stroke: rgba(118,205,255,0.66); stroke-width: 1.3; stroke-dasharray: 5 7;
+  vector-effect: non-scaling-stroke;
+}
+.causal-worldline { fill: none; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.causal-worldline-stationary { stroke: rgba(119,218,255,0.66); }
+.causal-worldline-inertial { stroke: rgba(255,174,103,0.7); }
+.causal-proper-tick { stroke: rgba(119,218,255,0.86); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.causal-inertial-tick { fill: rgba(255,184,116,0.92); }
+.causal-boost-axis {
+  fill: none; stroke-width: 1.7; stroke-dasharray: 8 7; vector-effect: non-scaling-stroke;
+}
+.causal-boost-x { stroke: rgba(70,212,224,0.88); }
+.causal-boost-ct { stroke: rgba(255,180,84,0.86); }
+.causal-boost-label { font-size: 11px; font-weight: 600; }
+.causal-boost-x-label { fill: rgba(105,235,230,0.92); }
+.causal-boost-ct-label { fill: rgba(255,199,112,0.92); }
+.causal-event-link {
+  stroke: var(--causal-pair); stroke-width: 2.1; stroke-dasharray: 10 8;
+  vector-effect: non-scaling-stroke;
+}
+.causal-transformed-link {
+  stroke: rgba(208,220,246,0.42); stroke-width: 1.4; stroke-dasharray: 3 6;
+  vector-effect: non-scaling-stroke;
+}
+.causal-transformed-event circle {
+  fill: rgba(8,13,23,0.82); stroke: rgba(218,230,250,0.58); stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+.causal-transformed-event text { fill: rgba(218,230,250,0.62); font: 9px var(--font-mono); }
+.causal-event { cursor: grab; outline: none; }
+.causal-event:active { cursor: grabbing; }
+.causal-event > circle:first-child {
+  fill: rgba(8,14,24,0.95); stroke: var(--causal-pair); stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.causal-event.selected > circle:first-child, .causal-event:focus-visible > circle:first-child {
+  fill: var(--causal-pair); stroke: #ffffff; stroke-width: 3.5;
+}
+.causal-event-hit { fill: transparent; stroke: transparent; }
+.causal-event text {
+  fill: #f7fbff; font: 700 13px var(--font-head);
+  paint-order: stroke; stroke: rgba(3,7,13,0.9); stroke-width: 3px;
+}
+.causal-signal line { stroke: #fff1a8; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+.causal-signal circle { fill: #fff7d4; stroke: #ffbf5f; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.causal-twin-path line {
+  stroke: rgba(204,150,255,0.9); stroke-width: 2.4; vector-effect: non-scaling-stroke;
+}
+.causal-twin-path circle { fill: #d0a0ff; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.causal-diagram-legend {
+  position: absolute; left: 92px; bottom: 13px; display: flex; gap: 13px; flex-wrap: wrap;
+  pointer-events: none; color: rgba(170,192,222,0.72);
+  font: 400 7.5px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.causal-diagram-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.causal-diagram-legend i { width: 13px; height: 2px; display: inline-block; background: var(--causal-pair); }
+.causal-diagram-legend .legend-transform { background: rgba(218,230,250,0.5); }
+.causal-diagram-legend .legend-null { background: rgba(118,205,255,0.72); }
+.causal-diagram-legend .legend-xprime { background: #46d4e0; }
+.causal-diagram-legend .legend-ctprime { background: #ffb454; }
+.causal-event-controls {
+  display: grid; grid-template-columns: auto auto minmax(220px, 1fr); gap: 12px; align-items: center;
+  padding: 11px 14px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: rgba(4,8,15,0.82);
+}
+.causal-coordinate-group { display: flex; align-items: center; gap: 7px; }
+.causal-coordinate-group > strong {
+  white-space: nowrap; color: rgba(228,239,255,0.86);
+  font: 600 8.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.causal-coordinate-input { display: grid; grid-template-columns: auto 62px; align-items: center; gap: 4px; }
+.causal-coordinate-input > span {
+  color: rgba(148,176,224,0.62); font: 500 7px/1 var(--font-mono); text-transform: uppercase;
+}
+.causal-preset-note {
+  margin: 0; text-align: right; color: rgba(170,192,222,0.74);
+  font: 400 9px/1.45 var(--font-mono);
+}
+.causal-readout-deck { grid-template-columns: 1fr 1fr; }
+.causal-order-readout { grid-column: span 2; }
+.causal-order-readout .kerr-readout-value { color: var(--causal-pair); }
+.causal-formulation {
+  margin: 0 14px 12px; overflow: hidden; border: 1px solid var(--line); border-radius: 4px;
+  background: linear-gradient(180deg, rgba(10,16,28,0.76), rgba(5,9,16,0.64));
+}
+.causal-formulation > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line); background: rgba(9,15,26,0.64);
+}
+.causal-formulation > header > div { display: flex; align-items: center; gap: 10px; }
+.causal-formulation h4 {
+  margin: 0; font: 600 10px/1 var(--font-mono); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--head);
+}
+.causal-formulation > header > span {
+  color: rgba(148,176,224,0.66); font: 400 8px/1 var(--font-mono); letter-spacing: 0.08em;
+}
+.causal-panel-id { color: var(--acc); font: 600 8px/1 var(--font-mono); letter-spacing: 0.16em; }
+.causal-equation-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.causal-equation-grid > div {
+  min-width: 0; padding: 12px 14px; border-right: 1px solid rgba(120,160,220,0.08);
+  border-bottom: 1px solid rgba(120,160,220,0.08); overflow-x: auto;
+}
+.causal-equation-grid > div > span {
+  display: block; margin-bottom: 5px; color: rgba(148,176,224,0.72);
+  font: 500 8px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.causal-equation-grid .katex { color: #e7efff; font-size: 0.94em; }
+.causal-equation-note {
+  margin: 0; padding: 10px 13px; color: rgba(170,192,222,0.72);
+  font: 400 9.5px/1.55 var(--font-mono); background: rgba(84,174,255,0.035);
+}
+.causal-validity-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 14px 12px;
+}
+.causal-validity-grid section {
+  padding: 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(6,10,18,0.6);
+}
+.causal-validity-grid h4 { margin: 9px 0 5px; font-size: 12px; }
+.causal-validity-grid p { margin: 0; color: var(--text-dim); font-size: 10.5px; line-height: 1.55; }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion="balanced"] .causal-event.selected > circle:first-child,
+  html[data-motion="full"] .causal-event.selected > circle:first-child {
+    animation: causal-event-pulse 1.8s ease-in-out infinite;
+  }
+  html[data-motion="balanced"] .causal-signal circle,
+  html[data-motion="full"] .causal-signal circle {
+    animation: causal-signal-pulse 0.9s ease-in-out infinite;
+  }
+}
+@keyframes causal-event-pulse {
+  0%, 100% { opacity: 0.82; }
+  50% { opacity: 1; }
+}
+@keyframes causal-signal-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+@media (max-width: 760px) {
+  .causal-frame-control { grid-template-columns: 1fr; gap: 12px; }
+  .causal-beta-control { grid-template-columns: 1fr 68px; }
+  .causal-beta-control > label { grid-column: 1 / -1; }
+  .causal-lab button,
+  .causal-lab input[type="number"],
+  .causal-lab input[type="range"] { min-height: 44px; }
+  .causal-frame-actions { justify-content: flex-start; }
+  .causal-motion-note { text-align: left; }
+  .causal-diagram { width: 680px; min-width: 680px; min-height: 423px; }
+  .causal-diagram-legend { left: 72px; }
+  .causal-event-controls { grid-template-columns: 1fr; }
+  .causal-coordinate-group { justify-content: space-between; }
+  .causal-preset-note { text-align: left; }
+  .causal-readout-deck { grid-template-columns: 1fr; }
+  .causal-order-readout { grid-column: auto; }
+  .causal-equation-grid, .causal-validity-grid { grid-template-columns: 1fr; }
+  .causal-formulation > header { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .causal-event.selected > circle:first-child, .causal-signal circle { animation: none !important; }
+}
 </style>
 </head>
 <body>

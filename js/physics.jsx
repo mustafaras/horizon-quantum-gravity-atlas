@@ -33,6 +33,103 @@ const QGA_PHYSICS = {
     let state = (Number(seed) >>> 0) || 1;
     return () => { state = (1664525 * state + 1013904223) >>> 0; return state / 4294967296; };
   },
+  safeBeta(value, fallback = 0.2, { min = -0.999, max = 0.999 } = {}) {
+    const beta = Number(value);
+    if (!Number.isFinite(beta) || Math.abs(beta) >= 1) {
+      return Number.isFinite(fallback) ? Math.min(max, Math.max(min, Number(fallback))) : 0;
+    }
+    return Math.min(max, Math.max(min, beta));
+  },
+  clamp(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(max, Math.max(min, value));
+  },
+  sanitizeCausalState(input = {}, defaults = {}) {
+    const fallback = {
+      beta: 0.35,
+      a: { ct: 0, x: -1.35 },
+      b: { ct: 2.6, x: 1.1 },
+      ...defaults,
+    };
+    fallback.a = { ct: 0, x: -1.35, ...(defaults.a || {}) };
+    fallback.b = { ct: 2.6, x: 1.1, ...(defaults.b || {}) };
+    const inRange = (value, backup, min, max) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) && numeric >= min && numeric <= max ? numeric : backup;
+    };
+    return {
+      beta: inRange(input.beta, fallback.beta, -0.95, 0.95),
+      a: {
+        ct: inRange(input.a?.ct, fallback.a.ct, -4, 4),
+        x: inRange(input.a?.x, fallback.a.x, -4, 4),
+      },
+      b: {
+        ct: inRange(input.b?.ct, fallback.b.ct, -4, 4),
+        x: inRange(input.b?.x, fallback.b.x, -4, 4),
+      },
+    };
+  },
+  lorentzGamma(beta) {
+    const b = this.safeBeta(beta, 0);
+    return 1 / Math.sqrt(Math.max(1e-12, 1 - b * b));
+  },
+  invariantInterval(deltaCt, deltaX, { c = 1 } = {}) {
+    const dct = Number(deltaCt); const dx = Number(deltaX);
+    if (!Number.isFinite(dct) || !Number.isFinite(dx) || !(Number(c) > 0)) return NaN;
+    return -(dct * dct) + dx * dx;
+  },
+  classifySeparation(deltaCt, deltaX, { c = 1 } = {}) {
+    const ds2 = this.invariantInterval(deltaCt, deltaX, { c });
+    if (!Number.isFinite(ds2)) return { type: "invalid", ds2: NaN, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+    if (ds2 < 0) return { type: "timelike", ds2, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+    if (Math.abs(ds2) < 1e-12) return { type: "null", ds2: 0, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+    return { type: "spacelike", ds2, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+  },
+  properTime(deltaCt, deltaX, { c = 1 } = {}) {
+    const ds2 = this.invariantInterval(deltaCt, deltaX, { c });
+    const cs = Number(c);
+    if (!Number.isFinite(ds2) || ds2 >= 0 || !(cs > 0)) return NaN;
+    return Math.sqrt(-ds2) / cs;
+  },
+  lorentzTransform({ deltaCt, deltaX, beta, c = 1 } = {}) {
+    const b = this.safeBeta(beta, 0);
+    const dct = Number(deltaCt); const dx = Number(deltaX);
+    if (!Number.isFinite(dct) || !Number.isFinite(dx) || !(Number(c) > 0)) {
+      return { deltaCtPrime: NaN, deltaXPrime: NaN, gamma: this.lorentzGamma(b), beta: b };
+    }
+    const gamma = this.lorentzGamma(b);
+    const ctPrime = gamma * (dct - b * dx);
+    const xPrime = gamma * (dx - b * dct);
+    return { deltaCtPrime: ctPrime, deltaXPrime: xPrime, gamma, beta: b };
+  },
+  simultaneityFrameBeta(deltaCt, deltaX) {
+    const dt = Number(deltaCt); const dx = Number(deltaX);
+    if (!Number.isFinite(dt) || !Number.isFinite(dx) || Math.abs(dx) < 1e-12) return NaN;
+    const beta = dt / dx;
+    return Math.abs(beta) < 1 ? beta : NaN;
+  },
+  transformPair({ a, b, beta, c = 1 } = {}) {
+    const left = { deltaCt: Number(b.ct) - Number(a.ct), deltaX: Number(b.x) - Number(a.x) };
+    const transformed = this.lorentzTransform({ ...left, beta, c });
+    const interval = this.classifySeparation(left.deltaCt, left.deltaX, { c });
+    return { a, b, left, transformed, interval, gamma: transformed.gamma };
+  },
+  piecewiseProperTime(points, { c = 1 } = {}) {
+    if (!Array.isArray(points) || points.length < 2) return NaN;
+    let total = 0;
+    for (let index = 1; index < points.length; index++) {
+      const previous = points[index - 1];
+      const current = points[index];
+      const segment = this.properTime(
+        Number(current?.ct) - Number(previous?.ct),
+        Number(current?.x) - Number(previous?.x),
+        { c },
+      );
+      if (!Number.isFinite(segment)) return NaN;
+      total += segment;
+    }
+    return total;
+  },
   /* Leading-order binary-inspiral teaching model — mirrors js/physics.mjs exactly. */
   chirpMass(m1Solar, m2Solar) {
     const m1 = Number(m1Solar), m2 = Number(m2Solar);

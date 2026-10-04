@@ -53,6 +53,112 @@ export function seededRng(seed) {
   };
 }
 
+export function safeBeta(value, fallback = 0.2, { min = -0.999, max = 0.999 } = {}) {
+  const beta = Number(value);
+  if (!Number.isFinite(beta) || Math.abs(beta) >= 1) return Number.isFinite(fallback) ? clamp(fallback, min, max) : 0;
+  return clamp(beta, min, max);
+}
+
+export function clamp(value, min, max) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+export function sanitizeCausalState(input = {}, defaults = {}) {
+  const fallback = {
+    beta: 0.35,
+    a: { ct: 0, x: -1.35 },
+    b: { ct: 2.6, x: 1.1 },
+    ...defaults,
+  };
+  fallback.a = { ct: 0, x: -1.35, ...(defaults.a || {}) };
+  fallback.b = { ct: 2.6, x: 1.1, ...(defaults.b || {}) };
+  const inRange = (value, backup, min, max) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric >= min && numeric <= max ? numeric : backup;
+  };
+  return {
+    beta: inRange(input.beta, fallback.beta, -0.95, 0.95),
+    a: {
+      ct: inRange(input.a?.ct, fallback.a.ct, -4, 4),
+      x: inRange(input.a?.x, fallback.a.x, -4, 4),
+    },
+    b: {
+      ct: inRange(input.b?.ct, fallback.b.ct, -4, 4),
+      x: inRange(input.b?.x, fallback.b.x, -4, 4),
+    },
+  };
+}
+
+export function lorentzGamma(beta) {
+  const b = safeBeta(beta, 0);
+  return 1 / Math.sqrt(Math.max(1e-12, 1 - b * b));
+}
+
+export function invariantInterval(deltaCt, deltaX, { c = 1 } = {}) {
+  const dct = Number(deltaCt); const dx = Number(deltaX);
+  if (!Number.isFinite(dct) || !Number.isFinite(dx) || !(Number(c) > 0)) return NaN;
+  return -(dct * dct) + dx * dx;
+}
+
+export function classifySeparation(deltaCt, deltaX, { c = 1 } = {}) {
+  const ds2 = invariantInterval(deltaCt, deltaX, { c });
+  if (!Number.isFinite(ds2)) return { type: "invalid", ds2: NaN, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+  if (ds2 < 0) return { type: "timelike", ds2, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+  if (Math.abs(ds2) < 1e-12) return { type: "null", ds2: 0, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+  return { type: "spacelike", ds2, deltaCt: Number(deltaCt), deltaX: Number(deltaX) };
+}
+
+export function properTime(deltaCt, deltaX, { c = 1 } = {}) {
+  const ds2 = invariantInterval(deltaCt, deltaX, { c });
+  const cs = Number(c);
+  if (!Number.isFinite(ds2) || ds2 >= 0 || !(cs > 0)) return NaN;
+  return Math.sqrt(-ds2) / cs;
+}
+
+export function lorentzTransform({ deltaCt, deltaX, beta, c = 1 } = {}) {
+  const b = safeBeta(beta, 0);
+  const dct = Number(deltaCt); const dx = Number(deltaX);
+  if (!Number.isFinite(dct) || !Number.isFinite(dx) || !(Number(c) > 0)) {
+    return { deltaCtPrime: NaN, deltaXPrime: NaN, gamma: lorentzGamma(b), beta: b };
+  }
+  const gamma = lorentzGamma(b);
+  const ctPrime = gamma * (dct - b * dx);
+  const xPrime = gamma * (dx - b * dct);
+  return { deltaCtPrime: ctPrime, deltaXPrime: xPrime, gamma, beta: b };
+}
+
+export function simultaneityFrameBeta(deltaCt, deltaX) {
+  const dt = Number(deltaCt); const dx = Number(deltaX);
+  if (!Number.isFinite(dt) || !Number.isFinite(dx) || Math.abs(dx) < 1e-12) return NaN;
+  const beta = dt / dx;
+  return Math.abs(beta) < 1 ? beta : NaN;
+}
+
+export function transformPair({ a, b, beta, c = 1 } = {}) {
+  const left = { deltaCt: Number(b.ct) - Number(a.ct), deltaX: Number(b.x) - Number(a.x) };
+  const transformed = lorentzTransform({ ...left, beta, c });
+  const interval = classifySeparation(left.deltaCt, left.deltaX, { c });
+  return { a, b, left, transformed, interval, gamma: transformed.gamma };
+}
+
+export function piecewiseProperTime(points, { c = 1 } = {}) {
+  if (!Array.isArray(points) || points.length < 2) return NaN;
+  let total = 0;
+  for (let index = 1; index < points.length; index++) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const segment = properTime(
+      Number(current?.ct) - Number(previous?.ct),
+      Number(current?.x) - Number(previous?.x),
+      { c },
+    );
+    if (!Number.isFinite(segment)) return NaN;
+    total += segment;
+  }
+  return total;
+}
+
 /* ---------- Leading-order binary-inspiral signal model (teaching approximation) ---------- */
 /* Newtonian chirp: f_gw(tau) = (1/pi)(5/256·1/tau)^{3/8}(G Mc/c^3)^{-5/8}, tau = t_c - t.
    Documented approximation: valid only far from merger; no spins, no higher PN orders. */

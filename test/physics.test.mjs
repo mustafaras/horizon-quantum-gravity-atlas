@@ -6,6 +6,9 @@ import {
   chirpMass, timeToCoalescence, inspiralFrequency, generatedChirp, stftSpectrogram,
   mandelstamKinematics, kleinNishina, angularDistribution,
   breitWignerResonance, qftTotalCrossSection, M_Z, GAMMA_Z,
+  safeBeta, lorentzGamma, invariantInterval, classifySeparation,
+  properTime, lorentzTransform, simultaneityFrameBeta, sanitizeCausalState,
+  piecewiseProperTime,
 } from "../js/physics.mjs";
 
 test("Schwarzschild radius is about 2.95 km per solar mass", () => {
@@ -228,4 +231,90 @@ test("s-channel total cross-section follows 4πα²/(3s) and matches the 0.87 nb
   assert.ok(Math.abs(s10 / s20 - 4) < 1e-9); // 1/s scaling
   const analytic = (4 * Math.PI * (1 / 137.035999084) ** 2) / (3 * 100) * 0.3893793721e6;
   assert.ok(Math.abs(s10 - analytic) < 1e-12);
+});
+
+// ---------- Causal structure and Lorentz invariants ----------
+
+test("invariant interval is Lorentz-invariant under a valid boost", () => {
+  const before = invariantInterval(2, 1);
+  const boosted = lorentzTransform({ deltaCt: 2, deltaX: 1, beta: 0.4 });
+  const after = invariantInterval(boosted.deltaCtPrime, boosted.deltaXPrime);
+  assert.ok(Math.abs(before - after) < 1e-12, `before=${before}, after=${after}`);
+  assert.ok(Math.abs(invariantInterval(0, 0)) < 1e-12);
+});
+
+test("gamma tends to the correct limiting values at beta = 0 and subluminal beta", () => {
+  assert.equal(lorentzGamma(0), 1);
+  assert.ok(Math.abs(lorentzGamma(0.5) - 1.1547005383792517) < 1e-12);
+  assert.ok(Math.abs(lorentzGamma(-0.8) - 1.6666666666666667) < 1e-12);
+  assert.ok(Number.isFinite(lorentzGamma(0.99)));
+});
+
+test("null intervals remain null under valid Lorentz transforms", () => {
+  const pair = { deltaCt: 3, deltaX: 3 };
+  const transformed = lorentzTransform({ ...pair, beta: 0.6 });
+  assert.ok(Math.abs(invariantInterval(pair.deltaCt, pair.deltaX)) < 1e-12);
+  assert.ok(Math.abs(invariantInterval(transformed.deltaCtPrime, transformed.deltaXPrime)) < 1e-9);
+  assert.equal(classifySeparation(pair.deltaCt, pair.deltaX).type, "null");
+  assert.equal(classifySeparation(transformed.deltaCtPrime, transformed.deltaXPrime).type, "null");
+});
+
+test("timelike event ordering is preserved in a standard valid frame", () => {
+  const pair = { deltaCt: 2.5, deltaX: 1.0 };
+  const boosted = lorentzTransform({ ...pair, beta: 0.6 });
+  assert.equal(classifySeparation(pair.deltaCt, pair.deltaX).type, "timelike");
+  assert.equal(classifySeparation(boosted.deltaCtPrime, boosted.deltaXPrime).type, "timelike");
+  assert.ok(boosted.deltaCtPrime > 0);
+  assert.ok(Math.abs(boosted.deltaCtPrime) > Math.abs(boosted.deltaXPrime));
+});
+
+test("spacelike pairs can reverse order and admit a simultaneity frame", () => {
+  const pair = { deltaCt: 0.2, deltaX: 1.0 };
+  const beta = simultaneityFrameBeta(pair.deltaCt, pair.deltaX);
+  assert.ok(Math.abs(beta - 0.2) < 1e-12); // Δct/Δx = 0.2
+  const simultaneous = lorentzTransform({ ...pair, beta });
+  assert.ok(Math.abs(simultaneous.deltaCtPrime) < 1e-12, `simultaneous ct' = ${simultaneous.deltaCtPrime}`);
+  assert.ok(classifySeparation(pair.deltaCt, pair.deltaX).type === "spacelike");
+
+  const reversed = lorentzTransform({ ...pair, beta: 0.75 });
+  assert.ok(reversed.deltaCtPrime < 0, `reversed Δct' = ${reversed.deltaCtPrime}`);
+  assert.equal(classifySeparation(reversed.deltaCtPrime, reversed.deltaXPrime).type, "spacelike");
+});
+
+test("proper time and the c = 1 convention are handled consistently", () => {
+  const pair = { deltaCt: 3, deltaX: 1 };
+  const ds2 = invariantInterval(pair.deltaCt, pair.deltaX, { c: 1 });
+  assert.ok(Math.abs(ds2 - (-8)) < 1e-12);
+  assert.ok(Math.abs(properTime(pair.deltaCt, pair.deltaX, { c: 1 }) - Math.sqrt(8)) < 1e-12);
+  assert.ok(Number.isNaN(properTime(0, 0, { c: 1 })));
+  assert.ok(Math.abs(properTime(3, 1, { c: 2 }) - Math.sqrt(8) / 2) < 1e-12);
+});
+
+test("safeBeta and invalid event values reject out-of-range input cleanly", () => {
+  assert.equal(safeBeta(2, 0.25), 0.25);
+  assert.equal(safeBeta(-2, -0.25), -0.25);
+  assert.equal(safeBeta(NaN, 0.3), 0.3);
+  assert.equal(safeBeta(0.5), 0.5);
+  assert.ok(Number.isNaN(invariantInterval(Number.NaN, 1)));
+  assert.equal(classifySeparation(Number.NaN, 1).type, "invalid");
+  assert.ok(Number.isNaN(properTime(0.5, 1)));
+
+  const defaults = { beta: 0.35, a: { ct: 0, x: -1.35 }, b: { ct: 2.6, x: 1.1 } };
+  assert.deepEqual(sanitizeCausalState({
+    beta: 1, a: { ct: 99, x: "bad" }, b: { ct: -4, x: 4 },
+  }, defaults), {
+    beta: 0.35, a: { ct: 0, x: -1.35 }, b: { ct: -4, x: 4 },
+  });
+  assert.deepEqual(sanitizeCausalState({
+    beta: -0.95, a: { ct: 4, x: -4 }, b: { ct: 0, x: 0 },
+  }, defaults), {
+    beta: -0.95, a: { ct: 4, x: -4 }, b: { ct: 0, x: 0 },
+  });
+});
+
+test("piecewise proper time sums only timelike inertial legs", () => {
+  const points = [{ ct: -3, x: 0 }, { ct: 0, x: 2.2 }, { ct: 3, x: 0 }];
+  const expected = 2 * Math.sqrt(3 ** 2 - 2.2 ** 2);
+  assert.ok(Math.abs(piecewiseProperTime(points) - expected) < 1e-12);
+  assert.ok(Number.isNaN(piecewiseProperTime([{ ct: 0, x: 0 }, { ct: 1, x: 2 }])));
 });

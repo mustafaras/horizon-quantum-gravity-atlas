@@ -254,6 +254,18 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <br/>
 <sub><strong>Mobile amplitude room</strong> — the four instrument panels stack into a single column and the control rows expand to full width, with no horizontal overflow.</sub>
 </td>
+<td width="50%">
+<img src="docs/screenshots/16-causal-spacetime-lab.png" alt="Desktop Causal Spacetime Laboratory showing a Minkowski diagram, light cones, boosted axes, draggable events, invariant diagnostics, and live Lorentz equations" width="100%" />
+<br/>
+<sub><strong>Causal Spacetime Laboratory</strong> — exact 1+1D Minkowski calculations drive the interval classification, transformed coordinates, proper-time readouts, and substituted Lorentz equations. Eased axes and event ghosts are presentation only.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/17-causal-spacetime-lab-mobile.png" alt="Mobile Causal Spacetime Laboratory with stacked 44-pixel controls and a horizontally scrollable Minkowski diagram" width="100%" />
+<br/>
+<sub><strong>Mobile causal laboratory</strong> — presets and frame controls retain 44 px touch targets; the wide scientific diagram scrolls inside its own container without widening the page.</sub>
+</td>
 <td width="50%"></td>
 </tr>
 </table>
@@ -365,7 +377,7 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 | 01 | Standard Model | Particle content and gauge architecture | 3D particle map and analytical atlas | established physics with known gaps |
 | 02 | Quantum Field Theory | Fields, quanta, amplitudes, propagators | Klein-Gordon membrane and Feynman collision lab | established formalism with pedagogical simplification |
 | 03 | Gauge Symmetry & RG Flow | Local symmetry and scale dependence | RG landscape and running coupling simulator | established one-loop logic with domain limits |
-| 04 | General Relativity | Gravity as curved spacetime | deformable geometry, geodesics, lensing rays | established classical theory |
+| 04 | General Relativity | Local causal structure and gravity as curved spacetime | Minkowski causal laboratory, deformable geometry, geodesics, lensing rays | exact flat-spacetime SR foundation plus established classical GR |
 | 05 | Planck Frontier | Why perturbative quantum gravity fails | scale ladder and speculative foam visualization | established obstruction, speculative visualization |
 | 06 | Theory Comparator | Candidate quantum-gravity programs | 3D theory constellation and comparator | conjectural frameworks |
 | 07 | Black Holes | Entropy, horizons, Hawking radiation, holography | raymarched black hole, Page curve, holography | semiclassical landmarks and open paradoxes |
@@ -613,6 +625,30 @@ The dimensionless strength grows with energy:
 This scaling is one of the simplest ways to see why the Planck scale is special.
 
 ### 4. General Relativity
+
+The causal laboratory uses flat 1+1D Minkowski spacetime as the local foundation for GR, with signature $(−,+,+,+)$:
+
+```math
+\Delta s^2 = -c^2\Delta t^2 + \Delta x^2
+```
+
+In diagram units, $c = 1$ light-second per second, so the vertical coordinate is $\Delta ct$ and the Lorentz boost is:
+
+```math
+\gamma = \frac{1}{\sqrt{1-\beta^2}},
+\qquad
+\Delta ct' = \gamma(\Delta ct-\beta\Delta x),
+\qquad
+\Delta x' = \gamma(\Delta x-\beta\Delta ct)
+```
+
+For a timelike pair:
+
+```math
+\Delta\tau = \frac{\sqrt{-\Delta s^2}}{c}
+```
+
+These relations do not simulate curvature or gravity; they expose the invariant local causal structure inherited by general relativity.
 
 Einstein's field equations are:
 
@@ -959,6 +995,7 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 | black-hole raymarcher | shader-based scene in `mod-blackholes.jsx` | strongest visual surface for horizon physics |
 | QFT collision lab | process selector and 3D scene in `mod-qft.jsx` | connects amplitudes, diagrams, and event intuition |
 | QFT amplitude room | live Mandelstam/angular/resonance bench in `mod-qft.jsx` | turns the Feynman rules into numbers the reader can move |
+| Causal Spacetime Laboratory | Minkowski diagram and Lorentz-frame explorer in `mod-gr.jsx` | makes invariant intervals, causal order, simultaneity, and proper time directly testable |
 | GR curvature engine | scene in `mod-gr.jsx` | visualizes geodesics and lensing |
 | Planck ladder | scene in `mod-planck.jsx` | makes the scale desert explicit |
 | collider and GW labs | `mod-experiments.jsx` | shows indirect constraints |
@@ -1005,7 +1042,11 @@ horizon-quantum-gravity-atlas/
 │       ├── 11-kerr-observatory-mobile.png
 │       ├── 12-gw-theatre.png
 │       ├── 12b-gw-theatre-real.png
-│       └── 13-gw-theatre-mobile.png
+│       ├── 13-gw-theatre-mobile.png
+│       ├── 14-qft-amplitude-room.png
+│       ├── 15-qft-amplitude-room-mobile.png
+│       ├── 16-causal-spacetime-lab.png
+│       └── 17-causal-spacetime-lab-mobile.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1072,7 +1113,7 @@ The physics itself is covered separately by `test/physics.test.mjs`, which runs 
 
 ## Reproducible sharing and data modes
 
-The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
+The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), causal-laboratory controls (preset, β, and both event coordinates), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
 Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. An animated playback engine sweeps a shared playhead across both instruments — with play/pause, replay, 0.5–4× speed, drag-to-scrub on the progress bar or any trace, a hover crosshair reporting time, strain, and instantaneous frequency, and a merger flash at coalescence — while component-mass sliders (m₁, m₂, URL-encoded as `gwm1`/`gwm2`) reshape the waveform live. Playback is presentation-only: the underlying signals stay seed-deterministic, and animation pauses when the OS requests reduced motion. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
 
@@ -1083,6 +1124,8 @@ The **Kerr Black Hole Observatory** animates its equatorial coordinate map rathe
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
 The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the Mandelstam variables from the four-momenta, the angular differential cross-section, the photon 1/s total cross-section, and the Z⁰ Breit–Wigner shape on every frame, using the pure functions in `js/physics.mjs` (mirrored in `js/physics.jsx` for the browser). Three processes are offered: s-channel e⁺e⁻ → μ⁺μ⁻ (1 + cos²θ), t-channel e⁻μ⁻ → e⁻μ⁻ (leading pole 1/sin⁴(θ/2)), and Compton γe⁻ → γe⁻ (Klein–Nishina). The transport bar scrubs a normalised collision phase τ ∈ [0, 1] with play/pause, replay, and 0.5–4× speed; the animation is presentation only and the readouts do not depend on it. Playback is disabled when the OS requests reduced motion. Each of the four instrument panels carries a titled header bar, and the transport strip reports the live collision phase (incoming / interaction / outgoing) next to the clock, so the schematic canvases are always labelled as schematic. The t-channel curve deliberately plots only the leading pole — the complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are not drawn. The Z⁰ panel shows the Breit–Wigner shape alone, not the γ–Z⁰ interference term. The Compton slider x = E_γ/mₑc² is a lab-frame ratio and is deliberately decoupled from √s.
+
+The GR **Causal Spacetime Laboratory** is an exact 1+1D special-relativistic instrument using diagram units `c = 1 light-second per second` and metric signature `(−,+,+,+)`. It evaluates `Δs² = −(Δct)² + Δx²`, `γ`, the Lorentz-transformed event pair, causal-order verdicts, simultaneity-frame β, and timelike proper time from the pure helpers in `js/physics.mjs` and the browser mirror in `js/physics.jsx`. Five documented presets cover timelike, spacelike, null, relativity-of-simultaneity, and twin-style piecewise-inertial examples. The twin path uses two inertial legs and an explicitly schematic instantaneous turnaround; it does not model acceleration. Exact readouts always use the target β, while eased boosted axes and A′/B′ ghosts are presentation only. URL keys `grp`, `grb`, `grat`, `grax`, `grbt`, and `grbx` restore the preset, frame, and two events. β is restricted to `[-0.95, 0.95]`, coordinates to `[-4, 4]`, and invalid or out-of-range URL values fall back to the documented defaults. JSON export records the flat-spacetime model, established-special-relativity status, dimensionality, conventions, scope, implementation files, and standard references.
 
 ## Run Locally
 
@@ -1146,6 +1189,8 @@ The screenshot set emphasizes visual and animated modules:
 | `13-gw-theatre-mobile.png` | `exp` | mobile GW theatre, stacked instrument panels |
 | `14-qft-amplitude-room.png` | `qft` | amplitude room: scattering plane, interference waterfall, angular plot, Z⁰ resonance |
 | `15-qft-amplitude-room-mobile.png` | `qft` | mobile amplitude room, single-column instrument stack |
+| `16-causal-spacetime-lab.png` | `gr` | causal laboratory at `?view=gr&grp=simultaneity&grb=0.4&grat=-0.8&grax=-2.4&grbt=0.8&grbx=1.6`, 1440 × 1200 |
+| `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
 
 Capture criteria:
 
@@ -1204,6 +1249,14 @@ It prepares the reader for the gravitational obstruction by contrasting marginal
 ### Module 04 — General Relativity
 
 The GR module reframes gravity as geometry.
+
+It first isolates the local flat-spacetime foundation in the Causal Spacetime Laboratory.
+
+The Minkowski diagram classifies event pairs, displays past and future light cones, compares stationary and inertial observers, and transforms events and axes between frames.
+
+Its interval, Lorentz, order, simultaneity, and proper-time calculations are exact for 1+1D inertial special relativity.
+
+Its eased axes, event pulses, light-signal playback, and twin turnaround are explicitly schematic presentation layers.
 
 It shows a deformable spatial slice.
 
@@ -1455,7 +1508,6 @@ High-value future improvements:
 - add a proper citation file (`CITATION.cff`);
 - add a screenshot manifest with viewport, view, scroll position, and render settings;
 - extend the pure-physics test suite to the remaining modules (GR, Planck, and the black-hole thermodynamics helpers beyond the covered horizon, ergosphere, ISCO, temperature, and entropy scalings);
-- add a causal-spacetime laboratory with an interactive light-cone and event-ordering explorer;
 - add a renormalisation-group flow landscape with a live β-function integrator.
 
 Completed since the first release:
@@ -1466,6 +1518,7 @@ Completed since the first release:
 - a bounded real-data mode for the gravitational-wave laboratory;
 - a Kerr Observatory with an exact coordinate-radius map, eased geometry transitions, eased camera presets, and a live formulation panel that substitutes the current parameters into the implemented Kerr relations;
 - a gravitational-wave presentation state machine (`idle` / `loading` / `real` / `generated` / `error` / `cancelled`) with cancel and retry, an eased shared vertical scale, and animated observation/provenance reveals.
+- a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
 
 ---
 
@@ -1913,6 +1966,8 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | no direct Planck-scale data | prevents confirmation of candidate theories | Planck module caveats |
 | Hawking radiation unobserved | black-hole thermodynamics remains indirect | black-hole captions |
 | visual grids can mislead | spacetime curvature is not a rubber sheet | GR caption |
+| causal diagram is flat and 1+1D | it cannot represent curvature, gravity, expansion, or geodesic deviation | causal-laboratory validity panel and export metadata |
+| twin path omits acceleration history | an instantaneous turnaround is not a complete physical twin-paradox trajectory | twin preset labels the path piecewise inertial and schematic |
 | diagrams can mislead | virtual particles are not observed trajectories | QFT caption |
 | t-channel curve is pole-only | the full Møller/Bhabha amplitude includes s- and u-channel interference | amplitude-room validity note |
 | Z⁰ panel omits γ–Z⁰ interference | the plotted shape is the resonance alone, not the full cross-section | amplitude-room validity note |
@@ -2142,6 +2197,8 @@ Each screenshot also has a caveat.
 | `09-mobile-black-hole-lab.png` | documents responsive visual layout | mobile crop is documentation, not hero art |
 | `14-qft-amplitude-room.png` | shows the Feynman rules evaluated as live numbers | scattering plane and waterfall are schematic; t-channel is pole-only; Z⁰ panel omits γ–Z⁰ interference |
 | `15-qft-amplitude-room-mobile.png` | documents the responsive amplitude-room layout | mobile crop is documentation, not hero art |
+| `16-causal-spacetime-lab.png` | demonstrates invariant and Lorentz readouts tied to the Minkowski diagram | exact only for flat 1+1D inertial special relativity |
+| `17-causal-spacetime-lab-mobile.png` | documents 44 px controls and contained diagram scrolling | mobile viewport shows only part of the horizontally scrollable diagram |
 
 ### Appendix W — Badge Manifest
 

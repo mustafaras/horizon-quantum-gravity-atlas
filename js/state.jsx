@@ -4,20 +4,22 @@ const QGA_DEFAULT_STATE = {
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
   qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
+  grPreset: "timelike", grBeta: 0.35, grAt: 0, grAx: -1.35, grBt: 2.6, grBx: 1.1,
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
   gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
   qftProcess: "qfp", qftSqrtS: "qfs", qftAngle: "qfa", qftPhotonX: "qfx",
+  grPreset: "grp", grBeta: "grb", grAt: "grat", grAx: "grax", grBt: "grbt", grBx: "grbx",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
   view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
-  qftProcess: ["s-channel", "t-channel", "compton"],
+  qftProcess: ["s-channel", "t-channel", "compton"], grPreset: ["timelike", "spacelike", "null", "simultaneity", "twin", "custom"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx"];
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
@@ -40,6 +42,19 @@ function qgaReadState(search = window.location.search) {
   state.qftSqrtS = qgaClamp(state.qftSqrtS, 1, 200);
   state.qftAngle = qgaClamp(state.qftAngle, -1, 1);
   state.qftPhotonX = qgaClamp(state.qftPhotonX, 0.05, 20);
+  state.grPreset = QGA_ENUMS.grPreset.includes(state.grPreset) ? state.grPreset : QGA_DEFAULT_STATE.grPreset;
+  const causal = window.QGA_PHYSICS.sanitizeCausalState({
+    beta: state.grBeta,
+    a: { ct: state.grAt, x: state.grAx },
+    b: { ct: state.grBt, x: state.grBx },
+  }, {
+    beta: QGA_DEFAULT_STATE.grBeta,
+    a: { ct: QGA_DEFAULT_STATE.grAt, x: QGA_DEFAULT_STATE.grAx },
+    b: { ct: QGA_DEFAULT_STATE.grBt, x: QGA_DEFAULT_STATE.grBx },
+  });
+  state.grBeta = causal.beta;
+  state.grAt = causal.a.ct; state.grAx = causal.a.x;
+  state.grBt = causal.b.ct; state.grBx = causal.b.x;
   return state;
 }
 function qgaStateSearch(state) {
@@ -69,8 +84,21 @@ async function qgaCopyLink(state) {
   return url;
 }
 function qgaExportJson(state, extra = {}) {
+  const metadata = state.view === "gr" ? {
+    model: {
+      id: "flat-spacetime-causal-lab",
+      status: "established-special-relativity",
+      dimensionality: "1+1",
+      convention: "Minkowski metric (-,+,+,+); diagram units c=1",
+      scope: "inertial frames plus an explicitly schematic piecewise-inertial twin path",
+    },
+    provenance: {
+      implementation: "js/physics.mjs mirrored by js/physics.jsx",
+      references: ["Misner, Thorne & Wheeler (1973)", "Wald (1984)"],
+    },
+  } : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
-    source: qgaShareUrl(state), state: { ...state }, ...extra };
+    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));
   const a = document.createElement("a"); a.href = href; a.download = "horizon-qga-state.json"; a.click();
   setTimeout(() => URL.revokeObjectURL(href), 0); return payload;

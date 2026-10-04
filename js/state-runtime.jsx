@@ -39,8 +39,21 @@ async function qgaCopyLink(state) {
   return url;
 }
 function qgaExportJson(state, extra = {}) {
+  const metadata = state.view === "gr" ? {
+    model: {
+      id: "flat-spacetime-causal-lab",
+      status: "established-special-relativity",
+      dimensionality: "1+1",
+      convention: "Minkowski metric (-,+,+,+); diagram units c=1",
+      scope: "inertial frames plus an explicitly schematic piecewise-inertial twin path",
+    },
+    provenance: {
+      implementation: "js/physics.mjs mirrored by js/physics.jsx",
+      references: ["Misner, Thorne & Wheeler (1973)", "Wald (1984)"],
+    },
+  } : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
-    source: qgaShareUrl(state), state: { ...state }, ...extra };
+    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));
   const a = document.createElement("a"); a.href = href; a.download = "horizon-qga-state.json"; a.click();
   setTimeout(() => URL.revokeObjectURL(href), 0); return payload;
