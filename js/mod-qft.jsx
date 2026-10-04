@@ -886,11 +886,21 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
     ctx.strokeStyle = "rgba(148,176,224,0.10)";
     ctx.lineWidth = 1;
     ctx.beginPath();ctx.arc(cx, cy, R, 0, Math.PI * 2);ctx.stroke();
+    ctx.strokeStyle = "rgba(148,176,224,0.06)";
+    for (const f of [0.5, 0.75]) {
+      ctx.beginPath();ctx.arc(cx, cy, R * f, 0, Math.PI * 2);ctx.stroke();
+    }
 
     ctx.setLineDash([4, 5]);
     ctx.strokeStyle = "rgba(148,176,224,0.28)";
     ctx.beginPath();ctx.moveTo(cx - R * 1.18, cy);ctx.lineTo(cx + R * 1.18, cy);ctx.stroke();
     ctx.setLineDash([]);
+    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    for (let i = -3; i <= 3; i++) {
+      if (i === 0) continue;
+      const tx = cx + R * 1.18 * i / 3;
+      ctx.beginPath();ctx.moveTo(tx, cy - 3);ctx.lineTo(tx, cy + 3);ctx.stroke();
+    }
 
     ctx.beginPath();
     for (let i = 0; i <= 360; i++) {
@@ -904,7 +914,11 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
     grad.addColorStop(0, "rgba(90,185,255,0.20)");
     grad.addColorStop(1, "rgba(120,90,255,0.05)");
     ctx.fillStyle = grad;ctx.fill();
-    ctx.strokeStyle = "rgba(120,200,255,0.55)";ctx.lineWidth = 1.4;ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = "rgba(120,200,255,0.6)";
+    ctx.shadowBlur = 9;
+    ctx.strokeStyle = "rgba(120,200,255,0.6)";ctx.lineWidth = 1.4;ctx.stroke();
+    ctx.restore();
 
     const L = R * 1.05;
     const th = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
@@ -948,6 +962,8 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
     ctx.fillStyle = "rgba(148,176,224,0.55)";
     ctx.fillText("incoming", 8, cy - 8);
     ctx.fillText("forward", cx + R * 1.18 - 42, cy - 8);
+    ctx.fillStyle = "rgba(120,200,255,0.5)";
+    ctx.fillText("dσ/dΩ", 8, 14);
   }, [process.id, cosTheta, photonX, tau, fontsReady]);
   return (
     <canvas ref={ref} className="qft-scatter"
@@ -1001,6 +1017,25 @@ function QFTWaterfall({ cosTheta, tau, fontsReady }) {
     ctx.strokeStyle = "rgba(148,176,224,0.30)";
     ctx.beginPath();ctx.moveTo(padL + pw / 2, padT);ctx.lineTo(padL + pw / 2, padT + ph);ctx.stroke();
     ctx.setLineDash([]);
+
+    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    for (let i = 0; i <= 4; i++) {
+      const ty = padT + ph * i / 4;
+      ctx.beginPath();ctx.moveTo(padL - 4, ty);ctx.lineTo(padL, ty);ctx.stroke();
+    }
+
+    const cbW = 7,cbH = 34,cbX = padL + pw - cbW - 6,cbY = padT + 6;
+    const cbg = ctx.createLinearGradient(0, cbY, 0, cbY + cbH);
+    cbg.addColorStop(0, "rgba(255,186,92,0.9)");
+    cbg.addColorStop(0.5, "rgba(10,16,28,0.92)");
+    cbg.addColorStop(1, "rgba(88,198,255,0.9)");
+    ctx.fillStyle = cbg;ctx.fillRect(cbX, cbY, cbW, cbH);
+    ctx.strokeStyle = "rgba(148,176,224,0.28)";ctx.lineWidth = 1;
+    ctx.strokeRect(cbX, cbY, cbW, cbH);
+    ctx.font = "8px IBM Plex Mono";
+    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.fillText("+", cbX - 7, cbY + 7);
+    ctx.fillText("−", cbX - 7, cbY + cbH - 1);
 
     const py = padT + ph * Math.min(1, Math.max(0, tau));
     ctx.strokeStyle = "rgba(255,214,120,0.85)";
@@ -1061,17 +1096,25 @@ function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
       const x = X(-1 + 2 * i / N),y = Y(ratios[i]);
       if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
     }
+    ctx.save();
+    ctx.shadowColor = "rgba(120,200,255,0.55)";
+    ctx.shadowBlur = 8;
     ctx.strokeStyle = "rgba(120,200,255,0.95)";
     ctx.lineWidth = 1.8;
     ctx.stroke();
+    ctx.restore();
 
     const cNow = Math.max(-1, Math.min(1, cosTheta));
     const mx = X(cNow),my = Y(shape(cNow) / s90);
     ctx.strokeStyle = "rgba(255,214,120,0.5)";
     ctx.lineWidth = 1;
     ctx.beginPath();ctx.moveTo(mx, padT);ctx.lineTo(mx, padT + ph);ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = "rgba(255,214,120,0.8)";
+    ctx.shadowBlur = 8;
     ctx.fillStyle = "rgba(255,214,120,1)";
     ctx.beginPath();ctx.arc(mx, my, 3.4, 0, Math.PI * 2);ctx.fill();
+    ctx.restore();
 
     ctx.font = "9.5px IBM Plex Mono";
     ctx.fillStyle = "rgba(148,176,224,0.6)";
@@ -1080,6 +1123,8 @@ function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
     ctx.fillText("+1", padL + pw - 10, h - 10);
     ctx.fillText(yMax.toFixed(1) + "×", 6, padT + 8);
     ctx.fillText("0", 6, padT + ph);
+    ctx.fillStyle = "rgba(148,176,224,0.42)";
+    ctx.fillText("cos θ", padL + pw / 2 - 14, h - 1);
   }, [process.id, cosTheta, photonX, fontsReady]);
   return (
     <canvas ref={ref} className="qft-angular"
@@ -1115,21 +1160,31 @@ function QFTResonancePlot({ sqrtS, fontsReady }) {
         const x = X(v),y = Y(fn(v));
         if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
       }
+      ctx.save();
+      ctx.shadowColor = "rgba(120,200,255,0.5)";
+      ctx.shadowBlur = 7;
       ctx.strokeStyle = "rgba(120,200,255,0.95)";
       ctx.lineWidth = 1.8;
       ctx.stroke();
+      ctx.restore();
       if (sqrtS >= xMin && sqrtS <= xMax) {
         ctx.strokeStyle = "rgba(255,214,120,0.5)";
         ctx.lineWidth = 1;
         ctx.beginPath();ctx.moveTo(X(sqrtS), padT);ctx.lineTo(X(sqrtS), padT + ph);ctx.stroke();
+        ctx.save();
+        ctx.shadowColor = "rgba(255,214,120,0.8)";
+        ctx.shadowBlur = 8;
         ctx.fillStyle = "rgba(255,214,120,1)";
         ctx.beginPath();ctx.arc(X(sqrtS), Y(fn(sqrtS)), 3.2, 0, Math.PI * 2);ctx.fill();
+        ctx.restore();
       }
       ctx.font = "9.5px IBM Plex Mono";
       ctx.fillStyle = "rgba(148,176,224,0.6)";
       ctx.fillText(title, x0 + 4, padT - 4);
       ctx.fillText(xMin.toFixed(0), x0 - 2, h - 10);
       ctx.fillText(xMax.toFixed(0), x0 + pw - 18, h - 10);
+      ctx.fillStyle = "rgba(148,176,224,0.42)";
+      ctx.fillText("√s (GeV)", x0 + pw / 2 - 22, h - 1);
     };
     panel(0, 1, 200, -3, 2, true,
     (v) => window.QGA_PHYSICS.qftTotalCrossSection({ sqrtS: v }),
@@ -1200,6 +1255,9 @@ function AmplitudeRoom() {
           <div className="kerr-state-line">
             {process.name} · √s = {sqrtS.toFixed(1)} GeV · cos θ = {cosTheta.toFixed(2)}
           </div>
+          <div className="kerr-state-line">
+            σ = {sigma.toFixed(4)} nb · {verdict.ok ? verdict.topo + "-channel" : "forbidden"} · {phase}
+          </div>
         </div>
       </div>
 
@@ -1224,68 +1282,80 @@ function AmplitudeRoom() {
         </div>
       </div>
 
-      <div className="gw-transport" aria-label="Collision playback transport">
-        <button className="gw-play-btn" onClick={togglePlay}
-        aria-label={playing ? "Pause collision" : "Play collision"}>{playing ? "❚❚" : "▶"}</button>
-        <button className="gw-replay-btn" onClick={() => {setTau(0);setPlaying(!reducedMotion);}}
-        aria-label="Replay from the start">↺</button>
-        <div className="gw-progress" role="slider" aria-label="Collision phase"
-        aria-valuemin={0} aria-valuemax={1} aria-valuenow={Number(tau.toFixed(3))}
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          const r = e.currentTarget.getBoundingClientRect();
-          setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
-        }}
-        onPointerMove={(e) => {
-          if (!(e.buttons & 1)) return;
-          const r = e.currentTarget.getBoundingClientRect();
-          setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
-        }}>
-          <div className="gw-progress-fill" style={{ width: 100 * tau + "%" }}></div>
+      <div className="qft-transport-strip">
+        <span className="qft-transport-label">Collision clock</span>
+        <div className="gw-transport" aria-label="Collision playback transport">
+          <button className="gw-play-btn" onClick={togglePlay}
+          aria-label={playing ? "Pause collision" : "Play collision"}>{playing ? "❚❚" : "▶"}</button>
+          <button className="gw-replay-btn" onClick={() => {setTau(0);setPlaying(!reducedMotion);}}
+          aria-label="Replay from the start">↺</button>
+          <div className="gw-progress" role="slider" aria-label="Collision phase"
+          aria-valuemin={0} aria-valuemax={1} aria-valuenow={Number(tau.toFixed(3))}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            const r = e.currentTarget.getBoundingClientRect();
+            setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+          }}
+          onPointerMove={(e) => {
+            if (!(e.buttons & 1)) return;
+            const r = e.currentTarget.getBoundingClientRect();
+            setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+          }}>
+            <div className="gw-progress-fill" style={{ width: 100 * tau + "%" }}></div>
+          </div>
+          <span className="gw-time">τ = {tau.toFixed(2)}</span>
+          <div className="gw-speed" aria-label="Playback speed">
+            {[0.5, 1, 2, 4].map((s) =>
+            <button key={s} className={"kerr-chip" + (speed === s ? " on" : "")} aria-pressed={speed === s}
+            onClick={() => setSpeed(s)}>{s}×</button>
+            )}
+          </div>
         </div>
-        <span className="gw-time">τ = {tau.toFixed(2)} · {phase}</span>
-        <div className="gw-speed" aria-label="Playback speed">
-          {[0.5, 1, 2, 4].map((s) =>
-          <button key={s} className={"kerr-chip" + (speed === s ? " on" : "")} aria-pressed={speed === s}
-          onClick={() => setSpeed(s)}>{s}×</button>
-          )}
-        </div>
+        <span className="qft-phase-chip">{phase}</span>
       </div>
 
       <div className="qft-stage">
         <figure className="qft-panel">
-          <figcaption>
-            <span className="qft-panel-title">SCATTERING PLANE</span>
+          <header className="qft-panel-head">
+            <span className="qft-panel-title">Scattering plane</span>
             <span className="qft-panel-note">dσ/dΩ envelope · {process.shapeLabel}</span>
-          </figcaption>
-          <QFTScatterCanvas process={process} cosTheta={cosTheta} photonX={photonX} tau={tau}
-          fontsReady={fontsReady}></QFTScatterCanvas>
+          </header>
+          <div className="qft-panel-body">
+            <QFTScatterCanvas process={process} cosTheta={cosTheta} photonX={photonX} tau={tau}
+            fontsReady={fontsReady}></QFTScatterCanvas>
+          </div>
         </figure>
         <figure className="qft-panel">
-          <figcaption>
-            <span className="qft-panel-title">SPACETIME PICTURE</span>
+          <header className="qft-panel-head">
+            <span className="qft-panel-title">Spacetime picture</span>
             <span className="qft-panel-note">schematic wave-packet collision · longitudinal axis</span>
-          </figcaption>
-          <QFTWaterfall cosTheta={cosTheta} tau={tau} fontsReady={fontsReady}></QFTWaterfall>
+          </header>
+          <div className="qft-panel-body">
+            <QFTWaterfall cosTheta={cosTheta} tau={tau} fontsReady={fontsReady}></QFTWaterfall>
+          </div>
         </figure>
       </div>
 
       <div className="qft-plots">
         <figure className="qft-panel">
-          <figcaption>
-            <span className="qft-panel-title">ANGULAR DISTRIBUTION</span>
+          <header className="qft-panel-head">
+            <span className="qft-panel-title">Angular distribution</span>
             <span className="qft-panel-note">normalised to the 90° value · y clipped at 20×</span>
-          </figcaption>
-          <div className="qft-formula"><Eq tex={process.shapeTex} display={true}></Eq></div>
-          <QFTAngularPlot process={process} cosTheta={cosTheta} photonX={photonX}
-          fontsReady={fontsReady}></QFTAngularPlot>
+          </header>
+          <div className="qft-panel-body">
+            <div className="qft-formula"><Eq tex={process.shapeTex} display={true}></Eq></div>
+            <QFTAngularPlot process={process} cosTheta={cosTheta} photonX={photonX}
+            fontsReady={fontsReady}></QFTAngularPlot>
+          </div>
         </figure>
         <figure className="qft-panel">
-          <figcaption>
-            <span className="qft-panel-title">ENERGY SCAN</span>
+          <header className="qft-panel-head">
+            <span className="qft-panel-title">Energy scan</span>
             <span className="qft-panel-note">photon 1/s (log) · Z⁰ Breit–Wigner (linear, ±3Γ)</span>
-          </figcaption>
-          <QFTResonancePlot sqrtS={sqrtS} fontsReady={fontsReady}></QFTResonancePlot>
+          </header>
+          <div className="qft-panel-body">
+            <QFTResonancePlot sqrtS={sqrtS} fontsReady={fontsReady}></QFTResonancePlot>
+          </div>
         </figure>
       </div>
 

@@ -548,39 +548,75 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 }
 
 /* ---------- QFT amplitude room ---------- */
-.qft-room { display: flex; flex-direction: column; gap: 10px; }
-.qft-stage, .qft-plots { display: grid; gap: 10px; }
+.qft-room { display: flex; flex-direction: column; gap: 12px; }
+.qft-stage, .qft-plots { display: grid; gap: 12px; }
 .qft-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .qft-plots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .qft-panel {
-  margin: 0; display: flex; flex-direction: column; gap: 8px;
-  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px;
+  margin: 0; display: flex; flex-direction: column; position: relative; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
 }
-.qft-panel figcaption {
+.qft-panel::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; z-index: 1;
+  background: linear-gradient(90deg, rgba(84,174,255,0.6), rgba(70,212,224,0.24) 44%, transparent 80%);
+}
+.qft-panel-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  background: rgba(10,16,28,0.72);
 }
 .qft-panel-title {
-  font: 600 9.5px/1.4 var(--font-mono); letter-spacing: 0.16em;
-  color: rgba(120,200,255,0.92);
+  display: flex; align-items: center; gap: 7px; flex: none;
+  font: 600 9.5px/1 var(--font-mono); letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--head);
+}
+.qft-panel-title::before {
+  content: ""; width: 5px; height: 5px; flex: none; border-radius: 1px;
+  background: var(--acc); box-shadow: 0 0 7px rgba(84,174,255,0.75);
 }
 .qft-panel-note {
-  font: 400 9px/1.4 var(--font-mono); letter-spacing: 0.03em;
-  color: rgba(148,176,224,0.62); text-align: right;
+  font: 400 8.5px/1.35 var(--font-mono); letter-spacing: 0.06em;
+  color: rgba(148,176,224,0.66); text-align: right;
 }
+.qft-panel-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; }
 .qft-panel canvas { width: 100%; display: block; background: rgba(5,8,14,0.55); border-radius: 7px; }
 .qft-scatter { height: 268px; }
 .qft-waterfall { height: 268px; }
 .qft-angular { height: 196px; }
 .qft-resonance { height: 196px; }
 .qft-formula {
-  padding: 6px 8px; border: 1px solid rgba(148,176,224,0.12); border-radius: 7px;
+  padding: 7px 10px; border: 1px solid rgba(148,176,224,0.12); border-radius: 7px;
   background: rgba(6,10,18,0.6); overflow-x: auto;
 }
 .qft-formula .eq-display { margin: 0; font-size: 13px; }
+.qft-transport-strip {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+}
+.qft-transport-label {
+  display: flex; align-items: center; gap: 7px; flex: none;
+  font: 500 8.5px/1 var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(148,176,224,0.62);
+}
+.qft-transport-label::before {
+  content: ""; width: 5px; height: 5px; flex: none; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 8px rgba(70,212,224,0.8);
+}
+.qft-transport-strip .gw-transport {
+  flex: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none;
+}
+.qft-phase-chip {
+  flex: none; padding: 4px 9px; border-radius: 3px;
+  border: 1px solid rgba(84,174,255,0.32); background: rgba(84,174,255,0.08);
+  font: 500 9px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(190,222,255,0.95);
+}
 .qft-identity {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-  padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; border: 1px solid var(--line); border-left: 2px solid rgba(84,174,255,0.6);
+  border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.6), rgba(7,11,19,0.85));
 }
 .qft-identity-note {
@@ -594,9 +630,13 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .qft-angular, .qft-resonance { height: 180px; }
 }
 @media (max-width: 760px) {
-  .qft-panel figcaption { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .qft-panel-head { flex-direction: column; align-items: flex-start; gap: 4px; }
   .qft-panel-note { text-align: left; }
   .qft-room .kerr-instrument-bar .ctl-row { min-width: 0; width: 100%; }
+  .qft-transport-strip { flex-direction: column; align-items: stretch; gap: 8px; }
+  .qft-transport-strip .gw-transport { flex-wrap: wrap; }
+  .qft-transport-strip .gw-time { min-width: 0; flex: 1; text-align: right; }
+  .qft-transport-label { justify-content: space-between; }
 }
 
 /* ---------- Particle table ---------- */
