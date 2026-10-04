@@ -3,18 +3,21 @@ const QGA_DEFAULT_STATE = {
   view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
+  qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
   gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
+  qftProcess: "qfp", qftSqrtS: "qfs", qftAngle: "qfa", qftPhotonX: "qfx",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
   view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
+  qftProcess: ["s-channel", "t-channel", "compton"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX"];
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
@@ -34,6 +37,9 @@ function qgaReadState(search = window.location.search) {
   state.gwDuration = qgaClamp(Math.round(state.gwDuration), 1, 32); state.seed = Math.trunc(state.seed) || 42;
   state.gwM1 = qgaClamp(Math.round(state.gwM1), 5, 200); state.gwM2 = qgaClamp(Math.round(state.gwM2), 5, 200);
   state.gwEvent = /^[A-Za-z0-9_-]{3,40}$/.test(state.gwEvent) ? state.gwEvent : QGA_DEFAULT_STATE.gwEvent;
+  state.qftSqrtS = qgaClamp(state.qftSqrtS, 1, 200);
+  state.qftAngle = qgaClamp(state.qftAngle, -1, 1);
+  state.qftPhotonX = qgaClamp(state.qftPhotonX, 0.05, 20);
   return state;
 }
 function qgaStateSearch(state) {

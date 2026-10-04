@@ -242,6 +242,18 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <br/>
 <sub><strong>Mobile analysis theatre</strong> — transport, strain, and time–frequency panels stack without horizontal overflow; playback, scrubbing, and the seeded simulation remain fully usable offline.</sub>
 </td>
+<td width="50%">
+<img src="docs/screenshots/14-qft-amplitude-room.png" alt="QFT amplitude room showing the scattering-plane animation, spacetime interference waterfall, angular distribution plot, and Z-zero Breit-Wigner resonance panel with live Mandelstam readouts" width="100%" />
+<br/>
+<sub><strong>QFT amplitude room</strong> — a live 2 → 2 scattering bench. The Mandelstam variables, the angular distribution, the photon 1/s cross-section, and the Z⁰ Breit–Wigner shape are evaluated from the pure physics functions on every frame; the transport bar scrubs a normalised collision phase, and the identity residual is shown rather than hidden.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/15-qft-amplitude-room-mobile.png" alt="Mobile QFT amplitude room with stacked instrument panels and full-width control rows" width="100%" />
+<br/>
+<sub><strong>Mobile amplitude room</strong> — the four instrument panels stack into a single column and the control rows expand to full width, with no horizontal overflow.</sub>
+</td>
 <td width="50%"></td>
 </tr>
 </table>
@@ -524,11 +536,36 @@ Near the $Z^0$ pole, a Breit-Wigner resonance modifies the cross-section:
 {(s-M_Z^2)^2 + M_Z^2\Gamma_Z^2}
 ```
 
+The Mandelstam identity is exact for any $2\to2$ process:
+
+```math
+s + t + u = \sum_i m_i^2
+```
+
+Compton scattering follows the Klein-Nishina differential cross-section:
+
+```math
+\frac{d\sigma}{d\Omega}
+= \frac{\alpha^2}{2m_e^2}
+\left(\frac{E'}{E}\right)^{2}
+\left[
+\frac{E'}{E} + \frac{E}{E'} - \sin^2\theta
+\right]
+```
+
+The **Amplitude Room** in the app evaluates these relations live. It reports $s$, $t$, $u$, the residual of the Mandelstam identity, $\sigma = 4\pi\alpha^2/3s$, the Breit-Wigner value, and the normalised angular shape for the selected process. The residual is displayed as floating-point noise rather than being hidden, so the identity can be checked on screen.
+
 **Limit:** Feynman diagrams are terms in a perturbative expansion.
 
 **Limit:** virtual particles are calculational structures, not directly observed objects.
 
 **Limit:** the path integral measure is formal except in special rigorously defined cases.
+
+**Limit:** the t-channel curve shows only the leading pole $1/\sin^4(\theta/2)$. The full Møller and Bhabha amplitudes also contain $s$- and $u$-channel terms and their interference, which the app does not draw.
+
+**Limit:** the $Z^0$ panel shows the Breit-Wigner shape alone, not the $\gamma$–$Z^0$ interference term.
+
+**Limit:** the scattering-plane and spacetime canvases are schematic animations, not solutions of the QED amplitude.
 
 ### 3. Gauge Symmetry and Renormalization
 
@@ -919,6 +956,7 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 | formula cards | KaTeX rendering and symbol definitions | turns equations into readable interface units |
 | black-hole raymarcher | shader-based scene in `mod-blackholes.jsx` | strongest visual surface for horizon physics |
 | QFT collision lab | process selector and 3D scene in `mod-qft.jsx` | connects amplitudes, diagrams, and event intuition |
+| QFT amplitude room | live Mandelstam/angular/resonance bench in `mod-qft.jsx` | turns the Feynman rules into numbers the reader can move |
 | GR curvature engine | scene in `mod-gr.jsx` | visualizes geodesics and lensing |
 | Planck ladder | scene in `mod-planck.jsx` | makes the scale desert explicit |
 | collider and GW labs | `mod-experiments.jsx` | shows indirect constraints |
@@ -1026,15 +1064,19 @@ This is not a physics test suite.
 
 It is a repository-presentation guardrail that prevents broken academic packaging, missing assets, and GitHub README rendering regressions.
 
+The physics itself is covered separately by `test/physics.test.mjs`, which runs under `node --test` and is executed by the same workflow.
+
 ---
 
 ## Reproducible sharing and data modes
 
-The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
+The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
 Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. An animated playback engine sweeps a shared playhead across both instruments — with play/pause, replay, 0.5–4× speed, drag-to-scrub on the progress bar or any trace, a hover crosshair reporting time, strain, and instantaneous frequency, and a merger flash at coalescence — while component-mass sliders (m₁, m₂, URL-encoded as `gwm1`/`gwm2`) reshape the waveform live. Playback is presentation-only: the underlying signals stay seed-deterministic, and animation pauses when the OS requests reduced motion. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
+
+The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the Mandelstam variables from the four-momenta, the angular differential cross-section, the photon 1/s total cross-section, and the Z⁰ Breit–Wigner shape on every frame, using the pure functions in `js/physics.mjs` (mirrored in `js/physics.jsx` for the browser). Three processes are offered: s-channel e⁺e⁻ → μ⁺μ⁻ (1 + cos²θ), t-channel e⁻μ⁻ → e⁻μ⁻ (leading pole 1/sin⁴(θ/2)), and Compton γe⁻ → γe⁻ (Klein–Nishina). The transport bar scrubs a normalised collision phase τ ∈ [0, 1] with play/pause, replay, and 0.5–4× speed; the animation is presentation only and the readouts do not depend on it. Playback is disabled when the OS requests reduced motion. The t-channel curve deliberately plots only the leading pole — the complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are not drawn. The Z⁰ panel shows the Breit–Wigner shape alone, not the γ–Z⁰ interference term. The Compton slider x = E_γ/mₑc² is a lab-frame ratio and is deliberately decoupled from √s.
 
 ## Run Locally
 
@@ -1096,6 +1138,8 @@ The screenshot set emphasizes visual and animated modules:
 | `12-gw-theatre.png` | `exp` | GW analysis theatre mid-playback: dual strain, playhead, STFT + chirp track, transport |
 | `12b-gw-theatre-real.png` | `exp` | GWOSC real-observation mode with provenance |
 | `13-gw-theatre-mobile.png` | `exp` | mobile GW theatre, stacked instrument panels |
+| `14-qft-amplitude-room.png` | `qft` | amplitude room: scattering plane, interference waterfall, angular plot, Z⁰ resonance |
+| `15-qft-amplitude-room-mobile.png` | `qft` | mobile amplitude room, single-column instrument stack |
 
 Capture criteria:
 
@@ -1130,6 +1174,8 @@ The QFT module treats particles as localized excitations of fields.
 It includes a Klein-Gordon membrane that can be excited interactively.
 
 It includes a Feynman collision builder.
+
+It includes an amplitude room that converts a diagram into numbers: Mandelstam variables, angular distributions, and the Z⁰ resonance, all evaluated live from the pure physics functions.
 
 It shows how a diagram is not a picture of a literal microscopic movie.
 
@@ -1396,15 +1442,22 @@ The following are especially central:
 High-value future improvements:
 
 - generate reproducible screenshot scripts committed to `docs/`;
-- add a GitHub Pages workflow;
-- add deep-link support through query parameters instead of only `localStorage`;
 - add Playwright visual regression tests for every module;
 - add a compact mathematical glossary page;
 - add a separate academic whitepaper in `docs/`;
 - self-host CDN assets for long-term archival stability;
 - add a proper citation file (`CITATION.cff`);
-- add a small test harness for formula-card rendering;
-- add a screenshot manifest with viewport, view, scroll position, and render settings.
+- add a screenshot manifest with viewport, view, scroll position, and render settings;
+- extend the pure-physics test suite to the remaining modules (GR, Planck, black-hole thermodynamics);
+- add a causal-spacetime laboratory with an interactive light-cone and event-ordering explorer;
+- add a renormalisation-group flow landscape with a live β-function integrator.
+
+Completed since the first release:
+
+- deep-link support through query parameters, with back/forward restoration and documented fallback;
+- a GitHub Pages deployment workflow;
+- a focused Node test suite for the pure physics and reproducibility helpers;
+- a bounded real-data mode for the gravitational-wave laboratory.
 
 ---
 
@@ -1778,7 +1831,7 @@ They should not imply causal certainty where the subject is conjectural.
 
 ### Appendix N — App State Notes
 
-The app currently stores the active view in:
+The app stores the active view in:
 
 ```text
 localStorage["qga-view"]
@@ -1786,15 +1839,7 @@ localStorage["qga-view"]
 
 The tweak state is also persisted in local storage.
 
-That is sufficient for a static interactive atlas.
-
-However, README-grade screenshot reproducibility would improve if the app supported URL parameters such as:
-
-```text
-?view=bh&motion=full&detail=ultra&pathway=advanced
-```
-
-Suggested future state grammar:
+The shareable state grammar is implemented in `js/state.jsx` and `js/state-runtime.jsx`. The URL query string carries the active view, the learning pathway, the black-hole mass and spin, the gravitational-wave controls, the QFT amplitude-room controls, and the seed. Any key equal to its default is omitted, so a default state produces a clean URL.
 
 | Parameter | Example | Purpose |
 |---|---|---|
@@ -1806,6 +1851,15 @@ Suggested future state grammar:
 | `annotations` | `1` | show annotations |
 | `accent` | `ffb454` | theme accent |
 | `shot` | `black-hole` | optional capture preset |
+| `seed` | `12345` | reproducible generated data |
+| `bhm` / `bha` | `10` / `0.9` | black-hole mass and spin |
+| `gwm1` / `gwm2` | `30` / `30` | gravitational-wave component masses |
+| `qfp` | `compton` | QFT process |
+| `qfs` | `91` | QFT centre-of-mass energy in GeV |
+| `qfa` | `0.6` | QFT scattering cosine |
+| `qfx` | `0.5` | Compton lab-frame photon ratio |
+
+Numeric parameters are clamped to their documented ranges on read, and enum parameters fall back to their default when the value is not recognised. Module and pathway changes push a history entry; parameter tweaks replace the current entry, so sliders do not flood the back stack.
 
 ### Appendix O — Suggested GitHub Repository Metadata
 
@@ -1844,10 +1898,12 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | Hawking radiation unobserved | black-hole thermodynamics remains indirect | black-hole captions |
 | visual grids can mislead | spacetime curvature is not a rubber sheet | GR caption |
 | diagrams can mislead | virtual particles are not observed trajectories | QFT caption |
+| t-channel curve is pole-only | the full Møller/Bhabha amplitude includes s- and u-channel interference | amplitude-room validity note |
+| Z⁰ panel omits γ–Z⁰ interference | the plotted shape is the resonance alone, not the full cross-section | amplitude-room validity note |
 | holography is background-specific | AdS/CFT is not automatically our universe | holography caption |
 | collider energies far below Planck scale | null results are indirect | experiment module |
 | no unique theory ranking | programs solve different subproblems | theory comparator |
-| static app has no formal test suite | regressions may be visual | roadmap |
+| pure-physics coverage is partial | untested helpers can regress silently | `test/physics.test.mjs` covers the shared helpers; roadmap extends it |
 
 ### Appendix Q — Academic README Rubric
 
@@ -2068,6 +2124,8 @@ Each screenshot also has a caveat.
 | `07-gravitational-wave-inspiral.png` | shows strong-field GR observation | not a quantum-gravity detection |
 | `08-theory-constellation.png` | compares research programs | no winner implied |
 | `09-mobile-black-hole-lab.png` | documents responsive visual layout | mobile crop is documentation, not hero art |
+| `14-qft-amplitude-room.png` | shows the Feynman rules evaluated as live numbers | scattering plane and waterfall are schematic; t-channel is pole-only; Z⁰ panel omits γ–Z⁰ interference |
+| `15-qft-amplitude-room-mobile.png` | documents the responsive amplitude-room layout | mobile crop is documentation, not hero art |
 
 ### Appendix W — Badge Manifest
 

@@ -148,3 +148,79 @@ export function qftConservation(in1, in2, out1, out2) {
     deltaQ: delta("q"), deltaLe: delta("le"), deltaLmu: delta("lmu"),
   };
 }
+
+/* ---------- QFT 2→2 kinematics and leading-order observables ----------
+   Natural units (ħ = c = 1). Energies in GeV, cross-sections in nb.
+   Every form below is a textbook leading-order result; the reference is
+   named in the comment so the displayed number can be checked by hand. */
+
+const ALPHA_EM = 1 / 137.035999084;   // CODATA fine-structure constant
+const GEV2_TO_NB = 0.3893793721e6;   // 1 GeV⁻² = 3.8938e5 nb
+const M_ELECTRON = 0.51099895e-3;    // GeV
+export const M_Z = 91.1876;          // GeV (PDG Z⁰ mass)
+export const GAMMA_Z = 2.4952;       // GeV (PDG Z⁰ total width)
+
+/* Mandelstam variables for a 2→2 process in the centre-of-mass frame.
+   s = (p₁+p₂)², t = (p₁−p₃)², u = (p₁−p₄)², with particle 3 emitted at
+   polar angle θ from the beam axis. The kinematic identity
+   s + t + u = m₁² + m₂² + m₃² + m₄²  holds exactly and is returned as
+   `residual` so callers can display the numerical check. */
+export function mandelstamKinematics({ sqrtS, cosTheta = 0, masses = [0, 0, 0, 0] }) {
+  const [m1, m2, m3, m4] = masses;
+  const s = sqrtS * sqrtS;
+  const E1 = (s + m1 * m1 - m2 * m2) / (2 * sqrtS);
+  const E3 = (s + m3 * m3 - m4 * m4) / (2 * sqrtS);
+  const E4 = (s + m4 * m4 - m3 * m3) / (2 * sqrtS);
+  const p1 = Math.sqrt(Math.max(0, E1 * E1 - m1 * m1));
+  const p3 = Math.sqrt(Math.max(0, E3 * E3 - m3 * m3));
+  const t = m1 * m1 + m3 * m3 - 2 * E1 * E3 + 2 * p1 * p3 * cosTheta;
+  const u = m1 * m1 + m4 * m4 - 2 * E1 * E4 - 2 * p1 * p3 * cosTheta;
+  const sum = m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4;
+  return { s, t, u, sum, residual: s + t + u - sum, sqrtS, cosTheta, E1, E3, E4, p1, p3 };
+}
+
+/* Klein–Nishina differential cross-section for γe⁻ → γe⁻, normalised to
+   the prefactor α²/2mₑ² so the returned value is a pure shape.
+   x = E_γ / (mₑc²) in the electron rest frame, E'/E = 1/(1+x(1−cosθ)).
+   As x → 0 this reduces to the Thomson form 1 + cos²θ. */
+export function kleinNishina({ cosTheta = 0, x = 0.1 }) {
+  const ratio = 1 / (1 + x * (1 - cosTheta));
+  const sin2 = 1 - cosTheta * cosTheta;
+  return ratio * ratio * (ratio + 1 / ratio - sin2);
+}
+
+/* Angular shape of the leading-order differential cross-section.
+   - "s-channel": e⁺e⁻ → μ⁺μ⁻ with massless fermions, dσ/dΩ ∝ 1 + cos²θ.
+   - "t-channel": leading t-channel pole (Mott/Rutherford), ∝ 1/sin⁴(θ/2).
+     This is the dominant small-angle behaviour, not the full Møller or
+     Bhabha amplitude, which also carries s- and u-channel terms.
+   - "compton": Klein–Nishina, see kleinNishina(). */
+export function angularDistribution({ process = "s-channel", cosTheta = 0, photonX = 0.1 }) {
+  const c = Math.max(-1, Math.min(1, cosTheta));
+  if (process === "s-channel") return 1 + c * c;
+  if (process === "t-channel") {
+    const half = Math.sin(Math.acos(c) / 2);
+    const s2 = half * half;
+    return 1 / Math.max(1e-8, s2 * s2);
+  }
+  if (process === "compton") return kleinNishina({ cosTheta: c, x: photonX });
+  return 0;
+}
+
+/* Breit–Wigner resonance shape, normalised to 1 at √s = mass.
+   σ ∝ m²Γ² / [(s − m²)² + m²Γ²]. */
+export function breitWignerResonance({ sqrtS = M_Z, mass = M_Z, width = GAMMA_Z }) {
+  const s = sqrtS * sqrtS;
+  const m2 = mass * mass;
+  const denom = (s - m2) * (s - m2) + m2 * width * width;
+  return (m2 * width * width) / denom;
+}
+
+/* Total cross-section for the massless s-channel benchmark
+   e⁺e⁻ → μ⁺μ⁻: σ = 4πα²/(3s), returned in nb. */
+export function qftTotalCrossSection({ sqrtS = 10 }) {
+  const s = sqrtS * sqrtS;
+  return ((4 * Math.PI * ALPHA_EM * ALPHA_EM) / (3 * s)) * GEV2_TO_NB;
+}
+
+export const QFT_CONSTANTS = { ALPHA_EM, GEV2_TO_NB, M_ELECTRON, M_Z, GAMMA_Z };

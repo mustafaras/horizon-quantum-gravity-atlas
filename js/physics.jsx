@@ -101,5 +101,47 @@ const QGA_PHYSICS = {
     const freqs = Array.from({ length: bins }, (_, b) => (b * sampleRate) / windowSize);
     return { magnitudes, frames, bins, times, freqs, maxDb, nyquist: sampleRate / 2 };
   },
+  /* ---------- QFT 2→2 kinematics (mirrors js/physics.mjs) ---------- */
+  QFT_CONSTANTS: { ALPHA_EM: 1 / 137.035999084, GEV2_TO_NB: 0.3893793721e6, M_ELECTRON: 0.51099895e-3, M_Z: 91.1876, GAMMA_Z: 2.4952 },
+  mandelstamKinematics({ sqrtS, cosTheta = 0, masses = [0, 0, 0, 0] }) {
+    const [m1, m2, m3, m4] = masses;
+    const s = sqrtS * sqrtS;
+    const E1 = (s + m1 * m1 - m2 * m2) / (2 * sqrtS);
+    const E3 = (s + m3 * m3 - m4 * m4) / (2 * sqrtS);
+    const E4 = (s + m4 * m4 - m3 * m3) / (2 * sqrtS);
+    const p1 = Math.sqrt(Math.max(0, E1 * E1 - m1 * m1));
+    const p3 = Math.sqrt(Math.max(0, E3 * E3 - m3 * m3));
+    const t = m1 * m1 + m3 * m3 - 2 * E1 * E3 + 2 * p1 * p3 * cosTheta;
+    const u = m1 * m1 + m4 * m4 - 2 * E1 * E4 - 2 * p1 * p3 * cosTheta;
+    const sum = m1 * m1 + m2 * m2 + m3 * m3 + m4 * m4;
+    return { s, t, u, sum, residual: s + t + u - sum, sqrtS, cosTheta, E1, E3, E4, p1, p3 };
+  },
+  kleinNishina({ cosTheta = 0, x = 0.1 }) {
+    const ratio = 1 / (1 + x * (1 - cosTheta));
+    const sin2 = 1 - cosTheta * cosTheta;
+    return ratio * ratio * (ratio + 1 / ratio - sin2);
+  },
+  angularDistribution({ process = "s-channel", cosTheta = 0, photonX = 0.1 }) {
+    const c = Math.max(-1, Math.min(1, cosTheta));
+    if (process === "s-channel") return 1 + c * c;
+    if (process === "t-channel") {
+      const half = Math.sin(Math.acos(c) / 2);
+      const s2 = half * half;
+      return 1 / Math.max(1e-8, s2 * s2);
+    }
+    if (process === "compton") return this.kleinNishina({ cosTheta: c, x: photonX });
+    return 0;
+  },
+  breitWignerResonance({ sqrtS = 91.1876, mass = 91.1876, width = 2.4952 }) {
+    const s = sqrtS * sqrtS;
+    const m2 = mass * mass;
+    const denom = (s - m2) * (s - m2) + m2 * width * width;
+    return (m2 * width * width) / denom;
+  },
+  qftTotalCrossSection({ sqrtS = 10 }) {
+    const s = sqrtS * sqrtS;
+    const a = 1 / 137.035999084;
+    return ((4 * Math.PI * a * a) / (3 * s)) * 0.3893793721e6;
+  },
 };
 window.QGA_PHYSICS = QGA_PHYSICS;

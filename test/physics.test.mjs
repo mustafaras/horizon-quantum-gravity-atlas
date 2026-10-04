@@ -4,6 +4,8 @@ import {
   schwarzschildRadius, kerrGeometry, hawkingTemperature,
   blackHoleEntropyAreaUnits, seededRng, qftConservation,
   chirpMass, timeToCoalescence, inspiralFrequency, generatedChirp, stftSpectrogram,
+  mandelstamKinematics, kleinNishina, angularDistribution,
+  breitWignerResonance, qftTotalCrossSection, M_Z, GAMMA_Z,
 } from "../js/physics.mjs";
 
 test("Schwarzschild radius is about 2.95 km per solar mass", () => {
@@ -105,4 +107,87 @@ test("STFT spectrogram localizes a pure tone in the correct bin", () => {
   for (let b = 1; b < spec.bins; b++) if (row[b] > row[peakBin]) peakBin = b;
   assert.equal(peakBin, 24);
   assert.ok(Math.abs(spec.freqs[peakBin] - toneFreq) < 1e-9);
+});
+
+/* ---------- Stage 3: QFT 2→2 kinematics and leading-order observables ---------- */
+
+test("Mandelstam identity s + t + u = Σmᵢ² holds for massless and massive legs", () => {
+  const massless = mandelstamKinematics({ sqrtS: 10, cosTheta: 0.5, masses: [0, 0, 0, 0] });
+  assert.ok(Math.abs(massless.residual) < 1e-9);
+  assert.ok(Math.abs(massless.s - 100) < 1e-9);
+  // massless limit: t = −s(1−cosθ)/2, u = −s(1+cosθ)/2
+  assert.ok(Math.abs(massless.t - (-100 * (1 - 0.5) / 2)) < 1e-9);
+  assert.ok(Math.abs(massless.u - (-100 * (1 + 0.5) / 2)) < 1e-9);
+
+  const massive = mandelstamKinematics({
+    sqrtS: 10, cosTheta: 0.5, masses: [0.51099895e-3, 0.51099895e-3, 0.10566, 0.10566],
+  });
+  assert.ok(Math.abs(massive.residual) < 1e-9);
+  assert.ok(Math.abs(massive.sum - (2 * 0.51099895e-3 ** 2 + 2 * 0.10566 ** 2)) < 1e-15);
+});
+
+test("Mandelstam t and u are symmetric about cosθ = 0 in the massless limit", () => {
+  const fwd = mandelstamKinematics({ sqrtS: 20, cosTheta: 0.8, masses: [0, 0, 0, 0] });
+  const bwd = mandelstamKinematics({ sqrtS: 20, cosTheta: -0.8, masses: [0, 0, 0, 0] });
+  assert.ok(Math.abs(fwd.t - bwd.u) < 1e-9);
+  assert.ok(Math.abs(fwd.u - bwd.t) < 1e-9);
+  const head = mandelstamKinematics({ sqrtS: 20, cosTheta: 0, masses: [0, 0, 0, 0] });
+  assert.ok(Math.abs(head.t - head.u) < 1e-9);
+});
+
+test("s-channel angular distribution is 1 + cos²θ: symmetric, 2:1 forward-to-side ratio", () => {
+  const at = (c) => angularDistribution({ process: "s-channel", cosTheta: c });
+  assert.ok(Math.abs(at(0) - 1) < 1e-12);
+  assert.ok(Math.abs(at(1) - 2) < 1e-12);
+  assert.ok(Math.abs(at(-1) - 2) < 1e-12);
+  assert.ok(Math.abs(at(0.5) - at(-0.5)) < 1e-12);
+  assert.ok(Math.abs(at(1) / at(0) - 2) < 1e-12);
+});
+
+test("t-channel leading pole diverges forward and is finite at back-scattering", () => {
+  const fwd = angularDistribution({ process: "t-channel", cosTheta: 0.999999 });
+  const back = angularDistribution({ process: "t-channel", cosTheta: -1 });
+  assert.ok(fwd > 1e6);
+  assert.ok(Math.abs(back - 1) < 1e-9); // sin⁴(π/2) = 1
+  assert.ok(angularDistribution({ process: "t-channel", cosTheta: 0.9 }) >
+            angularDistribution({ process: "t-channel", cosTheta: 0.5 }));
+});
+
+test("Klein–Nishina reduces to the Thomson form 1 + cos²θ as x → 0", () => {
+  for (const c of [-1, -0.4, 0, 0.3, 1]) {
+    const kn = kleinNishina({ cosTheta: c, x: 1e-9 });
+    assert.ok(Math.abs(kn - (1 + c * c)) < 1e-6, `cosθ=${c} gave ${kn}`);
+  }
+  // forward scattering is unshifted at any x: E'/E = 1 when cosθ = 1
+  assert.ok(Math.abs(kleinNishina({ cosTheta: 1, x: 5 }) - 2) < 1e-12);
+  // high-energy back-scattering is strongly suppressed relative to forward
+  const fwd = kleinNishina({ cosTheta: 1, x: 5 });
+  const bwd = kleinNishina({ cosTheta: -1, x: 5 });
+  assert.ok(bwd < fwd / 20, `back/forward = ${bwd / fwd}`);
+  // analytic check at cosθ = −1: ratio = 1/(1+2x), shape = ratio²(ratio + 1/ratio)
+  const r = 1 / 11;
+  assert.ok(Math.abs(bwd - r * r * (r + 1 / r)) < 1e-12);
+});
+
+test("Breit–Wigner peaks at √s = m and falls off symmetrically", () => {
+  assert.ok(Math.abs(breitWignerResonance({ sqrtS: M_Z }) - 1) < 1e-12);
+  // the shape is symmetric in s = √s², not in √s itself
+  const delta = 25;
+  const below = breitWignerResonance({ sqrtS: Math.sqrt(M_Z * M_Z - delta) });
+  const above = breitWignerResonance({ sqrtS: Math.sqrt(M_Z * M_Z + delta) });
+  assert.ok(Math.abs(below - above) < 1e-12);
+  assert.ok(below < 1);
+  assert.ok(breitWignerResonance({ sqrtS: M_Z + 40 }) < 1e-3);
+  // half-maximum sits at |√s − m| ≈ Γ/2 for Γ ≪ m
+  const half = breitWignerResonance({ sqrtS: M_Z + GAMMA_Z / 2 });
+  assert.ok(Math.abs(half - 0.5) < 0.01, `half-max was ${half}`);
+});
+
+test("s-channel total cross-section follows 4πα²/(3s) and matches the 0.87 nb benchmark", () => {
+  const s10 = qftTotalCrossSection({ sqrtS: 10 });
+  assert.ok(Math.abs(s10 - 0.8685) < 0.001, `σ(10 GeV) = ${s10} nb`);
+  const s20 = qftTotalCrossSection({ sqrtS: 20 });
+  assert.ok(Math.abs(s10 / s20 - 4) < 1e-9); // 1/s scaling
+  const analytic = (4 * Math.PI * (1 / 137.035999084) ** 2) / (3 * 100) * 0.3893793721e6;
+  assert.ok(Math.abs(s10 - analytic) < 1e-12);
 });

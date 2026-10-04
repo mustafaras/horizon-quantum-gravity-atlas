@@ -547,6 +547,58 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .gw-time { min-width: 0; flex: 1; text-align: right; }
 }
 
+/* ---------- QFT amplitude room ---------- */
+.qft-room { display: flex; flex-direction: column; gap: 10px; }
+.qft-stage, .qft-plots { display: grid; gap: 10px; }
+.qft-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.qft-plots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.qft-panel {
+  margin: 0; display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+}
+.qft-panel figcaption {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+}
+.qft-panel-title {
+  font: 600 9.5px/1.4 var(--font-mono); letter-spacing: 0.16em;
+  color: rgba(120,200,255,0.92);
+}
+.qft-panel-note {
+  font: 400 9px/1.4 var(--font-mono); letter-spacing: 0.03em;
+  color: rgba(148,176,224,0.62); text-align: right;
+}
+.qft-panel canvas { width: 100%; display: block; background: rgba(5,8,14,0.55); border-radius: 7px; }
+.qft-scatter { height: 268px; }
+.qft-waterfall { height: 268px; }
+.qft-angular { height: 196px; }
+.qft-resonance { height: 196px; }
+.qft-formula {
+  padding: 6px 8px; border: 1px solid rgba(148,176,224,0.12); border-radius: 7px;
+  background: rgba(6,10,18,0.6); overflow-x: auto;
+}
+.qft-formula .eq-display { margin: 0; font-size: 13px; }
+.qft-identity {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.6), rgba(7,11,19,0.85));
+}
+.qft-identity-note {
+  font: 400 10px/1.5 var(--font-mono); letter-spacing: 0.02em;
+  color: rgba(148,176,224,0.72);
+}
+.qft-room .kerr-instrument-bar .ctl-row { min-width: 200px; }
+@media (max-width: 860px) {
+  .qft-stage, .qft-plots { grid-template-columns: 1fr; }
+  .qft-scatter, .qft-waterfall { height: 232px; }
+  .qft-angular, .qft-resonance { height: 180px; }
+}
+@media (max-width: 760px) {
+  .qft-panel figcaption { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .qft-panel-note { text-align: left; }
+  .qft-room .kerr-instrument-bar .ctl-row { min-width: 0; width: 100%; }
+}
+
 /* ---------- Particle table ---------- */
 .pt-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
 @media (max-width: 860px) { .pt-wrap { grid-template-columns: 1fr; } }

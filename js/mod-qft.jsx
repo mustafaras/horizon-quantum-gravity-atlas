@@ -779,6 +779,617 @@ function FeynmanBuilder() {
 
 }
 
+/* ================= Stage 3 · the amplitude room =================
+   A live 2 → 2 scattering bench. Every number on screen is produced by the
+   pure functions in js/physics.mjs (mirrored in js/physics.jsx):
+   mandelstamKinematics, angularDistribution, breitWignerResonance and
+   qftTotalCrossSection. The animation is presentation only — the readouts
+   are exact functions of (√s, cos θ, x). */
+
+const QFT_M_E = 0.51099895e-3; // GeV — electron rest energy (CODATA)
+
+const QFT_PROCESSES = [
+{
+  id: "s-channel",
+  name: "e⁺e⁻ → μ⁺μ⁻",
+  sub: "s-channel annihilation",
+  in: ["e-", "e+"], out: ["mu-", "mu+"],
+  masses: [0, 0, 0, 0],
+  angleLabel: "cos θ (μ⁻)",
+  shapeLabel: "1 + cos²θ",
+  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\propto 1 + \\cos^2\\theta",
+  ref: "Peskin & Schroeder, An Introduction to QFT, §5.1",
+  note: "Massless-fermion limit. The 1 + cos²θ shape and the total cross-section σ = 4πα²/3s are the textbook leading-order results."
+},
+{
+  id: "t-channel",
+  name: "e⁻μ⁻ → e⁻μ⁻",
+  sub: "t-channel exchange",
+  in: ["e-", "mu-"], out: ["e-", "mu-"],
+  masses: [0, 0, 0, 0],
+  angleLabel: "cos θ (e⁻)",
+  shapeLabel: "1 / sin⁴(θ/2)",
+  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\sim \\dfrac{\\alpha^2}{4E^2\\sin^4(\\theta/2)}",
+  ref: "Mott (1929); Rutherford (1911) — leading t-channel pole",
+  note: "Only the leading t-channel pole is plotted. The complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are deliberately not drawn."
+},
+{
+  id: "compton",
+  name: "γe⁻ → γe⁻",
+  sub: "Compton scattering",
+  in: ["ph", "e-"], out: ["ph", "e-"],
+  masses: [0, QFT_M_E, 0, QFT_M_E],
+  angleLabel: "cos θ (γ)",
+  shapeLabel: "Klein–Nishina",
+  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} = \\dfrac{\\alpha^2}{2m_e^2}\\left(\\dfrac{E'}{E}\\right)^{2}\\left[\\dfrac{E'}{E} + \\dfrac{E}{E'} - \\sin^2\\theta\\right]",
+  ref: "Klein & Nishina (1929)",
+  note: "x = E_γ/mₑc² is a separate lab-frame slider, decoupled from √s: tying x to a 10 GeV centre-of-mass energy would give x ≈ 2 × 10⁸ and a visually degenerate curve."
+}];
+
+
+function useQFTFontsReady() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {if (live) setReady(true);});
+    }
+    return () => {live = false;};
+  }, []);
+  return ready;
+}
+
+/* DPR-aware canvas sizing. `draw(ctx, w, h)` receives CSS-pixel dimensions. */
+function useQFTCanvas(draw, deps) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = cv.clientWidth,h = cv.clientHeight;
+    if (!w || !h) return;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+      cv.width = Math.round(w * dpr);cv.height = Math.round(h * dpr);
+    }
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    draw(ctx, w, h);
+  }, deps);
+  return ref;
+}
+
+function QFTReadout({ label, value, unit, formula, lead }) {
+  return (
+    <div className={"kerr-readout" + (lead ? " lead" : "")}>
+      <div className="kerr-readout-label">{label}</div>
+      <div className="kerr-readout-value">{value}{unit ? <span className="unit">{unit}</span> : null}</div>
+      <div className="kerr-readout-formula">{formula}</div>
+    </div>);
+
+}
+
+/* Scattering plane: the dσ/dΩ envelope drawn in polar coordinates, with the
+   two incoming packets converging on the vertex and the outgoing pair
+   receding at ±θ. */
+function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
+  const ref = useQFTCanvas((ctx, w, h) => {
+    const cx = w * 0.5,cy = h * 0.5;
+    const R = Math.min(w * 0.40, h * 0.42);
+    const shape = (c) => window.QGA_PHYSICS.angularDistribution({ process: process.id, cosTheta: c, photonX });
+    const s90 = shape(0) || 1;
+    let maxRatio = 0;
+    for (let i = 0; i <= 180; i++) maxRatio = Math.max(maxRatio, shape(-1 + 2 * i / 180) / s90);
+    const rMax = Math.min(6, maxRatio);
+    const radius = (c) => R * Math.min(6, shape(c) / s90) / rMax;
+
+    ctx.strokeStyle = "rgba(148,176,224,0.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();ctx.arc(cx, cy, R, 0, Math.PI * 2);ctx.stroke();
+
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = "rgba(148,176,224,0.28)";
+    ctx.beginPath();ctx.moveTo(cx - R * 1.18, cy);ctx.lineTo(cx + R * 1.18, cy);ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    for (let i = 0; i <= 360; i++) {
+      const a = i / 360 * Math.PI * 2;
+      const r = radius(Math.cos(a));
+      const x = cx + r * Math.cos(a),y = cy - r * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    grad.addColorStop(0, "rgba(90,185,255,0.20)");
+    grad.addColorStop(1, "rgba(120,90,255,0.05)");
+    ctx.fillStyle = grad;ctx.fill();
+    ctx.strokeStyle = "rgba(120,200,255,0.55)";ctx.lineWidth = 1.4;ctx.stroke();
+
+    const L = R * 1.05;
+    const th = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
+    const pr = Math.max(5, R * 0.075);
+    const blob = (x, y, hue) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, pr);
+      g.addColorStop(0, hue + "0.95)");
+      g.addColorStop(0.45, hue + "0.35)");
+      g.addColorStop(1, hue + "0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();ctx.arc(x, y, pr, 0, Math.PI * 2);ctx.fill();
+    };
+    if (tau <= 0.5) {
+      const f = 1 - tau / 0.5;
+      blob(cx - L * f, cy, "rgba(120,200,255,");
+      blob(cx + L * f, cy, "rgba(255,150,120,");
+    } else {
+      const g = (tau - 0.5) / 0.5;
+      blob(cx + L * g * Math.cos(th), cy - L * g * Math.sin(th), "rgba(120,200,255,");
+      blob(cx - L * g * Math.cos(th), cy + L * g * Math.sin(th), "rgba(255,150,120,");
+    }
+
+    const flash = Math.max(0, 1 - Math.abs(tau - 0.5) / 0.14);
+    if (flash > 0.01) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5 * flash);
+      g.addColorStop(0, "rgba(255,235,180," + 0.85 * flash + ")");
+      g.addColorStop(1, "rgba(255,200,90,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();ctx.arc(cx, cy, R * 0.5 * flash, 0, Math.PI * 2);ctx.fill();
+    }
+
+    ctx.strokeStyle = "rgba(255,214,120,0.75)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();ctx.arc(cx, cy, R * 0.34, 0, -th, true);ctx.stroke();
+    ctx.font = "10px IBM Plex Mono";
+    ctx.fillStyle = "rgba(255,214,120,0.9)";
+    ctx.fillText("θ = " + (th * 180 / Math.PI).toFixed(0) + "°",
+    cx + R * 0.44 * Math.cos(th / 2) - 14, cy - R * 0.44 * Math.sin(th / 2) + 3);
+
+    ctx.font = "9.5px IBM Plex Mono";
+    ctx.fillStyle = "rgba(148,176,224,0.55)";
+    ctx.fillText("incoming", 8, cy - 8);
+    ctx.fillText("forward", cx + R * 1.18 - 42, cy - 8);
+  }, [process.id, cosTheta, photonX, tau, fontsReady]);
+  return (
+    <canvas ref={ref} className="qft-scatter"
+    aria-label="Scattering plane: polar angular cross-section envelope with animated wave packets"></canvas>);
+
+}
+
+/* Spacetime picture: the two incoming packets converge along the beam axis,
+   meet at τ = 0.5, and the outgoing pair recedes with longitudinal speed
+   cos θ. The fringe pattern is the superposition of the two carrier waves. */
+function QFTWaterfall({ cosTheta, tau, fontsReady }) {
+  const COLS = 220,ROWS = 130;
+  const off = useMemo(() => {
+    const cv = document.createElement("canvas");
+    cv.width = COLS;cv.height = ROWS;
+    const octx = cv.getContext("2d");
+    const img = octx.createImageData(COLS, ROWS);
+    const sigma = 0.15,k = 30;
+    const ct = Math.cos(Math.acos(Math.max(-1, Math.min(1, cosTheta))));
+    for (let j = 0; j < ROWS; j++) {
+      const t = j / (ROWS - 1);
+      const f = t <= 0.5 ? 1 - t / 0.5 : (t - 0.5) / 0.5 * ct;
+      const a = -f,b = f;
+      for (let i = 0; i < COLS; i++) {
+        const x = -1 + 2 * i / (COLS - 1);
+        const da = x - a,db = x - b;
+        const v = Math.exp(-(da * da) / (sigma * sigma)) * Math.cos(k * da) +
+        Math.exp(-(db * db) / (sigma * sigma)) * Math.cos(k * db);
+        const p = (j * COLS + i) * 4;
+        if (v >= 0) {img.data[p] = 255;img.data[p + 1] = 186;img.data[p + 2] = 92;} else
+        {img.data[p] = 88;img.data[p + 1] = 198;img.data[p + 2] = 255;}
+        img.data[p + 3] = Math.round(255 * Math.min(1, Math.abs(v) * 0.7));
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    return cv;
+  }, [cosTheta]);
+
+  const ref = useQFTCanvas((ctx, w, h) => {
+    const padL = 40,padR = 12,padT = 16,padB = 26;
+    const pw = w - padL - padR,ph = h - padT - padB;
+    ctx.fillStyle = "rgba(4,7,13,0.85)";
+    ctx.fillRect(padL, padT, pw, ph);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, padL, padT, pw, ph);
+    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padL, padT, pw, ph);
+
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = "rgba(148,176,224,0.30)";
+    ctx.beginPath();ctx.moveTo(padL + pw / 2, padT);ctx.lineTo(padL + pw / 2, padT + ph);ctx.stroke();
+    ctx.setLineDash([]);
+
+    const py = padT + ph * Math.min(1, Math.max(0, tau));
+    ctx.strokeStyle = "rgba(255,214,120,0.85)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();ctx.moveTo(padL, py);ctx.lineTo(padL + pw, py);ctx.stroke();
+
+    ctx.font = "9.5px IBM Plex Mono";
+    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.fillText("−1", padL, h - 8);
+    ctx.fillText("0", padL + pw / 2 - 3, h - 8);
+    ctx.fillText("+1", padL + pw - 12, h - 8);
+    ctx.fillText("τ", 12, padT + 10);
+    ctx.fillText("1", 12, padT + ph);
+  }, [off, tau, fontsReady]);
+  return (
+    <canvas ref={ref} className="qft-waterfall"
+    aria-label="Spacetime picture: two wave packets converging, interacting and receding along the beam axis"></canvas>);
+
+}
+
+/* Angular distribution, normalised to its 90° value. The y axis is clipped at
+   min(20, max) so the t-channel forward pole stays on screen. */
+function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
+  const ref = useQFTCanvas((ctx, w, h) => {
+    const padL = 46,padR = 14,padT = 16,padB = 30;
+    const pw = w - padL - padR,ph = h - padT - padB;
+    const shape = (c) => window.QGA_PHYSICS.angularDistribution({ process: process.id, cosTheta: c, photonX });
+    const s90 = shape(0) || 1;
+    const N = 240;
+    const ratios = [];
+    let maxRatio = 0;
+    for (let i = 0; i <= N; i++) {
+      const r = shape(-1 + 2 * i / N) / s90;
+      ratios.push(r);
+      if (r > maxRatio) maxRatio = r;
+    }
+    const yMax = Math.min(20, maxRatio);
+    const X = (c) => padL + (c + 1) / 2 * pw;
+    const Y = (r) => padT + ph - Math.min(r, yMax) / yMax * ph;
+
+    ctx.strokeStyle = "rgba(148,176,224,0.18)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padL, padT, pw, ph);
+    ctx.strokeStyle = "rgba(148,176,224,0.07)";
+    for (let i = 1; i < 4; i++) {
+      const y = padT + ph * i / 4;
+      ctx.beginPath();ctx.moveTo(padL, y);ctx.lineTo(padL + pw, y);ctx.stroke();
+      const x = padL + pw * i / 4;
+      ctx.beginPath();ctx.moveTo(x, padT);ctx.lineTo(x, padT + ph);ctx.stroke();
+    }
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = "rgba(255,214,120,0.35)";
+    ctx.beginPath();ctx.moveTo(padL, Y(1));ctx.lineTo(padL + pw, Y(1));ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const x = X(-1 + 2 * i / N),y = Y(ratios[i]);
+      if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = "rgba(120,200,255,0.95)";
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    const cNow = Math.max(-1, Math.min(1, cosTheta));
+    const mx = X(cNow),my = Y(shape(cNow) / s90);
+    ctx.strokeStyle = "rgba(255,214,120,0.5)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();ctx.moveTo(mx, padT);ctx.lineTo(mx, padT + ph);ctx.stroke();
+    ctx.fillStyle = "rgba(255,214,120,1)";
+    ctx.beginPath();ctx.arc(mx, my, 3.4, 0, Math.PI * 2);ctx.fill();
+
+    ctx.font = "9.5px IBM Plex Mono";
+    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.fillText("−1", padL - 4, h - 10);
+    ctx.fillText("0", padL + pw / 2 - 3, h - 10);
+    ctx.fillText("+1", padL + pw - 10, h - 10);
+    ctx.fillText(yMax.toFixed(1) + "×", 6, padT + 8);
+    ctx.fillText("0", 6, padT + ph);
+  }, [process.id, cosTheta, photonX, fontsReady]);
+  return (
+    <canvas ref={ref} className="qft-angular"
+    aria-label="Angular differential cross-section normalised to its 90 degree value"></canvas>);
+
+}
+
+/* Two-panel energy scan: the photon 1/s cross-section on a log axis, and the
+   Z⁰ Breit–Wigner shape on a linear axis zoomed to ±3Γ. */
+function QFTResonancePlot({ sqrtS, fontsReady }) {
+  const ref = useQFTCanvas((ctx, w, h) => {
+    const gap = 22,padT = 16,padB = 30;
+    const pw = (w - gap) / 2,ph = h - padT - padB;
+    const M_Z = window.QGA_PHYSICS.M_Z,G_Z = window.QGA_PHYSICS.GAMMA_Z;
+    const panel = (x0, xMin, xMax, yMin, yMax, logY, fn, title) => {
+      const X = (v) => x0 + (v - xMin) / (xMax - xMin) * pw;
+      const Y = (v) => {
+        const t = logY ? (Math.log10(Math.max(1e-12, v)) - yMin) / (yMax - yMin) : (v - yMin) / (yMax - yMin);
+        return padT + ph - t * ph;
+      };
+      ctx.strokeStyle = "rgba(148,176,224,0.18)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x0, padT, pw, ph);
+      ctx.strokeStyle = "rgba(148,176,224,0.07)";
+      for (let i = 1; i < 4; i++) {
+        const y = padT + ph * i / 4;
+        ctx.beginPath();ctx.moveTo(x0, y);ctx.lineTo(x0 + pw, y);ctx.stroke();
+      }
+      ctx.beginPath();
+      const N = 260;
+      for (let i = 0; i <= N; i++) {
+        const v = xMin + (xMax - xMin) * i / N;
+        const x = X(v),y = Y(fn(v));
+        if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "rgba(120,200,255,0.95)";
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      if (sqrtS >= xMin && sqrtS <= xMax) {
+        ctx.strokeStyle = "rgba(255,214,120,0.5)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();ctx.moveTo(X(sqrtS), padT);ctx.lineTo(X(sqrtS), padT + ph);ctx.stroke();
+        ctx.fillStyle = "rgba(255,214,120,1)";
+        ctx.beginPath();ctx.arc(X(sqrtS), Y(fn(sqrtS)), 3.2, 0, Math.PI * 2);ctx.fill();
+      }
+      ctx.font = "9.5px IBM Plex Mono";
+      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillText(title, x0 + 4, padT - 4);
+      ctx.fillText(xMin.toFixed(0), x0 - 2, h - 10);
+      ctx.fillText(xMax.toFixed(0), x0 + pw - 18, h - 10);
+    };
+    panel(0, 1, 200, -3, 2, true,
+    (v) => window.QGA_PHYSICS.qftTotalCrossSection({ sqrtS: v }),
+    "σ_γ (nb) · log");
+    panel(pw + gap, M_Z - 3 * G_Z, M_Z + 3 * G_Z, 0, 1.05, false,
+    (v) => window.QGA_PHYSICS.breitWignerResonance({ sqrtS: v }),
+    "Z⁰ Breit–Wigner · linear");
+  }, [sqrtS, fontsReady]);
+  return (
+    <canvas ref={ref} className="qft-resonance"
+    aria-label="Energy scan: photon 1 over s cross-section and the Z boson Breit-Wigner resonance"></canvas>);
+
+}
+
+function AmplitudeRoom() {
+  const [atlasState, setAtlasState] = useQGAState();
+  const processId = atlasState.qftProcess;
+  const process = QFT_PROCESSES.find((p) => p.id === processId) || QFT_PROCESSES[0];
+  const sqrtS = atlasState.qftSqrtS;
+  const cosTheta = atlasState.qftAngle;
+  const photonX = atlasState.qftPhotonX;
+  const fontsReady = useQFTFontsReady();
+
+  /* Presentation-only clock over a normalised τ ∈ [0, 1]. The physics
+     readouts below do not depend on it. */
+  const [tau, setTau] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const reducedMotion = useMemo(() =>
+  window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  useEffect(() => {
+    if (!playing) return undefined;
+    let raf = 0,last = performance.now();
+    const tick = (now) => {
+      const dt = (now - last) / 1000;last = now;
+      setTau((t) => Math.min(1, t + dt * speed * 0.5));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, speed]);
+  useEffect(() => {if (playing && tau >= 1) setPlaying(false);}, [tau, playing]);
+  useEffect(() => {setTau(0);setPlaying(!reducedMotion);}, [processId, reducedMotion]);
+  const togglePlay = () => {if (!playing && tau >= 1) setTau(0);setPlaying(!playing);};
+
+  const kin = window.QGA_PHYSICS.mandelstamKinematics({ sqrtS, cosTheta, masses: process.masses });
+  const sigma = window.QGA_PHYSICS.qftTotalCrossSection({ sqrtS });
+  const bw = window.QGA_PHYSICS.breitWignerResonance({ sqrtS });
+  const shapeNow = window.QGA_PHYSICS.angularDistribution({ process: process.id, cosTheta, photonX });
+  const shape90 = window.QGA_PHYSICS.angularDistribution({ process: process.id, cosTheta: 0, photonX });
+  const verdict = feyAnalyze(process.in[0], process.in[1], process.out[0], process.out[1]);
+  const identityOk = Math.abs(kin.residual) < 1e-6;
+  const phase = tau < 0.46 ? "incoming" : tau > 0.54 ? "outgoing" : "interaction";
+
+  return (
+    <div className="viz-frame qft-room">
+      <div className="kerr-observatory-head">
+        <div className="kerr-head-plate">
+          <div className="kerr-head-ident">QFT<span>AMP</span></div>
+          <div>
+            <h3>The Amplitude Room</h3>
+            <p>A live 2 → 2 scattering bench: Mandelstam kinematics, angular distributions and the Z⁰ resonance,
+            evaluated from the pure functions in <code>js/physics.mjs</code>.</p>
+          </div>
+        </div>
+        <div className="kerr-head-state">
+          <span className="badge badge-established">Leading-order QED</span>
+          <div className="kerr-state-line">
+            {process.name} · √s = {sqrtS.toFixed(1)} GeV · cos θ = {cosTheta.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      <div className="kerr-instrument-bar">
+        <div className="kerr-control-group" aria-label="Process">
+          <span className="kerr-control-label">Process</span>
+          {QFT_PROCESSES.map((p) =>
+          <button key={p.id} className={"kerr-chip" + (p.id === process.id ? " on" : "")}
+          aria-pressed={p.id === process.id}
+          onClick={() => setAtlasState({ qftProcess: p.id })}>{p.name}</button>
+          )}
+        </div>
+        <div className="kerr-control-group" aria-label="Kinematic controls">
+          <SliderRow label="√s" min={1} max={200} step={0.5} value={sqrtS}
+          onChange={(v) => setAtlasState({ qftSqrtS: v })} format={(v) => v.toFixed(1) + " GeV"}></SliderRow>
+          <SliderRow label={process.angleLabel} min={-1} max={1} step={0.01} value={cosTheta}
+          onChange={(v) => setAtlasState({ qftAngle: v })} format={(v) => v.toFixed(2)}></SliderRow>
+          {process.id === "compton" ?
+          <SliderRow label="x = E_γ/mₑc²" min={0.05} max={20} step={0.05} value={photonX}
+          onChange={(v) => setAtlasState({ qftPhotonX: v })} format={(v) => v.toFixed(2)}></SliderRow> :
+          null}
+        </div>
+      </div>
+
+      <div className="gw-transport" aria-label="Collision playback transport">
+        <button className="gw-play-btn" onClick={togglePlay}
+        aria-label={playing ? "Pause collision" : "Play collision"}>{playing ? "❚❚" : "▶"}</button>
+        <button className="gw-replay-btn" onClick={() => {setTau(0);setPlaying(!reducedMotion);}}
+        aria-label="Replay from the start">↺</button>
+        <div className="gw-progress" role="slider" aria-label="Collision phase"
+        aria-valuemin={0} aria-valuemax={1} aria-valuenow={Number(tau.toFixed(3))}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          const r = e.currentTarget.getBoundingClientRect();
+          setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+        }}
+        onPointerMove={(e) => {
+          if (!(e.buttons & 1)) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          setTau(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+        }}>
+          <div className="gw-progress-fill" style={{ width: 100 * tau + "%" }}></div>
+        </div>
+        <span className="gw-time">τ = {tau.toFixed(2)} · {phase}</span>
+        <div className="gw-speed" aria-label="Playback speed">
+          {[0.5, 1, 2, 4].map((s) =>
+          <button key={s} className={"kerr-chip" + (speed === s ? " on" : "")} aria-pressed={speed === s}
+          onClick={() => setSpeed(s)}>{s}×</button>
+          )}
+        </div>
+      </div>
+
+      <div className="qft-stage">
+        <figure className="qft-panel">
+          <figcaption>
+            <span className="qft-panel-title">SCATTERING PLANE</span>
+            <span className="qft-panel-note">dσ/dΩ envelope · {process.shapeLabel}</span>
+          </figcaption>
+          <QFTScatterCanvas process={process} cosTheta={cosTheta} photonX={photonX} tau={tau}
+          fontsReady={fontsReady}></QFTScatterCanvas>
+        </figure>
+        <figure className="qft-panel">
+          <figcaption>
+            <span className="qft-panel-title">SPACETIME PICTURE</span>
+            <span className="qft-panel-note">schematic wave-packet collision · longitudinal axis</span>
+          </figcaption>
+          <QFTWaterfall cosTheta={cosTheta} tau={tau} fontsReady={fontsReady}></QFTWaterfall>
+        </figure>
+      </div>
+
+      <div className="qft-plots">
+        <figure className="qft-panel">
+          <figcaption>
+            <span className="qft-panel-title">ANGULAR DISTRIBUTION</span>
+            <span className="qft-panel-note">normalised to the 90° value · y clipped at 20×</span>
+          </figcaption>
+          <div className="qft-formula"><Eq tex={process.shapeTex} display={true}></Eq></div>
+          <QFTAngularPlot process={process} cosTheta={cosTheta} photonX={photonX}
+          fontsReady={fontsReady}></QFTAngularPlot>
+        </figure>
+        <figure className="qft-panel">
+          <figcaption>
+            <span className="qft-panel-title">ENERGY SCAN</span>
+            <span className="qft-panel-note">photon 1/s (log) · Z⁰ Breit–Wigner (linear, ±3Γ)</span>
+          </figcaption>
+          <QFTResonancePlot sqrtS={sqrtS} fontsReady={fontsReady}></QFTResonancePlot>
+        </figure>
+      </div>
+
+      <div className="kerr-deck">
+        <section className="kerr-rgroup">
+          <header><h4>Mandelstam kinematics</h4><span>natural units · GeV²</span></header>
+          <div className="kerr-rgrid">
+            <QFTReadout lead label="√s" value={sqrtS.toFixed(1)} unit="GeV"
+            formula="centre-of-mass energy"></QFTReadout>
+            <QFTReadout label="s" value={kin.s.toFixed(2)} unit="GeV²" formula="(p₁+p₂)²"></QFTReadout>
+            <QFTReadout label="t" value={kin.t.toFixed(2)} unit="GeV²"
+            formula="m₁²+m₃²−2E₁E₃+2p₁p₃cos θ"></QFTReadout>
+            <QFTReadout label="u" value={kin.u.toFixed(2)} unit="GeV²"
+            formula="m₁²+m₄²−2E₁E₄−2p₁p₃cos θ"></QFTReadout>
+            <QFTReadout label="Σ mᵢ²" value={kin.sum.toFixed(4)} unit="GeV²"
+            formula="m₁²+m₂²+m₃²+m₄²"></QFTReadout>
+            <QFTReadout label="s+t+u−Σmᵢ²" value={kin.residual.toExponential(1)} unit="GeV²"
+            formula="exact identity — residual is floating-point noise"></QFTReadout>
+          </div>
+        </section>
+        <section className="kerr-rgroup">
+          <header><h4>Observables</h4><span>leading order</span></header>
+          <div className="kerr-rgrid">
+            <QFTReadout lead label="σ_γ" value={sigma.toFixed(4)} unit="nb"
+            formula="4πα²/3s · massless s-channel benchmark"></QFTReadout>
+            <QFTReadout label="Z⁰ Breit–Wigner" value={bw.toFixed(4)}
+            formula="m²Γ²/[(s−m²)²+m²Γ²] · 1 at √s = m"></QFTReadout>
+            <QFTReadout label="dσ/dΩ at cos θ" value={(shapeNow / shape90).toFixed(3)} unit="× 90°"
+            formula={process.shapeLabel}></QFTReadout>
+            {process.id === "compton" ?
+            <QFTReadout label="photon energy ratio" value={photonX.toFixed(2)} unit="× mₑc²"
+            formula="x = E_γ/mₑc² · lab frame"></QFTReadout> :
+            <QFTReadout label="beam energy E₁" value={kin.E1.toFixed(2)} unit="GeV"
+            formula="centre-of-mass frame"></QFTReadout>}
+          </div>
+        </section>
+      </div>
+
+      <div className="qft-identity">
+        <span className={"kerr-check " + (identityOk ? "ok" : "bad")}>
+          {identityOk ? "s + t + u = Σmᵢ² ✓" : "identity residual " + kin.residual.toExponential(1)}
+        </span>
+        <span className={"kerr-check " + (verdict.ok ? "ok" : "bad")}>
+          {verdict.ok ? "conservation laws satisfied" : "forbidden process"}
+        </span>
+        <span className="qft-identity-note">{verdict.ok ? verdict.note : verdict.reason}</span>
+      </div>
+
+      <details className="kerr-validity">
+        <summary>
+          <span>Assumptions, validity &amp; uncertainty</span>
+          <span className="kerr-check ok">leading order · closed forms</span>
+        </summary>
+        <div className="kerr-validity-body">
+          <dl>
+            <dt>What is exact</dt>
+            <dd>
+              The Mandelstam identity s + t + u = Σmᵢ², the massless s-channel shape 1 + cos²θ, the total
+              cross-section σ = 4πα²/3s, the Klein–Nishina shape and the Breit–Wigner form are closed-form
+              leading-order results. They are evaluated live by <code>js/physics.mjs</code> and covered by
+              <code> node:test</code> cases in <code>test/physics.test.mjs</code>.
+            </dd>
+            <dt>What is approximate</dt>
+            <dd>
+              The t-channel curve plots only the leading pole 1/sin⁴(θ/2). The complete Møller and Bhabha
+              amplitudes also contain s- and u-channel terms and their interference, which are deliberately not
+              drawn — guessing their coefficients would be worse than omitting them. The Z⁰ panel shows the
+              Breit–Wigner shape alone, not the γ–Z⁰ interference term, and the fermion masses are set to zero
+              except in the Compton process.
+            </dd>
+            <dt>What is schematic</dt>
+            <dd>
+              The scattering-plane and spacetime canvases are pedagogical animations. The wave packets are
+              Gaussian envelopes with a carrier wave, not solutions of the QED amplitude; the envelope radius is
+              the angular distribution normalised to its 90° value and clipped at 6×. The spacetime panel's
+              longitudinal separation tracks cos θ, which is the correct kinematic trend, but the fringe pattern
+              is a two-packet superposition rather than a field-theory calculation.
+            </dd>
+            <dt>References</dt>
+            <dd>
+              {process.ref}. Mandelstam variables: Mandelstam (1958). Klein–Nishina: Klein &amp; Nishina (1929).
+              Z⁰ mass and width: PDG values m_Z = 91.1876 GeV, Γ_Z = 2.4952 GeV. Fine-structure constant: CODATA
+              α = 1/137.035999084.
+            </dd>
+            <dt>Units</dt>
+            <dd>
+              Natural units ħ = c = 1. Energies in GeV, cross-sections in nanobarns
+              (1 GeV⁻² = 3.8938 × 10⁵ nb). The Compton slider x is a lab-frame ratio and is deliberately
+              decoupled from √s.
+            </dd>
+          </dl>
+        </div>
+      </details>
+
+      <VizCaption status="schematic">
+        The readouts are exact leading-order QED results; the two canvases are a schematic animation of the same
+        process. Drag the transport to scrub the collision, or change √s and cos θ to watch the Mandelstam
+        variables, the angular shape and the resonance curve respond. Every value is a pure function of the
+        sliders — the animation adds no physics of its own.
+      </VizCaption>
+    </div>);
+
+}
+
 function ModuleQFT({ go }) {
   return (
     <article>
@@ -805,6 +1416,18 @@ function ModuleQFT({ go }) {
           enforces the conservation laws every vertex obeys, and shows the leading-order amplitude and cross-section.
         </p>
         <FeynmanBuilder></FeynmanBuilder>
+      </Section>
+
+      <Section title="The amplitude room">
+        <p>
+          A diagram is only a picture until the Feynman rules turn it into a number. This bench does that
+          conversion live: pick a 2 → 2 process, then move the centre-of-mass energy √s and the scattering angle
+          θ. The Mandelstam variables s, t and u are recomputed from the four-momenta on every frame, the angular
+          distribution is drawn in polar and Cartesian form, and the energy scan shows the photon 1/s fall-off
+          alongside the Z⁰ resonance. Every readout is a closed-form leading-order result evaluated by the pure
+          functions in <code>js/physics.mjs</code>; the animation is presentation only.
+        </p>
+        <AmplitudeRoom></AmplitudeRoom>
       </Section>
 
       <Section title="Mathematical formulation">
