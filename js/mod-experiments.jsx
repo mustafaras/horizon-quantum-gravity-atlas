@@ -867,8 +867,36 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
   const cvRef = useRef(null);
   const [hover, setHover] = useState(null);
   const fontsReady = useFontsReady();
+  const prm = usePRM();
   const PADL = 46, PADR = 12;
   const duration = mode === "real" && realData ? realData.duration : GW_GEN_DURATION;
+  /* Eased vertical scale: the trace normalisation glides between signals
+     instead of snapping when the source changes. Bounded rAF — it stops as
+     soon as the scale has settled, and snaps instantly under reduced motion. */
+  const targetAmax = useMemo(() => {
+    const peak = (s) => { let m = 1e-9; for (let i = 0; i < s.length; i++) { const a = Math.abs(s[i]); if (a > m) m = a; } return m; };
+    if (mode === "generated" && genH1) return Math.max(peak(genH1.samples), peak(genL1.samples));
+    if (mode === "real" && realData) return peak(realData.samples);
+    return 1;
+  }, [mode, genH1, genL1, realData]);
+  const amaxRef = useRef(targetAmax);
+  const [amax, setAmax] = useState(targetAmax);
+  useEffect(() => {
+    if (prm) { amaxRef.current = targetAmax; setAmax(targetAmax); return undefined; }
+    let raf = 0, last = performance.now();
+    const tick = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const cur = amaxRef.current;
+      const next = cur + (targetAmax - cur) * Math.min(1, dt * 7);
+      if (Math.abs(next - targetAmax) <= Math.abs(targetAmax) * 1e-3) {
+        amaxRef.current = targetAmax; setAmax(targetAmax); return;
+      }
+      amaxRef.current = next; setAmax(next);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [targetAmax, prm]);
   const toTime = (e) => {
     const r = cvRef.current.getBoundingClientRect();
     const pw = r.width - PADL - PADR;
@@ -902,13 +930,7 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
     };
-    const maxAbs = (samples) => {
-      let amax = 1e-9;
-      for (let i = 0; i < samples.length; i++) { const a = Math.abs(samples[i]); if (a > amax) amax = a; }
-      return amax;
-    };
     const drawTrace = (samples, color, glow, upto) => {
-      const amax = maxAbs(samples);
       ctx.strokeStyle = color; ctx.lineWidth = 1.3;
       ctx.shadowColor = glow ? color : "transparent"; ctx.shadowBlur = glow ? 6 : 0;
       tracePath(samples, amax, upto);
@@ -950,6 +972,14 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
       drawTrace(genH1.samples, "rgba(90,185,255,0.16)", false);
       drawTrace(genL1.samples, "rgba(255,189,102,0.75)", false, upto);
       const amaxH1 = drawTrace(genH1.samples, "rgba(90,185,255,0.95)", true, upto);
+      // leading-edge reveal glow: a soft gradient at the draw-in front
+      if (frac < 1) {
+        const ex = padL + frac * pw;
+        const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
+        g.addColorStop(0, "rgba(90,185,255,0)");
+        g.addColorStop(1, "rgba(90,185,255,0.18)");
+        ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
+      }
       if (frac < 1) drawHead(genH1.samples, amaxH1, upto, "rgba(160,220,255,1)");
       // merger flash, decaying after the playhead crosses coalescence
       if (playT >= tMerge) {
@@ -990,6 +1020,13 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
       const upto = Math.round(frac * (n - 1)) + 1;
       drawTrace(realData.samples, "rgba(70,212,224,0.16)", false);
       const amax = drawTrace(realData.samples, "rgba(70,212,224,0.95)", true, upto);
+      if (frac < 1) {
+        const ex = padL + frac * pw;
+        const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
+        g.addColorStop(0, "rgba(70,212,224,0)");
+        g.addColorStop(1, "rgba(70,212,224,0.18)");
+        ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
+      }
       if (frac < 1) drawHead(realData.samples, amax, upto, "rgba(160,240,244,1)");
       const effRate = realData.samples.length / realData.duration;
       ctx.fillStyle = "rgba(148,176,224,0.6)";
@@ -1024,7 +1061,7 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
       ctx.fillStyle = "rgba(235,244,255,0.8)";
       ctx.beginPath(); ctx.moveTo(px - 4, padT - 4); ctx.lineTo(px + 4, padT - 4); ctx.lineTo(px, padT + 2); ctx.closePath(); ctx.fill();
     }
-  }, [mode, genH1, genL1, realData, detector, fontsReady, playT, hover, duration]);
+  }, [mode, genH1, genL1, realData, detector, fontsReady, playT, hover, duration, amax]);
   return (
     <figure className="gw-panel">
       <figcaption>
@@ -1146,10 +1183,23 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
   );
 }
 
+const GW_PHASE_LABEL = {
+  idle: "Idle",
+  loading: "Loading",
+  real: "Observation",
+  generated: "Generated",
+  error: "Unavailable",
+  cancelled: "Cancelled",
+};
+
 function GWAnalysisTheatre() {
   const [atlasState, setAtlasState] = useQGAState();
   const mode = atlasState.gwMode;
   const [status, setStatus] = useState(mode === "generated" ? "Seeded local waveform — same seed reproduces this exact signal." : "");
+  /* Explicit presentation state machine. `status` stays the human-readable
+     sentence; `phase` drives the animated pill so loading / real /
+     generated-fallback / error / cancelled are visually distinct. */
+  const [phase, setPhase] = useState(mode === "generated" ? "generated" : "idle");
   const [provenance, setProvenance] = useState(null);
   const [realData, setRealData] = useState(null);
   const realLoadRef = useRef(null);
@@ -1170,8 +1220,7 @@ function GWAnalysisTheatre() {
   const [playT, setPlayT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
-  const reducedMotion = useMemo(() =>
-    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  const reducedMotion = usePRM();
   useEffect(() => {
     if (!playing) return undefined;
     let raf = 0, last = performance.now();
@@ -1200,19 +1249,34 @@ function GWAnalysisTheatre() {
     const controller = new AbortController();
     realLoadRef.current = controller;
     setStatus("Loading bounded GWOSC strain…"); setProvenance(null); setRealData(null);
+    setPhase("loading");
     try {
       const result = await QGA_FETCH_GWOSC(atlasState.gwEvent, {
         detector: atlasState.gwDetector, start: atlasState.gwStart, duration: atlasState.gwDuration,
         signal: controller.signal,
       });
+      if (realLoadRef.current !== controller) return;
       setRealData(result); setProvenance(result.provenance);
       setStatus("GWOSC observation loaded; preview is downsampled calibrated strain.");
+      setPhase("real");
     } catch (error) {
-      if (error?.name === "AbortError") return;
+      /* A superseded or user-cancelled request must not overwrite the phase
+         the user has already moved on to. */
+      if (realLoadRef.current !== controller) return;
+      if (error?.name === "AbortError") { setPhase("cancelled"); return; }
       setStatus("GWOSC unavailable; the seeded generated signal below remains usable.");
+      setPhase("error");
     } finally {
       if (realLoadRef.current === controller) realLoadRef.current = null;
     }
+  };
+  const cancelReal = () => {
+    const controller = realLoadRef.current;
+    if (!controller) return;
+    realLoadRef.current = null;
+    controller.abort();
+    setStatus("GWOSC request cancelled; the seeded generated signal below remains usable.");
+    setPhase("cancelled");
   };
   const changeMode = (next) => {
     setAtlasState({ gwMode: next });
@@ -1221,6 +1285,7 @@ function GWAnalysisTheatre() {
       realLoadRef.current?.abort(); realLoadRef.current = null;
       setRealData(null); setProvenance(null);
       setStatus("Seeded local waveform — same seed reproduces this exact signal.");
+      setPhase("generated");
     }
   };
   useEffect(() => { if (mode === "real") loadReal(); }, [atlasState.gwDetector, atlasState.gwStart, atlasState.gwDuration]);
@@ -1288,6 +1353,18 @@ function GWAnalysisTheatre() {
         )}
       </div>
 
+      <div className={"gw-state-pill"} data-phase={phase} role="status" aria-live="polite">
+        <span className="gw-state-dot" aria-hidden="true"></span>
+        <span className="gw-state-label">{GW_PHASE_LABEL[phase] || phase}</span>
+        <span className="gw-state-text">{status}</span>
+        {(phase === "error" || phase === "cancelled") ? (
+          <button className="gw-state-retry" onClick={loadReal}>Retry</button>
+        ) : null}
+        {phase === "loading" ? (
+          <button className="gw-state-retry" onClick={cancelReal}>Cancel</button>
+        ) : null}
+      </div>
+
       <div className="gw-transport" aria-label="Signal playback transport">
         <button className="gw-play-btn" onClick={togglePlay}
           aria-label={playing ? "Pause playback" : "Play signal"}>{playing ? "❚❚" : "▶"}</button>
@@ -1350,7 +1427,7 @@ function GWAnalysisTheatre() {
             </div>
           </section>
         ) : (
-          <section className="kerr-rgroup">
+          <section className="kerr-rgroup gw-reveal" key={"obs-" + (provenance ? provenance.retrievedAt : "pending")}>
             <header><h4>Observation</h4><span>GWOSC API v2 · bounded fetch</span></header>
             <div className="kerr-rgrid">
               <KerrReadout lead label="event" value={atlasState.gwEvent}
@@ -1400,13 +1477,12 @@ function GWAnalysisTheatre() {
             </dd>
           </dl>
           {provenance ? (
-            <p className="small dim" style={{ marginBottom: 0 }}>
+            <p className="small dim gw-provenance" style={{ marginBottom: 0 }}>
               Provenance: {provenance.source} · <a href={provenance.url} target="_blank" rel="noreferrer">strain listing</a> · <a href={provenance.downloadUrl} target="_blank" rel="noreferrer">data file</a> · retrieved {provenance.retrievedAt}
             </p>
           ) : null}
         </div>
       </details>
-      <p className="small dim" aria-live="polite" style={{ margin: "6px 2px 0" }}>{status}</p>
     </div>
   );
 }

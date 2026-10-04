@@ -829,6 +829,8 @@ The Hawking temperature tends toward zero in the extremal limit.
 
 **Limit:** the information paradox remains open in operational detail.
 
+**Limit:** the Kerr Observatory's coordinate-radius map is exact Kerr geometry, but the image beside it is a Schwarzschild-based geodesic raymarch with visual spin cues only — frame dragging is not integrated. The interface keeps the two separated: the map and the live formulation panel print exact Kerr coordinate radii, while the rendered image is labelled as an approximate raymarch.
+
 ### 8. Page Curve and Information
 
 If evaporation is unitary, the entanglement entropy of Hawking radiation should rise and then fall.
@@ -1073,6 +1075,10 @@ The physics itself is covered separately by `test/physics.test.mjs`, which runs 
 The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
 Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. An animated playback engine sweeps a shared playhead across both instruments — with play/pause, replay, 0.5–4× speed, drag-to-scrub on the progress bar or any trace, a hover crosshair reporting time, strain, and instantaneous frequency, and a merger flash at coalescence — while component-mass sliders (m₁, m₂, URL-encoded as `gwm1`/`gwm2`) reshape the waveform live. Playback is presentation-only: the underlying signals stay seed-deterministic, and animation pauses when the OS requests reduced motion. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
+
+The theatre's presentation is driven by an explicit state machine — `idle`, `loading`, `real`, `generated`, `error`, `cancelled` — surfaced as a colour-coded status pill with a live dot, the human-readable status sentence, and a contextual **Cancel** (while loading) or **Retry** (after an error or cancellation) action. A superseded or user-cancelled request never overwrites the phase the reader has already moved on to. The shared vertical scale eases toward the new peak whenever the signal changes, so switching seed, mode, or component masses rescales the trace smoothly instead of jumping; the ease is bounded (it stops once settled) and snaps instantly under reduced motion. The observation readout group and the provenance line animate in when real data lands, and the leading edge of the revealed trace carries a mode-coloured glow — blue for the generated teaching signal, cyan for the GWOSC observation — so the two are never visually confusable.
+
+The **Kerr Black Hole Observatory** animates its equatorial coordinate map rather than redrawing it: horizon, ergosphere, photon-orbit, and ISCO radii interpolate with a cubic ease-out whenever mass or spin changes, the map reports a `settling` state while it moves, and the camera presets ease between viewpoints instead of cutting. A **live formulation** panel prints the governing relations with the current numbers substituted — the horizon pair $r_\pm = M \pm \sqrt{M^2 - a^2}$, the ergosurface $r_E = M + \sqrt{M^2 - a^2\cos^2\theta}$ at both the equator and the pole, the prograde and retrograde photon orbits, the ISCO closed form with its $Z_1$/$Z_2$ intermediates, the surface-gravity ratio, the entropy area law, and the Hawking temperature — each row updating as the sliders move. Printed numbers always come from the exact geometry, never from the eased animation values, and the panel closes with an explicit note separating the exact Kerr coordinate radii from the approximate raymarch image.
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
@@ -1448,7 +1454,7 @@ High-value future improvements:
 - self-host CDN assets for long-term archival stability;
 - add a proper citation file (`CITATION.cff`);
 - add a screenshot manifest with viewport, view, scroll position, and render settings;
-- extend the pure-physics test suite to the remaining modules (GR, Planck, black-hole thermodynamics);
+- extend the pure-physics test suite to the remaining modules (GR, Planck, and the black-hole thermodynamics helpers beyond the covered horizon, ergosphere, ISCO, temperature, and entropy scalings);
 - add a causal-spacetime laboratory with an interactive light-cone and event-ordering explorer;
 - add a renormalisation-group flow landscape with a live β-function integrator.
 
@@ -1457,7 +1463,9 @@ Completed since the first release:
 - deep-link support through query parameters, with back/forward restoration and documented fallback;
 - a GitHub Pages deployment workflow;
 - a focused Node test suite for the pure physics and reproducibility helpers;
-- a bounded real-data mode for the gravitational-wave laboratory.
+- a bounded real-data mode for the gravitational-wave laboratory;
+- a Kerr Observatory with an exact coordinate-radius map, eased geometry transitions, eased camera presets, and a live formulation panel that substitutes the current parameters into the implemented Kerr relations;
+- a gravitational-wave presentation state machine (`idle` / `loading` / `real` / `generated` / `error` / `cancelled`) with cancel and retry, an eased shared vertical scale, and animated observation/provenance reveals.
 
 ---
 
@@ -1720,6 +1728,14 @@ The ergosphere at the equator occurs at:
 ```math
 r_{\mathrm{ergo}} = 2M
 ```
+
+Away from the equator the stationary-limit surface is polar-angle dependent:
+
+```math
+r_E(\theta) = M + \sqrt{M^2 - a^2\cos^2\theta}
+```
+
+which reduces to $2M$ at $\theta = 90^\circ$ and to $r_+$ at the pole. The observatory's live formulation panel prints both values for the current spin.
 
 The visual disk is not a numerical GRMHD simulation.
 

@@ -119,7 +119,7 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
      fallback      node rendered if WebGL/THREE unavailable or context lost
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -130,6 +130,16 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   const settingsRef = useRef(settings); settingsRef.current = settings;
   const prmRef = useRef(prm); prmRef.current = prm;
   const playingRef = useRef(playing); playingRef.current = playing;
+  // Eased camera-preset target. Held in a ref so changing it never rebuilds the
+  // WebGL scene; the frame loop glides the orbit rig toward it instead.
+  const goalRef = useRef(null);
+  useEffect(() => {
+    if (!cameraGoal) return;
+    goalRef.current = {
+      radius: cameraGoal.radius, theta: cameraGoal.theta, phi: cameraGoal.phi,
+      fromR: null, fromT: 0, fromP: 0, t: 0, active: true,
+    };
+  }, [cameraGoal]);
 
   useEffect(() => {
     if (!qgaWebGLAvailable()) { setFailed(true); return; }
@@ -350,14 +360,40 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       clockT += rawDt;
       const mo = motion();
 
+      // eased camera-preset transition (no scene rebuild)
+      const goal = goalRef.current;
+      if (goal && goal.active) {
+        if (ptr.down) {
+          goal.active = false;
+        } else if (mo === 0) {
+          // reduced motion: snap straight to the preset
+          orbit.radius = goal.radius; orbit.theta = goal.theta; orbit.phi = goal.phi;
+          orbit.introT = 0; orbit.vTheta = 0; orbit.vPhi = 0;
+          goal.active = false;
+        } else {
+          if (goal.fromR == null) {
+            goal.fromR = orbit.radius; goal.fromT = orbit.theta; goal.fromP = orbit.phi;
+            orbit.introT = 0; orbit.vTheta = 0; orbit.vPhi = 0;
+            orbit.lastInteract = clockT;
+          }
+          goal.t = Math.min(1, goal.t + rawDt / 0.9);
+          const e = 1 - Math.pow(1 - goal.t, 3);
+          orbit.radius = goal.fromR + (goal.radius - goal.fromR) * e;
+          orbit.theta = goal.fromT + (goal.theta - goal.fromT) * e;
+          orbit.phi = goal.fromP + (goal.phi - goal.fromP) * e;
+          if (goal.t >= 1) goal.active = false;
+        }
+      }
+      const easing = !!(goal && goal.active);
+
       // cinematic intro ease
-      if (orbit.introT > 0) {
+      if (orbit.introT > 0 && !easing) {
         orbit.introT = Math.max(0, orbit.introT - rawDt / 1.4);
         const k = 1 - orbit.introT * orbit.introT;
         orbit.radius = home.radius * (1.45 - 0.45 * k);
       }
       // inertia
-      if (!ptr.down && mo > 0) {
+      if (!ptr.down && mo > 0 && !easing) {
         orbit.theta += orbit.vTheta;
         orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, orbit.phi + orbit.vPhi));
         orbit.vTheta *= 0.9; orbit.vPhi *= 0.9;
@@ -365,7 +401,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         if (Math.abs(orbit.vPhi) < 1e-5) orbit.vPhi = 0;
       }
       // gentle auto-drift in cinematic mode after idle
-      if (mo > 0 && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic"
+      if (mo > 0 && !easing && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic"
           && clockT - orbit.lastInteract > 4 && !ptr.down) {
         orbit.theta += 0.03 * mo * rawDt;
       }

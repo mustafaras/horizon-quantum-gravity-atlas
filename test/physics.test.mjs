@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  schwarzschildRadius, kerrGeometry, hawkingTemperature,
+  schwarzschildRadius, kerrGeometry, kerrErgosphere, hawkingTemperature,
   blackHoleEntropyAreaUnits, seededRng, qftConservation,
   chirpMass, timeToCoalescence, inspiralFrequency, generatedChirp, stftSpectrogram,
   mandelstamKinematics, kleinNishina, angularDistribution,
@@ -29,6 +29,44 @@ test("Kerr spin separates prograde and retrograde characteristic radii", () => {
   assert.ok(geometry.rPlus < geometry.rErgoEquator);
   assert.ok(geometry.rPhoton < geometry.rPhotonRetrograde);
   assert.ok(geometry.rIsco < geometry.rIscoRetrograde);
+});
+
+test("Kerr horizon pair r± brackets the extremal limit", () => {
+  for (const a of [0, 0.3, 0.7, 0.9, 0.998]) {
+    const g = kerrGeometry(a);
+    // r± = M ± sqrt(M^2 - a^2) in units of GM/c^2
+    assert.ok(Math.abs(g.rPlus - (1 + Math.sqrt(1 - a * a))) < 1e-12);
+    assert.ok(Math.abs(g.rMinus - (1 - Math.sqrt(1 - a * a))) < 1e-12);
+    assert.ok(g.rMinus <= g.rPlus);
+    assert.ok(g.rPlus >= 1 && g.rPlus <= 2);
+  }
+  // the documented clamp is a★ ≤ 0.998, so the extremal limit is approached, not reached
+  const nearExtremal = kerrGeometry(0.998);
+  assert.ok(Math.abs(nearExtremal.rPlus - (1 + Math.sqrt(1 - 0.998 * 0.998))) < 1e-12);
+  assert.ok(nearExtremal.rPlus < 1.07 && nearExtremal.rMinus > 0.93);
+  assert.ok(Math.abs(kerrGeometry(5).a - 0.998) < 1e-12);
+});
+
+test("Kerr ergosphere reduces to the implemented equatorial value at theta = pi/2", () => {
+  for (const a of [0, 0.25, 0.5, 0.75, 0.9, 0.998]) {
+    const g = kerrGeometry(a);
+    assert.ok(Math.abs(kerrErgosphere(a, Math.PI / 2) - g.rErgoEquator) < 1e-12);
+    // on the polar axis the ergosurface meets the horizon
+    assert.ok(Math.abs(kerrErgosphere(a, 0) - g.rPlus) < 1e-12);
+    // and it is monotone between the two
+    assert.ok(kerrErgosphere(a, Math.PI / 4) >= g.rPlus - 1e-12);
+    assert.ok(kerrErgosphere(a, Math.PI / 4) <= g.rErgoEquator + 1e-12);
+  }
+  assert.equal(kerrErgosphere(0, 0.3), 2);
+});
+
+test("Kerr ISCO closed form matches the Z1/Z2 intermediates it exposes", () => {
+  for (const a of [0, 0.4, 0.8, 0.95]) {
+    const g = kerrGeometry(a);
+    const root = Math.sqrt(Math.max(0, (3 - g.z1) * (3 + g.z1 + 2 * g.z2)));
+    assert.ok(Math.abs(g.rIsco - (3 + g.z2 - root)) < 1e-12);
+    assert.ok(Math.abs(g.rIscoRetrograde - (3 + g.z2 + root)) < 1e-12);
+  }
 });
 
 test("black-hole temperature scales inversely with mass and entropy with area", () => {

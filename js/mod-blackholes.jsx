@@ -1,4 +1,51 @@
 // mod-blackholes.jsx — Module 07: Black Holes, Entropy, and Holography
+/* ---------- Eased Kerr geometry ----------
+   Interpolates the numeric fields of kerrGeometry() so the coordinate map and
+   the characteristic-radius rings glide between slider values instead of
+   snapping. Purely presentational: the readouts always print the exact target
+   values, and reduced-motion users get an instant snap. */
+const KERR_EASE_KEYS = [
+  "a", "rPlus", "rMinus", "rErgoEquator", "rIsco", "rIscoRetrograde",
+  "rPhoton", "rPhotonRetrograde", "z1", "z2", "surfaceGravity", "temperatureFactor",
+];
+function useEasedKerr(target, duration = 0.55) {
+  const prm = usePRM();
+  const [shown, setShown] = useState(target);
+  const shownRef = useRef(target);
+  const targetRef = useRef(target);
+  targetRef.current = target;
+  const rafRef = useRef(0);
+  // kerrGeometry() is a pure function of the spin parameter, so the spin is a
+  // complete and stable dependency key for the whole geometry object.
+  const key = target.a;
+  useEffect(() => {
+    const goal = targetRef.current;
+    if (prm) {
+      cancelAnimationFrame(rafRef.current);
+      shownRef.current = goal;
+      setShown(goal);
+      return undefined;
+    }
+    const from = shownRef.current;
+    let moved = false;
+    for (const k of KERR_EASE_KEYS) if (Math.abs(from[k] - goal[k]) > 1e-9) { moved = true; break; }
+    if (!moved) { shownRef.current = goal; return undefined; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / (duration * 1000));
+      const e = 1 - Math.pow(1 - p, 3);
+      const next = {};
+      for (const k of KERR_EASE_KEYS) next[k] = from[k] + (goal[k] - from[k]) * e;
+      shownRef.current = next;
+      setShown(next);
+      if (p < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [key, duration, prm]);
+  return shown;
+}
+
 /* ---------- Hawking blackbody spectrum (responds to mass & spin) ---------- */
 function HawkingSpectrumPlot({ logM, tempFactor }) {
   const cvRef = useRef(null);
@@ -92,7 +139,7 @@ const KERR_CURVES = [
   { key: "horizon", sense: "", color: "#ff7b72", dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: "rgba(4,7,13,0.97)" },
 ];
 
-function KerrGeometryMap({ geometry, layers, open, onToggle }) {
+function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, motion }) {
   const cx = 118, cy = 110, span = 94;
   const visible = KERR_CURVES.filter((curve) => layers[curve.key]);
   const widest = visible.reduce((acc, curve) => Math.max(acc, curve.read(geometry)), 2);
@@ -101,6 +148,7 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
   const tickStep = domain > 12 ? 4 : domain > 6 ? 2 : 1;
   const ticks = [];
   for (let r = tickStep; r <= domain; r += tickStep) ticks.push(r);
+  const readout = exact || geometry;
 
   if (!open) {
     return (
@@ -112,7 +160,8 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
   }
 
   return (
-    <figure className="kerr-map" aria-label="Exact Kerr equatorial coordinate-radius figure">
+    <figure className={"kerr-map" + (settling ? " settling" : "") + (motion ? " live" : "")}
+      aria-label="Exact Kerr equatorial coordinate-radius figure">
       <figcaption className="kerr-map-head">
         <span className="kerr-map-ident">
           <span className="kerr-map-id">FIG.1</span>
@@ -132,6 +181,10 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
             <stop offset="68%" stopColor="#08111f" stopOpacity="0.18"></stop>
             <stop offset="100%" stopColor="#02060c" stopOpacity="0"></stop>
           </radialGradient>
+          <linearGradient id="kerr-sweep-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#54aeff" stopOpacity="0"></stop>
+            <stop offset="100%" stopColor="#54aeff" stopOpacity="0.5"></stop>
+          </linearGradient>
         </defs>
         <circle cx={cx} cy={cy} r={span} fill="url(#kerr-scope-field)"
           stroke="rgba(148,176,224,0.18)" strokeWidth="0.7"></circle>
@@ -145,8 +198,12 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
             <text x={cx + px(r)} y={cy + 13} className="kerr-tick-label">{r}</text>
           </g>
         ))}
+        <g className="kerr-sweep" aria-hidden="true">
+          <line x1={cx} y1={cy} x2={cx + span} y2={cy} stroke="url(#kerr-sweep-fade)" strokeWidth="1.1"></line>
+        </g>
         {visible.map((curve, index) => (
           <circle key={index} cx={cx} cy={cy} r={px(curve.read(geometry))}
+            className={"kerr-ring kerr-ring-" + curve.key + (curve.sense ? " kerr-ring-" + curve.sense : "")}
             fill={curve.fill || "none"} stroke={curve.color} strokeWidth={curve.width}
             strokeDasharray={curve.dash}></circle>
         ))}
@@ -156,7 +213,7 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
             stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
           <path d={"M " + (cx + 82) + " " + (cy - 50) + " l -6 -1 l 1 6"} fill="none"
             stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
-          <text x={cx + 50} y={cy - 78} className="kerr-tick-label">a★ {geometry.a.toFixed(2)}</text>
+          <text x={cx + 50} y={cy - 78} className="kerr-tick-label">a★ {readout.a.toFixed(2)}</text>
         </g>
         <line x1={cx - span} y1={cy + span + 24} x2={cx - span + px(tickStep)} y2={cy + span + 24}
           stroke="rgba(205,219,241,0.6)" strokeWidth="1.3"></line>
@@ -179,7 +236,7 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
                 </svg>
               </td>
               <th scope="row">{curve.label}</th>
-              <td className="kerr-legend-value">{curve.read(geometry).toFixed(3)}</td>
+              <td className="kerr-legend-value">{curve.read(readout).toFixed(3)}</td>
             </tr>
           ))}
         </tbody>
@@ -189,7 +246,7 @@ function KerrGeometryMap({ geometry, layers, open, onToggle }) {
   );
 }
 
-function KerrReadout({ label, value, unit, formula, lead, pair }) {
+function KerrReadout({ label, value, unit, formula, sub, lead, pair }) {
   return (
     <div className={"kerr-readout" + (lead ? " lead" : "")}>
       <div className="kerr-readout-label">
@@ -208,6 +265,7 @@ function KerrReadout({ label, value, unit, formula, lead, pair }) {
         <div className="kerr-readout-value">{value}{unit ? <span className="unit">{unit}</span> : null}</div>
       )}
       <div className="kerr-readout-formula">{formula}</div>
+      {sub ? <div className="kerr-readout-sub">{sub}</div> : null}
     </div>
   );
 }
@@ -264,9 +322,107 @@ function KerrValidity({ geometry }) {
   );
 }
 
+/* ---------- Live formulation: governing equations with the current numbers
+   substituted. Every expression below is the closed form already implemented in
+   js/physics.mjs (kerrGeometry / kerrErgosphere); nothing new is asserted here. */
+function KerrFormulation({ geometry, massSolar, temperature, entropy }) {
+  const g = geometry;
+  const a = g.a;
+  const rows = [
+    {
+      id: "rpm",
+      name: "Horizon pair",
+      sym: "r± = M ± √(M² − a²)",
+      sub: "r₊ = 1 + √(1 − " + a.toFixed(3) + "²) = " + g.rPlus.toFixed(3) +
+        "  ·  r₋ = 1 − √(1 − " + a.toFixed(3) + "²) = " + g.rMinus.toFixed(3),
+      val: g.rPlus.toFixed(3) + " / " + g.rMinus.toFixed(3),
+      unit: "GM/c²",
+    },
+    {
+      id: "ergo",
+      name: "Ergosurface",
+      sym: "r_E(θ) = M + √(M² − a² cos²θ)",
+      sub: "θ = 90° → 1 + √(1 − " + a.toFixed(3) + "²·0) = " + g.rErgoEquator.toFixed(3) +
+        "  ·  θ = 0° → " + g.rPlus.toFixed(3),
+      val: g.rErgoEquator.toFixed(3),
+      unit: "GM/c²",
+    },
+    {
+      id: "photon",
+      name: "Photon orbit",
+      sym: "r_ph = 2M[1 + cos(⅔ arccos(∓a★))]",
+      sub: "pro: 2[1 + cos(⅔ arccos(−" + a.toFixed(3) + "))] = " + g.rPhoton.toFixed(3) +
+        "  ·  retro: " + g.rPhotonRetrograde.toFixed(3),
+      val: g.rPhoton.toFixed(3) + " / " + g.rPhotonRetrograde.toFixed(3),
+      unit: "GM/c²",
+    },
+    {
+      id: "isco",
+      name: "ISCO",
+      sym: "r_isco = M[3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))]",
+      sub: "Z₁ = " + g.z1.toFixed(3) + "  ·  Z₂ = " + g.z2.toFixed(3) +
+        "  →  pro " + g.rIsco.toFixed(3) + "  ·  retro " + g.rIscoRetrograde.toFixed(3),
+      val: g.rIsco.toFixed(3) + " / " + g.rIscoRetrograde.toFixed(3),
+      unit: "GM/c²",
+    },
+    {
+      id: "kappa",
+      name: "Surface gravity",
+      sym: "κ = (r₊ − M) / (r₊² + a²)",
+      sub: "(" + g.rPlus.toFixed(3) + " − 1) / (" + g.rPlus.toFixed(3) + "² + " + a.toFixed(3) +
+        "²) = " + g.surfaceGravity.toFixed(4) + "  →  T_H/T_Schw = " + g.temperatureFactor.toFixed(3),
+      val: g.temperatureFactor.toFixed(3),
+      unit: "× T_Schw",
+    },
+    {
+      id: "entropy",
+      name: "Bekenstein–Hawking entropy",
+      sym: "S/k_B = 1.05×10⁷⁷ (M/M☉)² (r₊/2M)",
+      sub: "1.05×10⁷⁷ × " + sciNotation(massSolar, 2) + "² × " + (g.rPlus / 2).toFixed(3) +
+        " = " + sciNotation(entropy, 2),
+      val: sciNotation(entropy, 2),
+      unit: "k_B",
+    },
+    {
+      id: "temp",
+      name: "Hawking temperature",
+      sym: "T_H = (ħc³ / 8πGMk_B) · κ/κ₀",
+      sub: "6.17×10⁻⁸ K / " + sciNotation(massSolar, 2) + " × " + g.temperatureFactor.toFixed(3) +
+        " = " + sciNotation(temperature, 2),
+      val: sciNotation(temperature, 2),
+      unit: "K",
+    },
+  ];
+  return (
+    <section className="kerr-formulation" aria-label="Live Kerr formulation with current parameter values">
+      <header className="kerr-formulation-head">
+        <span className="kerr-formulation-ident">LIVE FORMULATION</span>
+        <span className="kerr-formulation-state">
+          a★ = {a.toFixed(3)} · M = {sciNotation(massSolar, 2)} M☉
+        </span>
+      </header>
+      <ol className="kerr-formulation-list">
+        {rows.map((row) => (
+          <li key={row.id} className="kerr-formulation-row">
+            <span className="kerr-formulation-name">{row.name}</span>
+            <span className="kerr-formulation-sym">{row.sym}</span>
+            <span className="kerr-formulation-sub">{row.sub}</span>
+            <span className="kerr-formulation-val">{row.val}<em>{row.unit}</em></span>
+          </li>
+        ))}
+      </ol>
+      <p className="kerr-formulation-note">
+        Closed-form Kerr quantities in Boyer–Lindquist coordinates, evaluated at the current sliders.
+        These are exact coordinate radii; the raymarched image above is an approximate lensing render.
+      </p>
+    </section>
+  );
+}
+
 /* ---------- 3D black hole laboratory ---------- */
 function BlackHoleLab3D() {
   const [atlasState, setAtlasState] = useQGAState();
+  const prm = usePRM();
   const [cameraPreset, setCameraPreset] = useState("edge");
   const [layers, setLayers] = useState({ horizon: true, ergo: true, photon: true, isco: true });
   const mapPreferenceKey = useRef(
@@ -440,6 +596,8 @@ function BlackHoleLab3D() {
   const M = Math.pow(10, logM);
   const rs_km = window.QGA_PHYSICS.schwarzschildRadius(M);
   const kerr = window.QGA_PHYSICS.kerrGeometry(aStar);
+  const eased = useEasedKerr(kerr);
+  const settling = Math.abs(eased.a - kerr.a) > 1e-4;
   const a = kerr.a;
   const rPlus = kerr.rPlus;          // outer horizon
   const rIsco = kerr.rIsco;
@@ -448,6 +606,7 @@ function BlackHoleLab3D() {
   const T_H = window.QGA_PHYSICS.hawkingTemperature(M, a);
   const S = window.QGA_PHYSICS.blackHoleEntropyAreaUnits(M, a);
   const t_ev = 2.1e67 * M * M * M;
+  const cameraGoal = KERR_CAMERA_PRESETS[cameraPreset];
 
   return (
     <div className="viz-frame">
@@ -495,8 +654,9 @@ function BlackHoleLab3D() {
         </div>
       </div>
       <Scene3D height={460} aria="Three-dimensional black hole with accretion disk, photon ring, and physical readouts"
-        initial={KERR_CAMERA_PRESETS[cameraPreset]} deps={[cameraPreset]}
-        overlay={<KerrGeometryMap geometry={kerr} layers={layers} open={mapOpen}
+        initial={KERR_CAMERA_PRESETS.edge} cameraGoal={cameraGoal}
+        overlay={<KerrGeometryMap geometry={eased} exact={kerr} layers={layers} open={mapOpen}
+          settling={settling} motion={!prm}
           onToggle={() => setMapOpen((current) => !current)}></KerrGeometryMap>}
         build={build} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
       <div className="kerr-deck">
@@ -507,19 +667,25 @@ function BlackHoleLab3D() {
           </header>
           <div className="kerr-rgrid">
             <KerrReadout lead label="outer horizon r₊" value={rPlus.toFixed(3)} unit="GM/c²"
-              formula="M + √(M² − a²)"></KerrReadout>
+              formula="M + √(M² − a²)"
+              sub={"1 + √(1 − " + a.toFixed(3) + "²) = " + rPlus.toFixed(3)}></KerrReadout>
             <KerrReadout label="ergosurface (equator)" value={kerr.rErgoEquator.toFixed(3)} unit="GM/c²"
-              formula="r = 2GM/c², spin-independent"></KerrReadout>
+              formula="r_E(θ) = M + √(M² − a² cos²θ)"
+              sub={"θ = 90° → 1 + √(1 − " + a.toFixed(3) + "²·0) = " + kerr.rErgoEquator.toFixed(3)}></KerrReadout>
             <KerrReadout lead label="ISCO" unit="GM/c²"
               pair={[["prograde", rIsco.toFixed(3)], ["retrograde", kerr.rIscoRetrograde.toFixed(3)]]}
-              formula="3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))"></KerrReadout>
+              formula="3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))"
+              sub={"Z₁ = " + kerr.z1.toFixed(3) + " · Z₂ = " + kerr.z2.toFixed(3)}></KerrReadout>
             <KerrReadout label="photon orbit" unit="GM/c²"
               pair={[["prograde", rPhoton.toFixed(3)], ["retrograde", kerr.rPhotonRetrograde.toFixed(3)]]}
-              formula="2[1 + cos(⅔ arccos(∓a★))]"></KerrReadout>
+              formula="2[1 + cos(⅔ arccos(∓a★))]"
+              sub={"2[1 + cos(⅔ arccos(−" + a.toFixed(3) + "))] = " + rPhoton.toFixed(3)}></KerrReadout>
             <KerrReadout label="Schwarzschild radius r_s" value={sciNotation(rs_km)} unit="km"
-              formula="2GM/c²"></KerrReadout>
+              formula="2GM/c²"
+              sub={"2.95 km × " + sciNotation(M, 2) + " = " + sciNotation(rs_km) + " km"}></KerrReadout>
             <KerrReadout label="spin a★" value={a.toFixed(3)}
-              formula="a★ = Jc/GM², extremal at 1"></KerrReadout>
+              formula="a★ = Jc/GM², extremal at 1"
+              sub={"clamped to a★ ≤ 0.998 · r₋ = " + kerr.rMinus.toFixed(3) + " GM/c²"}></KerrReadout>
           </div>
         </section>
         <section className="kerr-rgroup">
@@ -529,16 +695,21 @@ function BlackHoleLab3D() {
           </header>
           <div className="kerr-rgrid">
             <KerrReadout lead label="Hawking temperature T_H" value={sciNotation(T_H)} unit="K"
-              formula="T_H = ħκ / 2πck_B"></KerrReadout>
+              formula="T_H = ħκ / 2πck_B"
+              sub={"6.17×10⁻⁸ K / " + sciNotation(M, 2) + " × " + tempFactor.toFixed(3) + " = " + sciNotation(T_H) + " K"}></KerrReadout>
             <KerrReadout label="T_H / T_Schw at this spin" value={tempFactor.toFixed(3)}
-              formula="κ(a) / κ(0), → 0 at extremality"></KerrReadout>
+              formula="κ(a) / κ(0), → 0 at extremality"
+              sub={"κ = (" + rPlus.toFixed(3) + " − 1) / (" + rPlus.toFixed(3) + "² + " + a.toFixed(3) + "²) = " + kerr.surfaceGravity.toFixed(4)}></KerrReadout>
             <KerrReadout lead label="entropy S / k_B" value={sciNotation(S, 2)}
-              formula="S = A c³ / 4Għ"></KerrReadout>
+              formula="S = A c³ / 4Għ"
+              sub={"1.05×10⁷⁷ × " + sciNotation(M, 2) + "² × " + (rPlus / 2).toFixed(3) + " = " + sciNotation(S, 2)}></KerrReadout>
             <KerrReadout label="evaporation time" value={sciNotation(t_ev, 2)} unit="yr"
-              formula="∝ M³, order of magnitude"></KerrReadout>
+              formula="∝ M³, order of magnitude"
+              sub={"2.1×10⁶⁷ yr × " + sciNotation(M, 2) + "³ = " + sciNotation(t_ev, 2) + " yr"}></KerrReadout>
           </div>
         </section>
       </div>
+      <KerrFormulation geometry={kerr} massSolar={M} temperature={T_H} entropy={S}></KerrFormulation>
       <KerrValidity geometry={kerr}></KerrValidity>
       <div className="grid-2" style={{ marginTop: 6 }}>
         <HawkingSpectrumPlot logM={logM} tempFactor={tempFactor}></HawkingSpectrumPlot>
