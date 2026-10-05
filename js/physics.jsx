@@ -1,5 +1,145 @@
 // Browser bridge for the pure calculations in js/physics.mjs.
+function qcdB0(nf) {
+  const flavors = Number(nf);
+  return Number.isFinite(flavors) && flavors >= 0 ? 11 - (2 * flavors) / 3 : NaN;
+}
+function rgBeta(model, coupling, { nf = 1, a = 1, b = 1, gStar = 1 } = {}) {
+  const g = Number(coupling), flavors = Number(nf), aa = Number(a), bb = Number(b), fixed = Number(gStar);
+  if (!Number.isFinite(g)) return NaN;
+  if (model === "qed") return Number.isFinite(flavors) && flavors >= 0 ? (flavors * g ** 3) / (12 * Math.PI ** 2) : NaN;
+  if (model === "qcd") {
+    const coefficient = qcdB0(flavors);
+    return Number.isFinite(coefficient) ? -(coefficient * g ** 3) / (16 * Math.PI ** 2) : NaN;
+  }
+  if (model === "gaussian") return Number.isFinite(aa) ? -aa * g : NaN;
+  if (model === "linear") return Number.isFinite(aa) && Number.isFinite(fixed) ? aa * (g - fixed) : NaN;
+  if (model === "asymptotic-safety") return Number.isFinite(aa) && Number.isFinite(bb) ? aa * g - bb * g ** 3 : NaN;
+  return NaN;
+}
+function rgBetaDerivative(model, coupling, { nf = 1, a = 1, b = 1 } = {}) {
+  const g = Number(coupling), flavors = Number(nf), aa = Number(a), bb = Number(b);
+  if (!Number.isFinite(g)) return NaN;
+  if (model === "qed") return Number.isFinite(flavors) && flavors >= 0 ? (flavors * g * g) / (4 * Math.PI ** 2) : NaN;
+  if (model === "qcd") {
+    const coefficient = qcdB0(flavors);
+    return Number.isFinite(coefficient) ? -(3 * coefficient * g * g) / (16 * Math.PI ** 2) : NaN;
+  }
+  if (model === "gaussian" || model === "linear") return Number.isFinite(aa) ? (model === "gaussian" ? -aa : aa) : NaN;
+  if (model === "asymptotic-safety") return Number.isFinite(aa) && Number.isFinite(bb) ? aa - 3 * bb * g * g : NaN;
+  return NaN;
+}
+function rgStability(derivative, tolerance = 1e-9) {
+  const slope = Number(derivative);
+  if (!Number.isFinite(slope)) return "invalid";
+  if (slope < -Math.abs(tolerance)) return "UV-attractive";
+  if (slope > Math.abs(tolerance)) return "IR-attractive";
+  return "marginal";
+}
+function rgFixedPoints(model, parameters = {}) {
+  const { a = 1, b = 1, gStar = 1 } = parameters;
+  let roots = [];
+  if (model === "qed" || model === "qcd" || model === "gaussian") roots = [0];
+  else if (model === "linear" && Number.isFinite(Number(gStar))) roots = [Number(gStar)];
+  else if (model === "asymptotic-safety" && Number(a) >= 0 && Number(b) > 0) roots = [0, Math.sqrt(Number(a) / Number(b))];
+  return roots.map((g) => {
+    const derivative = rgBetaDerivative(model, g, parameters);
+    return { g, beta: rgBeta(model, g, parameters), derivative, stability: rgStability(derivative), source: "analytic" };
+  });
+}
+function findRGFixedPoints(model, parameters = {}, { gMin = 0, gMax = 4, samples = 512, tolerance = 1e-9 } = {}) {
+  const lo = Number(gMin), hi = Number(gMax), count = Math.max(16, Math.min(4096, Math.trunc(Number(samples))));
+  const tol = Math.max(1e-14, Math.abs(Number(tolerance)) || 1e-9);
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || !(hi > lo)) return [];
+  const roots = [];
+  const add = (value) => {
+    if (!Number.isFinite(value) || value < lo - tol || value > hi + tol) return;
+    if (!roots.some((root) => Math.abs(root - value) <= Math.max(tol * 10, 1e-7))) roots.push(value);
+  };
+  let left = lo, fLeft = rgBeta(model, left, parameters);
+  if (Number.isFinite(fLeft) && Math.abs(fLeft) <= tol) add(left);
+  for (let index = 1; index <= count; index++) {
+    const right = lo + ((hi - lo) * index) / count;
+    const fRight = rgBeta(model, right, parameters);
+    if (Number.isFinite(fRight) && Math.abs(fRight) <= tol) add(right);
+    if (Number.isFinite(fLeft) && Number.isFinite(fRight) && fLeft * fRight < 0) {
+      let a0 = left, b0 = right, fa = fLeft;
+      for (let iteration = 0; iteration < 80 && b0 - a0 > tol; iteration++) {
+        const middle = (a0 + b0) / 2, fm = rgBeta(model, middle, parameters);
+        if (!Number.isFinite(fm)) break;
+        if (Math.abs(fm) <= tol) { a0 = middle; b0 = middle; break; }
+        if (fa * fm <= 0) b0 = middle;
+        else { a0 = middle; fa = fm; }
+      }
+      add((a0 + b0) / 2);
+    }
+    left = right; fLeft = fRight;
+  }
+  return roots.sort((x, y) => x - y).map((g) => {
+    const derivative = rgBetaDerivative(model, g, parameters);
+    return { g, beta: rgBeta(model, g, parameters), derivative, stability: rgStability(derivative), source: "numeric", tolerance: tol };
+  });
+}
+function rgOneLoopRunning(model, g0, deltaLogMu, { nf = 1 } = {}) {
+  const coupling = Number(g0), t = Number(deltaLogMu), flavors = Number(nf);
+  if (!(coupling >= 0) || !Number.isFinite(coupling) || !Number.isFinite(t) ||
+      !Number.isFinite(flavors) || flavors < 0 || !["qed", "qcd"].includes(model)) {
+    return { g: NaN, alpha: NaN, denominator: NaN, status: "invalid", poleDelta: NaN };
+  }
+  const coefficient = model === "qed" ? flavors / (6 * Math.PI ** 2) : -qcdB0(flavors) / (8 * Math.PI ** 2);
+  const denominator = 1 - coefficient * coupling * coupling * t;
+  const poleDelta = coefficient > 0 && coupling > 0 ? 1 / (coefficient * coupling * coupling) : Infinity;
+  if (!(denominator > 0) || !Number.isFinite(denominator)) {
+    return { g: NaN, alpha: NaN, denominator, status: "pole", poleDelta };
+  }
+  const g = coupling / Math.sqrt(denominator), alpha = (g * g) / (4 * Math.PI);
+  const status = alpha >= 1 ? (model === "qcd" ? "strong-coupling" : "perturbative-limit") : "perturbative";
+  return { g, alpha, denominator, status, poleDelta };
+}
+function integrateRGFlow({
+  model, g0, t0 = 0, tMin = -8, tMax = 8, step = 0.02,
+  gLimit = Math.sqrt(4 * Math.PI), maxSteps = 20000, parameters = {},
+} = {}) {
+  const startG = Number(g0), startT = Number(t0), minT = Number(tMin), maxT = Number(tMax);
+  const hMax = Math.abs(Number(step)), limit = Math.abs(Number(gLimit)), iterationLimit = Math.max(1, Math.trunc(Number(maxSteps)));
+  const invalid = !Number.isFinite(startG) || startG < 0 || !Number.isFinite(startT) ||
+    !Number.isFinite(minT) || !Number.isFinite(maxT) || !(minT <= startT && startT <= maxT) ||
+    !(hMax > 0) || !(limit > 0) || !Number.isFinite(rgBeta(model, startG, parameters));
+  const diagnostics = { method: "fixed-step-rk4", step: hMax, tolerance: 1e-10, gLimit: limit, maxSteps: iterationLimit };
+  if (invalid) {
+    return { points: [], infrared: { status: "invalid", reached: startT }, ultraviolet: { status: "invalid", reached: startT },
+      status: "invalid", ...diagnostics };
+  }
+  const boundaryStatus = () => model === "qcd" ? "strong-coupling" : model === "qed" ? "perturbative-limit" : "coupling-boundary";
+  const advance = (target) => {
+    const direction = target >= startT ? 1 : -1;
+    const points = [{ t: startT, g: startG, beta: rgBeta(model, startG, parameters) }];
+    let t = startT, g = startG, status = "range-complete", iterations = 0;
+    while (Math.abs(target - t) > 1e-12 && iterations < iterationLimit) {
+      const h = direction * Math.min(hMax, Math.abs(target - t));
+      const k1 = rgBeta(model, g, parameters), k2 = rgBeta(model, g + (h * k1) / 2, parameters);
+      const k3 = rgBeta(model, g + (h * k2) / 2, parameters), k4 = rgBeta(model, g + h * k3, parameters);
+      const next = g + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+      if (![k1, k2, k3, k4, next].every(Number.isFinite)) { status = "divergent"; break; }
+      if (Math.abs(next) > limit) {
+        const fraction = Math.max(0, Math.min(1, (limit - Math.abs(g)) / Math.max(1e-15, Math.abs(next) - Math.abs(g))));
+        const boundaryT = t + h * fraction, boundaryG = Math.sign(next || g || 1) * limit;
+        points.push({ t: boundaryT, g: boundaryG, beta: rgBeta(model, boundaryG, parameters), boundary: true });
+        t = boundaryT; g = boundaryG; status = boundaryStatus(); break;
+      }
+      t += h; g = next; iterations += 1;
+      points.push({ t, g, beta: rgBeta(model, g, parameters) });
+    }
+    if (iterations >= iterationLimit && Math.abs(target - t) > 1e-12) status = "iteration-limit";
+    return { points, status, reached: t, coupling: g, iterations, terminated: status !== "range-complete" };
+  };
+  const infrared = advance(minT), ultraviolet = advance(maxT);
+  const points = infrared.points.slice(1).reverse().concat(ultraviolet.points);
+  return { points, infrared, ultraviolet,
+    status: infrared.terminated || ultraviolet.terminated ? "bounded-termination" : "range-complete", ...diagnostics };
+}
 const QGA_PHYSICS = {
+  qcdB0, rgBeta, rgBetaDerivative, rgStability, rgFixedPoints, findRGFixedPoints,
+  rgOneLoopRunning, integrateRGFlow,
   schwarzschildRadius(massSolar) { return 2.95 * Number(massSolar); },
   kerrGeometry(spin) {
     const a = Math.min(0.998, Math.max(0, Number(spin) || 0));

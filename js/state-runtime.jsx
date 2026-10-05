@@ -51,7 +51,44 @@ function qgaExportJson(state, extra = {}) {
       implementation: "js/physics.mjs mirrored by js/physics.jsx",
       references: ["Misner, Thorne & Wheeler (1973)", "Wald (1984)"],
     },
-  } : {};
+  } : state.view === "rg" ? (() => {
+    const parameters = { nf: state.rgNf, a: state.rgA, b: state.rgB, gStar: state.rgGStar };
+    const ln10 = Math.log(10);
+    const integration = window.QGA_PHYSICS.integrateRGFlow({
+      model: state.rgModel, g0: state.rgG0, t0: 0,
+      tMin: (state.rgLogMin - state.rgMu0) * ln10,
+      tMax: (state.rgLogMax - state.rgMu0) * ln10,
+      step: 0.02, parameters,
+    });
+    return {
+      model: {
+        id: state.rgModel, preset: state.rgPreset, presetOrigin: state.rgPresetOrigin || state.rgPreset,
+        status: state.rgModel === "asymptotic-safety" || state.rgPresetOrigin === "asymptotic-safety"
+          ? "conjectural-illustrative-toy"
+          : ["gaussian", "linear"].includes(state.rgModel) ? "pedagogical-toy" : "one-loop-perturbative",
+        equation: "dg/dln(mu) = beta(g)", alphaConvention: "alpha = g^2/(4 pi)",
+        qedConvention: "nf unit-charge Dirac fermions; beta(e)=nf e^3/(12 pi^2)",
+        qcdConvention: "SU(3), b0=11-2 nf/3; beta(g)=-b0 g^3/(16 pi^2)",
+        parameters,
+      },
+      numerics: {
+        method: integration.method, stepInNaturalLogScale: integration.step,
+        fixedPointTolerance: 1e-9, couplingBoundary: integration.gLimit,
+        infrared: integration.infrared.status, ultraviolet: integration.ultraviolet.status,
+      },
+      validity: {
+        boundary: "alpha = 1 is used as a perturbative/strong-coupling display boundary",
+        qedLandauPole: "formal one-loop extrapolation, not an observation",
+        qcdInfrared: "one-loop perturbation theory is not valid in the strong-coupling regime",
+        asymptoticSafety: "illustrative toy flow; not evidence for quantum-gravity asymptotic safety",
+      },
+      fixedPoints: window.QGA_PHYSICS.rgFixedPoints(state.rgModel, parameters),
+      provenance: {
+        implementation: "js/physics.mjs mirrored by js/physics.jsx",
+        references: ["Gross & Wilczek (1973)", "Politzer (1973)", "Peskin & Schroeder (1995)", "Weinberg (1979)"],
+      },
+    };
+  })() : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));

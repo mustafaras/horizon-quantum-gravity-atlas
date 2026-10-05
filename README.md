@@ -266,7 +266,27 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <br/>
 <sub><strong>Mobile causal laboratory</strong> — presets and frame controls retain 44 px touch targets; the wide scientific diagram scrolls inside its own container without widening the page.</sub>
 </td>
-<td width="50%"></td>
+<td width="50%">
+<img src="docs/screenshots/18-rg-flow-landscape.png" alt="Desktop Renormalisation-Group Flow Landscape showing the running coupling, beta-function phase line, fixed-point diagnostics, and live substituted equations" width="100%" />
+<br/>
+<sub><strong>RG Flow Landscape</strong> — the scale trajectory and β-function phase line share a coupling axis. The QCD preset exposes asymptotic freedom, the infrared strong-coupling boundary, fixed-point classification, and deterministic RK4 diagnostics without presenting the invalid region as a successful continuation.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/19-rg-flow-landscape-mobile.png" alt="Mobile RG Flow Landscape with stacked documented presets, 44-pixel controls, scrollable scale plot, and conjectural asymptotic-safety-style toy disclosure" width="100%" />
+<br/>
+<sub><strong>Mobile RG instrument</strong> — documented presets and controls retain 44 px targets; the wide scale graph scrolls inside its panel, while the asymptotic-safety-style preset remains explicitly conjectural and illustrative.</sub>
+</td>
+<td width="50%">
+<strong>RG screenshot state</strong>
+<br/><br/>
+Desktop: one-loop QCD with five active flavours.
+<br/><br/>
+Mobile: asymptotic-safety-style polynomial toy.
+<br/><br/>
+The paired captures deliberately keep perturbative and conjectural layers visually and textually distinct.
+</td>
 </tr>
 </table>
 
@@ -376,7 +396,7 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 |---|---|---|---|---|
 | 01 | Standard Model | Particle content and gauge architecture | 3D particle map and analytical atlas | established physics with known gaps |
 | 02 | Quantum Field Theory | Fields, quanta, amplitudes, propagators | Klein-Gordon membrane and Feynman collision lab | established formalism with pedagogical simplification |
-| 03 | Gauge Symmetry & RG Flow | Local symmetry and scale dependence | RG landscape and running coupling simulator | established one-loop logic with domain limits |
+| 03 | Gauge Symmetry & RG Flow | Local symmetry, scale dependence, and fixed-point stability | synchronized running-coupling / β-function flow chamber | one-loop QED/QCD with domain limits; pedagogical and conjectural presets explicitly separated |
 | 04 | General Relativity | Local causal structure and gravity as curved spacetime | Minkowski causal laboratory, deformable geometry, geodesics, lensing rays | exact flat-spacetime SR foundation plus established classical GR |
 | 05 | Planck Frontier | Why perturbative quantum gravity fails | scale ladder and speculative foam visualization | established obstruction, speculative visualization |
 | 06 | Theory Comparator | Candidate quantum-gravity programs | 3D theory constellation and comparator | conjectural frameworks |
@@ -413,7 +433,7 @@ It is deliberately conservative: strong visuals are not allowed to upgrade the e
 |---|---|---|---|
 | Standard Model | particle architecture and interaction map | Established physics | gravity is explicitly outside the Standard Model gauge group |
 | Quantum Field Theory | field excitation and scattering laboratory | Established / Effective theory | diagrams are perturbative terms, not literal particle movies |
-| Gauge Symmetry and RG Flow | local symmetry and running couplings | Established / Effective theory | coupling evolution is contextualized by scale and scheme |
+| Gauge Symmetry and RG Flow | local symmetry, running couplings, phase lines, and fixed points | Established / Effective / Schematic / Conjectural | one-loop QED/QCD, numerical integration, teaching toys, and asymptotic-safety-style illustration are separately labeled |
 | General Relativity | curvature, geodesics, lensing, gravitational waves | Established physics | rubber-sheet scenes are spatial slices, not full spacetime |
 | Planck Frontier | scale ladder and Planck foam rendering | Schematic / Open problem | Planck-scale structure is not presented as observed |
 | Theory Comparator | string theory, LQG, asymptotic safety, EFT, holography | Conjectural / Effective theory | no candidate program is ranked as experimentally confirmed |
@@ -605,6 +625,56 @@ At one loop, a generic coupling runs as:
 For QCD with sufficiently few flavors, $b_0>0$, and the coupling weakens at high energy.
 
 This is asymptotic freedom.
+
+For SU(3) with $n_f$ active quark flavours, the implemented one-loop coefficient and solution are:
+
+```math
+b_0 = 11-\frac{2}{3}n_f,
+\qquad
+\frac{1}{g_s^2(\mu)}
+=
+\frac{1}{g_s^2(\mu_0)}
++\frac{b_0}{8\pi^2}\ln\frac{\mu}{\mu_0}
+```
+
+The QED preset uses a deliberately documented unit-charge Dirac-fermion convention:
+
+```math
+\beta(e)=\frac{n_f e^3}{12\pi^2},
+\qquad
+\alpha=\frac{e^2}{4\pi},
+\qquad
+\frac{1}{e^2(\mu)}
+=
+\frac{1}{e^2(\mu_0)}
+-\frac{n_f}{6\pi^2}\ln\frac{\mu}{\mu_0}
+```
+
+The resulting one-loop QED Landau pole is displayed only as a formal extrapolation. It is not an observation, and the instrument stops its numerical trajectory at the conservative display boundary $\alpha=1$ before the pole.
+
+A fixed point satisfies:
+
+```math
+\beta(g_*)=0
+```
+
+and the one-coupling linearization is:
+
+```math
+\beta(g)\simeq \beta'(g_*)(g-g_*)
+```
+
+With $t=\ln\mu$ increasing toward the ultraviolet, $\beta'(g_*)<0$ is UV-attractive and $\beta'(g_*)>0$ is IR-attractive. A zero derivative is marginal at linear order.
+
+The live trajectory is integrated in both directions from $\mu_0$ by deterministic fixed-step fourth-order Runge-Kutta with $\Delta\ln\mu=0.02$. Non-finite stages, iteration limits, and the coupling boundary terminate explicitly. Analytic roots are cross-checked by a bounded bisection scan at tolerance $10^{-9}$.
+
+The Gaussian, UV-attractive, and IR-attractive presets are pedagogical one-coupling systems. The asymptotic-safety-style polynomial
+
+```math
+\beta(g)=a g-b g^3
+```
+
+is an explicitly conjectural illustration whose interacting UV fixed point is built into the chosen toy function. It is not evidence for quantum-gravity asymptotic safety.
 
 Gravity differs because Newton's constant has mass dimension $-2$ in four dimensions:
 
@@ -995,6 +1065,7 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 | black-hole raymarcher | shader-based scene in `mod-blackholes.jsx` | strongest visual surface for horizon physics |
 | QFT collision lab | process selector and 3D scene in `mod-qft.jsx` | connects amplitudes, diagrams, and event intuition |
 | QFT amplitude room | live Mandelstam/angular/resonance bench in `mod-qft.jsx` | turns the Feynman rules into numbers the reader can move |
+| RG Flow Landscape | `mod-gauge-rg.jsx`, `mod-rg-stage3.jsx`, and shared pure helpers | synchronizes coupling running, β phase lines, fixed points, termination, and epistemic boundaries |
 | Causal Spacetime Laboratory | Minkowski diagram and Lorentz-frame explorer in `mod-gr.jsx` | makes invariant intervals, causal order, simultaneity, and proper time directly testable |
 | GR curvature engine | scene in `mod-gr.jsx` | visualizes geodesics and lensing |
 | Planck ladder | scene in `mod-planck.jsx` | makes the scale desert explicit |
@@ -1046,11 +1117,15 @@ horizon-quantum-gravity-atlas/
 │       ├── 14-qft-amplitude-room.png
 │       ├── 15-qft-amplitude-room-mobile.png
 │       ├── 16-causal-spacetime-lab.png
-│       └── 17-causal-spacetime-lab-mobile.png
+│       ├── 17-causal-spacetime-lab-mobile.png
+│       ├── 18-rg-flow-landscape.png
+│       └── 19-rg-flow-landscape-mobile.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
 │   └── validate-repo.mjs
+├── styles/
+│   └── rg-flow.css
 └── js/
     ├── app.jsx
     ├── atlas-stage.jsx
@@ -1061,6 +1136,7 @@ horizon-quantum-gravity-atlas/
     ├── mod-standard-model.jsx
     ├── mod-qft.jsx
     ├── mod-gauge-rg.jsx
+    ├── mod-rg-stage3.jsx
     ├── mod-gr.jsx
     ├── mod-planck.jsx
     ├── mod-approaches.jsx
@@ -1109,11 +1185,13 @@ It is a repository-presentation guardrail that prevents broken academic packagin
 
 The physics itself is covered separately by `test/physics.test.mjs`, which runs under `node --test` and is executed by the same workflow.
 
+The RG cases cover one-loop QED ultraviolet growth, QCD asymptotic freedom, the $b_0=0$ boundary at $n_f=16.5$, analytic and numerical fixed points, the UV/IR stability convention, deterministic integration and reversal, invalid inputs, and graceful QED/QCD validity termination.
+
 ---
 
 ## Reproducible sharing and data modes
 
-The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), causal-laboratory controls (preset, β, and both event coordinates), and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
+The active module, learning pathway, black-hole mass/spin, gravitational-wave controls (mode, event, detector, GPS range, component masses), QFT amplitude-room controls (process, √s, cos θ, Compton x), causal-laboratory controls (preset, β, and both event coordinates), complete RG state, and seed are encoded in the URL query string. Browser back/forward navigation restores those values. Use **Copy link** to share an exact state or **Export JSON** to download a portable state record with a schema version and provenance fields.
 
 Generated visual data uses the recorded seed rather than ambient randomness, so a shared state is reproducible. The gravitational-wave **Signal Analysis Theatre** renders a seeded dual-detector (H1/L1) leading-order chirp with an inspiral–merger–ringdown phase ribbon, a live Hann-windowed STFT spectrogram computed from the displayed samples, and chirp-mass/coalescence-time readouts from the exact leading-order scalings. An animated playback engine sweeps a shared playhead across both instruments — with play/pause, replay, 0.5–4× speed, drag-to-scrub on the progress bar or any trace, a hover crosshair reporting time, strain, and instantaneous frequency, and a merger flash at coalescence — while component-mass sliders (m₁, m₂, URL-encoded as `gwm1`/`gwm2`) reshape the waveform live. Playback is presentation-only: the underlying signals stay seed-deterministic, and animation pauses when the OS requests reduced motion. It also offers a bounded **GWOSC API v2 strain mode** for a named event, detector, GPS range, and 4 kHz text strain product. It caps the compressed and decompressed response, downsamples the calibrated observation for a small browser preview, and shows the event, detector, units, processing, and source links. It times out quickly and falls back to the seeded local waveform when the network, browser decompression, or selected data product is unavailable. The spectrogram is an STFT — not a Q-transform — and the preview's effective sample rate sets its Nyquist limit, which the interface states explicitly.
 
@@ -1126,6 +1204,10 @@ The official API source used is https://gwosc.org/api/, with v2 documentation an
 The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the Mandelstam variables from the four-momenta, the angular differential cross-section, the photon 1/s total cross-section, and the Z⁰ Breit–Wigner shape on every frame, using the pure functions in `js/physics.mjs` (mirrored in `js/physics.jsx` for the browser). Three processes are offered: s-channel e⁺e⁻ → μ⁺μ⁻ (1 + cos²θ), t-channel e⁻μ⁻ → e⁻μ⁻ (leading pole 1/sin⁴(θ/2)), and Compton γe⁻ → γe⁻ (Klein–Nishina). The transport bar scrubs a normalised collision phase τ ∈ [0, 1] with play/pause, replay, and 0.5–4× speed; the animation is presentation only and the readouts do not depend on it. Playback is disabled when the OS requests reduced motion. Each of the four instrument panels carries a titled header bar, and the transport strip reports the live collision phase (incoming / interaction / outgoing) next to the clock, so the schematic canvases are always labelled as schematic. The t-channel curve deliberately plots only the leading pole — the complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are not drawn. The Z⁰ panel shows the Breit–Wigner shape alone, not the γ–Z⁰ interference term. The Compton slider x = E_γ/mₑc² is a lab-frame ratio and is deliberately decoupled from √s.
 
 The GR **Causal Spacetime Laboratory** is an exact 1+1D special-relativistic instrument using diagram units `c = 1 light-second per second` and metric signature `(−,+,+,+)`. It evaluates `Δs² = −(Δct)² + Δx²`, `γ`, the Lorentz-transformed event pair, causal-order verdicts, simultaneity-frame β, and timelike proper time from the pure helpers in `js/physics.mjs` and the browser mirror in `js/physics.jsx`. Five documented presets cover timelike, spacelike, null, relativity-of-simultaneity, and twin-style piecewise-inertial examples. The twin path uses two inertial legs and an explicitly schematic instantaneous turnaround; it does not model acceleration. Exact readouts always use the target β, while eased boosted axes and A′/B′ ghosts are presentation only. URL keys `grp`, `grb`, `grat`, `grax`, `grbt`, and `grbx` restore the preset, frame, and two events. β is restricted to `[-0.95, 0.95]`, coordinates to `[-4, 4]`, and invalid or out-of-range URL values fall back to the documented defaults. JSON export records the flat-spacetime model, established-special-relativity status, dimensionality, conventions, scope, implementation files, and standard references.
+
+The **RG Flow Landscape** records preset (`rgp`), originating preset (`rgpo`), model (`rgm`), initial coupling (`rgg`), reference scale (`rgmu`), logarithmic bounds (`rglo`, `rghi`), flavour count (`rgnf`), toy coefficients (`rga`, `rgb`, `rggs`), and current scale (`rgc`). Editing any control sets `rgp=custom` while `rgpo` retains the preset being edited, so **Reset preset** returns to that preset rather than an unrelated default; when `rgpo` is absent or incompatible with the model it is derived deterministically, keeping older links valid. Scientific status follows the active model and originating preset rather than the literal preset, so a customised asymptotic-safety-style flow keeps its conjectural badge and caveat. Ranges are validated on load; incompatible preset/model pairs resolve to the documented preset model, QED is clamped to `rgnf >= 1`, and invalid narrow ranges revert to the QCD defaults. Back/forward restores the complete instrument. The export adds the β convention, model parameters, fixed points, RK4 method and step, numerical/root tolerances, IR and UV termination status, validity disclosures, implementation provenance, and standard references.
+
+Curve morphing lasts a bounded 520 ms and then writes the exact target geometry. The flow tracer and current-point pulse each run once. Under `prefers-reduced-motion: reduce`, the trajectory snaps directly to the final points and all decorative motion remains static; no scientific state or control depends on animation.
 
 ## Run Locally
 
@@ -1191,6 +1273,8 @@ The screenshot set emphasizes visual and animated modules:
 | `15-qft-amplitude-room-mobile.png` | `qft` | mobile amplitude room, single-column instrument stack |
 | `16-causal-spacetime-lab.png` | `gr` | causal laboratory at `?view=gr&grp=simultaneity&grb=0.4&grat=-0.8&grax=-2.4&grbt=0.8&grbx=1.6`, 1440 × 1200 |
 | `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
+| `18-rg-flow-landscape.png` | `rg` | QCD preset at `?view=rg&rgp=qcd`, 1440 × 1200 |
+| `19-rg-flow-landscape-mobile.png` | `rg` | asymptotic-safety-style toy at `?view=rg&rgp=asymptotic-safety&rgm=asymptotic-safety&rgg=0.3&rgmu=0&rglo=-4&rghi=5&rgnf=0&rga=0.9&rgb=0.9&rgc=4`, 390 × 844 |
 
 Capture criteria:
 
@@ -1243,6 +1327,12 @@ It shows why gauge fields are required when phase choices vary from point to poi
 It introduces running couplings.
 
 It shows how renormalization turns scale into a physical variable.
+
+Its RG Flow Landscape integrates $dg/d\ln\mu=\beta(g)$ deterministically in both directions from a reference scale and displays the coupling trajectory beside the generating beta function.
+
+The QED and QCD presets are one-loop perturbative results with explicit Landau-pole and infrared strong-coupling caveats. The Gaussian and linear fixed-point systems are pedagogical. The asymptotic-safety-style polynomial is conjectural and illustrative, not evidence for a gravitational ultraviolet fixed point.
+
+Analytic fixed points, numerical roots, derivatives, stability labels, current substitutions, method/step/tolerance diagnostics, and validity termination are shown live.
 
 It prepares the reader for the gravitational obstruction by contrasting marginal gauge couplings with Newton's dimensionful coupling.
 
@@ -1493,6 +1583,8 @@ The following are especially central:
 28. R. M. Wald, *General Relativity*, 1984.
 29. J. Polchinski, *String Theory*, Vols. I-II, 1998.
 30. C. Rovelli, *Quantum Gravity*, 2004.
+31. M. Gell-Mann and F. E. Low, "Quantum Electrodynamics at Small Distances," *Physical Review* 95, 1300–1312 (1954).
+32. M. Reuter, "Nonperturbative Evolution Equation for Quantum Gravity," *Physical Review D* 57, 971–985 (1998).
 
 ---
 
@@ -1508,7 +1600,6 @@ High-value future improvements:
 - add a proper citation file (`CITATION.cff`);
 - add a screenshot manifest with viewport, view, scroll position, and render settings;
 - extend the pure-physics test suite to the remaining modules (GR, Planck, and the black-hole thermodynamics helpers beyond the covered horizon, ergosphere, ISCO, temperature, and entropy scalings);
-- add a renormalisation-group flow landscape with a live β-function integrator.
 
 Completed since the first release:
 
@@ -1519,6 +1610,7 @@ Completed since the first release:
 - a Kerr Observatory with an exact coordinate-radius map, eased geometry transitions, eased camera presets, and a live formulation panel that substitutes the current parameters into the implemented Kerr relations;
 - a gravitational-wave presentation state machine (`idle` / `loading` / `real` / `generated` / `error` / `cancelled`) with cancel and retry, an eased shared vertical scale, and animated observation/provenance reveals.
 - a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
+- a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
 
 ---
 
@@ -1974,6 +2066,10 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | holography is background-specific | AdS/CFT is not automatically our universe | holography caption |
 | collider energies far below Planck scale | null results are indirect | experiment module |
 | no unique theory ranking | programs solve different subproblems | theory comparator |
+| one-loop RG omits thresholds and higher orders | perturbative coefficients and active fields depend on scale and scheme | QED/QCD presets name their convention and terminate at $\alpha=1$ |
+| QED Landau pole is only a formal extrapolation | a one-loop singularity far beyond the controlled domain is not an observation | the pole is labeled as a warning; the numerical curve stops earlier |
+| QCD becomes strongly coupled in the infrared | perturbative running cannot describe confinement | the trajectory terminates visibly at $\alpha_s=1$ without claiming a physical divergence |
+| fixed-point toys are not empirical flows | chosen polynomial beta functions can build in the desired stability | toy and asymptotic-safety-style presets carry schematic/conjectural labels in the instrument and export |
 | pure-physics coverage is partial | untested helpers can regress silently | `test/physics.test.mjs` covers the shared helpers; roadmap extends it |
 
 ### Appendix Q — Academic README Rubric
@@ -2199,6 +2295,8 @@ Each screenshot also has a caveat.
 | `15-qft-amplitude-room-mobile.png` | documents the responsive amplitude-room layout | mobile crop is documentation, not hero art |
 | `16-causal-spacetime-lab.png` | demonstrates invariant and Lorentz readouts tied to the Minkowski diagram | exact only for flat 1+1D inertial special relativity |
 | `17-causal-spacetime-lab-mobile.png` | documents 44 px controls and contained diagram scrolling | mobile viewport shows only part of the horizontally scrollable diagram |
+| `18-rg-flow-landscape.png` | demonstrates one-loop QCD running, β geometry, and bounded integration | infrared continuation stops at the chosen perturbative boundary |
+| `19-rg-flow-landscape-mobile.png` | documents responsive controls and the conjectural fixed-point toy | the displayed UV fixed point is built into an illustrative polynomial |
 
 ### Appendix W — Badge Manifest
 

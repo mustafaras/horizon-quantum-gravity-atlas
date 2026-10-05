@@ -9,6 +9,8 @@ import {
   safeBeta, lorentzGamma, invariantInterval, classifySeparation,
   properTime, lorentzTransform, simultaneityFrameBeta, sanitizeCausalState,
   piecewiseProperTime,
+  qcdB0, rgBeta, rgBetaDerivative, rgStability, rgFixedPoints,
+  findRGFixedPoints, rgOneLoopRunning, integrateRGFlow,
 } from "../js/physics.mjs";
 
 test("Schwarzschild radius is about 2.95 km per solar mass", () => {
@@ -317,4 +319,100 @@ test("piecewise proper time sums only timelike inertial legs", () => {
   const expected = 2 * Math.sqrt(3 ** 2 - 2.2 ** 2);
   assert.ok(Math.abs(piecewiseProperTime(points) - expected) < 1e-12);
   assert.ok(Number.isNaN(piecewiseProperTime([{ ct: 0, x: 0 }, { ct: 1, x: 2 }])));
+});
+
+// ---------- Renormalization-group flow landscape ----------
+
+test("QED one-loop running increases toward the ultraviolet and exposes its formal pole", () => {
+  const g0 = Math.sqrt(4 * Math.PI / 137.035999084);
+  const uv = rgOneLoopRunning("qed", g0, Math.log(1e12), { nf: 1 });
+  const ir = rgOneLoopRunning("qed", g0, -Math.log(1e6), { nf: 1 });
+  assert.equal(uv.status, "perturbative");
+  assert.ok(uv.g > g0);
+  assert.ok(ir.g < g0);
+  assert.ok(Number.isFinite(uv.poleDelta) && uv.poleDelta > Math.log(1e12));
+  const pole = rgOneLoopRunning("qed", g0, uv.poleDelta * 1.001, { nf: 1 });
+  assert.equal(pole.status, "pole");
+  assert.ok(Number.isNaN(pole.g));
+});
+
+test("QCD one-loop running is asymptotically free for physical nf", () => {
+  const g0 = Math.sqrt(4 * Math.PI * 0.118);
+  const uv = rgOneLoopRunning("qcd", g0, Math.log(1e5), { nf: 5 });
+  const ir = rgOneLoopRunning("qcd", g0, -1, { nf: 5 });
+  assert.ok(uv.g < g0);
+  assert.ok(ir.g > g0);
+  assert.ok(rgBeta("qcd", g0, { nf: 5 }) < 0);
+  assert.ok(rgBetaDerivative("qcd", g0, { nf: 5 }) < 0);
+});
+
+test("QCD b0 changes sign at nf = 16.5", () => {
+  assert.ok(qcdB0(16) > 0);
+  assert.equal(qcdB0(16.5), 0);
+  assert.ok(qcdB0(17) < 0);
+  assert.ok(Number.isNaN(qcdB0(-1)));
+});
+
+test("analytic and numeric fixed points agree with the documented stability convention", () => {
+  const uvParameters = { a: -0.8, gStar: 1.25 };
+  const analytic = rgFixedPoints("linear", uvParameters)[0];
+  const numeric = findRGFixedPoints("linear", uvParameters, { gMin: 0, gMax: 3, tolerance: 1e-10 })[0];
+  assert.ok(Math.abs(analytic.g - 1.25) < 1e-12);
+  assert.ok(Math.abs(numeric.g - analytic.g) < 1e-8);
+  assert.equal(analytic.derivative, -0.8);
+  assert.equal(analytic.stability, "UV-attractive");
+  assert.equal(rgStability(0.8), "IR-attractive");
+  assert.equal(rgStability(0), "marginal");
+
+  const safety = rgFixedPoints("asymptotic-safety", { a: 1, b: 0.25 });
+  assert.deepEqual(safety.map((point) => point.g), [0, 2]);
+  assert.equal(safety[0].stability, "IR-attractive");
+  assert.equal(safety[1].stability, "UV-attractive");
+});
+
+test("bounded RK4 integration is deterministic and approximately reversible", () => {
+  const options = {
+    model: "linear", g0: 2.1, t0: 0, tMin: -1, tMax: 2, step: 0.01,
+    parameters: { a: -0.6, gStar: 1 },
+  };
+  const first = integrateRGFlow(options);
+  const second = integrateRGFlow(options);
+  assert.deepEqual(first, second);
+  assert.equal(first.status, "range-complete");
+  assert.equal(first.ultraviolet.status, "range-complete");
+  assert.equal(first.infrared.status, "range-complete");
+  const uv = first.ultraviolet.points.at(-1);
+  const reversed = integrateRGFlow({
+    ...options, g0: uv.g, t0: 2, tMin: 0, tMax: 2,
+  });
+  assert.ok(Math.abs(reversed.infrared.points.at(-1).g - options.g0) < 1e-9);
+});
+
+test("integration terminates gracefully at QED and QCD perturbative boundaries", () => {
+  const qed = integrateRGFlow({
+    model: "qed", g0: 2.8, t0: 0, tMin: 0, tMax: 20, step: 0.01, parameters: { nf: 1 },
+  });
+  assert.equal(qed.ultraviolet.status, "perturbative-limit");
+  assert.equal(qed.ultraviolet.terminated, true);
+  assert.ok(qed.ultraviolet.points.every((point) => Number.isFinite(point.t) && Number.isFinite(point.g)));
+  assert.ok(qed.ultraviolet.reached < 20);
+
+  const qcd = integrateRGFlow({
+    model: "qcd", g0: 1.2, t0: 0, tMin: -20, tMax: 0, step: 0.01, parameters: { nf: 5 },
+  });
+  assert.equal(qcd.infrared.status, "strong-coupling");
+  assert.equal(qcd.infrared.terminated, true);
+  assert.ok(qcd.infrared.reached > -20);
+  assert.ok(qcd.infrared.points.every((point) => Number.isFinite(point.beta)));
+});
+
+test("RG helpers reject invalid models and non-finite inputs without fake success", () => {
+  assert.ok(Number.isNaN(rgBeta("unknown", 1)));
+  assert.ok(Number.isNaN(rgBeta("qed", NaN)));
+  assert.deepEqual(findRGFixedPoints("linear", { a: 1, gStar: 1 }, { gMin: 2, gMax: 1 }), []);
+  assert.equal(rgOneLoopRunning("qed", -1, 2).status, "invalid");
+  const invalid = integrateRGFlow({ model: "qcd", g0: NaN });
+  assert.equal(invalid.status, "invalid");
+  assert.equal(invalid.points.length, 0);
+  assert.equal(invalid.ultraviolet.status, "invalid");
 });
