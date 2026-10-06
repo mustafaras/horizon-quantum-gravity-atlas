@@ -15,6 +15,10 @@ const { manifest, captures } = await loadManifest(root);
 
 for (const capture of captures) {
   test(`capture ${capture.id}`, async ({ browser }) => {
+    test.skip(
+      process.env.CI && process.env.QGA_QA_VISUAL !== "1",
+      "Visual baselines are generated on the local capture platform; run npm run qa:test locally for visual evidence."
+    );
     test.setTimeout(capture.timeoutMs + 30_000);
     const vp = capture.viewport ?? manifest.defaults.viewport;
     const context = await browser.newContext({

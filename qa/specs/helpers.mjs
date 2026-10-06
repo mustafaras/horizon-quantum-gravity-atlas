@@ -17,7 +17,7 @@ export async function gotoReady(page, url, readiness = DEFAULT_READINESS, opts =
   page.on("pageerror", onPageError);
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: opts.timeoutMs ?? 45_000 });
-    await runReadiness(page, readiness, { timeoutMs: opts.timeoutMs ?? 45_000, settleMs: opts.settleMs ?? 4000 });
+    await runReadiness(page, readiness, { timeoutMs: opts.timeoutMs ?? 45_000, settleMs: opts.settleMs ?? 12_000 });
   } finally {
     page.off("console", onConsole);
     page.off("pageerror", onPageError);

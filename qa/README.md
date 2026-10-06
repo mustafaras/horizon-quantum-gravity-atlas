@@ -61,8 +61,11 @@ qa/
 - **Loopback only.** The server binds `127.0.0.1` on a random port and serves
   only this worktree; the GWOSC fixture intercepts `https://gwosc.org/**` so the
   deterministic suite never leaves the machine.
-- **Baselines are data, updated deliberately.** `qa:update` is the only writer;
-  CI never updates baselines, it only compares.
+- **Baselines are data, updated deliberately.** `qa:update` is the only writer.
+  Functional browser checks run in CI; visual baselines are a local
+  capture-platform gate because browser font rasterization and full-page layout
+  heights differ between macOS and the Linux runner. Set `QGA_QA_VISUAL=1` on
+  a runner with matching baselines to opt into the visual comparison.
 - **Failures are debuggable.** Traces and screenshots are retained on failure
   (`qa/test-results/`, uploaded as CI artifacts).
 
