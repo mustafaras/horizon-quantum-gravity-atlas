@@ -28,3 +28,37 @@ jobs:
 
       - name: Run repository validation
         run: npm run validate
+
+  browser:
+    name: Browser QA (Playwright, pinned Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify capture manifest
+        run: npm run qa:verify
+
+      - name: Run browser QA suite
+        run: npm run qa:test
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa-failure
+          path: |
+            qa/test-results/
+            qa/output/
+          retention-days: 7

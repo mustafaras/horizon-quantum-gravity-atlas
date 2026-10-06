@@ -17,6 +17,9 @@ scraps/
 # local tooling / QA artifacts
 .impeccable/
 .playwright-mcp/
+qa/output/
+qa/test-results/
+qa/playwright-report/
 
 # logs
 npm-debug.log*

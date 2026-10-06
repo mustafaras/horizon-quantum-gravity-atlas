@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "download_url": "https://gwosc.org/fixture/GW150914-synthetic-strain.txt",
+      "sample_rate_kHz": 0.128,
+      "gps_start": 1126259438,
+      "duration": 32,
+      "detector": "H1",
+      "file_format": "txt",
+      "fixture": "synthetic — see README.md in this directory; not real GWOSC data"
+    }
+  ],
+  "next": null,
+  "previous": null
+}
