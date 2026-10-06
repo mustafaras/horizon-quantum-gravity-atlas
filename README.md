@@ -1187,6 +1187,8 @@ The physics itself is covered separately by `test/physics.test.mjs`, which runs 
 
 The RG cases cover one-loop QED ultraviolet growth, QCD asymptotic freedom, the $b_0=0$ boundary at $n_f=16.5$, analytic and numerical fixed points, the UV/IR stability convention, deterministic integration and reversal, invalid inputs, and graceful QED/QCD validity termination.
 
+A persistent browser-QA harness lives in `qa/` and runs as a separate GitHub Actions job on pinned Chromium. It is driven by a machine-readable capture manifest (`qa/manifest.json`, validated against `qa/manifest.schema.json`) and covers: clean mounting of all twelve views with zero console/page errors; URL-state round-trip, reload persistence, back/forward navigation, copy-link, and the versioned export JSON schema; observable differences between reduced and normal motion; keyboard focus, arrow-key sliders, mobile overflow, 44 px touch targets, and horizontal chart scrolling; RG conjectural labeling and preset reset; every GWOSC network phase (success, HTTP error, abort, oversize, cancel) through a deterministic offline fixture; and per-capture visual regression against committed baselines, each with its own justified pixel tolerance. A single live gwosc.org smoke test exists but runs only on explicit request (`npm run qa:test:live`), never in CI. See `qa/README.md` for the full runbook.
+
 ---
 
 ## Reproducible sharing and data modes
@@ -1243,12 +1245,12 @@ http://127.0.0.1:8000/
 
 ## Screenshot Reproduction Guide
 
-The current screenshots were regenerated from the live app.
+Every screenshot is reproducible from the committed capture manifest. The manifest (`qa/manifest.json`) pins, per capture: the exact URL state, viewport and device scale factor, motion mode, measurable readiness probes (no fixed sleeps), the screenshot scope (viewport, full page, or a named element), the deterministic GWOSC fixture where used, and the visual-regression tolerance with its justification. The capture CLI serves **this checkout** on a loopback-only server, verifies byte-equality between the served page and the file on disk, and renders with pinned Chromium:
 
-The capture target was:
-
-```text
-http://127.0.0.1:8000/
+```bash
+npm run qa:capture            # all captures -> qa/output/ (scratch)
+npm run qa:capture -- --docs  # also refresh docs/screenshots/ below
+npm run qa:verify             # validate the manifest against schema + this README
 ```
 
 The screenshot set emphasizes visual and animated modules:
@@ -1592,13 +1594,10 @@ The following are especially central:
 
 High-value future improvements:
 
-- generate reproducible screenshot scripts committed to `docs/`;
-- add Playwright visual regression tests for every module;
 - add a compact mathematical glossary page;
 - add a separate academic whitepaper in `docs/`;
 - self-host CDN assets for long-term archival stability;
 - add a proper citation file (`CITATION.cff`);
-- add a screenshot manifest with viewport, view, scroll position, and render settings;
 - extend the pure-physics test suite to the remaining modules (GR, Planck, and the black-hole thermodynamics helpers beyond the covered horizon, ergosphere, ISCO, temperature, and entropy scalings);
 
 Completed since the first release:
@@ -1608,6 +1607,7 @@ Completed since the first release:
 - a focused Node test suite for the pure physics and reproducibility helpers;
 - a bounded real-data mode for the gravitational-wave laboratory;
 - a Kerr Observatory with an exact coordinate-radius map, eased geometry transitions, eased camera presets, and a live formulation panel that substitutes the current parameters into the implemented Kerr relations;
+- a manifest-driven QA and screenshot infrastructure (`qa/`): reproducible capture CLI, persistent Playwright visual regression with per-capture justified tolerances, deterministic GWOSC fixtures, motion/accessibility/state suites, and a dedicated CI browser job;
 - a gravitational-wave presentation state machine (`idle` / `loading` / `real` / `generated` / `error` / `cancelled`) with cancel and retry, an eased shared vertical scale, and animated observation/provenance reveals.
 - a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
@@ -2274,7 +2274,7 @@ The following audit manifest records what the document is expected to contain.
 
 ### Appendix V — Screenshot Manifest
 
-The README now uses the following image contract.
+The README now uses the following image contract. The machine-readable form of this contract — with exact URL state, viewport, readiness probes, scope, fixture, and tolerance per capture — is `qa/manifest.json`, kept consistent with this README by `npm run qa:verify`.
 
 Each screenshot has a scientific function.
 

@@ -14,7 +14,12 @@
     "serve": "python3 -m http.server 8000",
     "test": "node --test test/*.test.mjs",
     "validate": "node scripts/validate-repo.mjs",
-    "check": "npm run validate"
+    "check": "npm run validate",
+    "qa:verify": "node qa/verify-manifest.mjs",
+    "qa:capture": "node qa/capture.mjs",
+    "qa:update": "node qa/capture.mjs --update",
+    "qa:test": "playwright test --config qa/playwright.config.mjs",
+    "qa:test:live": "QGA_QA_LIVE=1 playwright test --config qa/playwright.config.mjs qa/specs/live.spec.mjs"
   },
   "keywords": [
     "physics",
@@ -29,5 +34,8 @@
     "interactive"
   ],
   "license": "MIT",
-  "private": false
+  "private": false,
+  "devDependencies": {
+    "playwright": "^1.58.0"
+  }
 }
