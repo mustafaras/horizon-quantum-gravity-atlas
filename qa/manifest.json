@@ -332,7 +332,7 @@
       "scientificStatus": "documentation",
       "statusNote": "Notation conventions and disambiguation; no physics claims beyond standard textbook usage.",
       "readme": true,
-      "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static reference view, deterministic DOM; tight tolerance justified." }
+      "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static reference view, deterministic DOM; tight tolerance justified. The WebGL backdrop snaps to its rest pose under reduced motion (no frame-count-dependent easing), so captures are byte-stable." }
     },
     {
       "id": "whitepaper",

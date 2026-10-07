@@ -211,23 +211,38 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       const mo = motionVal();
       clk += rawDt * (mo > 0 ? 1 : 0);
 
-      // lerp palette toward target
+      // lerp palette toward target. Under reduced motion the palette snaps to
+      // its target instead of easing: the eased value depends on how many
+      // frames have elapsed, which would make the "static" backdrop differ
+      // between otherwise identical captures.
       const tg = targetRef.current;
-      const lp = 1 - Math.pow(0.001, rawDt); // ~time-based ease
-      hue += ((tg[0] - hue + 540) % 360 - 180) * lp;
-      aShift += (tg[1] - aShift) * lp;
-      warp += (tg[2] - warp) * lp;
-      neb += (tg[3] - neb) * lp;
+      if (mo > 0) {
+        const lp = 1 - Math.pow(0.001, rawDt); // ~time-based ease
+        hue += ((tg[0] - hue + 540) % 360 - 180) * lp;
+        aShift += (tg[1] - aShift) * lp;
+        warp += (tg[2] - warp) * lp;
+        neb += (tg[3] - neb) * lp;
+      } else {
+        hue = tg[0]; aShift = tg[1]; warp = tg[2]; neb = tg[3];
+      }
       setCols();
       fabricMat.color.copy(colPrimary);
 
-      // camera parallax + slow cosmic drift
+      // camera parallax + slow cosmic drift. The per-frame ease below is
+      // frame-count dependent, so under reduced motion the camera is placed
+      // directly at its easing target — the documented "reduced-motion →
+      // static" contract, and byte-stable across captures.
       const driftX = Math.sin(clk * 0.05) * 2.0;
       const driftY = Math.cos(clk * 0.037) * 1.1;
-      mouse.ex += (mouse.x - mouse.ex) * 0.045 * (mo > 0 ? 1 : 0.0001);
-      mouse.ey += (mouse.y - mouse.ey) * 0.045 * (mo > 0 ? 1 : 0.0001);
-      camera.position.x += ((mouse.ex * 5 + driftX) - camera.position.x) * 0.05;
-      camera.position.y += ((2.5 - mouse.ey * 3 + driftY) - camera.position.y) * 0.05;
+      if (mo > 0) {
+        mouse.ex += (mouse.x - mouse.ex) * 0.045;
+        mouse.ey += (mouse.y - mouse.ey) * 0.045;
+        camera.position.x += ((mouse.ex * 5 + driftX) - camera.position.x) * 0.05;
+        camera.position.y += ((2.5 - mouse.ey * 3 + driftY) - camera.position.y) * 0.05;
+      } else {
+        camera.position.x = driftX;
+        camera.position.y = 2.5 + driftY;
+      }
       root.rotation.y = Math.sin(clk * 0.02) * 0.06 * mo;
       camera.lookAt(0, 0, -10);
 
