@@ -73,13 +73,14 @@ const QGA_VIEWS = {
   symbols: { label: "Symbol Atlas", comp: () => window.ViewSymbols },
   refs: { label: "References", comp: () => window.ViewReferences },
   open: { label: "Open Problems", comp: () => window.ViewOpenProblems },
+  paper: { label: "Whitepaper", comp: () => window.ViewWhitepaper },
 };
 
 // per-module background tint (hsl hue) — drives the cinematic scene change
 const QGA_VIEW_HUE = {
   overview: 226, sm: 268, qft: 196, rg: 226, gr: 44,
   planck: 226, approaches: 282, bh: 36, exp: 196,
-  glossary: 226, symbols: 226, refs: 226, open: 226,
+  glossary: 226, symbols: 226, refs: 226, open: 226, paper: 226,
 };
 
 const QGA_STATE_DEFAULTS = window.QGA_DEFAULT_STATE || {
@@ -101,7 +102,7 @@ function NavList({ view, go }) {
         </button>
       ))}
       <div className="nav-group-label">Reference</div>
-      {["glossary", "symbols", "refs", "open"].map((id) => (
+      {["glossary", "symbols", "refs", "open", "paper"].map((id) => (
         <button key={id} className={"nav-item" + (view === id ? " active" : "")} onClick={() => go(id)}>
           <span className="nav-num">·</span> {QGA_VIEWS[id].label}
         </button>

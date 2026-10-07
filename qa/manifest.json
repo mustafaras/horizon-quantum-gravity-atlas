@@ -333,6 +333,20 @@
       "statusNote": "Notation conventions and disambiguation; no physics claims beyond standard textbook usage.",
       "readme": true,
       "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static reference view, deterministic DOM; tight tolerance justified." }
+    },
+    {
+      "id": "whitepaper",
+      "file": "docs/screenshots/21-whitepaper.png",
+      "description": "Whitepaper tab: the in-app companion document — abstract, epistemic status table, chain of reasoning, and the KaTeX-typeset formulation spine.",
+      "view": "paper",
+      "url": "?view=paper",
+      "viewport": { "width": 1600, "height": 1000, "deviceScaleFactor": 1, "label": "desktop-hi" },
+      "scope": "viewport",
+      "readiness": ["fonts", "network-idle", "view-mounted", "animation-settled"],
+      "scientificStatus": "documentation",
+      "statusNote": "Companion document describing the atlas itself; every physics claim it makes carries the app's five-status taxonomy.",
+      "readme": true,
+      "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static document view, deterministic DOM and KaTeX typesetting; tight tolerance justified." }
     }
   ]
 }

@@ -3,7 +3,7 @@
 import { test, expect } from "playwright/test";
 import { gotoReady } from "./helpers.mjs";
 
-const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open"];
+const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper"];
 
 test.describe("view mounting", () => {
   for (const view of VIEWS) {

@@ -4,7 +4,7 @@
 import { test, expect } from "playwright/test";
 import { gotoReady } from "./helpers.mjs";
 
-const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open"];
+const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open", "paper"];
 
 test.describe("keyboard", () => {
   test("Tab reaches interactive elements with :focus-visible", async ({ page }) => {

@@ -95,7 +95,7 @@
         },
         "description": { "type": "string", "minLength": 10 },
         "view": {
-          "enum": ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open"]
+          "enum": ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper"]
         },
         "url": {
           "type": "string",

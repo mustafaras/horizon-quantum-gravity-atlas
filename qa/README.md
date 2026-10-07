@@ -9,7 +9,7 @@ on disk before a single test executes.
 
 ```
 qa/
-  manifest.json            capture contract: 20 named captures (the source of truth)
+  manifest.json            capture contract: 22 named captures (the source of truth)
   manifest.schema.json     JSON Schema 2020-12 the manifest is validated against
   verify-manifest.mjs      schema + file-existence + README cross-check (fast gate)
   capture.mjs              screenshot CLI (default output, --update baselines, --docs)
@@ -32,7 +32,7 @@ qa/
 | Command | Purpose |
 | --- | --- |
 | `npm run qa:verify` | Validate the manifest: schema, referenced files, README consistency. |
-| `npm run qa:capture` | Render all 20 captures into `qa/output/` (scratch). |
+| `npm run qa:capture` | Render all 22 captures into `qa/output/` (scratch). |
 | `npm run qa:capture -- --only <id>` | Render a single capture. |
 | `npm run qa:update` | Refresh committed baselines in `qa/baselines/`. **Explicit, separate, never implicit.** |
 | `npm run qa:capture -- --docs` | Also refresh `docs/screenshots/` referenced by the README. |
@@ -43,7 +43,7 @@ qa/
 
 | Spec | Coverage |
 | --- | --- |
-| `smoke.spec.mjs` | All 13 views mount with zero console/page errors. |
+| `smoke.spec.mjs` | All 14 views mount with zero console/page errors. |
 | `state.spec.mjs` | URL→state round-trip, reload persistence, back/forward, copy-link, export JSON schema (`horizon-qga-state/v1`). |
 | `motion.spec.mjs` | Reduced vs normal motion: GW auto-play and RG settling differ observably. |
 | `a11y.spec.mjs` | Keyboard focus (`:focus-visible`), arrow-key sliders, mobile overflow, 44px touch targets, horizontal chart scroll. |

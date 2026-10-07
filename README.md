@@ -66,7 +66,7 @@
 
 It is an interactive map of why the problem exists.
 
-For the formal treatment — the epistemic labeling system, the chain of reasoning, the design methodology, and the verification infrastructure — see the companion whitepaper: **[docs/whitepaper.md](docs/whitepaper.md)**.
+For the formal treatment — the epistemic labeling system, the chain of reasoning, the design methodology, and the verification infrastructure — read the companion whitepaper **inside the atlas** at [`?view=paper`](https://mustafaras.github.io/horizon-quantum-gravity-atlas/?view=paper), where every formulation is typeset live with KaTeX. A plain-Markdown mirror is kept at **[docs/whitepaper.md](docs/whitepaper.md)** for citation and offline reading.
 
 It starts from experimentally established physics.
 
@@ -295,6 +295,13 @@ The paired captures deliberately keep perturbative and conjectural layers visual
 <img src="docs/screenshots/20-symbol-atlas.png" alt="Symbol Atlas reference view: searchable notation registry where the same letter — beta, g, Lambda — is mapped to its different meanings, units, and home modules across the atlas" width="100%" />
 <br/>
 <sub><strong>Symbol Atlas</strong> — a dedicated notation reference: every symbol with its unit, its home module, and the contexts where the same letter means different physics (β = v/c vs β(g); the metric g_μν vs a coupling g vs a fixed point g★). Every glyph and defining equation is typeset live with KaTeX, category filters carry per-context counts, full-text search and deep links into the owning modules are built in, and the atlas' metric-signature and natural-unit conventions are stated explicitly.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" colspan="2">
+<img src="docs/screenshots/21-whitepaper.png" alt="Whitepaper tab inside the atlas: abstract, five-status epistemic table, chain of reasoning, and a formulation spine of KaTeX-typeset equations with symbol tables" width="100%" />
+<br/>
+<sub><strong>Whitepaper</strong> (<code>?view=paper</code>) — the companion document as a first-class tab rather than an external file: abstract, the five-status epistemic table, the chain of reasoning from established physics to the open problem, the design and verification methodology, and a <em>formulation spine</em> of the equations the atlas actually implements. Every equation is typeset live with KaTeX and paired with a symbol table, its meaning, and its stated limits; the section index jumps directly to any part of the document.</sub>
 </td>
 </tr>
 </table>
@@ -1130,7 +1137,8 @@ horizon-quantum-gravity-atlas/
 │       ├── 17-causal-spacetime-lab-mobile.png
 │       ├── 18-rg-flow-landscape.png
 │       ├── 19-rg-flow-landscape-mobile.png
-│       └── 20-symbol-atlas.png
+│       ├── 20-symbol-atlas.png
+│       └── 21-whitepaper.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1198,7 +1206,7 @@ The physics itself is covered separately by `test/physics.test.mjs`, which runs 
 
 The RG cases cover one-loop QED ultraviolet growth, QCD asymptotic freedom, the $b_0=0$ boundary at $n_f=16.5$, analytic and numerical fixed points, the UV/IR stability convention, deterministic integration and reversal, invalid inputs, and graceful QED/QCD validity termination.
 
-A persistent browser-QA harness lives in `qa/` and runs as a separate GitHub Actions job on pinned Chromium. It is driven by a machine-readable capture manifest (`qa/manifest.json`, validated against `qa/manifest.schema.json`) and covers: clean mounting of all thirteen views with zero console/page errors; URL-state round-trip, reload persistence, back/forward navigation, copy-link, and the versioned export JSON schema; observable differences between reduced and normal motion; keyboard focus, arrow-key sliders, mobile overflow, 44 px touch targets, and horizontal chart scrolling; RG conjectural labeling and preset reset; every GWOSC network phase (success, HTTP error, abort, oversize, cancel) through a deterministic offline fixture; and per-capture visual regression against committed baselines, each with its own justified pixel tolerance. A single live gwosc.org smoke test exists but runs only on explicit request (`npm run qa:test:live`), never in CI. See `qa/README.md` for the full runbook.
+A persistent browser-QA harness lives in `qa/` and runs as a separate GitHub Actions job on pinned Chromium. It is driven by a machine-readable capture manifest (`qa/manifest.json`, validated against `qa/manifest.schema.json`) and covers: clean mounting of all fourteen views with zero console/page errors; URL-state round-trip, reload persistence, back/forward navigation, copy-link, and the versioned export JSON schema; observable differences between reduced and normal motion; keyboard focus, arrow-key sliders, mobile overflow, 44 px touch targets, and horizontal chart scrolling; RG conjectural labeling and preset reset; every GWOSC network phase (success, HTTP error, abort, oversize, cancel) through a deterministic offline fixture; and per-capture visual regression against committed baselines, each with its own justified pixel tolerance. A single live gwosc.org smoke test exists but runs only on explicit request (`npm run qa:test:live`), never in CI. See `qa/README.md` for the full runbook.
 
 ---
 
@@ -1620,7 +1628,7 @@ Completed since the first release:
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
 - Stage 5 pure-physics test coverage: the GR perihelion and light-deflection observables, Planck units and probe energy, and the black-hole evaporation, Page-curve, and Hawking-spectrum helpers moved into `js/physics.mjs`, mirrored through the browser bridge, wired into the GR/Planck/black-hole modules, and anchored to literature values (Mercury 42.98″/century, solar-limb 1.75″, CODATA Planck units, 2.1×10⁶⁷ yr evaporation, Wien peak u ≈ 2.8214).
 - Stage 6 notation and citation: a Symbol Atlas reference view (`?view=symbols`) — a searchable, category-filtered registry of 27 symbols across 33 contexts that disambiguates reused letters (β = v/c vs β(g); metric g_μν vs coupling g vs fixed point g★), typesets every glyph and defining equation live with KaTeX, states each entry's unit and home module with deep links, and makes the atlas' metric-signature and natural-unit conventions explicit — plus a schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) with a Node test suite keeping it consistent with `package.json` and `LICENSE`.
-- a companion academic whitepaper ([`docs/whitepaper.md`](docs/whitepaper.md)) presenting the atlas's epistemic labeling system, chain of physical reasoning, design methodology, zero-build architecture, and literature-anchored verification infrastructure as a formal standalone document.
+- a companion academic whitepaper delivered as a first-class in-app tab (`?view=paper`) — abstract, the five-status epistemic table, the chain of physical reasoning, the design methodology, the zero-build architecture, and the literature-anchored verification infrastructure, closing with a *formulation spine* of the equations the atlas actually implements, each typeset live with KaTeX and paired with a symbol table, its meaning, and its stated limits — with a plain-Markdown mirror at [`docs/whitepaper.md`](docs/whitepaper.md) for citation and offline reading.
 
 ---
 
