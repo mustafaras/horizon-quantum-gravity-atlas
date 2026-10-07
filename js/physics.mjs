@@ -45,6 +45,64 @@ export function blackHoleEntropyAreaUnits(massSolar, spin = 0) {
   return 1.05e77 * massSolar * massSolar * (geometry.rPlus / 2);
 }
 
+/* ---------- General relativity: post-Newtonian observables ----------
+   Exact leading-order Schwarzschild results. The same helpers serve the
+   curvature engine's scene units and the real-unit literature anchors:
+   Mercury's anomalous perihelion advance (42.98″/century) and the 1919
+   solar-limb light deflection (1.75″). */
+
+// Perihelion advance Δϖ = 6πGM/[c² a(1−e²)] per orbit, in radians.
+export function grPerihelionPrecession(gm, c2, a, e) {
+  return (6 * Math.PI * gm) / (c2 * a * (1 - e * e));
+}
+
+// Light deflection α = 4GM/(c² b) — twice the Newtonian value, in radians.
+export function grLightDeflection(gm, c2, impactParameter) {
+  return (4 * gm) / (c2 * impactParameter);
+}
+
+/* ---------- Planck units: the unique scale built from ħ, G, c alone ---------- */
+export function planckUnits() {
+  const lengthMeters = Math.sqrt((HBAR * G) / C ** 3);
+  const timeSeconds = Math.sqrt((HBAR * G) / C ** 5);
+  const massKg = Math.sqrt((HBAR * C) / G);
+  const energyJoules = massKg * C * C;
+  const energyGeV = energyJoules / 1.602176634e-10; // J → GeV (CODATA elementary charge)
+  return { lengthMeters, timeSeconds, massKg, energyJoules, energyGeV };
+}
+
+// Probe energy ħc/l for a resolution l, in GeV (ħc ≈ 1.973×10⁻¹⁶ GeV·m).
+export function probeEnergyGeV(lengthMeters) {
+  return 1.973e-16 / lengthMeters;
+}
+
+/* ---------- Black-hole thermodynamics beyond the static geometry ---------- */
+
+// Order-of-magnitude evaporation time, anchored at 2.1×10⁶⁷ yr per solar mass.
+export function blackHoleEvaporationTimeYears(massSolar) {
+  return 2.1e67 * massSolar ** 3;
+}
+
+/* Unitary Page curve: S_rad = min(thermal, remaining), normalised so the
+   peak is 1 at the Page time (half the evaporation). The naive semiclassical
+   curve is the ever-rising thermal branch alone. */
+export function pageCurveEntropy(fractionEvaporated) {
+  const f = Number(fractionEvaporated);
+  if (!Number.isFinite(f)) return NaN;
+  const clamped = Math.min(1, Math.max(0, f));
+  return 2 * Math.min(clamped, 1 - clamped);
+}
+
+/* Planck blackbody spectral shape x³/(e^{x/T} − 1): the Hawking spectrum up
+   to normalisation. The exponent is bounded so large x/T stays finite. */
+export function hawkingSpectralShape(x, temperature) {
+  const t = Number(temperature);
+  if (!Number.isFinite(t) || t <= 0) return NaN;
+  const u = Number(x) / t;
+  if (!Number.isFinite(u) || u < 0) return NaN;
+  return (u * u * u) / (Math.exp(Math.min(40, u)) - 1 + 1e-9);
+}
+
 export function seededRng(seed) {
   let state = (Number(seed) >>> 0) || 1;
   return () => {

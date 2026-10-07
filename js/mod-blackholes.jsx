@@ -62,7 +62,7 @@ function HawkingSpectrumPlot({ logM, tempFactor }) {
     // visual temperature: smaller mass / lower spin-suppression → hotter (peak at higher x)
     // map so the curve visibly shifts with the sliders; absolute scale is illustrative.
     const Tvis = Math.max(0.06, (1 - logM / 9) * tempFactor * 0.95 + 0.05);
-    const planck = (x) => { const u = x / Tvis; return (u * u * u) / (Math.exp(Math.min(40, u)) - 1 + 1e-9); };
+    const planck = (x) => window.QGA_PHYSICS.hawkingSpectralShape(x, Tvis);
     let pk = 0; for (let i = 1; i <= 200; i++) { const x = i / 200 * 3; pk = Math.max(pk, planck(x)); }
     ctx.strokeStyle = "rgba(148,176,224,0.22)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
@@ -110,7 +110,7 @@ function PageCurvePlot() {
     ctx.strokeStyle = "oklch(0.82 0.13 230)"; ctx.lineWidth = 2;
     ctx.shadowColor = "oklch(0.82 0.13 230)"; ctx.shadowBlur = 7;
     ctx.beginPath();
-    for (let i = 0; i <= 100; i++) { const f = i / 100; const thermal = 1.7 * f; const remaining = 1.7 * (1 - f); const s = Math.min(thermal, remaining); ctx.lineTo(X(f), Y(s)); }
+    for (let i = 0; i <= 100; i++) { const f = i / 100; const s = 0.85 * window.QGA_PHYSICS.pageCurveEntropy(f); ctx.lineTo(X(f), Y(s)); }
     ctx.stroke(); ctx.shadowBlur = 0;
     // Page time marker
     ctx.strokeStyle = "rgba(224,179,90,0.5)"; ctx.setLineDash([3, 3]);
@@ -605,7 +605,7 @@ function BlackHoleLab3D() {
   const tempFactor = kerr.temperatureFactor;
   const T_H = window.QGA_PHYSICS.hawkingTemperature(M, a);
   const S = window.QGA_PHYSICS.blackHoleEntropyAreaUnits(M, a);
-  const t_ev = 2.1e67 * M * M * M;
+  const t_ev = window.QGA_PHYSICS.blackHoleEvaporationTimeYears(M);
   const cameraGoal = KERR_CAMERA_PRESETS[cameraPreset];
 
   return (
@@ -825,7 +825,7 @@ function BlackHoleSim() {
   const rs_km = 2.95 * M;
   const T_H = 6.17e-8 / M;
   const S = 1.05e77 * M * M;
-  const t_ev = 2.1e67 * M * M * M;
+  const t_ev = window.QGA_PHYSICS.blackHoleEvaporationTimeYears(M);
 
   return (
     <div className="viz-frame">

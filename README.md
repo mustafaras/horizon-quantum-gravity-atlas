@@ -1598,7 +1598,6 @@ High-value future improvements:
 - add a separate academic whitepaper in `docs/`;
 - self-host CDN assets for long-term archival stability;
 - add a proper citation file (`CITATION.cff`);
-- extend the pure-physics test suite to the remaining modules (GR, Planck, and the black-hole thermodynamics helpers beyond the covered horizon, ergosphere, ISCO, temperature, and entropy scalings);
 
 Completed since the first release:
 
@@ -1611,6 +1610,7 @@ Completed since the first release:
 - a gravitational-wave presentation state machine (`idle` / `loading` / `real` / `generated` / `error` / `cancelled`) with cancel and retry, an eased shared vertical scale, and animated observation/provenance reveals.
 - a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
+- Stage 5 pure-physics test coverage: the GR perihelion and light-deflection observables, Planck units and probe energy, and the black-hole evaporation, Page-curve, and Hawking-spectrum helpers moved into `js/physics.mjs`, mirrored through the browser bridge, wired into the GR/Planck/black-hole modules, and anchored to literature values (Mercury 42.98″/century, solar-limb 1.75″, CODATA Planck units, 2.1×10⁶⁷ yr evaporation, Wien peak u ≈ 2.8214).
 
 ---
 
@@ -2070,7 +2070,7 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | QED Landau pole is only a formal extrapolation | a one-loop singularity far beyond the controlled domain is not an observation | the pole is labeled as a warning; the numerical curve stops earlier |
 | QCD becomes strongly coupled in the infrared | perturbative running cannot describe confinement | the trajectory terminates visibly at $\alpha_s=1$ without claiming a physical divergence |
 | fixed-point toys are not empirical flows | chosen polynomial beta functions can build in the desired stability | toy and asymptotic-safety-style presets carry schematic/conjectural labels in the instrument and export |
-| pure-physics coverage is partial | untested helpers can regress silently | `test/physics.test.mjs` covers the shared helpers; roadmap extends it |
+| pure-physics coverage is complete for every exported helper | scene integrators and renderers stay outside unit tests by design | `test/physics.test.mjs` covers all shared helpers, including the Stage 5 GR, Planck, and black-hole thermodynamics additions |
 
 ### Appendix Q — Academic README Rubric
 

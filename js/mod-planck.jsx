@@ -206,7 +206,7 @@ function ScaleLadder() {
   };
 
   const L = Math.pow(10, logL);
-  const E_GeV = 1.973e-16 / L; // ħc ≈ 1.973×10⁻¹⁶ GeV·m
+  const E_GeV = window.QGA_PHYSICS.probeEnergyGeV(L); // ħc ≈ 1.973×10⁻¹⁶ GeV·m
   const active = LADDER_STOPS.reduce((best, s) => (Math.abs(s.log - logL) < Math.abs(best.log - logL) ? s : best), LADDER_STOPS[0]);
 
   return (

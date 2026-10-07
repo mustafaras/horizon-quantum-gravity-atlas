@@ -169,6 +169,36 @@ const QGA_PHYSICS = {
   blackHoleEntropyAreaUnits(massSolar, spin = 0) {
     return 1.05e77 * Number(massSolar) ** 2 * (this.kerrGeometry(spin).rPlus / 2);
   },
+  grPerihelionPrecession(gm, c2, a, e) {
+    return (6 * Math.PI * Number(gm)) / (Number(c2) * Number(a) * (1 - Number(e) * Number(e)));
+  },
+  grLightDeflection(gm, c2, impactParameter) {
+    return (4 * Number(gm)) / (Number(c2) * Number(impactParameter));
+  },
+  planckUnits() {
+    const HBAR = 1.054571817e-34, G = 6.67430e-11, C = 299792458;
+    const lengthMeters = Math.sqrt((HBAR * G) / C ** 3);
+    const timeSeconds = Math.sqrt((HBAR * G) / C ** 5);
+    const massKg = Math.sqrt((HBAR * C) / G);
+    const energyJoules = massKg * C * C;
+    const energyGeV = energyJoules / 1.602176634e-10;
+    return { lengthMeters, timeSeconds, massKg, energyJoules, energyGeV };
+  },
+  probeEnergyGeV(lengthMeters) { return 1.973e-16 / Number(lengthMeters); },
+  blackHoleEvaporationTimeYears(massSolar) { return 2.1e67 * Number(massSolar) ** 3; },
+  pageCurveEntropy(fractionEvaporated) {
+    const f = Number(fractionEvaporated);
+    if (!Number.isFinite(f)) return NaN;
+    const clamped = Math.min(1, Math.max(0, f));
+    return 2 * Math.min(clamped, 1 - clamped);
+  },
+  hawkingSpectralShape(x, temperature) {
+    const t = Number(temperature);
+    if (!Number.isFinite(t) || t <= 0) return NaN;
+    const u = Number(x) / t;
+    if (!Number.isFinite(u) || u < 0) return NaN;
+    return (u * u * u) / (Math.exp(Math.min(40, u)) - 1 + 1e-9);
+  },
   seededRng(seed) {
     let state = (Number(seed) >>> 0) || 1;
     return () => { state = (1664525 * state + 1013904223) >>> 0; return state / 4294967296; };

@@ -11,6 +11,9 @@ import {
   piecewiseProperTime,
   qcdB0, rgBeta, rgBetaDerivative, rgStability, rgFixedPoints,
   findRGFixedPoints, rgOneLoopRunning, integrateRGFlow,
+  grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
+  blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
+  clamp, transformPair, QFT_CONSTANTS,
 } from "../js/physics.mjs";
 
 test("Schwarzschild radius is about 2.95 km per solar mass", () => {
@@ -415,4 +418,139 @@ test("RG helpers reject invalid models and non-finite inputs without fake succes
   assert.equal(invalid.status, "invalid");
   assert.equal(invalid.points.length, 0);
   assert.equal(invalid.ultraviolet.status, "invalid");
+});
+
+/* ---------- Stage 5: GR, Planck units, and black-hole thermodynamics ---------- */
+
+const ARCSEC_PER_RAD = 206264.80624709636;
+const GM_SUN = 6.67430e-11 * 1.98847e30;
+const C_SQ = 299792458 ** 2;
+
+test("GR perihelion precession reproduces Mercury's 42.98 arcsec per century", () => {
+  const a = 5.7909e10; // semi-major axis, metres
+  const e = 0.2056; // eccentricity
+  const perOrbit = grPerihelionPrecession(GM_SUN, C_SQ, a, e);
+  const orbitsPerCentury = 36525 / 87.969; // days per Julian century / period
+  const arcsecPerCentury = perOrbit * orbitsPerCentury * ARCSEC_PER_RAD;
+  assert.ok(Math.abs(arcsecPerCentury - 42.98) < 0.05);
+});
+
+test("GR perihelion precession scales as 1/[a(1−e²)] and vanishes for circular orbits", () => {
+  const base = grPerihelionPrecession(1, 1, 2, 0.5);
+  assert.ok(Math.abs(grPerihelionPrecession(1, 1, 4, 0.5) - base / 2) < 1e-15);
+  assert.ok(Math.abs(grPerihelionPrecession(1, 1, 2, 0) - base * 0.75) < 1e-15);
+  assert.equal(grPerihelionPrecession(1, 1, 2, 0), grPerihelionPrecession(1, 1, 2, 0));
+});
+
+test("GR light deflection reproduces the 1.75 arcsec solar-limb anchor", () => {
+  const deflection = grLightDeflection(GM_SUN, C_SQ, 6.957e8); // impact parameter = R_sun
+  const arcsec = deflection * ARCSEC_PER_RAD;
+  assert.ok(Math.abs(arcsec - 1.751) < 0.005);
+});
+
+test("GR light deflection is twice the Newtonian value and scales as 1/b", () => {
+  const gr = grLightDeflection(GM_SUN, C_SQ, 6.957e8);
+  const newtonian = 2 * GM_SUN / (C_SQ * 6.957e8); // Newtonian corpuscular prediction
+  assert.ok(Math.abs(gr / newtonian - 2) < 1e-12);
+  assert.ok(Math.abs(grLightDeflection(GM_SUN, C_SQ, 2 * 6.957e8) - gr / 2) < 1e-20);
+});
+
+test("Planck units match CODATA values within 0.1%", () => {
+  const planck = planckUnits();
+  assert.ok(Math.abs(planck.lengthMeters / 1.616255e-35 - 1) < 1e-3);
+  assert.ok(Math.abs(planck.timeSeconds / 5.391247e-44 - 1) < 1e-3);
+  assert.ok(Math.abs(planck.massKg / 2.176434e-8 - 1) < 1e-3);
+  assert.ok(Math.abs(planck.energyJoules / 1.9561e9 - 1) < 1e-3);
+  assert.ok(Math.abs(planck.energyGeV / 1.2209e19 - 1) < 1e-3);
+});
+
+test("Planck units satisfy their defining relations t_P = l_P/c and E_P = m_P·c²", () => {
+  const planck = planckUnits();
+  const C = 299792458;
+  assert.ok(Math.abs(planck.timeSeconds - planck.lengthMeters / C) < 1e-55);
+  assert.ok(Math.abs(planck.energyJoules - planck.massKg * C * C) < 1e-6);
+});
+
+test("Probe energy ħc/l at the Planck length recovers the Planck energy", () => {
+  const planck = planckUnits();
+  const ratio = probeEnergyGeV(planck.lengthMeters) / planck.energyGeV;
+  assert.ok(Math.abs(ratio - 1) < 1e-3); // ħc ≈ 1.973×10⁻¹⁶ GeV·m vs exact CODATA
+  assert.ok(Math.abs(probeEnergyGeV(2e-19) / probeEnergyGeV(1e-19) - 0.5) < 1e-12);
+});
+
+test("Black-hole evaporation time anchors at 2.1×10⁶⁷ yr and scales as M³", () => {
+  assert.equal(blackHoleEvaporationTimeYears(1), 2.1e67);
+  assert.equal(blackHoleEvaporationTimeYears(2), 2.1e67 * 8);
+  assert.ok(Math.abs(blackHoleEvaporationTimeYears(3) / blackHoleEvaporationTimeYears(1) - 27) < 1e-9);
+});
+
+test("Page curve rises, peaks at the Page time, and falls back to zero", () => {
+  assert.equal(pageCurveEntropy(0), 0);
+  assert.equal(pageCurveEntropy(0.5), 1);
+  assert.equal(pageCurveEntropy(1), 0);
+  assert.ok(pageCurveEntropy(0.25) > 0 && pageCurveEntropy(0.25) < 1);
+  assert.equal(pageCurveEntropy(0.25), pageCurveEntropy(0.75)); // symmetry about the Page time
+  assert.ok(pageCurveEntropy(0.4) > pageCurveEntropy(0.3));
+});
+
+test("Page curve clamps out-of-range fractions and propagates NaN", () => {
+  assert.equal(pageCurveEntropy(-0.5), 0);
+  assert.equal(pageCurveEntropy(1.5), 0);
+  assert.ok(Number.isNaN(pageCurveEntropy(NaN)));
+  assert.ok(Number.isNaN(pageCurveEntropy(Infinity)));
+});
+
+test("Hawking spectral shape peaks at the Wien displacement u ≈ 2.8214", () => {
+  let peak = 0, peakU = 0;
+  for (let i = 0; i <= 100000; i++) {
+    const u = (i / 100000) * 10;
+    const s = hawkingSpectralShape(u, 1);
+    if (s > peak) { peak = s; peakU = u; }
+  }
+  assert.ok(Math.abs(peakU - 2.8214) < 0.02);
+});
+
+test("Hawking spectral shape stays finite in the exponential tail and guards invalid inputs", () => {
+  const tail = hawkingSpectralShape(100, 1);
+  assert.ok(Number.isFinite(tail) && tail > 0 && tail < 1e-10); // exponent capped at e⁴⁰
+  assert.equal(hawkingSpectralShape(0, 1), 0);
+  assert.ok(Number.isNaN(hawkingSpectralShape(1, 0)));
+  assert.ok(Number.isNaN(hawkingSpectralShape(1, -1)));
+  assert.ok(Number.isNaN(hawkingSpectralShape(1, NaN)));
+  assert.ok(Number.isNaN(hawkingSpectralShape(-1, 1)));
+});
+
+test("Kerr surface gravity falls with spin and keeps the 0.998 Thorne limit physical", () => {
+  const schwarzschild = kerrGeometry(0).temperatureFactor;
+  assert.ok(Math.abs(schwarzschild - 1) < 1e-12);
+  let previous = schwarzschild;
+  for (let i = 1; i <= 10; i++) {
+    const factor = kerrGeometry(i / 10).temperatureFactor;
+    assert.ok(factor < previous);
+    previous = factor;
+  }
+  assert.ok(kerrGeometry(0.998).temperatureFactor < 0.12);
+});
+
+test("clamp returns min for non-finite inputs and respects both bounds", () => {
+  assert.equal(clamp(5, 0, 10), 5);
+  assert.equal(clamp(-1, 0, 10), 0);
+  assert.equal(clamp(11, 0, 10), 10);
+  assert.equal(clamp(NaN, 0, 10), 0);
+  assert.equal(clamp(Infinity, 0, 10), 0);
+});
+
+test("transformPair returns the full Lorentz bookkeeping shape", () => {
+  const result = transformPair({ a: { ct: 0, x: 0 }, b: { ct: 5, x: 3 }, beta: 0.6, c: 1 });
+  assert.ok(result.a.ct === 0 && result.b.x === 3);
+  assert.ok(result.left !== undefined && result.transformed !== undefined);
+  assert.ok(result.interval !== undefined && result.gamma !== undefined);
+  assert.ok(Math.abs(result.gamma - 1.25) < 1e-12);
+});
+
+test("QFT constants match PDG values", () => {
+  assert.equal(QFT_CONSTANTS.M_Z, 91.1876);
+  assert.equal(QFT_CONSTANTS.GAMMA_Z, 2.4952);
+  assert.ok(Math.abs(QFT_CONSTANTS.GEV2_TO_NB - 0.3893793721e6) < 1e-3);
+  assert.ok(Math.abs(QFT_CONSTANTS.M_ELECTRON - 0.51099895e-3) < 1e-12);
 });

@@ -621,7 +621,9 @@ const GR_BODIES = [
   { a: 2.2, e: 0.45, hex: 0x7fe0ee, r: 0.19 },
   { a: 3.5, e: 0.22, hex: 0xf3a85e, r: 0.13 },
 ];
-function grPrecDeg(M, a, e) { return 6 * Math.PI * (0.55 * M) / (GR_C2 * a * (1 - e * e)) * 180 / Math.PI; }
+function grPrecDeg(M, a, e) {
+  return window.QGA_PHYSICS.grPerihelionPrecession(0.55 * M, GR_C2, a, e) * 180 / Math.PI;
+}
 function CurvatureEngine3D() {
   const [mass, setMass] = useState(5);
   const [view, setView] = useState("gr");
