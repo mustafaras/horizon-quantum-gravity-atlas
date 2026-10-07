@@ -132,7 +132,7 @@ Motion is fully bounded and every animated surface snaps under `prefers-reduced-
 
 ### 5.1 Zero-build, static-first
 
-The application is intentionally a folder of static files. It loads React, Babel, Three.js, and KaTeX from CDN URLs declared in `index.html`, runs from any plain HTTP server, and requires no backend and no build step. This is an archival decision: a reader in ten years should be able to serve the repository and see the same atlas, and a reviewer can audit the exact bytes that ship.
+The application is intentionally a folder of static files. It loads React, Babel, Three.js, KaTeX, and its web fonts from self-hosted copies under `vendor/`, runs from any plain HTTP server, and requires no backend and no build step. This is an archival decision: a reader in ten years should be able to serve the repository and see the same atlas, with no third-party host in the request path, and a reviewer can audit the exact bytes that ship.
 
 ### 5.2 Module structure
 
@@ -167,7 +167,7 @@ A persistent browser-QA harness (`qa/`, pinned Chromium, separate CI job) is dri
 
 ### 6.3 Repository-presentation guardrails
 
-A validation suite (`npm run validate`) enforces the academic packaging itself: README image paths exist, screenshot and diagram counts are met, Open Graph and manifest metadata are present and point to real assets, PNGs have expected dimensions, and diagram SVGs are structurally complete. A schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) is kept consistent with `package.json` and `LICENSE` by its own test suite.
+A validation suite (`npm run validate`) enforces the academic packaging itself: README image paths exist, screenshot and diagram counts are met, Open Graph and manifest metadata are present and point to real assets, PNGs have expected dimensions, diagram SVGs are structurally complete, and every asset the entry document and the vendored stylesheets reference resolves to a real local file with no third-party host in the request path. A schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) is kept consistent with `package.json` and `LICENSE` by its own test suite.
 
 ---
 

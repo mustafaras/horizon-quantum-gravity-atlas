@@ -32,11 +32,10 @@
 <meta name="twitter:description" content="Interactive scientific atlas of quantum gravity, black holes, QFT, spacetime curvature, holography, and experimental constraints.">
 <meta name="twitter:image" content="https://mustafaras.github.io/horizon-quantum-gravity-atlas/docs/social/og-image.png">
 <meta name="twitter:image:alt" content="HORIZON Quantum Gravity Atlas social preview with black-hole accretion disk, scientific badges, and field equations.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Sora:wght@300;400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<!-- All third-party assets are self-hosted under vendor/ for archival stability. -->
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
 <style>
 :root {
   --bg: #05080f;
@@ -1675,18 +1674,18 @@ body { background:
 </head>
 <body>
 <div id="root"></div>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/build/three.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/shaders/CopyShader.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/EffectComposer.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/RenderPass.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/ShaderPass.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/MaskPass.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/shaders/GammaCorrectionShader.js" crossorigin="anonymous"></script>
+<script src="vendor/react/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="vendor/react/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="vendor/babel/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="vendor/three/three.min.js"></script>
+<script src="vendor/three/examples/js/shaders/CopyShader.js"></script>
+<script src="vendor/three/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="vendor/three/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="vendor/three/examples/js/postprocessing/RenderPass.js"></script>
+<script src="vendor/three/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="vendor/three/examples/js/postprocessing/MaskPass.js"></script>
+<script src="vendor/three/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="vendor/three/examples/js/shaders/GammaCorrectionShader.js"></script>
 <script type="text/babel" src="tweaks-panel.jsx"></script>
 <script type="text/babel" src="js/physics.jsx"></script>
 <script type="text/babel" src="js/state.jsx"></script>

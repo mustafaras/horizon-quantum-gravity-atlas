@@ -659,10 +659,11 @@ function ViewWhitepaper() {
       <PaperSection id="architecture" index="5" title="Software architecture">
         <PaperSub index="5.1" title="Zero-build, static-first">
           <p>
-            The application is intentionally a folder of static files. It loads React, Babel, Three.js, and KaTeX from
-            CDN URLs declared in <span className="mono">index.html</span>, runs from any plain HTTP server, and requires
-            no backend and no build step. This is an archival decision: a reader in ten years should be able to serve the
-            repository and see the same atlas, and a reviewer can audit the exact bytes that ship.
+            The application is intentionally a folder of static files. It loads React, Babel, Three.js, KaTeX, and its
+            web fonts from self-hosted copies under <span className="mono">vendor/</span>, runs from any plain HTTP
+            server, and requires no backend and no build step. This is an archival decision: a reader in ten years
+            should be able to serve the repository and see the same atlas, with no third-party host in the request
+            path, and a reviewer can audit the exact bytes that ship.
           </p>
         </PaperSub>
         <PaperSub index="5.2" title="Module structure">
@@ -721,10 +722,11 @@ function ViewWhitepaper() {
           <p>
             A validation suite (<span className="mono">npm run validate</span>) enforces the academic packaging itself:
             README image paths exist, screenshot and diagram counts are met, Open Graph and manifest metadata are present
-            and point to real assets, PNGs have expected dimensions, and diagram SVGs are structurally complete. A
-            schema-validated <span className="mono">CITATION.cff</span> (CFF 1.2.0, no unverified identifiers) is kept
-            consistent with <span className="mono">package.json</span> and <span className="mono">LICENSE</span> by its
-            own test suite.
+            and point to real assets, PNGs have expected dimensions, diagram SVGs are structurally complete, and every
+            asset the entry document and the vendored stylesheets reference resolves to a real local file with no
+            third-party host in the request path. A schema-validated <span className="mono">CITATION.cff</span> (CFF
+            1.2.0, no unverified identifiers) is kept consistent with <span className="mono">package.json</span> and
+            <span className="mono">LICENSE</span> by its own test suite.
           </p>
         </PaperSub>
       </PaperSection>

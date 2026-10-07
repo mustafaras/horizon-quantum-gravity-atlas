@@ -45,7 +45,6 @@ function normalizeLocalAsset(src) {
 for (const file of [
   "README.md",
   "index.html",
-  "Quantum Gravity Atlas.html",
   "favicon.svg",
   "manifest.webmanifest",
   "docs/social/og-image.png",
@@ -111,7 +110,7 @@ requirePngSize("docs/icons/apple-touch-icon.png", 180, 180);
 requirePngSize("docs/icons/icon-192.png", 192, 192);
 requirePngSize("docs/icons/icon-512.png", 512, 512);
 
-for (const htmlFile of ["index.html", "Quantum Gravity Atlas.html"]) {
+for (const htmlFile of ["index.html"]) {
   const html = read(htmlFile);
   for (const required of [
     'name="description"',
@@ -125,6 +124,63 @@ for (const htmlFile of ["index.html", "Quantum Gravity Atlas.html"]) {
     'name="twitter:image"'
   ]) {
     if (!html.includes(required)) fail(`${htmlFile} is missing ${required}`);
+  }
+
+  const assetRefs = [
+    ...html.matchAll(/<script[^>]+src="([^"]+)"/g),
+    ...html.matchAll(/<link[^>]+href="([^"]+)"/g),
+    ...html.matchAll(/<img[^>]+src="([^"]+)"/g)
+  ].map((match) => match[1]);
+
+  const metadataLinks = new Set(
+    [...html.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/g)]
+      .filter((match) => /rel="(canonical|alternate|author|license|me)"/.test(match[0]))
+      .map((match) => match[1])
+  );
+
+  for (const ref of assetRefs) {
+    if (metadataLinks.has(ref)) continue;
+    if (/^https?:\/\//.test(ref)) {
+      fail(`${htmlFile} must self-host third-party assets; found external reference: ${ref}`);
+      continue;
+    }
+    if (/^(data:|#|mailto:)/.test(ref)) continue;
+    const asset = normalizeLocalAsset(ref);
+    if (!exists(asset)) fail(`${htmlFile} asset path does not exist: ${ref}`);
+  }
+}
+
+for (const file of [
+  "vendor/fonts/fonts.css",
+  "vendor/katex/katex.min.css",
+  "vendor/katex/katex.min.js",
+  "vendor/react/react.development.js",
+  "vendor/react/react-dom.development.js",
+  "vendor/babel/babel.min.js",
+  "vendor/three/three.min.js",
+  "vendor/three/examples/js/shaders/CopyShader.js",
+  "vendor/three/examples/js/shaders/LuminosityHighPassShader.js",
+  "vendor/three/examples/js/shaders/GammaCorrectionShader.js",
+  "vendor/three/examples/js/postprocessing/EffectComposer.js",
+  "vendor/three/examples/js/postprocessing/RenderPass.js",
+  "vendor/three/examples/js/postprocessing/ShaderPass.js",
+  "vendor/three/examples/js/postprocessing/MaskPass.js",
+  "vendor/three/examples/js/postprocessing/UnrealBloomPass.js"
+]) {
+  requireFile(file);
+}
+
+for (const cssFile of ["vendor/fonts/fonts.css", "vendor/katex/katex.min.css"]) {
+  if (!exists(cssFile)) continue;
+  const css = read(cssFile);
+  for (const match of css.matchAll(/url\((['"]?)([^'")]+)\1\)/g)) {
+    const ref = match[2];
+    if (/^(data:|https?:)/.test(ref)) {
+      fail(`${cssFile} must self-host its assets; found external reference: ${ref}`);
+      continue;
+    }
+    const asset = path.join(path.dirname(cssFile), normalizeLocalAsset(ref));
+    if (!exists(asset)) fail(`${cssFile} asset path does not exist: ${ref}`);
   }
 }
 

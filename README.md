@@ -114,7 +114,7 @@ It does not require a backend.
 
 It does not require a build step.
 
-It loads React, Babel, Three.js, and KaTeX from CDN URLs declared in `index.html`.
+It loads React, Babel, Three.js, KaTeX, and its web fonts from self-hosted copies under `vendor/`, so the atlas has no runtime third-party network dependency.
 
 ---
 
@@ -1094,7 +1094,6 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 ```text
 horizon-quantum-gravity-atlas/
 ├── index.html
-├── Quantum Gravity Atlas.html
 ├── README.md
 ├── LICENSE
 ├── CITATION.cff
@@ -1145,13 +1144,33 @@ horizon-quantum-gravity-atlas/
 │   └── validate-repo.mjs
 ├── styles/
 │   └── rg-flow.css
+├── vendor/
+│   ├── babel/
+│   │   └── babel.min.js
+│   ├── fonts/
+│   │   ├── fonts.css
+│   │   └── *.woff2
+│   ├── katex/
+│   │   ├── katex.min.css
+│   │   ├── katex.min.js
+│   │   └── fonts/
+│   ├── react/
+│   │   ├── react.development.js
+│   │   └── react-dom.development.js
+│   └── three/
+│       ├── three.min.js
+│       └── examples/js/
 └── js/
     ├── app.jsx
     ├── atlas-stage.jsx
     ├── core.jsx
     ├── data.jsx
     ├── extras.jsx
+    ├── physics.jsx
+    ├── physics.mjs
     ├── scene3d.jsx
+    ├── state.jsx
+    ├── state-runtime.jsx
     ├── mod-standard-model.jsx
     ├── mod-qft.jsx
     ├── mod-gauge-rg.jsx
@@ -1171,6 +1190,8 @@ horizon-quantum-gravity-atlas/
 | JSX transform | Babel Standalone | no bundler required |
 | 3D renderer | Three.js r147 | WebGL scenes and cinematic modules |
 | equations | KaTeX | formula rendering |
+| web fonts | Space Grotesk, Sora, IBM Plex Mono | self-hosted woff2 subsets |
+| third-party assets | `vendor/` | self-hosted, no runtime CDN dependency |
 | fallback simulations | Canvas 2D | analytical and low-support rendering |
 | persistence | `localStorage` | selected view and tweak settings |
 | deployment | static hosting | GitHub Pages compatible |
@@ -1193,10 +1214,11 @@ The validation currently enforces:
 - all README local image paths exist;
 - at least nine cinematic screenshots are referenced;
 - at least eleven static SVG diagrams are referenced;
-- Open Graph and Twitter card metadata exists in both HTML entry files;
+- Open Graph and Twitter card metadata exists in the HTML entry file;
 - `manifest.webmanifest` is valid JSON and points to real icons;
 - PNG assets have the expected dimensions;
-- diagram SVG files are structurally complete.
+- diagram SVG files are structurally complete;
+- every asset referenced by `index.html` and by the vendored CSS resolves to a real local file, and no third-party asset is loaded from an external host.
 
 This is not a physics test suite.
 
@@ -1611,12 +1633,11 @@ The following are especially central:
 
 ## Roadmap
 
-High-value future improvements:
-
-- self-host CDN assets for long-term archival stability;
+No outstanding items — every improvement planned for the first release has shipped.
 
 Completed since the first release:
 
+- self-hosted third-party assets: React, ReactDOM, Babel standalone, Three.js (with its shader and post-processing examples), KaTeX (with its woff2 font set), and the Space Grotesk / Sora / IBM Plex Mono web fonts are all vendored under `vendor/`, so the atlas renders with zero runtime CDN dependency and stays reproducible for long-term archival;
 - deep-link support through query parameters, with back/forward restoration and documented fallback;
 - a GitHub Pages deployment workflow;
 - a focused Node test suite for the pure physics and reproducibility helpers;
