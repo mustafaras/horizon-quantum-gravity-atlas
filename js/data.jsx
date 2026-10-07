@@ -279,193 +279,193 @@ const QGA_GLOSS_LINKS = {
 /* ---------- symbol atlas: notation registry with per-context rows ---------- */
 const QGA_SYMBOLS = [
   {
-    sym: "β", cat: "Kinematics & causality",
+    sym: "β", tex: "\\beta", cat: "Kinematics & causality",
     contexts: [
-      { ctx: "Special relativity", meaning: "v/c — velocity as a fraction of light speed; β → 1 marks the ultra-relativistic limit.", unit: "dimensionless", module: "gr" },
-      { ctx: "Renormalization group", meaning: "β(g) = μ ∂g/∂μ — the rate at which a coupling g runs with the energy scale μ.", unit: "dimensionless per e-fold of μ", module: "rg" },
+      { ctx: "Special relativity", eq: "\\beta \\equiv v/c", meaning: "Velocity as a fraction of light speed; β → 1 marks the ultra-relativistic limit.", unit: "dimensionless", module: "gr" },
+      { ctx: "Renormalization group", eq: "\\beta(g) \\equiv \\mu\\,\\frac{\\partial g}{\\partial \\mu}", meaning: "The rate at which a coupling g runs with the energy scale μ.", unit: "dimensionless per e-fold of μ", module: "rg" },
     ],
   },
   {
-    sym: "γ", cat: "Kinematics & causality",
+    sym: "γ", tex: "\\gamma", cat: "Kinematics & causality",
     contexts: [
-      { ctx: "Special relativity", meaning: "Lorentz factor γ = 1/√(1−β²) — time dilation and momentum boost p = γmv.", unit: "dimensionless", module: "gr" },
-      { ctx: "Dirac theory", meaning: "γ^μ — the 4×4 gamma matrices satisfying {γ^μ, γ^ν} = 2η^μν.", unit: "dimensionless matrices", module: "qft" },
-      { ctx: "RG & dimensional regularization", meaning: "γ_E ≈ 0.5772 — the Euler–Mascheroni constant, arising in ε-expansion integrals.", unit: "dimensionless", module: "rg" },
+      { ctx: "Special relativity", eq: "\\gamma = \\frac{1}{\\sqrt{1-\\beta^{2}}}", meaning: "Lorentz factor — time dilation and the momentum boost p = γmv.", unit: "dimensionless", module: "gr" },
+      { ctx: "Dirac theory", eq: "\\{\\gamma^{\\mu},\\gamma^{\\nu}\\} = 2\\eta^{\\mu\\nu}", meaning: "The 4×4 gamma matrices of the Dirac equation.", unit: "dimensionless matrices", module: "qft" },
+      { ctx: "RG & dimensional regularization", eq: "\\gamma_{E} \\approx 0.5772", meaning: "The Euler–Mascheroni constant, arising in ε-expansion integrals.", unit: "dimensionless", module: "rg" },
     ],
   },
   {
-    sym: "ct", cat: "Kinematics & causality",
+    sym: "ct", tex: "ct", cat: "Kinematics & causality",
     contexts: [
-      { ctx: "Minkowski geometry", meaning: "Time plotted in length units: x⁰ = ct. The atlas plots ct on the vertical axis of its spacetime diagrams.", unit: "metres", module: "gr" },
+      { ctx: "Minkowski geometry", eq: "x^{0} = ct", meaning: "Time plotted in length units; the atlas plots ct on the vertical axis of its spacetime diagrams.", unit: "metres", module: "gr" },
     ],
   },
   {
-    sym: "τ", cat: "Kinematics & causality",
+    sym: "τ", tex: "\\tau", cat: "Kinematics & causality",
     contexts: [
-      { ctx: "Relativistic motion", meaning: "Proper time — the time an idealized clock carried along a worldline actually records; dτ² = −ds²/c².", unit: "seconds", module: "gr" },
+      { ctx: "Relativistic motion", eq: "c^{2}\\,\\mathrm{d}\\tau^{2} = -\\,\\mathrm{d}s^{2}", meaning: "Proper time — the time an idealized clock carried along a worldline actually records.", unit: "seconds", module: "gr" },
     ],
   },
   {
-    sym: "s²", cat: "Kinematics & causality",
+    sym: "s²", tex: "s^{2}", cat: "Kinematics & causality",
     contexts: [
-      { ctx: "Spacetime geometry", meaning: "Invariant interval s² = −(cΔt)² + (Δx)² — same for every inertial observer; its sign classifies timelike / null / spacelike separations.", unit: "metres²", module: "gr" },
-      { ctx: "Scattering kinematics", meaning: "Mandelstam s = (p₁+p₂)² — the squared centre-of-mass energy of a 2→2 collision.", unit: "GeV² (natural units)", module: "qft" },
+      { ctx: "Spacetime geometry", eq: "s^{2} = -(c\\,\\Delta t)^{2} + (\\Delta\\mathbf{x})^{2}", meaning: "Invariant for every inertial observer; its sign classifies timelike / null / spacelike separations.", unit: "metres²", module: "gr" },
+      { ctx: "Scattering kinematics", eq: "s = (p_{1} + p_{2})^{2}", meaning: "Mandelstam s — the squared centre-of-mass energy of a 2→2 collision.", unit: "GeV² (natural units)", module: "qft" },
     ],
   },
   {
-    sym: "G", cat: "Constants & scales",
+    sym: "G", tex: "G", cat: "Constants & scales",
     contexts: [
-      { ctx: "Newtonian gravity", meaning: "Newton's constant G ≈ 6.674×10⁻¹¹ m³ kg⁻¹ s⁻² — sets the strength of gravity and, with ħ and c, defines the Planck scale.", unit: "m³ kg⁻¹ s⁻²", module: "planck" },
+      { ctx: "Newtonian gravity", eq: "G \\approx 6.674\\times10^{-11}\\ \\mathrm{m^{3}\\,kg^{-1}\\,s^{-2}}", meaning: "Newton's constant — sets the strength of gravity and, with ħ and c, defines the Planck scale.", unit: "m³ kg⁻¹ s⁻²", module: "planck" },
     ],
   },
   {
-    sym: "ħ, c", cat: "Constants & scales",
+    sym: "ħ, c", tex: "\\hbar,\\;c", cat: "Constants & scales",
     contexts: [
-      { ctx: "Natural units", meaning: "The quantum of action ħ ≈ 1.055×10⁻³⁴ J·s and light speed c = 299 792 458 m/s. Particle-physics formulas set ħ = c = 1; the atlas restores them for numerical outputs.", unit: "J·s; m/s", module: "planck" },
+      { ctx: "Natural units", eq: "\\hbar = c = 1", meaning: "The quantum of action ħ ≈ 1.055×10⁻³⁴ J·s and light speed c = 299 792 458 m/s. Formulas set both to one; the atlas restores them for numerical outputs.", unit: "J·s; m/s", module: "planck" },
     ],
   },
   {
-    sym: "ℓ_P, t_P, m_P", cat: "Constants & scales",
+    sym: "ℓ_P, t_P, m_P", tex: "\\ell_{P},\\;t_{P},\\;m_{P}", cat: "Constants & scales",
     contexts: [
-      { ctx: "Planck scale", meaning: "Planck length ℓ_P = √(ħG/c³) ≈ 1.616×10⁻³⁵ m, time t_P = ℓ_P/c ≈ 5.39×10⁻⁴⁴ s, mass m_P = √(ħc/G) ≈ 2.18×10⁻⁸ kg — where quantum gravity effects are expected to dominate.", unit: "m; s; kg", module: "planck" },
+      { ctx: "Planck scale", eq: "\\ell_{P} = \\sqrt{\\frac{\\hbar G}{c^{3}}} \\approx 1.616\\times10^{-35}\\ \\mathrm{m}", meaning: "Planck length; time t_P = ℓ_P/c ≈ 5.39×10⁻⁴⁴ s and mass m_P = √(ħc/G) ≈ 2.18×10⁻⁸ kg — where quantum gravity effects are expected to dominate.", unit: "m; s; kg", module: "planck" },
     ],
   },
   {
-    sym: "α", cat: "Constants & scales",
+    sym: "α", tex: "\\alpha", cat: "Constants & scales",
     contexts: [
-      { ctx: "Electromagnetism", meaning: "Fine-structure constant α = e²/(4πε₀ħc) ≈ 1/137 — the strength of the electromagnetic interaction at low energies.", unit: "dimensionless", module: "qft" },
-      { ctx: "Running couplings", meaning: "α(μ) = g(μ)²/(4π) — the same coupling written in terms of the running g(μ); it grows logarithmically at short distances.", unit: "dimensionless", module: "rg" },
-      { ctx: "Gravity as a coupling", meaning: "α_G = Gm²/(ħc) — the gravitational analogue for two masses m; reaches unity near the Planck mass.", unit: "dimensionless", module: "approaches" },
+      { ctx: "Electromagnetism", eq: "\\alpha = \\frac{e^{2}}{4\\pi\\varepsilon_{0}\\hbar c} \\approx \\tfrac{1}{137}", meaning: "The fine-structure constant — the strength of the electromagnetic interaction at low energies.", unit: "dimensionless", module: "qft" },
+      { ctx: "Running couplings", eq: "\\alpha(\\mu) = \\frac{g(\\mu)^{2}}{4\\pi}", meaning: "The same coupling written via the running g(μ); it grows logarithmically at short distances.", unit: "dimensionless", module: "rg" },
+      { ctx: "Gravity as a coupling", eq: "\\alpha_{G} = \\frac{Gm^{2}}{\\hbar c}", meaning: "The gravitational analogue for two masses m; reaches unity near the Planck mass.", unit: "dimensionless", module: "approaches" },
     ],
   },
   {
-    sym: "Λ", cat: "Constants & scales",
+    sym: "Λ", tex: "\\Lambda", cat: "Constants & scales",
     contexts: [
-      { ctx: "Cosmology", meaning: "Cosmological constant Λ — vacuum energy density term in Einstein's equations; observed to be tiny but positive.", unit: "m⁻²", module: "gr" },
-      { ctx: "QCD", meaning: "Λ_QCD ≈ 200 MeV — the confinement scale where the strong coupling leaves the perturbative regime.", unit: "MeV", module: "rg" },
-      { ctx: "Regularization", meaning: "UV cutoff Λ — the highest momentum retained in an effective description; physical answers must not depend on it.", unit: "eV", module: "rg" },
+      { ctx: "Cosmology", eq: "R_{\\mu\\nu} - \\tfrac{1}{2}R\\,g_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\kappa T_{\\mu\\nu}", meaning: "The cosmological constant — vacuum energy density term in Einstein's equations; observed to be tiny but positive.", unit: "m⁻²", module: "gr" },
+      { ctx: "QCD", eq: "\\Lambda_{\\mathrm{QCD}} \\approx 200\\ \\mathrm{MeV}", meaning: "The confinement scale where the strong coupling leaves the perturbative regime.", unit: "MeV", module: "rg" },
+      { ctx: "Regularization", eq: "|p| \\leq \\Lambda", meaning: "UV cutoff — the highest momentum retained in an effective description; physical answers must not depend on it.", unit: "eV", module: "rg" },
     ],
   },
   {
-    sym: "μ", cat: "Constants & scales",
+    sym: "μ", tex: "\\mu", cat: "Constants & scales",
     contexts: [
-      { ctx: "Renormalization group", meaning: "The sliding energy scale μ at which couplings are probed; β functions describe their flow in μ.", unit: "eV (renormalization scale)", module: "rg" },
-      { ctx: "Index notation", meaning: "Spacetime index μ ∈ {0,1,2,3} — as in g_μν or x^μ. Position (up/down) marks vector vs covector.", unit: "index", module: "gr" },
+      { ctx: "Renormalization group", eq: "g = g(\\mu)", meaning: "The sliding energy scale at which couplings are probed; β functions describe their flow in μ.", unit: "eV (renormalization scale)", module: "rg" },
+      { ctx: "Index notation", eq: "x^{\\mu},\\;g_{\\mu\\nu}", meaning: "Spacetime index μ ∈ {0,1,2,3}; position (up/down) marks vector vs covector.", unit: "index", module: "gr" },
     ],
   },
   {
-    sym: "g", cat: "Spacetime & gravity",
+    sym: "g", tex: "g", cat: "Spacetime & gravity",
     contexts: [
-      { ctx: "General relativity", meaning: "The metric tensor g_μν — the dynamical field encoding distances, times and causal structure.", unit: "dimensionless field", module: "gr" },
-      { ctx: "Gauge theory", meaning: "A coupling constant g — e.g. the strong coupling g_s or electroweak couplings g, g′.", unit: "dimensionless", module: "qft" },
-      { ctx: "Asymptotic safety", meaning: "g★ — a fixed point of the RG flow where β(g★) = 0; the UV completion candidate for gravity.", unit: "dimensionless", module: "rg" },
-      { ctx: "String theory", meaning: "g_s — the string coupling counting splitting/joining of strings; perturbative expansions are power series in g_s.", unit: "dimensionless", module: "approaches" },
+      { ctx: "General relativity", eq: "g_{\\mu\\nu}", meaning: "The metric tensor — the dynamical field encoding distances, times and causal structure.", unit: "dimensionless field", module: "gr" },
+      { ctx: "Gauge theory", eq: "g,\\;g'", meaning: "A coupling constant — e.g. the strong coupling g_s or electroweak couplings g, g′.", unit: "dimensionless", module: "qft" },
+      { ctx: "Asymptotic safety", eq: "\\beta(g_{\\star}) = 0", meaning: "A fixed point of the RG flow — the UV completion candidate for gravity.", unit: "dimensionless", module: "rg" },
+      { ctx: "String theory", eq: "g_{s}", meaning: "The string coupling counting splitting/joining of strings; perturbative expansions are power series in g_s.", unit: "dimensionless", module: "approaches" },
     ],
   },
   {
-    sym: "Γ", cat: "Spacetime & gravity",
+    sym: "Γ", tex: "\\Gamma", cat: "Spacetime & gravity",
     contexts: [
-      { ctx: "Differential geometry", meaning: "Christoffel symbols Γ^μ_αβ — the connection coefficients encoding how basis vectors change from point to point; they build geodesic equations.", unit: "1/length", module: "gr" },
-      { ctx: "Decays & scattering", meaning: "Γ — a decay width; the lifetime is τ = ħ/Γ. Appears in collider cross-sections as ∝ 1/Γ.", unit: "GeV (natural units)", module: "qft" },
+      { ctx: "Differential geometry", eq: "\\Gamma^{\\mu}_{\\alpha\\beta}", meaning: "Christoffel symbols — connection coefficients encoding how basis vectors change from point to point; they build geodesic equations.", unit: "1/length", module: "gr" },
+      { ctx: "Decays & scattering", eq: "\\tau = \\hbar/\\Gamma", meaning: "A decay width; sets the lifetime τ and appears in collider cross-sections as ∝ 1/Γ.", unit: "GeV (natural units)", module: "qft" },
     ],
   },
   {
-    sym: "R", cat: "Spacetime & gravity",
+    sym: "R", tex: "R", cat: "Spacetime & gravity",
     contexts: [
-      { ctx: "Curvature", meaning: "Ricci scalar R — the contraction of the Riemann tensor; the scalar curvature entering the Einstein–Hilbert action S = (c⁴/16πG)∫R√(−g) d⁴x.", unit: "1/length²", module: "gr" },
+      { ctx: "Curvature", eq: "S = \\frac{c^{4}}{16\\pi G}\\int R\\sqrt{-g}\\;\\mathrm{d}^{4}x", meaning: "Ricci scalar — the contraction of the Riemann tensor; enters the Einstein–Hilbert action.", unit: "1/length²", module: "gr" },
     ],
   },
   {
-    sym: "κ", cat: "Spacetime & gravity",
+    sym: "κ", tex: "\\kappa", cat: "Spacetime & gravity",
     contexts: [
-      { ctx: "Einstein's equations", meaning: "κ = 8πG/c⁴ — the coupling between geometry and stress-energy in G_μν = κ T_μν.", unit: "s² kg⁻¹ m⁻¹", module: "gr" },
-      { ctx: "Black hole horizons", meaning: "Surface gravity κ — the acceleration a distant observer would infer at the horizon; T_H = ħκ/(2πck_B).", unit: "m/s²", module: "bh" },
+      { ctx: "Einstein's equations", eq: "G_{\\mu\\nu} = \\kappa T_{\\mu\\nu},\\quad \\kappa = \\frac{8\\pi G}{c^{4}}", meaning: "The coupling between geometry and stress-energy.", unit: "s² kg⁻¹ m⁻¹", module: "gr" },
+      { ctx: "Black hole horizons", eq: "T_{H} = \\frac{\\hbar\\kappa}{2\\pi c k_{B}}", meaning: "Surface gravity — the acceleration a distant observer would infer at the horizon.", unit: "m/s²", module: "bh" },
     ],
   },
   {
-    sym: "λ", cat: "Quantum fields & amplitudes",
+    sym: "λ", tex: "\\lambda", cat: "Quantum fields & amplitudes",
     contexts: [
-      { ctx: "Gauge theory (large-N)", meaning: "'t Hooft coupling λ = g²N — the natural expansion parameter of gauge theories at large N.", unit: "dimensionless", module: "qft" },
+      { ctx: "Gauge theory (large-N)", eq: "\\lambda = g^{2}N", meaning: "The 't Hooft coupling — the natural expansion parameter of gauge theories at large N.", unit: "dimensionless", module: "qft" },
     ],
   },
   {
-    sym: "N", cat: "Quantum fields & amplitudes",
+    sym: "N", tex: "N", cat: "Quantum fields & amplitudes",
     contexts: [
-      { ctx: "QCD", meaning: "N_c = 3 — the number of colour charges; N_f counts quark flavours entering the RG flow.", unit: "count", module: "qft" },
-      { ctx: "Large-N expansion", meaning: "N → ∞ limit — organizes gauge theory diagrams by topology; the seed of holographic duality.", unit: "count", module: "approaches" },
+      { ctx: "QCD", eq: "N_{c} = 3", meaning: "The number of colour charges; N_f counts quark flavours entering the RG flow.", unit: "count", module: "qft" },
+      { ctx: "Large-N expansion", eq: "N \\to \\infty", meaning: "Organizes gauge theory diagrams by topology; the seed of holographic duality.", unit: "count", module: "approaches" },
     ],
   },
   {
-    sym: "S", cat: "Quantum fields & amplitudes",
+    sym: "S", tex: "S", cat: "Quantum fields & amplitudes",
     contexts: [
-      { ctx: "Action principle", meaning: "S = ∫ L d⁴x — the action whose stationary points give the equations of motion; ℏ sets the phase e^{iS/ℏ}.", unit: "J·s", module: "qft" },
-      { ctx: "Black hole thermodynamics", meaning: "S_BH = k_B c³A/(4Għ) — Bekenstein–Hawking entropy; the number of horizon microstates is e^{S_BH/k_B}.", unit: "J/K", module: "bh" },
+      { ctx: "Action principle", eq: "S = \\int \\mathcal{L}\\;\\mathrm{d}^{4}x", meaning: "The action whose stationary points give the equations of motion; ħ sets the phase e^{iS/ħ}.", unit: "J·s", module: "qft" },
+      { ctx: "Black hole thermodynamics", eq: "S_{\\mathrm{BH}} = \\frac{k_{B}c^{3}A}{4G\\hbar}", meaning: "Bekenstein–Hawking entropy; the number of horizon microstates is e^{S_BH/k_B}.", unit: "J/K", module: "bh" },
     ],
   },
   {
-    sym: "θ", cat: "Renormalization group",
+    sym: "θ", tex: "\\theta", cat: "Renormalization group",
     contexts: [
-      { ctx: "Critical exponents", meaning: "θ = −β′(g★) — the critical exponent of an RG fixed point; θ > 0 marks a UV-attractive (relevant) direction and asymptotic safety.", unit: "dimensionless", module: "rg" },
+      { ctx: "Critical exponents", eq: "\\theta = -\\beta'(g_{\\star})", meaning: "The critical exponent of an RG fixed point; θ > 0 marks a UV-attractive (relevant) direction and asymptotic safety.", unit: "dimensionless", module: "rg" },
     ],
   },
   {
-    sym: "ν", cat: "Renormalization group",
+    sym: "ν", tex: "\\nu", cat: "Renormalization group",
     contexts: [
-      { ctx: "Critical phenomena", meaning: "Correlation-length exponent ν = 1/θ — how the correlation length ξ ~ |g − g★|⁻ν diverges near a fixed point; ν > 0 signals a well-defined continuum limit.", unit: "dimensionless", module: "rg" },
+      { ctx: "Critical phenomena", eq: "\\xi \\sim |g - g_{\\star}|^{-\\nu}", meaning: "Correlation-length exponent — how ξ diverges near a fixed point; ν > 0 signals a well-defined continuum limit.", unit: "dimensionless", module: "rg" },
     ],
   },
   {
-    sym: "a★", cat: "Black holes & thermodynamics",
+    sym: "a★", tex: "a_{\\star}", cat: "Black holes & thermodynamics",
     contexts: [
-      { ctx: "Kerr geometry", meaning: "Dimensionless spin a★ = Jc/(GM²) ∈ [0,1) — from Schwarzschild (0) to extremal (→1); the atlas' black hole lab is parameterized by it.", unit: "dimensionless", module: "bh" },
+      { ctx: "Kerr geometry", eq: "a_{\\star} = \\frac{Jc}{GM^{2}} \\in [\\,0,1)", meaning: "Dimensionless spin — from Schwarzschild (0) to extremal (→1); the atlas' black hole lab is parameterized by it.", unit: "dimensionless", module: "bh" },
     ],
   },
   {
-    sym: "M", cat: "Black holes & thermodynamics",
+    sym: "M", tex: "M", cat: "Black holes & thermodynamics",
     contexts: [
-      { ctx: "Black hole mass", meaning: "The irreducible mass scale of a black hole; sets the horizon radius r_s = 2GM/c² and Hawking temperature T_H ∝ 1/M.", unit: "M☉ (solar masses)", module: "bh" },
+      { ctx: "Black hole mass", eq: "r_{s} = \\frac{2GM}{c^{2}}", meaning: "The irreducible mass scale of a black hole; sets the horizon radius and Hawking temperature T_H ∝ 1/M.", unit: "M☉ (solar masses)", module: "bh" },
     ],
   },
   {
-    sym: "T_H", cat: "Black holes & thermodynamics",
+    sym: "T_H", tex: "T_{H}", cat: "Black holes & thermodynamics",
     contexts: [
-      { ctx: "Hawking radiation", meaning: "T_H = ħc³/(8πGMk_B) ≈ 6.2×10⁻⁸ K × (M☉/M) — the horizon temperature; a solar-mass black hole radiates far colder than the CMB.", unit: "kelvin", module: "bh" },
+      { ctx: "Hawking radiation", eq: "T_{H} = \\frac{\\hbar c^{3}}{8\\pi GMk_{B}}", meaning: "The horizon temperature; a solar-mass black hole radiates far colder than the CMB.", unit: "kelvin", module: "bh" },
     ],
   },
   {
-    sym: "A", cat: "Black holes & thermodynamics",
+    sym: "A", tex: "A", cat: "Black holes & thermodynamics",
     contexts: [
-      { ctx: "Horizon geometry", meaning: "Horizon area A = 8π(GM/c²)²(1 + √(1−a★²)) — the state variable of black hole thermodynamics; entropy scales with A, not volume.", unit: "m²", module: "bh" },
-      { ctx: "Gauge theory", meaning: "A_μ — the gauge (vector) potential; its field strength F_μν = ∂_μA_ν − ∂_νA_μ.", unit: "potential field", module: "qft" },
+      { ctx: "Horizon geometry", eq: "A = 8\\pi\\Big(\\frac{GM}{c^{2}}\\Big)^{2}\\big(1+\\sqrt{1-a_{\\star}^{2}}\\big)", meaning: "Horizon area — the state variable of black hole thermodynamics; entropy scales with A, not volume.", unit: "m²", module: "bh" },
+      { ctx: "Gauge theory", eq: "F_{\\mu\\nu} = \\partial_{\\mu}A_{\\nu} - \\partial_{\\nu}A_{\\mu}", meaning: "The gauge (vector) potential; its field strength is F_μν.", unit: "potential field", module: "qft" },
     ],
   },
   {
-    sym: "ℳ", cat: "Gravitational waves",
+    sym: "ℳ", tex: "\\mathcal{M}", cat: "Gravitational waves",
     contexts: [
-      { ctx: "Binary inspiral", meaning: "Chirp mass ℳ = (m₁m₂)^{3/5}/(m₁+m₂)^{1/5} — the combination that fixes the inspiral rate; GW150914 had ℳ ≈ 28 M☉.", unit: "M☉", module: "exp" },
+      { ctx: "Binary inspiral", eq: "\\mathcal{M} = \\frac{(m_{1}m_{2})^{3/5}}{(m_{1}+m_{2})^{1/5}}", meaning: "Chirp mass — the combination that fixes the inspiral rate; GW150914 had ℳ ≈ 28 M☉.", unit: "M☉", module: "exp" },
     ],
   },
   {
-    sym: "h", cat: "Gravitational waves",
+    sym: "h", tex: "h", cat: "Gravitational waves",
     contexts: [
-      { ctx: "GW strain", meaning: "h = ΔL/L — the dimensionless strain; LIGO's peak observed strain for GW150914 was ≈ 1.0×10⁻²¹.", unit: "dimensionless", module: "exp" },
-      { ctx: "Quantum mechanics", meaning: "Planck's constant h = 2πħ ≈ 6.626×10⁻³⁴ J·s — the quantum of action; the atlas writes formulas with ħ.", unit: "J·s", module: "planck" },
+      { ctx: "GW strain", eq: "h = \\Delta L/L", meaning: "The dimensionless strain; LIGO's peak observed strain for GW150914 was ≈ 1.0×10⁻²¹.", unit: "dimensionless", module: "exp" },
+      { ctx: "Quantum mechanics", eq: "h = 2\\pi\\hbar", meaning: "Planck's constant — the quantum of action; the atlas writes formulas with ħ.", unit: "J·s", module: "planck" },
     ],
   },
   {
-    sym: "f", cat: "Gravitational waves",
+    sym: "f", tex: "f", cat: "Gravitational waves",
     contexts: [
-      { ctx: "Wave signals", meaning: "GW frequency f — sweeps upward through the inspiral (the 'chirp'); ground detectors listen from ~10 Hz to ~10³ Hz.", unit: "hertz", module: "exp" },
+      { ctx: "Wave signals", eq: "f \\in [\\,10,\\,10^{3}\\,]\\;\\mathrm{Hz}", meaning: "GW frequency — sweeps upward through the inspiral (the 'chirp'); ground detectors listen from ~10 Hz to ~10³ Hz.", unit: "hertz", module: "exp" },
     ],
   },
 ];
 
 /* ---------- notation conventions used across the atlas ---------- */
 const QGA_CONVENTIONS = [
-  { title: "Metric signature", body: "The atlas uses the (+,−,−,−) convention: ds² = −(cΔt)² + (Δx)². Timelike separations have ds² < 0, so proper time obeys c²dτ² = −ds²." },
-  { title: "Natural units", body: "Formulas are written with ħ = c = k_B = 1 where convenient; every numerical output in the labs restores SI units explicitly." },
-  { title: "Index placement", body: "Upper indices (x^μ) mark vectors, lower indices (x_μ) covectors; repeated up/down pairs are summed (Einstein convention)." },
-  { title: "Running couplings", body: "A coupling written g(μ) is scale-dependent by definition; a bare g₀ is a regulator-dependent parameter, never an observable." },
+  { title: "Metric signature", tex: "\\mathrm{d}s^{2} = -(c\\,\\mathrm{d}t)^{2} + \\mathrm{d}\\mathbf{x}^{2}", body: "The atlas uses the (+,−,−,−) convention. Timelike separations have ds² < 0, so proper time obeys c²dτ² = −ds²." },
+  { title: "Natural units", tex: "\\hbar = c = k_{B} = 1", body: "Formulas are written in natural units where convenient; every numerical output in the labs restores SI units explicitly." },
+  { title: "Index placement", tex: "x^{\\mu}x_{\\mu} \\equiv \\sum_{\\mu=0}^{3} x^{\\mu}x_{\\mu}", body: "Upper indices mark vectors, lower indices covectors; repeated up/down pairs are summed (Einstein convention)." },
+  { title: "Running couplings", tex: "g(\\mu)\\;\\text{vs.}\\;g_{0}", body: "A coupling written g(μ) is scale-dependent by definition; a bare g₀ is a regulator-dependent parameter, never an observable." },
   { title: "Status labels", body: "Established results carry the same weight as textbook physics; effective-model items hold only within a stated domain; conjectural items are active research." },
 ];
 

@@ -181,6 +181,7 @@ function ViewSymbols({ go }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("all");
   const cats = ["all", ...Array.from(new Set(QGA_SYMBOLS.map((s) => s.cat)))];
+  const catCount = (c) => (c === "all" ? QGA_SYMBOLS.length : QGA_SYMBOLS.filter((s) => s.cat === c).length);
   const q = query.trim().toLowerCase();
   const items = QGA_SYMBOLS.filter((s) =>
     (cat === "all" || s.cat === cat) &&
@@ -199,8 +200,9 @@ function ViewSymbols({ go }) {
         <div className="module-kicker">Reference · Notation</div>
         <h1>Symbol Atlas</h1>
         <p className="module-lede">
-          Every symbol the atlas uses — its meaning, its unit, its home module, and the contexts where the same
-          letter means something different. Notation is a convention, not a truth: this page makes ours explicit.
+          Every symbol the atlas uses — typeset exactly as it appears in the formulas, with its meaning, its unit,
+          its home module, and the contexts where the same letter means something different. Notation is a
+          convention, not a truth: this page makes ours explicit.
         </p>
       </header>
       <div className="section">
@@ -212,6 +214,7 @@ function ViewSymbols({ go }) {
               <button key={c} className={"sym-chip" + (cat === c ? " active" : "")}
                 onClick={() => setCat(c)} aria-pressed={cat === c}>
                 {c === "all" ? "All categories" : c}
+                <span className="sym-chip-count">{catCount(c)}</span>
               </button>
             ))}
           </div>
@@ -219,16 +222,28 @@ function ViewSymbols({ go }) {
         <p className="dim small" style={{ marginTop: 0 }}>
           {items.length} of {QGA_SYMBOLS.length} symbols · {ctxCount} contexts — same letters, different physics.
         </p>
-        <div className="formula-grid sym-grid">
-          {items.map((s) => (
-            <div key={s.sym} className="sym-card">
+        <div className="sym-grid">
+          {items.map((s, i) => (
+            <div key={s.sym} className="sym-card" style={{ "--i": Math.min(i, 14) }}>
               <div className="sym-head">
-                <span className="sym-glyph">{s.sym}</span>
-                <span className="sym-cat">{s.cat}</span>
+                <div className="sym-glyph-tile" aria-hidden="true">
+                  <Eq tex={s.tex || s.sym}></Eq>
+                </div>
+                <div className="sym-head-meta">
+                  <span className="sym-cat">{s.cat}</span>
+                  <span className="sym-contexts-count">
+                    {s.contexts.length} context{s.contexts.length > 1 ? "s" : ""}
+                  </span>
+                </div>
               </div>
-              {s.contexts.map((c, i) => (
-                <div key={i} className="sym-ctx">
+              {s.contexts.map((c, j) => (
+                <div key={j} className="sym-ctx">
                   <div className="sym-ctx-label">{c.ctx}</div>
+                  {c.eq ? (
+                    <div className="sym-eq">
+                      <Eq tex={c.eq} display={true}></Eq>
+                    </div>
+                  ) : null}
                   <p className="sym-ctx-meaning">{c.meaning}</p>
                   <div className="sym-ctx-meta">
                     <span className="sym-unit">{"[ " + c.unit + " ]"}</span>
@@ -245,12 +260,17 @@ function ViewSymbols({ go }) {
           ))}
           {items.length === 0 ? <p className="dim">No symbols match “{query}”.</p> : null}
         </div>
-        <div className="panel" style={{ marginTop: 26 }}>
+        <div className="panel sym-conv-panel">
           <div className="gloss-sub">Conventions used throughout the atlas</div>
           <div className="sym-conv-grid">
-            {QGA_CONVENTIONS.map((c) => (
-              <div key={c.title} className="sym-conv">
+            {QGA_CONVENTIONS.map((c, i) => (
+              <div key={c.title} className="sym-conv" style={{ "--i": i }}>
                 <div className="sym-conv-title">{c.title}</div>
+                {c.tex ? (
+                  <div className="sym-eq sym-conv-eq">
+                    <Eq tex={c.tex} display={true}></Eq>
+                  </div>
+                ) : null}
                 <p>{c.body}</p>
               </div>
             ))}
