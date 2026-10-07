@@ -66,6 +66,8 @@
 
 It is an interactive map of why the problem exists.
 
+For the formal treatment — the epistemic labeling system, the chain of reasoning, the design methodology, and the verification infrastructure — see the companion whitepaper: **[docs/whitepaper.md](docs/whitepaper.md)**.
+
 It starts from experimentally established physics.
 
 It moves through the formal machinery of quantum field theory and general relativity.
@@ -1603,7 +1605,6 @@ The following are especially central:
 
 High-value future improvements:
 
-- add a separate academic whitepaper in `docs/`;
 - self-host CDN assets for long-term archival stability;
 
 Completed since the first release:
@@ -1619,6 +1620,7 @@ Completed since the first release:
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
 - Stage 5 pure-physics test coverage: the GR perihelion and light-deflection observables, Planck units and probe energy, and the black-hole evaporation, Page-curve, and Hawking-spectrum helpers moved into `js/physics.mjs`, mirrored through the browser bridge, wired into the GR/Planck/black-hole modules, and anchored to literature values (Mercury 42.98″/century, solar-limb 1.75″, CODATA Planck units, 2.1×10⁶⁷ yr evaporation, Wien peak u ≈ 2.8214).
 - Stage 6 notation and citation: a Symbol Atlas reference view (`?view=symbols`) — a searchable, category-filtered registry of 27 symbols across 33 contexts that disambiguates reused letters (β = v/c vs β(g); metric g_μν vs coupling g vs fixed point g★), typesets every glyph and defining equation live with KaTeX, states each entry's unit and home module with deep links, and makes the atlas' metric-signature and natural-unit conventions explicit — plus a schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) with a Node test suite keeping it consistent with `package.json` and `LICENSE`.
+- a companion academic whitepaper ([`docs/whitepaper.md`](docs/whitepaper.md)) presenting the atlas's epistemic labeling system, chain of physical reasoning, design methodology, zero-build architecture, and literature-anchored verification infrastructure as a formal standalone document.
 
 ---
 
