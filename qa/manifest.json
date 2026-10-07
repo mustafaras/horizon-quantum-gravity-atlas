@@ -1,6 +1,6 @@
 {
   "schema": "horizon-qga-capture-manifest/v1",
-  "version": "2026-10-06",
+  "version": "2026-10-07",
   "app": {
     "entry": "index.html",
     "basePath": "/",
@@ -319,6 +319,20 @@
       "statusNote": "Illustrative polynomial toy with a built-in UV fixed point; the conjectural label must remain visible.",
       "readme": true,
       "baseline": { "maxDiffPixelRatio": 0.02, "note": "Deterministic SVG on mobile; 2% for font rasterization." }
+    },
+    {
+      "id": "symbols-atlas",
+      "file": "docs/screenshots/20-symbol-atlas.png",
+      "description": "Symbol Atlas: notation registry with per-context rows — the same letter (β, g, Λ) mapped to its different meanings across modules.",
+      "view": "symbols",
+      "url": "?view=symbols",
+      "viewport": { "width": 1600, "height": 1000, "deviceScaleFactor": 1, "label": "desktop-hi" },
+      "scope": "viewport",
+      "readiness": ["fonts", "network-idle", "view-mounted", "animation-settled"],
+      "scientificStatus": "documentation",
+      "statusNote": "Notation conventions and disambiguation; no physics claims beyond standard textbook usage.",
+      "readme": true,
+      "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static reference view, deterministic DOM; tight tolerance justified." }
     }
   ]
 }

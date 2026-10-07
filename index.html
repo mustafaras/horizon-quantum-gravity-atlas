@@ -847,6 +847,53 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .gloss-body { padding: 0 16px 14px 16px; font-size: 13.5px; }
 .gloss-sub { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acc); margin: 10px 0 3px 0; }
 
+/* ---------- Symbol Atlas ---------- */
+.sym-toolbar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.sym-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sym-chip {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent;
+  color: var(--text-dim); cursor: pointer; transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.sym-chip:hover { color: var(--text); border-color: var(--line-strong); }
+.sym-chip.active { color: var(--acc); border-color: var(--acc); background: var(--acc-soft); }
+.sym-card {
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  padding: 18px 18px 14px 18px; overflow: hidden; position: relative;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+.sym-card::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 2px;
+  background: linear-gradient(180deg, var(--acc), transparent 70%); opacity: 0; transition: opacity 0.18s;
+}
+.sym-card:hover { border-color: var(--line-strong); transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38); }
+.sym-card:hover::before { opacity: 1; }
+.sym-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sym-glyph {
+  font-family: var(--font-head); font-size: 27px; font-weight: 600; color: var(--head); line-height: 1;
+  letter-spacing: -0.01em;
+}
+.sym-cat { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); text-align: right; }
+.sym-ctx { padding: 9px 0; border-top: 1px solid var(--line); }
+.sym-ctx:first-of-type { border-top: none; }
+.sym-ctx-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--acc); margin-bottom: 3px; }
+.sym-ctx-meaning { font-size: 13px; line-height: 1.55; margin: 0 0 7px 0; color: var(--text); }
+.sym-ctx-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.sym-unit { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.04em; }
+.sym-module-chip {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--acc); background: none; border: 1px solid var(--acc-soft); border-radius: 5px;
+  padding: 2px 8px; cursor: pointer; transition: border-color 0.18s, background 0.18s;
+}
+.sym-module-chip:hover { border-color: var(--acc); background: var(--acc-soft); }
+.sym-conv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 8px; }
+.sym-conv-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.sym-conv p { font-size: 13px; line-height: 1.58; margin: 0; color: var(--text-dim); }
+@media (max-width: 720px) {
+  .sym-glyph { font-size: 23px; }
+  .sym-card { padding: 14px 14px 12px 14px; }
+}
+
 /* ---------- References ---------- */
 .ref-item { display: flex; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
 .ref-num { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); flex: 0 0 34px; }

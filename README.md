@@ -288,6 +288,13 @@ Mobile: asymptotic-safety-style polynomial toy.
 The paired captures deliberately keep perturbative and conjectural layers visually and textually distinct.
 </td>
 </tr>
+<tr>
+<td width="50%" colspan="2">
+<img src="docs/screenshots/20-symbol-atlas.png" alt="Symbol Atlas reference view: searchable notation registry where the same letter — beta, g, Lambda — is mapped to its different meanings, units, and home modules across the atlas" width="100%" />
+<br/>
+<sub><strong>Symbol Atlas</strong> — a dedicated notation reference: every symbol with its unit, its home module, and the contexts where the same letter means different physics (β = v/c vs β(g); the metric g_μν vs a coupling g vs a fixed point g★). Category filters, full-text search, deep links into the owning modules, and an explicit statement of the atlas' metric-signature and natural-unit conventions.</sub>
+</td>
+</tr>
 </table>
 
 ---
@@ -1081,6 +1088,7 @@ horizon-quantum-gravity-atlas/
 ├── Quantum Gravity Atlas.html
 ├── README.md
 ├── LICENSE
+├── CITATION.cff
 ├── manifest.webmanifest
 ├── package.json
 ├── tweaks-panel.jsx
@@ -1119,7 +1127,8 @@ horizon-quantum-gravity-atlas/
 │       ├── 16-causal-spacetime-lab.png
 │       ├── 17-causal-spacetime-lab-mobile.png
 │       ├── 18-rg-flow-landscape.png
-│       └── 19-rg-flow-landscape-mobile.png
+│       ├── 19-rg-flow-landscape-mobile.png
+│       └── 20-symbol-atlas.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1187,7 +1196,7 @@ The physics itself is covered separately by `test/physics.test.mjs`, which runs 
 
 The RG cases cover one-loop QED ultraviolet growth, QCD asymptotic freedom, the $b_0=0$ boundary at $n_f=16.5$, analytic and numerical fixed points, the UV/IR stability convention, deterministic integration and reversal, invalid inputs, and graceful QED/QCD validity termination.
 
-A persistent browser-QA harness lives in `qa/` and runs as a separate GitHub Actions job on pinned Chromium. It is driven by a machine-readable capture manifest (`qa/manifest.json`, validated against `qa/manifest.schema.json`) and covers: clean mounting of all twelve views with zero console/page errors; URL-state round-trip, reload persistence, back/forward navigation, copy-link, and the versioned export JSON schema; observable differences between reduced and normal motion; keyboard focus, arrow-key sliders, mobile overflow, 44 px touch targets, and horizontal chart scrolling; RG conjectural labeling and preset reset; every GWOSC network phase (success, HTTP error, abort, oversize, cancel) through a deterministic offline fixture; and per-capture visual regression against committed baselines, each with its own justified pixel tolerance. A single live gwosc.org smoke test exists but runs only on explicit request (`npm run qa:test:live`), never in CI. See `qa/README.md` for the full runbook.
+A persistent browser-QA harness lives in `qa/` and runs as a separate GitHub Actions job on pinned Chromium. It is driven by a machine-readable capture manifest (`qa/manifest.json`, validated against `qa/manifest.schema.json`) and covers: clean mounting of all thirteen views with zero console/page errors; URL-state round-trip, reload persistence, back/forward navigation, copy-link, and the versioned export JSON schema; observable differences between reduced and normal motion; keyboard focus, arrow-key sliders, mobile overflow, 44 px touch targets, and horizontal chart scrolling; RG conjectural labeling and preset reset; every GWOSC network phase (success, HTTP error, abort, oversize, cancel) through a deterministic offline fixture; and per-capture visual regression against committed baselines, each with its own justified pixel tolerance. A single live gwosc.org smoke test exists but runs only on explicit request (`npm run qa:test:live`), never in CI. See `qa/README.md` for the full runbook.
 
 ---
 
@@ -1594,10 +1603,8 @@ The following are especially central:
 
 High-value future improvements:
 
-- add a compact mathematical glossary page;
 - add a separate academic whitepaper in `docs/`;
 - self-host CDN assets for long-term archival stability;
-- add a proper citation file (`CITATION.cff`);
 
 Completed since the first release:
 
@@ -1611,6 +1618,7 @@ Completed since the first release:
 - a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
 - Stage 5 pure-physics test coverage: the GR perihelion and light-deflection observables, Planck units and probe energy, and the black-hole evaporation, Page-curve, and Hawking-spectrum helpers moved into `js/physics.mjs`, mirrored through the browser bridge, wired into the GR/Planck/black-hole modules, and anchored to literature values (Mercury 42.98″/century, solar-limb 1.75″, CODATA Planck units, 2.1×10⁶⁷ yr evaporation, Wien peak u ≈ 2.8214).
+- Stage 6 notation and citation: a Symbol Atlas reference view (`?view=symbols`) — a searchable, category-filtered registry of 27 symbols across 33 contexts that disambiguates reused letters (β = v/c vs β(g); metric g_μν vs coupling g vs fixed point g★), states each entry's unit and home module with deep links, and makes the atlas' metric-signature and natural-unit conventions explicit — plus a schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) with a Node test suite keeping it consistent with `package.json` and `LICENSE`.
 
 ---
 
@@ -2391,12 +2399,14 @@ The result is a repository front page that can serve as portfolio artifact, teac
 
 ## Citation
 
+This repository carries a [CITATION.cff](./CITATION.cff) (CFF 1.2.0, validated against the official schema). GitHub surfaces it automatically as a "Cite this repository" button, and tools like `cffconvert` can convert it to BibTeX, RIS, or EndNote. The file deliberately contains no DOI or identifier block: those fields stay empty until a genuinely registered identifier exists.
+
 Suggested software citation:
 
 ```bibtex
 @software{horizon_quantum_gravity_atlas_2026,
   title        = {HORIZON: Quantum Gravity Atlas},
-  author       = {Mustafa Rasit Sahin},
+  author       = {Ra{\c{s}}it, Mustafa},
   year         = {2026},
   license      = {MIT},
   note         = {Interactive static-web atlas of quantum gravity concepts, black-hole thermodynamics, and experimental constraints}

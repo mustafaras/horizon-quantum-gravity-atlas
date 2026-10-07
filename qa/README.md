@@ -43,7 +43,7 @@ qa/
 
 | Spec | Coverage |
 | --- | --- |
-| `smoke.spec.mjs` | All 12 views mount with zero console/page errors. |
+| `smoke.spec.mjs` | All 13 views mount with zero console/page errors. |
 | `state.spec.mjs` | URL→state round-trip, reload persistence, back/forward, copy-link, export JSON schema (`horizon-qga-state/v1`). |
 | `motion.spec.mjs` | Reduced vs normal motion: GW auto-play and RG settling differ observably. |
 | `a11y.spec.mjs` | Keyboard focus (`:focus-visible`), arrow-key sliders, mobile overflow, 44px touch targets, horizontal chart scroll. |

@@ -276,6 +276,199 @@ const QGA_GLOSS_LINKS = {
   "Unitarity": ["Hawking radiation", "Page curve"],
 };
 
+/* ---------- symbol atlas: notation registry with per-context rows ---------- */
+const QGA_SYMBOLS = [
+  {
+    sym: "β", cat: "Kinematics & causality",
+    contexts: [
+      { ctx: "Special relativity", meaning: "v/c — velocity as a fraction of light speed; β → 1 marks the ultra-relativistic limit.", unit: "dimensionless", module: "gr" },
+      { ctx: "Renormalization group", meaning: "β(g) = μ ∂g/∂μ — the rate at which a coupling g runs with the energy scale μ.", unit: "dimensionless per e-fold of μ", module: "rg" },
+    ],
+  },
+  {
+    sym: "γ", cat: "Kinematics & causality",
+    contexts: [
+      { ctx: "Special relativity", meaning: "Lorentz factor γ = 1/√(1−β²) — time dilation and momentum boost p = γmv.", unit: "dimensionless", module: "gr" },
+      { ctx: "Dirac theory", meaning: "γ^μ — the 4×4 gamma matrices satisfying {γ^μ, γ^ν} = 2η^μν.", unit: "dimensionless matrices", module: "qft" },
+      { ctx: "RG & dimensional regularization", meaning: "γ_E ≈ 0.5772 — the Euler–Mascheroni constant, arising in ε-expansion integrals.", unit: "dimensionless", module: "rg" },
+    ],
+  },
+  {
+    sym: "ct", cat: "Kinematics & causality",
+    contexts: [
+      { ctx: "Minkowski geometry", meaning: "Time plotted in length units: x⁰ = ct. The atlas plots ct on the vertical axis of its spacetime diagrams.", unit: "metres", module: "gr" },
+    ],
+  },
+  {
+    sym: "τ", cat: "Kinematics & causality",
+    contexts: [
+      { ctx: "Relativistic motion", meaning: "Proper time — the time an idealized clock carried along a worldline actually records; dτ² = −ds²/c².", unit: "seconds", module: "gr" },
+    ],
+  },
+  {
+    sym: "s²", cat: "Kinematics & causality",
+    contexts: [
+      { ctx: "Spacetime geometry", meaning: "Invariant interval s² = −(cΔt)² + (Δx)² — same for every inertial observer; its sign classifies timelike / null / spacelike separations.", unit: "metres²", module: "gr" },
+      { ctx: "Scattering kinematics", meaning: "Mandelstam s = (p₁+p₂)² — the squared centre-of-mass energy of a 2→2 collision.", unit: "GeV² (natural units)", module: "qft" },
+    ],
+  },
+  {
+    sym: "G", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Newtonian gravity", meaning: "Newton's constant G ≈ 6.674×10⁻¹¹ m³ kg⁻¹ s⁻² — sets the strength of gravity and, with ħ and c, defines the Planck scale.", unit: "m³ kg⁻¹ s⁻²", module: "planck" },
+    ],
+  },
+  {
+    sym: "ħ, c", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Natural units", meaning: "The quantum of action ħ ≈ 1.055×10⁻³⁴ J·s and light speed c = 299 792 458 m/s. Particle-physics formulas set ħ = c = 1; the atlas restores them for numerical outputs.", unit: "J·s; m/s", module: "planck" },
+    ],
+  },
+  {
+    sym: "ℓ_P, t_P, m_P", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Planck scale", meaning: "Planck length ℓ_P = √(ħG/c³) ≈ 1.616×10⁻³⁵ m, time t_P = ℓ_P/c ≈ 5.39×10⁻⁴⁴ s, mass m_P = √(ħc/G) ≈ 2.18×10⁻⁸ kg — where quantum gravity effects are expected to dominate.", unit: "m; s; kg", module: "planck" },
+    ],
+  },
+  {
+    sym: "α", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Electromagnetism", meaning: "Fine-structure constant α = e²/(4πε₀ħc) ≈ 1/137 — the strength of the electromagnetic interaction at low energies.", unit: "dimensionless", module: "qft" },
+      { ctx: "Running couplings", meaning: "α(μ) = g(μ)²/(4π) — the same coupling written in terms of the running g(μ); it grows logarithmically at short distances.", unit: "dimensionless", module: "rg" },
+      { ctx: "Gravity as a coupling", meaning: "α_G = Gm²/(ħc) — the gravitational analogue for two masses m; reaches unity near the Planck mass.", unit: "dimensionless", module: "approaches" },
+    ],
+  },
+  {
+    sym: "Λ", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Cosmology", meaning: "Cosmological constant Λ — vacuum energy density term in Einstein's equations; observed to be tiny but positive.", unit: "m⁻²", module: "gr" },
+      { ctx: "QCD", meaning: "Λ_QCD ≈ 200 MeV — the confinement scale where the strong coupling leaves the perturbative regime.", unit: "MeV", module: "rg" },
+      { ctx: "Regularization", meaning: "UV cutoff Λ — the highest momentum retained in an effective description; physical answers must not depend on it.", unit: "eV", module: "rg" },
+    ],
+  },
+  {
+    sym: "μ", cat: "Constants & scales",
+    contexts: [
+      { ctx: "Renormalization group", meaning: "The sliding energy scale μ at which couplings are probed; β functions describe their flow in μ.", unit: "eV (renormalization scale)", module: "rg" },
+      { ctx: "Index notation", meaning: "Spacetime index μ ∈ {0,1,2,3} — as in g_μν or x^μ. Position (up/down) marks vector vs covector.", unit: "index", module: "gr" },
+    ],
+  },
+  {
+    sym: "g", cat: "Spacetime & gravity",
+    contexts: [
+      { ctx: "General relativity", meaning: "The metric tensor g_μν — the dynamical field encoding distances, times and causal structure.", unit: "dimensionless field", module: "gr" },
+      { ctx: "Gauge theory", meaning: "A coupling constant g — e.g. the strong coupling g_s or electroweak couplings g, g′.", unit: "dimensionless", module: "qft" },
+      { ctx: "Asymptotic safety", meaning: "g★ — a fixed point of the RG flow where β(g★) = 0; the UV completion candidate for gravity.", unit: "dimensionless", module: "rg" },
+      { ctx: "String theory", meaning: "g_s — the string coupling counting splitting/joining of strings; perturbative expansions are power series in g_s.", unit: "dimensionless", module: "approaches" },
+    ],
+  },
+  {
+    sym: "Γ", cat: "Spacetime & gravity",
+    contexts: [
+      { ctx: "Differential geometry", meaning: "Christoffel symbols Γ^μ_αβ — the connection coefficients encoding how basis vectors change from point to point; they build geodesic equations.", unit: "1/length", module: "gr" },
+      { ctx: "Decays & scattering", meaning: "Γ — a decay width; the lifetime is τ = ħ/Γ. Appears in collider cross-sections as ∝ 1/Γ.", unit: "GeV (natural units)", module: "qft" },
+    ],
+  },
+  {
+    sym: "R", cat: "Spacetime & gravity",
+    contexts: [
+      { ctx: "Curvature", meaning: "Ricci scalar R — the contraction of the Riemann tensor; the scalar curvature entering the Einstein–Hilbert action S = (c⁴/16πG)∫R√(−g) d⁴x.", unit: "1/length²", module: "gr" },
+    ],
+  },
+  {
+    sym: "κ", cat: "Spacetime & gravity",
+    contexts: [
+      { ctx: "Einstein's equations", meaning: "κ = 8πG/c⁴ — the coupling between geometry and stress-energy in G_μν = κ T_μν.", unit: "s² kg⁻¹ m⁻¹", module: "gr" },
+      { ctx: "Black hole horizons", meaning: "Surface gravity κ — the acceleration a distant observer would infer at the horizon; T_H = ħκ/(2πck_B).", unit: "m/s²", module: "bh" },
+    ],
+  },
+  {
+    sym: "λ", cat: "Quantum fields & amplitudes",
+    contexts: [
+      { ctx: "Gauge theory (large-N)", meaning: "'t Hooft coupling λ = g²N — the natural expansion parameter of gauge theories at large N.", unit: "dimensionless", module: "qft" },
+    ],
+  },
+  {
+    sym: "N", cat: "Quantum fields & amplitudes",
+    contexts: [
+      { ctx: "QCD", meaning: "N_c = 3 — the number of colour charges; N_f counts quark flavours entering the RG flow.", unit: "count", module: "qft" },
+      { ctx: "Large-N expansion", meaning: "N → ∞ limit — organizes gauge theory diagrams by topology; the seed of holographic duality.", unit: "count", module: "approaches" },
+    ],
+  },
+  {
+    sym: "S", cat: "Quantum fields & amplitudes",
+    contexts: [
+      { ctx: "Action principle", meaning: "S = ∫ L d⁴x — the action whose stationary points give the equations of motion; ℏ sets the phase e^{iS/ℏ}.", unit: "J·s", module: "qft" },
+      { ctx: "Black hole thermodynamics", meaning: "S_BH = k_B c³A/(4Għ) — Bekenstein–Hawking entropy; the number of horizon microstates is e^{S_BH/k_B}.", unit: "J/K", module: "bh" },
+    ],
+  },
+  {
+    sym: "θ", cat: "Renormalization group",
+    contexts: [
+      { ctx: "Critical exponents", meaning: "θ = −β′(g★) — the critical exponent of an RG fixed point; θ > 0 marks a UV-attractive (relevant) direction and asymptotic safety.", unit: "dimensionless", module: "rg" },
+    ],
+  },
+  {
+    sym: "ν", cat: "Renormalization group",
+    contexts: [
+      { ctx: "Critical phenomena", meaning: "Correlation-length exponent ν = 1/θ — how the correlation length ξ ~ |g − g★|⁻ν diverges near a fixed point; ν > 0 signals a well-defined continuum limit.", unit: "dimensionless", module: "rg" },
+    ],
+  },
+  {
+    sym: "a★", cat: "Black holes & thermodynamics",
+    contexts: [
+      { ctx: "Kerr geometry", meaning: "Dimensionless spin a★ = Jc/(GM²) ∈ [0,1) — from Schwarzschild (0) to extremal (→1); the atlas' black hole lab is parameterized by it.", unit: "dimensionless", module: "bh" },
+    ],
+  },
+  {
+    sym: "M", cat: "Black holes & thermodynamics",
+    contexts: [
+      { ctx: "Black hole mass", meaning: "The irreducible mass scale of a black hole; sets the horizon radius r_s = 2GM/c² and Hawking temperature T_H ∝ 1/M.", unit: "M☉ (solar masses)", module: "bh" },
+    ],
+  },
+  {
+    sym: "T_H", cat: "Black holes & thermodynamics",
+    contexts: [
+      { ctx: "Hawking radiation", meaning: "T_H = ħc³/(8πGMk_B) ≈ 6.2×10⁻⁸ K × (M☉/M) — the horizon temperature; a solar-mass black hole radiates far colder than the CMB.", unit: "kelvin", module: "bh" },
+    ],
+  },
+  {
+    sym: "A", cat: "Black holes & thermodynamics",
+    contexts: [
+      { ctx: "Horizon geometry", meaning: "Horizon area A = 8π(GM/c²)²(1 + √(1−a★²)) — the state variable of black hole thermodynamics; entropy scales with A, not volume.", unit: "m²", module: "bh" },
+      { ctx: "Gauge theory", meaning: "A_μ — the gauge (vector) potential; its field strength F_μν = ∂_μA_ν − ∂_νA_μ.", unit: "potential field", module: "qft" },
+    ],
+  },
+  {
+    sym: "ℳ", cat: "Gravitational waves",
+    contexts: [
+      { ctx: "Binary inspiral", meaning: "Chirp mass ℳ = (m₁m₂)^{3/5}/(m₁+m₂)^{1/5} — the combination that fixes the inspiral rate; GW150914 had ℳ ≈ 28 M☉.", unit: "M☉", module: "exp" },
+    ],
+  },
+  {
+    sym: "h", cat: "Gravitational waves",
+    contexts: [
+      { ctx: "GW strain", meaning: "h = ΔL/L — the dimensionless strain; LIGO's peak observed strain for GW150914 was ≈ 1.0×10⁻²¹.", unit: "dimensionless", module: "exp" },
+      { ctx: "Quantum mechanics", meaning: "Planck's constant h = 2πħ ≈ 6.626×10⁻³⁴ J·s — the quantum of action; the atlas writes formulas with ħ.", unit: "J·s", module: "planck" },
+    ],
+  },
+  {
+    sym: "f", cat: "Gravitational waves",
+    contexts: [
+      { ctx: "Wave signals", meaning: "GW frequency f — sweeps upward through the inspiral (the 'chirp'); ground detectors listen from ~10 Hz to ~10³ Hz.", unit: "hertz", module: "exp" },
+    ],
+  },
+];
+
+/* ---------- notation conventions used across the atlas ---------- */
+const QGA_CONVENTIONS = [
+  { title: "Metric signature", body: "The atlas uses the (+,−,−,−) convention: ds² = −(cΔt)² + (Δx)². Timelike separations have ds² < 0, so proper time obeys c²dτ² = −ds²." },
+  { title: "Natural units", body: "Formulas are written with ħ = c = k_B = 1 where convenient; every numerical output in the labs restores SI units explicitly." },
+  { title: "Index placement", body: "Upper indices (x^μ) mark vectors, lower indices (x_μ) covectors; repeated up/down pairs are summed (Einstein convention)." },
+  { title: "Running couplings", body: "A coupling written g(μ) is scale-dependent by definition; a bare g₀ is a regulator-dependent parameter, never an observable." },
+  { title: "Status labels", body: "Established results carry the same weight as textbook physics; effective-model items hold only within a stated domain; conjectural items are active research." },
+];
+
 /* ---------- references (verified classics) ---------- */
 const QGA_REFERENCES = [
   { tag: "GR", text: "A. Einstein, “Die Feldgleichungen der Gravitation,” Sitzungsberichte der Preussischen Akademie der Wissenschaften, 844–847 (1915)." },
@@ -393,4 +586,5 @@ Object.assign(window, {
   QGA_PARTICLES, QGA_CLASS_COLORS, QGA_couplings, QGA_SECTORS,
   QGA_THEORIES, QGA_ROWS, QGA_GLOSSARY, QGA_REFERENCES, QGA_OPEN_PROBLEMS, QGA_MODULES,
   QGA_PARTICLE_EXTRA, QGA_THEORY_META, QGA_GLOSS_LINKS, QGA_PATHWAYS, QGA_BRIDGES,
+  QGA_SYMBOLS, QGA_CONVENTIONS,
 });

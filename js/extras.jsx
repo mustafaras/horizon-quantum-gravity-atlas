@@ -177,4 +177,88 @@ function ViewOpenProblems() {
   );
 }
 
-Object.assign(window, { ViewOverview, ViewGlossary, ViewReferences, ViewOpenProblems });
+function ViewSymbols({ go }) {
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState("all");
+  const cats = ["all", ...Array.from(new Set(QGA_SYMBOLS.map((s) => s.cat)))];
+  const q = query.trim().toLowerCase();
+  const items = QGA_SYMBOLS.filter((s) =>
+    (cat === "all" || s.cat === cat) &&
+    (q === "" ||
+      s.sym.toLowerCase().includes(q) ||
+      s.cat.toLowerCase().includes(q) ||
+      s.contexts.some((c) =>
+        c.ctx.toLowerCase().includes(q) ||
+        c.meaning.toLowerCase().includes(q) ||
+        c.unit.toLowerCase().includes(q))));
+  const ctxCount = items.reduce((n, s) => n + s.contexts.length, 0);
+  const moduleShort = (id) => (QGA_MODULES.find((m) => m.id === id) || {}).short || id;
+  return (
+    <article data-screen-label="Symbol Atlas">
+      <header>
+        <div className="module-kicker">Reference · Notation</div>
+        <h1>Symbol Atlas</h1>
+        <p className="module-lede">
+          Every symbol the atlas uses — its meaning, its unit, its home module, and the contexts where the same
+          letter means something different. Notation is a convention, not a truth: this page makes ours explicit.
+        </p>
+      </header>
+      <div className="section">
+        <div className="sym-toolbar">
+          <input className="glossary-search" type="search" placeholder="Search symbols — e.g. beta, coupling, kelvin…"
+            value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search symbols"></input>
+          <div className="sym-chips" role="group" aria-label="Filter symbols by category">
+            {cats.map((c) => (
+              <button key={c} className={"sym-chip" + (cat === c ? " active" : "")}
+                onClick={() => setCat(c)} aria-pressed={cat === c}>
+                {c === "all" ? "All categories" : c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="dim small" style={{ marginTop: 0 }}>
+          {items.length} of {QGA_SYMBOLS.length} symbols · {ctxCount} contexts — same letters, different physics.
+        </p>
+        <div className="formula-grid sym-grid">
+          {items.map((s) => (
+            <div key={s.sym} className="sym-card">
+              <div className="sym-head">
+                <span className="sym-glyph">{s.sym}</span>
+                <span className="sym-cat">{s.cat}</span>
+              </div>
+              {s.contexts.map((c, i) => (
+                <div key={i} className="sym-ctx">
+                  <div className="sym-ctx-label">{c.ctx}</div>
+                  <p className="sym-ctx-meaning">{c.meaning}</p>
+                  <div className="sym-ctx-meta">
+                    <span className="sym-unit">{"[ " + c.unit + " ]"}</span>
+                    {c.module ? (
+                      <button className="sym-module-chip" onClick={() => go(c.module)}
+                        title={"Open " + moduleShort(c.module) + " module"}>
+                        {"→ " + moduleShort(c.module)}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+          {items.length === 0 ? <p className="dim">No symbols match “{query}”.</p> : null}
+        </div>
+        <div className="panel" style={{ marginTop: 26 }}>
+          <div className="gloss-sub">Conventions used throughout the atlas</div>
+          <div className="sym-conv-grid">
+            {QGA_CONVENTIONS.map((c) => (
+              <div key={c.title} className="sym-conv">
+                <div className="sym-conv-title">{c.title}</div>
+                <p>{c.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+Object.assign(window, { ViewOverview, ViewGlossary, ViewReferences, ViewOpenProblems, ViewSymbols });

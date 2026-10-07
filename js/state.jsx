@@ -19,7 +19,7 @@ const QGA_STATE_KEYS = {
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
-  view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "refs", "open"],
+  view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
   qftProcess: ["s-channel", "t-channel", "compton"], grPreset: ["timelike", "spacelike", "null", "simultaneity", "twin", "custom"],
   rgPreset: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety", "custom"],

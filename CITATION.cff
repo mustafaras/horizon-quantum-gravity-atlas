@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use HORIZON — Quantum Gravity Atlas in your work, please cite it as below."
+title: "HORIZON — Quantum Gravity Atlas"
+type: software
+authors:
+  - family-names: "Raşit"
+    given-names: "Mustafa"
+    email: "mustafarasit@hotmail.com"
+repository-code: "https://github.com/mustafaras/horizon-quantum-gravity-atlas"
+url: "https://mustafaras.github.io/horizon-quantum-gravity-atlas/"
+abstract: >-
+  An interactive, cinematic atlas of modern physics tracing the path from the
+  Standard Model to the open frontier of quantum gravity. Eight modules pair
+  rigorous explanation with real-time 3D simulation and live formulas, with an
+  honest accounting of what is established, what is an effective model, and
+  what remains conjecture. Includes a symbol atlas of notation conventions, an
+  interactive glossary, verified classic references, and reproducible visual QA.
+keywords:
+  - quantum-gravity
+  - physics-education
+  - interactive-visualization
+  - general-relativity
+  - quantum-field-theory
+  - renormalization-group
+  - black-holes
+  - gravitational-waves
+license: MIT
+version: 1.1.0
+date-released: "2026-10-07"
