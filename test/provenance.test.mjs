@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   registerVisualization,
@@ -57,4 +58,10 @@ test("listVisualizationProvenance returns frozen inventory entries", () => {
   assert.throws(() => {
     entries[0].id = "mutated";
   }, TypeError);
+});
+
+test("science provenance stays independent from render-layer imports", async () => {
+  const source = await readFile(new URL("../js/science/provenance.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /\.\.\/render\/contracts\.mjs/);
+  assert.match(source, /from "\.\/contracts\.mjs"/);
 });

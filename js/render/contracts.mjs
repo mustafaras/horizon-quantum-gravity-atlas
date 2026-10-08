@@ -1,11 +1,4 @@
-const SCIENTIFIC_STATUS_LABELS = Object.freeze([
-  "established",
-  "effective",
-  "conjectural",
-  "schematic",
-  "heuristic",
-  "open",
-]);
+import { SCIENTIFIC_STATUS_LABELS, deepFreeze, validateScientificProvenance } from "../science/contracts.mjs";
 
 const RENDER_BACKENDS = Object.freeze(["webgpu", "webgl2", "static"]);
 const RENDER_PRESETS = Object.freeze(["low", "medium", "ultra"]);
@@ -13,12 +6,6 @@ const LIFECYCLE_ORDER = Object.freeze(["initialize", "resize", "update", "render
 
 function typeError(message) {
   return new TypeError(message);
-}
-
-function deepFreeze(value) {
-  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
-  for (const key of Reflect.ownKeys(value)) deepFreeze(value[key]);
-  return Object.freeze(value);
 }
 
 function expectRecord(value, name) {
@@ -144,19 +131,6 @@ export function validateRenderCapabilities(value) {
   return deepFreeze(normalized);
 }
 
-export function validateScientificProvenance(value) {
-  expectRecord(value, "ScientificProvenance");
-  const normalized = {
-    model: expectString(value.model, "ScientificProvenance.model"),
-    status: expectEnum(value.status, SCIENTIFIC_STATUS_LABELS, "ScientificProvenance.status"),
-    assumptions: expectArrayOfStrings(value.assumptions, "ScientificProvenance.assumptions"),
-    validity: expectArrayOfStrings(value.validity, "ScientificProvenance.validity"),
-    numericalMethod: expectString(value.numericalMethod, "ScientificProvenance.numericalMethod"),
-    references: expectArrayOfStrings(value.references, "ScientificProvenance.references"),
-  };
-  return deepFreeze(normalized);
-}
-
 export function validateVisualizationDescriptor(value) {
   expectRecord(value, "VisualizationDescriptor");
   const lifecycle = value.lifecycle;
@@ -181,4 +155,5 @@ export {
   RENDER_PRESETS,
   SCIENTIFIC_STATUS_LABELS,
   deepFreeze,
+  validateScientificProvenance,
 };

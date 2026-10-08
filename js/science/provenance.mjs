@@ -1,4 +1,4 @@
-import { validateScientificProvenance, deepFreeze } from "../render/contracts.mjs";
+import { validateScientificProvenance, deepFreeze } from "./contracts.mjs";
 
 const REGISTRY = new Map();
 

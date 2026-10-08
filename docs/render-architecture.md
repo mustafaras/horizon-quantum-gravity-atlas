@@ -9,8 +9,9 @@ Prompt 00 establishes a non-visual architecture contract for the atlas renderer 
 - `js/physics.mjs` is the canonical pure science layer for testable calculations. It must stay importable in Node without DOM, React, Three.js, WebGL, WebGPU, or canvas requirements.
 - `js/physics.jsx` is a browser bridge that mirrors the pure physics API onto `window.QGA_PHYSICS` for the current Babel/UMD runtime.
 - `js/state.jsx` and `js/state-runtime.jsx` own URL-state parsing, share links, JSON export, and bounded external data access.
-- `js/render/contracts.mjs` owns runtime-validated renderer and provenance contracts.
+- `js/render/contracts.mjs` owns runtime-validated renderer contracts and re-exports the shared scientific provenance validator for render consumers.
 - `js/render/capabilities.mjs` owns pure backend-selection and render-quality policy. It must not probe the DOM directly.
+- `js/science/contracts.mjs` owns the shared scientific provenance validator and deep-freeze utility used by science-owned registries and render-facing descriptors.
 - `js/science/provenance.mjs` owns atlas-wide provenance registration and retrieval.
 - Render modules may consume science outputs and provenance entries.
 - Science modules must never import render modules.
@@ -129,6 +130,9 @@ There is currently **no** canvas/image export path (`toBlob`, `toDataURL`, or eq
 - `js/render/contracts.mjs`
   - JSDoc typedefs for `RenderCapabilities`, `RenderQuality`, `ScientificProvenance`, and `VisualizationDescriptor`
   - runtime validators that throw `TypeError` with field names on invalid data
+- `js/science/contracts.mjs`
+  - `validateScientificProvenance(value)`
+  - `deepFreeze(value)`
 - `js/science/provenance.mjs`
   - `registerVisualization(id, provenance)`
   - `getVisualizationProvenance(id)`
