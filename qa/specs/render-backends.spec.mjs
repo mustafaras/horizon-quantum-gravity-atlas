@@ -3,6 +3,12 @@ import { writeFile } from "node:fs/promises";
 import { gotoReady } from "./helpers.mjs";
 
 test.use({ viewport: { width: 1200, height: 800 } });
+// These are real renderer integration cases on software rasterizers. Individual
+// readiness waits stay explicitly bounded below; this only lifts the ceiling so
+// a slow-but-progressing run is never mistaken for a deadlock.
+test.setTimeout(300_000);
+// Renderer readiness is asserted below; continuous GPU animation need not settle.
+const RENDER_READINESS = ["fonts", "network-idle", "view-mounted"];
 async function evidence(info, name, value) {
   const file = info.outputPath(`${name}.json`);
   await writeFile(file, JSON.stringify(value, null, 2));
@@ -11,8 +17,8 @@ async function evidence(info, name, value) {
 
 function observe(page) {
   const errors = [], failures = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.stack || error.message}`));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(`console: ${message.text()}`); });
   page.on("requestfailed", (request) => failures.push(request.url()));
   page.on("response", (response) => { if (response.status() >= 400) failures.push(response.url()); });
   page.on("request", (request) => {
@@ -21,9 +27,13 @@ function observe(page) {
   return { errors, failures };
 }
 const snapshots = (page) => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot());
-async function ready(page, timeout = 15_000) {
-  await expect.poll(async () => (await snapshots(page)).filter((entry) => entry.phase !== "ready")
-    .map((entry) => ({ phase: entry.phase, backend: entry.backend, messages: entry.messages })), { timeout }).toEqual([]);
+async function ready(page, timeout = 60_000) {
+  await expect.poll(async () => {
+    const entries = await snapshots(page);
+    if (!entries.length) return [{ phase: "no renderer diagnostics" }];
+    return entries.filter((entry) => entry.phase !== "ready")
+      .map((entry) => ({ phase: entry.phase, backend: entry.backend, messages: entry.messages }));
+  }, { timeout }).toEqual([]);
 }
 async function force(context, backend) {
   await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { forceBackend: value }; sessionStorage.setItem("horizon-intro", "1"); }, backend);
@@ -33,7 +43,7 @@ for (const view of ["overview", "gr", "bh"]) {
   test(`${view}: forced classic WebGL2 compiles actual scene shaders and reports active effects`, async ({ page, context }) => {
     await force(context, "webgl2");
     const observed = observe(page);
-    await gotoReady(page, `/?view=${view}&seed=42`);
+    await gotoReady(page, `/?view=${view}&seed=42`, RENDER_READINESS);
     await ready(page);
     const entries = await snapshots(page);
     expect(entries.length).toBeGreaterThan(0);
@@ -57,7 +67,7 @@ for (const view of ["overview", "gr", "bh"]) {
 test("forced static renders analytical content with actionable diagnostics and no 3D canvases", async ({ page, context }) => {
   await force(context, "static");
   const observed = observe(page);
-  await gotoReady(page, "/?view=bh&bhm=2&bhs=0.5&seed=42");
+  await gotoReady(page, "/?view=bh&bhm=2&bhs=0.5&seed=42", RENDER_READINESS);
   await expect(page.getByText("3D unavailable").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry 3D initialization" }).first()).toBeVisible();
   await expect(page.locator(".s3d-canvas, .atlas-stage canvas")).toHaveCount(0);
@@ -71,7 +81,7 @@ test("legacy GLSL compatibility overrides advertised GPU capability, never forci
     sessionStorage.setItem("horizon-intro", "1");
   });
   const observed = observe(page);
-  await gotoReady(page, "/?view=gr");
+  await gotoReady(page, "/?view=gr", RENDER_READINESS);
   await ready(page);
   const modules = (await snapshots(page)).filter((entry) => entry.label !== "Atlas backdrop");
   expect(modules.some((entry) => entry.capabilities.unsupportedMaterials.includes("ShaderMaterial"))).toBe(true);
@@ -114,7 +124,7 @@ test("failed compile surfaces an actionable static fallback without unhandled re
     await route.fulfill({ response, body });
   });
   const observed = observe(page);
-  await gotoReady(page, "/?view=bh");
+  await gotoReady(page, "/?view=bh", RENDER_READINESS);
   await expect(page.getByRole("alert").first()).toContainText("QA compile failure");
   await expect(page.locator(".s3d-canvas")).toHaveCount(0);
   expect(observed).toEqual({ errors: [], failures: [] });
@@ -123,7 +133,7 @@ test("failed compile surfaces an actionable static fallback without unhandled re
 test("runtime budget changes resize real drawing buffers and reduce rendered points without changing physics state", async ({ page, context }) => {
   await force(context, "webgl2");
   const observed = observe(page);
-  await gotoReady(page, "/?view=overview&seed=42");
+  await gotoReady(page, "/?view=overview&seed=42", RENDER_READINESS);
   await ready(page);
   const result = await page.evaluate(async () => {
     const { initializeRenderSession } = await import("./js/render/render-session.mjs");
@@ -168,15 +178,35 @@ test("runtime budget changes resize real drawing buffers and reduce rendered poi
     }
     const after = { width: session.renderer.domElement.width, particles: geometry.drawRange.count };
     const fps = QGA_RENDER.renderDiagnostics.snapshot().find((entry) => entry.id === id)?.fps;
+    const compile = session.renderer.compileAsync.bind(session.renderer);
+    let releaseCompile, enteredCompile;
+    const compileGate = new Promise((resolve) => { releaseCompile = resolve; });
+    const compilationEntered = new Promise((resolve) => { enteredCompile = resolve; });
+    session.renderer.compileAsync = async (...args) => {
+      enteredCompile();
+      await compileGate;
+      return compile(...args);
+    };
+    material.needsUpdate = true;
+    session.render(0.016, time, false);
+    await compilationEntered;
     abort.abort();
-    await session.dispose();
-    await session.dispose();
+    let disposalSettled = false;
+    const disposals = Promise.all([session.dispose(), session.dispose()])
+      .then(() => { disposalSettled = true; });
+    await Promise.resolve();
+    await Promise.resolve();
+    const disposalWaitedForCompilation = !disposalSettled;
+    releaseCompile();
+    await disposals;
     geometry.dispose(); material.dispose(); mount.remove(); QGA_RENDER.renderDiagnostics.remove(id);
-    return { before, after, fps, unchanged: state === JSON.stringify(qgaReadState()), connected: session.renderer.domElement.isConnected };
+    return { before, after, fps, disposalWaitedForCompilation,
+      unchanged: state === JSON.stringify(qgaReadState()), connected: session.renderer.domElement.isConnected };
   });
   expect(result.after.width).toBeLessThan(result.before.width);
   expect(result.after.particles).toBeLessThan(result.before.particles);
   expect(result.fps).toBe(1);
+  expect(result.disposalWaitedForCompilation).toBe(true);
   expect(result.unchanged).toBe(true);
   expect(result.connected).toBe(false);
   await evidence(test.info(), "applied-budget-changes", result);
@@ -186,7 +216,7 @@ test("runtime budget changes resize real drawing buffers and reduce rendered poi
 test("context loss disposes rendering, preserves analytical content, and resize remains healthy beforehand", async ({ page, context }) => {
   await force(context, "webgl2");
   const observed = observe(page);
-  await gotoReady(page, "/?view=bh");
+  await gotoReady(page, "/?view=bh", RENDER_READINESS);
   await ready(page);
   await page.setViewportSize({ width: 1000, height: 720 });
   await page.locator(".s3d-canvas").first().evaluate((canvas) => canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true })));
@@ -198,7 +228,7 @@ test("context loss disposes rendering, preserves analytical content, and resize 
 
 test("real WebGPU availability is measured, not inferred from mocks", async ({ page }, info) => {
   const observed = observe(page);
-  await gotoReady(page, "/?view=overview");
+  await gotoReady(page, "/?view=overview", RENDER_READINESS);
   await ready(page);
   const evidence = await page.evaluate(async () => {
     const adapter = navigator.gpu ? await navigator.gpu.requestAdapter() : null;
@@ -216,7 +246,7 @@ test("real WebGPU availability is measured, not inferred from mocks", async ({ p
 
 test.describe("real WebGPU API on a software adapter (not hardware evidence)", () => {
   test("atlas and mapped Standard Model scenes initialize native WebGPU and switch all presets", async ({}, info) => {
-    test.setTimeout(240_000);
+    test.setTimeout(600_000);
     const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu"] });
     const context = await browser.newContext({ baseURL: process.env.QA_BASE_URL, viewport: { width: 1200, height: 800 } });
     await context.addInitScript(() => {
@@ -255,8 +285,10 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     test.skip(!availability.available, `Actual software WebGPU unavailable: ${availability.reason}`);
     await context.addInitScript(() => { sessionStorage.setItem("horizon-intro", "1"); });
     const observed = observe(page);
-    await gotoReady(page, "/?view=sm&seed=42");
-    await ready(page, 120_000);
+    await gotoReady(page, "/?view=sm&seed=42", RENDER_READINESS);
+    // Measured on SwiftShader: ~77 s to bring both hosts to a real backend, plus
+    // ~50 s per preset rebuild. Bounded, but deliberately generous on software.
+    await ready(page, 240_000);
     const initialized = await snapshots(page);
     await evidence(info, "initial-native-and-bounded-fallback-matrix", initialized);
     for (const entry of initialized.filter((entry) => entry.backend !== "webgpu")) {
@@ -275,8 +307,12 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     await page.getByLabel("Motion", { exact: true }).selectOption("full");
     for (const preset of ["scientific", "minimal", "capture", "cinematic"]) {
       await page.getByLabel("Mode", { exact: true }).selectOption(preset);
-      await expect.poll(async () => (await snapshots(page)).every((entry) => entry.phase === "ready" && entry.renderPreset === preset), { timeout: 90_000 }).toBe(true);
+      await expect.poll(async () => {
+        const list = await snapshots(page);
+        return list.length > 0 && list.every((entry) => entry.phase === "ready" && entry.renderPreset === preset);
+      }, { timeout: 120_000 }).toBe(true);
       const entries = await snapshots(page);
+      expect(entries.length).toBeGreaterThan(0);
       expect(entries.every((entry) => entry.backend === "webgpu")).toBe(true);
       if (preset === "minimal") expect(entries.every((entry) => entry.effects.filter((effect) => effect.status === "enabled").length === 2)).toBe(true);
       if (preset === "capture") expect(entries.every((entry) => entry.effects.find((effect) => effect.name === "ssgi").status === "enabled")).toBe(true);
@@ -311,7 +347,10 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     const before = await page.evaluate(() => window.__qaDeviceDestroyCount);
     await page.getByRole("button", { name: "Rendering settings" }).first().click();
     await page.getByLabel("Render backend", { exact: true }).selectOption("static");
-    await expect.poll(async () => (await snapshots(page)).every((entry) => entry.backend === "static")).toBe(true);
+    await expect.poll(async () => {
+      const list = await snapshots(page);
+      return list.length > 0 && list.every((entry) => entry.backend === "static");
+    }).toBe(true);
     await expect.poll(() => page.evaluate(() => window.__qaDeviceDestroyCount)).toBeGreaterThan(before);
     await expect(page.locator(".s3d-canvas, .atlas-stage canvas")).toHaveCount(0);
     expect(observed).toEqual({ errors: [], failures: [] });

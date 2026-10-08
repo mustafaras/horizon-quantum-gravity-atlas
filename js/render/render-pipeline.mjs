@@ -3,6 +3,8 @@
  * (including their WebGL2 backend) use RenderPipeline and TSL exclusively.
  * Prewarming draws the complete graph while the host keeps its canvas hidden.
  */
+import { attachWebGPUValidation, getWebGPUValidation } from "./webgpu-validation.mjs";
+
 export const EFFECT_ORDER = Object.freeze([
   "base-render", "ao", "ssgi", "bloom", "god-rays", "depth-of-field",
   "temporal-aa", "motion-blur", "chromatic-aberration", "lens-dirt",
@@ -15,6 +17,21 @@ const PRESETS = Object.freeze({
   minimal: [],
   capture: ["ao", "ssgi", "bloom", "god-rays", "temporal-aa"],
 });
+
+const deviceLossStates = new WeakMap();
+
+function observeDeviceLoss(device) {
+  let state = deviceLossStates.get(device);
+  if (!state) {
+    state = { info: null };
+    deviceLossStates.set(device, state);
+    device.lost.then(
+      (info) => { state.info = info; },
+      (error) => { state.info = { reason: "unknown", message: String(error) }; },
+    );
+  }
+  return state;
+}
 
 /**
  * Pure policy; `capabilities` describes the actual renderer, not browser hints.
@@ -125,6 +142,7 @@ function dimensions(width, height) {
 /**
  * The renderer/scene/camera remain host-owned. A pipeline must be rebuilt when
  * its preset, quality, source, physical-depth validity or material capabilities change.
+ * Await dispose() before disposing the renderer if prewarm is still pending.
  */
 export async function createRenderPipeline({
   renderer, backend, scene, camera, quality = {}, preset = "cinematic",
@@ -146,6 +164,7 @@ export async function createRenderPipeline({
     if (object.receiveShadow && object.material && object.visible) shadowReceiver = true;
   });
   const nativeGPU = renderer.backend?.isWebGPUBackend === true;
+  if (nativeGPU) await attachWebGPUValidation(renderer);
   const effects = planRenderPipeline({
     backend, quality, preset, reducedMotion, fullMotion, source, depthValid,
     capabilities: {
@@ -191,7 +210,19 @@ function lifecycle({ renderer, scene, camera, effects, draw, resize, release, pr
   let disposed = false;
   let warmed = false;
   let warming = null;
-  const check = () => { if (disposed) throw new Error("Render pipeline is disposed"); };
+  let prewarming = false;
+  let disposing = null;
+  const device = renderer.backend?.isWebGPUBackend ? renderer.backend.device : null;
+  const deviceLoss = device ? observeDeviceLoss(device) : null;
+  const validation = getWebGPUValidation(renderer);
+  const check = () => {
+    if (disposed) throw new Error("Render pipeline is disposed");
+    if (deviceLoss?.info) {
+      const error = new Error(`GPU device lost (${deviceLoss.info.reason}): ${deviceLoss.info.message}`);
+      error.name = "GPUDeviceLostError";
+      throw error;
+    }
+  };
   return {
     effects,
     render(delta = 0) {
@@ -207,47 +238,83 @@ function lifecycle({ renderer, scene, camera, effects, draw, resize, release, pr
     prewarm() {
       check();
       if (!warming) {
-        warming = (async () => {
-          const device = renderer.backend?.isWebGPUBackend ? renderer.backend.device : null;
+        prewarming = true;
+        const warm = async () => {
           const target = renderer.getRenderTarget();
           const currentMRT = renderer.getMRT?.();
           const toneMapping = renderer.toneMapping;
           const outputColorSpace = renderer.outputColorSpace;
           const xrEnabled = renderer.xr.enabled;
           const view = camera.view ? { ...camera.view } : null;
-          device?.pushErrorScope("validation");
-          let validationError;
+          let scopePushed = false;
+          const failures = [];
           try {
+            device?.pushErrorScope("validation");
+            scopePushed = !!device;
+            check();
             await renderer.compileAsync(scene, camera);
             check();
-            if (prepare) await prepare();
+            if (prepare) await prepare(check);
             check();
             // Drawing while hidden compiles every normal/depth, fullscreen, blend
             // and render-target variant actually used by the pinned upstream graph.
             draw(0);
             if (device) await device.queue.onSubmittedWorkDone();
+          } catch (error) {
+            failures.push(error);
           } finally {
             // Upstream RenderPipeline/PassNode do not use finally around their
             // state changes. An initialization failure must not poison fallback.
-            renderer.setRenderTarget(target);
-            if (renderer.setMRT) renderer.setMRT(currentMRT);
-            renderer.toneMapping = toneMapping;
-            renderer.outputColorSpace = outputColorSpace;
-            renderer.xr.enabled = xrEnabled;
-            camera.view = view;
-            camera.updateProjectionMatrix();
-            if (device) validationError = await device.popErrorScope();
+            try {
+              renderer.setRenderTarget(target);
+              if (renderer.setMRT) renderer.setMRT(currentMRT);
+              renderer.toneMapping = toneMapping;
+              renderer.outputColorSpace = outputColorSpace;
+              renderer.xr.enabled = xrEnabled;
+              camera.view = view;
+              camera.updateProjectionMatrix();
+            } catch (error) {
+              failures.push(error);
+            }
+            try {
+              if (scopePushed) {
+                const validationError = await device.popErrorScope();
+                if (validationError) failures.push(new Error(`Pipeline WebGPU validation failed: ${validationError.message}`));
+              }
+            } catch (error) {
+              failures.push(error);
+            }
           }
-          if (validationError) throw new Error(`Pipeline WebGPU validation failed: ${validationError.message}`);
+          if (failures.length === 1) throw failures[0];
+          if (failures.length > 1) {
+            throw new AggregateError(failures, `Pipeline prewarm failed: ${failures.map((error) => error.message).join("; ")}`, { cause: failures[0] });
+          }
+          check();
+        };
+        warming = (validation ? validation.run(warm) : warm()).then(() => {
+          prewarming = false;
           check();
           warmed = true;
-        })();
+        }, (error) => {
+          prewarming = false;
+          throw error;
+        });
       }
       return warming;
     },
     dispose() {
-      if (disposed) return;
+      if (disposed) return disposing;
       disposed = true;
+      if (prewarming) {
+        // Drain compilation before freeing resources it may still reference.
+        // Both branches release, while the original prewarm rejection is retained.
+        disposing = warming.then(release, release);
+        return disposing;
+      }
+      if (validation) {
+        disposing = validation.drain().then(release, (error) => { release(); throw error; });
+        return disposing;
+      }
       release();
     },
     get prewarmed() { return warmed; },
@@ -442,11 +509,12 @@ async function buildNodePipeline({ renderer, scene, camera, quality, effects, en
     // PassNode and display nodes derive their actual sizes from the drawing
     // buffer each frame. The host resizes its renderer before calling this.
     resize: (width, height) => scenePass.setSize(width, height),
-    prepare: async () => {
+    prepare: async (check) => {
       const target = renderer.getRenderTarget();
       const currentMRT = renderer.getMRT();
       try {
         await scenePass.compileAsync(renderer);
+        check();
         // GodraysNode samples light.shadow.map.depthTexture during shader setup.
         // Material precompile alone does not allocate that scene-owned map.
         if (enabled("god-rays")) {

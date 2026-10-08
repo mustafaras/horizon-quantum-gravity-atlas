@@ -53,8 +53,21 @@ jobs:
       - name: Verify capture manifest
         run: npm run qa:verify
 
-      - name: Run browser QA suite
-        run: npm run qa:test
+      - name: Verify native renderer boundary first
+        run: npm run qa:test -- qa/specs/render-backends.spec.mjs --grep "real WebGPU API on a software adapter"
+
+      - name: Preserve native renderer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-renderer-evidence
+          path: |
+            qa/test-results/**/*.json
+            qa/test-results/**/sm-native-webgpu-software.png
+          retention-days: 7
+
+      - name: Run remaining browser QA suite
+        run: npm run qa:test -- --grep-invert "real WebGPU API on a software adapter"
 
       - name: Upload failure artifacts
         if: failure()

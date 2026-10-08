@@ -2,6 +2,7 @@ import { WebGLRenderer, SRGBColorSpace, AgXToneMapping, NeutralToneMapping } fro
 import { normalizeRenderQuality } from "./capabilities.mjs";
 import { abortIfNeeded, invalidatePrewarm } from "./shader-prewarm.mjs";
 import { awaitInitialization } from "./await-initialization.mjs";
+import { attachWebGPUValidation, drainWebGPUValidation } from "./webgpu-validation.mjs";
 
 const NODE_TYPES = new Set([
   "MeshPhongMaterial", "MeshStandardMaterial", "MeshPhysicalMaterial", "MeshToonMaterial",
@@ -10,6 +11,32 @@ const NODE_TYPES = new Set([
 ]);
 let gpuInitializationQueue = Promise.resolve();
 let sharedGPU = null;
+const TEARDOWN_BUDGET_MS = 10_000;
+
+/**
+ * Chromium resolves popErrorScope() asynchronously and r186 pops scopes on
+ * pipeline creation without awaiting those promises. Destroying a GPUDevice
+ * with unresolved scopes makes Chromium log "Instance dropped in popErrorScope"
+ * once per pending scope, which strict QA error predicates correctly treat as a
+ * failure. Settle everything we track and give Dawn a queue tick to resolve the
+ * rest before the device goes away. Both waits are bounded so teardown can
+ * never hang on a lost or wedged device.
+ */
+async function quiesceGPUDevice(device) {
+  if (!device || typeof device.destroy !== "function") return;
+  try { await drainWebGPUValidation(device, { timeoutMs: TEARDOWN_BUDGET_MS }); } catch { /* teardown must not throw */ }
+  try {
+    const flush = device.queue?.onSubmittedWorkDone?.();
+    if (flush) {
+      let timer;
+      await Promise.race([
+        flush.then(() => undefined, () => undefined),
+        new Promise((resolve) => { timer = setTimeout(resolve, TEARDOWN_BUDGET_MS); }),
+      ]);
+      clearTimeout(timer);
+    }
+  } catch { /* teardown must not throw */ }
+}
 
 function initializeGPU(operation) {
   const result = gpuInitializationQueue.then(operation);
@@ -23,7 +50,8 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
     const adapter = await awaitInitialization(request, { signal, label: "WebGPU adapter request" });
     if (!adapter) throw new Error("WebGPU adapter unavailable");
     const device = await awaitInitialization(adapter.requestDevice({ requiredFeatures: [...adapter.features] }), {
-      signal, label: "WebGPU device request", onLateResult: (lateDevice) => lateDevice.destroy(),
+      signal, label: "WebGPU device request",
+      onLateResult: (lateDevice) => { void quiesceGPUDevice(lateDevice).then(() => lateDevice.destroy()); },
     });
     const record = { device, leases: new Set() };
     sharedGPU = record;
@@ -40,13 +68,14 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
         for (const listener of record.leases) listener.onError(new Error(`GPU ${event.error.constructor.name}: ${event.error.message}`));
       };
     },
-    release() {
+    async release() {
       if (released) return;
       released = true;
       record.leases.delete(lease);
       if (record.leases.size === 0) {
         if (sharedGPU === record) sharedGPU = null;
         record.device.onuncapturederror = null;
+        await quiesceGPUDevice(record.device);
         record.device.destroy();
       }
     },
@@ -121,6 +150,7 @@ export async function createRenderer({
         await awaitInitialization(initialization, { signal, label: "WebGPU renderer initialization",
           onLateResult: () => { void renderer.dispose().catch((error) => report(`Late GPU cleanup failed: ${error.message}`)); },
         });
+        if (renderer.backend.isWebGPUBackend) await attachWebGPUValidation(renderer);
         deviceLease.routeErrors();
         });
         report("Node renderer initialization completed; compiling current scene shaders.");
@@ -157,7 +187,7 @@ export async function createRenderer({
           try { await renderer.dispose(); }
           finally {
             renderer.onDeviceLost = () => {};
-            deviceLease?.release();
+            await deviceLease?.release();
           }
         },
       };
@@ -171,7 +201,7 @@ export async function createRenderer({
         }
       } finally {
         if (renderer?.isWebGPURenderer) renderer.onDeviceLost = () => {};
-        deviceLease?.release();
+        await deviceLease?.release();
       }
       if (error.name === "AbortError") throw error;
       report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" ? "Retrying classic WebGL2 once." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);

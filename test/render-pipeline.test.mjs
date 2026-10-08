@@ -4,6 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { EFFECT_ORDER, planRenderPipeline, createRenderPipeline } from "../js/render/render-pipeline.mjs";
+import { attachWebGPUValidation, drainWebGPUValidation, getWebGPUValidation } from "../js/render/webgpu-validation.mjs";
+import WebGPUPipelineUtils from "three/src/renderers/webgpu/utils/WebGPUPipelineUtils.js";
 
 const quality = { postEffects: true, temporalSamples: 4, ssgi: true, raySteps: 96 };
 const capabilities = { ssgi: true, velocity: true, perspectiveCamera: true, godRays: true };
@@ -197,6 +199,369 @@ test("minimal classic lifecycle prewarms once, draws synchronously and owns no r
   assert.equal(broken.prewarmed, false);
   assert.throws(() => broken.render(), /prewarm/);
   broken.dispose();
+});
+
+async function createMockNativePipeline({ compileAsync, popErrorScope, lost, render } = {}) {
+  const { Scene, PerspectiveCamera } = await import("three");
+  let target = null;
+  let mrt = null;
+  const renderer = {
+    isWebGPURenderer: true, init: async () => {}, hasFeature: () => true,
+    xr: { enabled: false },
+    backend: {
+      isWebGPUBackend: true,
+      device: {
+        lost: lost ?? new Promise(() => {}),
+        pushErrorScope() {},
+        popErrorScope: popErrorScope ?? (async () => null),
+        queue: { onSubmittedWorkDone: async () => {} },
+      },
+    },
+    getRenderTarget: () => target, setRenderTarget: (value) => { target = value; },
+    getMRT: () => mrt, setMRT: (value) => { mrt = value; },
+    compileAsync: compileAsync ?? (async () => {}),
+    dispose() {},
+    onError() {},
+    render: render ?? (() => { throw new Error("Unexpected draw after failed or cancelled prewarm"); }),
+  };
+  renderer.backend.pipelineUtils = new WebGPUPipelineUtils(renderer.backend);
+  return createRenderPipeline({
+    renderer, backend: "webgpu", scene: new Scene(), camera: new PerspectiveCamera(), preset: "minimal",
+  });
+}
+
+test("scope rejection preserves the original compilation failure rather than replacing it", async () => {
+  const compileFailure = new Error("WGSL compilation failed");
+  const scopeFailure = new Error("Instance dropped in popErrorScope");
+  const pipeline = await createMockNativePipeline({
+    compileAsync: async () => { throw compileFailure; },
+    popErrorScope: async () => { throw scopeFailure; },
+  });
+  await assert.rejects(pipeline.prewarm(), (error) => {
+    assert.ok(error instanceof AggregateError);
+    assert.deepEqual(error.errors, [compileFailure, scopeFailure]);
+    assert.equal(error.cause, compileFailure);
+    return true;
+  });
+  assert.equal(pipeline.prewarmed, false);
+  await pipeline.dispose();
+});
+
+test("genuine GPU validation errors still reject prewarm rather than reporting success", async () => {
+  const pipeline = await createMockNativePipeline({
+    render() {},
+    popErrorScope: async () => ({ message: "test WGSL validation failure" }),
+  });
+  await assert.rejects(pipeline.prewarm(), /Pipeline WebGPU validation failed: test WGSL validation failure/);
+  assert.equal(pipeline.prewarmed, false);
+  await pipeline.dispose();
+});
+
+test("dispose waits for an in-flight compile and prevents subsequent graph work", async () => {
+  let finishCompile;
+  const compiling = new Promise((resolve) => { finishCompile = resolve; });
+  let compilations = 0;
+  let scopesPopped = 0;
+  const pipeline = await createMockNativePipeline({
+    compileAsync: () => { compilations++; return compiling; },
+    popErrorScope: async () => { scopesPopped++; return null; },
+  });
+  const warming = pipeline.prewarm();
+  const rejected = assert.rejects(warming, /disposed/);
+  await Promise.resolve();
+  const disposing = pipeline.dispose();
+  assert.ok(disposing instanceof Promise);
+  assert.equal(pipeline.dispose(), disposing);
+  let released = false;
+  disposing.then(() => { released = true; });
+  await Promise.resolve();
+  assert.equal(released, false);
+  finishCompile();
+  await rejected;
+  await disposing;
+  assert.equal(released, true);
+  assert.equal(compilations, 1);
+  assert.equal(scopesPopped, 1);
+  assert.equal(pipeline.prewarmed, false);
+});
+
+test("device loss during compilation stops before preparing or drawing the node graph", async () => {
+  let finishCompile;
+  let loseDevice;
+  const compiling = new Promise((resolve) => { finishCompile = resolve; });
+  const lost = new Promise((resolve) => { loseDevice = resolve; });
+  let compilations = 0;
+  const pipeline = await createMockNativePipeline({
+    lost, compileAsync: () => { compilations++; return compiling; },
+  });
+  const warming = pipeline.prewarm();
+  const rejected = assert.rejects(warming, (error) =>
+    error.name === "GPUDeviceLostError" && /unknown.*test device loss/.test(error.message));
+  await Promise.resolve();
+  loseDevice({ reason: "unknown", message: "test device loss" });
+  await Promise.resolve();
+  finishCompile();
+  await rejected;
+  assert.equal(compilations, 1);
+  assert.equal(pipeline.prewarmed, false);
+  assert.throws(() => pipeline.render(), /device lost/i);
+  pipeline.dispose();
+});
+
+function validationFixture({ scope = async () => null, diagnostics = async () => ({ messages: [] }) } = {}) {
+  const errors = [];
+  const calls = [];
+  const data = new WeakMap();
+  const device = {
+    pushErrorScope() { calls.push("push"); },
+    popErrorScope() { calls.push("pop"); return scope(); },
+    createPipelineLayout() { return {}; },
+    createComputePipeline() { calls.push("native-sync-compute"); return {}; },
+    createComputePipelineAsync() { throw new Error("Broken upstream async executor must not run"); },
+  };
+  const backend = {
+    isWebGPUBackend: true, device,
+    get(object) {
+      if (!data.has(object)) data.set(object, {});
+      return data.get(object);
+    },
+  };
+  backend.pipelineUtils = new WebGPUPipelineUtils(backend);
+  const program = { stage: "compute", code: "@compute @workgroup_size(1) fn main() {}" };
+  const pipeline = { computeProgram: program };
+  backend.get(program).module = { module: { getCompilationInfo: diagnostics }, entryPoint: "main" };
+  const renderer = {
+    isWebGPURenderer: true, backend, onError(info) { errors.push(info); },
+    async compileAsync() {
+      const promises = [];
+      backend.pipelineUtils.createComputePipeline(pipeline, [], promises);
+      await Promise.all(promises);
+    },
+    async compileComputeAsync() { return this.compileAsync(); },
+    dispose() { calls.push("renderer-dispose"); },
+  };
+  return { renderer, backend, device, calls, errors, pipeline };
+}
+
+test("validation adapter protects first compile, rejects scope failure, and has no orphan rejection", async () => {
+  const failure = new Error("Injected Instance dropped in popErrorScope");
+  const fixture = validationFixture({ scope: async () => { throw failure; } });
+  const unhandled = [];
+  const observe = (error) => unhandled.push(error);
+  process.on("unhandledRejection", observe);
+  try {
+    const validation = await attachWebGPUValidation(fixture.renderer);
+    assert.equal(await attachWebGPUValidation(fixture.renderer), validation);
+    assert.equal(getWebGPUValidation(fixture.renderer), validation);
+    await assert.rejects(fixture.renderer.compileAsync(), (error) => error === failure);
+    await fixture.renderer.dispose();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(unhandled, []);
+    assert.deepEqual(fixture.calls, ["push", "native-sync-compute", "pop", "renderer-dispose"]);
+    assert.equal(fixture.backend.device, fixture.device);
+    assert.equal(getWebGPUValidation(fixture.renderer), null);
+  } finally {
+    process.removeListener("unhandledRejection", observe);
+  }
+});
+
+test("genuine validation and diagnostic failures both surface with original upstream error flag", async () => {
+  const diagnosticsFailure = new Error("Compilation-info failed");
+  const fixture = validationFixture({
+    scope: async () => ({ message: "Invalid WGSL" }),
+    diagnostics: async () => { throw diagnosticsFailure; },
+  });
+  await attachWebGPUValidation(fixture.renderer);
+  await assert.rejects(fixture.renderer.compileComputeAsync(), (error) =>
+    /Invalid WGSL/.test(error.message) && /Compilation-info failed/.test(error.message));
+  assert.equal(fixture.backend.get(fixture.pipeline).error, true);
+  await fixture.renderer.dispose();
+});
+
+test("validation disposal drains standalone draw diagnostics before renderer resource release", async () => {
+  let finishScope;
+  const fixture = validationFixture({ scope: () => new Promise((resolve) => { finishScope = resolve; }) });
+  await attachWebGPUValidation(fixture.renderer);
+  fixture.backend.pipelineUtils.createComputePipeline(fixture.pipeline, []);
+  const disposing = fixture.renderer.dispose();
+  await Promise.resolve();
+  assert.ok(!fixture.calls.includes("renderer-dispose"));
+  finishScope({ message: "Draw validation failure" });
+  await disposing;
+  assert.equal(fixture.errors[0].error.message, "WebGPU validation failed: Draw validation failure");
+  assert.equal(fixture.calls.at(-1), "renderer-dispose");
+});
+
+test("validation disposal waits for queued compilation and restores original hooks", async () => {
+  let finishScope;
+  const fixture = validationFixture({ scope: () => new Promise((resolve) => { finishScope = resolve; }) });
+  const originalCompile = fixture.renderer.compileAsync;
+  const originalCompute = fixture.backend.pipelineUtils.createComputePipeline;
+  const validation = await attachWebGPUValidation(fixture.renderer);
+  const compiling = fixture.renderer.compileAsync();
+  const disposing = validation.dispose();
+  await Promise.resolve();
+  assert.equal(typeof finishScope, "function");
+  finishScope(null);
+  await compiling;
+  await disposing;
+  assert.equal(fixture.renderer.compileAsync, originalCompile);
+  assert.equal(fixture.backend.pipelineUtils.createComputePipeline, originalCompute);
+});
+
+test("validation private-hook guard rejects unknown shapes and leaves node WebGL2 untouched", async () => {
+  const fixture = validationFixture();
+  fixture.backend.pipelineUtils.createRenderPipeline = () => {};
+  await assert.rejects(attachWebGPUValidation(fixture.renderer), /verified Three 0.186.1/);
+  assert.equal(await attachWebGPUValidation({ isWebGPURenderer: true, backend: { isWebGLBackend: true } }), null);
+});
+
+test("validation operations serialize different renderers sharing one device", async () => {
+  const finish = [];
+  const first = validationFixture({ scope: () => new Promise((resolve) => finish.push(resolve)) });
+  const second = validationFixture();
+  second.backend.device = first.device;
+  await attachWebGPUValidation(first.renderer);
+  await attachWebGPUValidation(second.renderer);
+  const a = first.renderer.compileAsync();
+  const b = second.renderer.compileAsync();
+  await Promise.resolve();
+  assert.equal(finish.length, 1);
+  finish[0](null);
+  await a;
+  await Promise.resolve();
+  assert.equal(finish.length, 2);
+  finish[1](null);
+  await b;
+  await first.renderer.dispose();
+  await second.renderer.dispose();
+});
+
+test("factory-first concurrent attachment is idempotent through nested awaited compilation", async () => {
+  const fixture = validationFixture();
+  const [first, second] = await Promise.all([
+    attachWebGPUValidation(fixture.renderer),
+    attachWebGPUValidation(fixture.renderer),
+  ]);
+  assert.equal(first, second);
+  const compile = fixture.renderer.compileAsync;
+  await fixture.renderer.compileAsync();
+  assert.equal(await attachWebGPUValidation(fixture.renderer), first);
+  assert.equal(fixture.renderer.compileAsync, compile);
+  await first.run(async () => {
+    await fixture.renderer.compileAsync();
+    await first.run(() => fixture.renderer.compileComputeAsync());
+  });
+  assert.equal(fixture.calls.filter((call) => call === "native-sync-compute").length, 3);
+  await fixture.renderer.dispose();
+  assert.equal(getWebGPUValidation(fixture.renderer), null);
+});
+
+test("factory-first native shared-device pipelines prewarm and dispose every preset", {
+  skip: process.env.QGA_NATIVE_GPU !== "1",
+}, async () => {
+  const { chromium } = await import("playwright");
+  const { startServer } = await import("../qa/lib/serve.mjs");
+  const server = await startServer(path.resolve(import.meta.dirname, ".."));
+  let browser;
+  try {
+    browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu"] });
+    const page = await browser.newPage();
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+    await page.route("**/factory-probe", (route) => route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><script type="importmap">{"imports":{
+        "three":"/vendor/three/build/three.module.js",
+        "three/webgpu":"/vendor/three/build/three.webgpu.js",
+        "three/tsl":"/vendor/three/build/three.tsl.js",
+        "three/addons/":"/vendor/three/examples/jsm/"
+      }}</script>`,
+    }));
+    await page.goto(`${server.baseUrl}/factory-probe`);
+    const result = await page.evaluate(async () => {
+      const T = await import("three/webgpu");
+      const { createRenderer } = await import("/js/render/create-renderer.mjs");
+      const { createRenderPipeline } = await import("/js/render/render-pipeline.mjs");
+      const { prewarmShaders } = await import("/js/render/shader-prewarm.mjs");
+      const { getWebGPUValidation } = await import("/js/render/webgpu-validation.mjs");
+      const quality = { postEffects: true, maxDpr: 1, temporalSamples: 2, ssgi: false };
+      const fixtures = await Promise.all([0, 1].map(async () => {
+        const scene = new T.Scene();
+        const camera = new T.PerspectiveCamera(45, 1, 0.1, 100);
+        camera.position.z = 8;
+        const geometry = new T.SphereGeometry(1, 16, 8);
+        const material = new T.MeshStandardNodeMaterial();
+        scene.add(new T.Mesh(geometry, material), new T.AmbientLight(0xffffff, 2));
+        const handle = await createRenderer({ forceBackend: "webgpu", scene, camera, quality });
+        if (handle.backend !== "webgpu") {
+          await handle.dispose();
+          throw new Error("Factory-first native proof unexpectedly fell back from WebGPU");
+        }
+        handle.renderer.setSize(128, 96);
+        return { scene, camera, geometry, material, handle, validation: getWebGPUValidation(handle.renderer) };
+      }));
+      const sharedDevice = fixtures[0].handle.renderer.backend.device === fixtures[1].handle.renderer.backend.device;
+      const results = [];
+      try {
+        for (const preset of ["scientific", "cinematic", "minimal", "capture"]) {
+          const value = { ...quality, ssgi: preset === "capture" };
+          results.push(...await Promise.all(fixtures.map(async (fixture, index) => {
+            const renderer = fixture.handle.renderer;
+            const pipeline = await createRenderPipeline({
+              renderer, backend: "webgpu", scene: fixture.scene, camera: fixture.camera,
+              quality: value, preset, fullMotion: true,
+            });
+            try {
+              await prewarmShaders({
+                renderer, backend: "webgpu", scene: fixture.scene, camera: fixture.camera,
+                quality: value, pipeline, view: String(index),
+              });
+              pipeline.render(0.016);
+              return { preset, prewarmed: pipeline.prewarmed, sameAdapter: fixture.validation === getWebGPUValidation(renderer) };
+            } finally {
+              await pipeline.dispose();
+            }
+          })));
+        }
+      } finally {
+        await Promise.all(fixtures.map(async (fixture) => {
+          await fixture.handle.dispose();
+          fixture.geometry.dispose();
+          fixture.material.dispose();
+        }));
+      }
+      return { sharedDevice, results, detached: fixtures.every((fixture) => getWebGPUValidation(fixture.handle.renderer) === null) };
+    });
+    assert.equal(result.sharedDevice, true);
+    assert.equal(result.results.length, 8);
+    assert.ok(result.results.every(({ prewarmed, sameAdapter }) => prewarmed && sameAdapter));
+    assert.equal(result.detached, true);
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
+});
+
+test("device drain settles pending popErrorScope promises before destroy and is bounded", async () => {
+  let finishScope;
+  const fixture = validationFixture({ scope: () => new Promise((resolve) => { finishScope = resolve; }) });
+  assert.equal(await drainWebGPUValidation(fixture.device), true);
+  await attachWebGPUValidation(fixture.renderer);
+  fixture.backend.pipelineUtils.createComputePipeline(fixture.pipeline, []);
+  assert.equal(await drainWebGPUValidation(fixture.device, { timeoutMs: 20 }), false);
+  let drained = false;
+  const draining = drainWebGPUValidation(fixture.device).then((value) => { drained = value; });
+  await Promise.resolve();
+  assert.equal(drained, false);
+  finishScope(null);
+  await draining;
+  assert.equal(drained, true);
+  await fixture.renderer.dispose();
+  assert.equal(await drainWebGPUValidation(fixture.device), true);
+  assert.deepEqual(fixture.errors, []);
 });
 
 test("every vendored addon is official pinned source, checksum-covered and self-hosted transitively", () => {

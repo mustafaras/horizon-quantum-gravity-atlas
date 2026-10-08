@@ -18,7 +18,7 @@ export async function initializeRenderSession({
   quality.temporalSamples = Math.min(2, quality.temporalSamples);
   const messages = (message) => renderDiagnostics.message(diagnosticId, message);
   const options = globalThis.QGA_RENDER_OPTIONS || {};
-  let handle, pipeline, disposed = false, changing = false, fpsTime = -Infinity, warmedSignature;
+  let handle, pipeline, retiringPipeline, disposal, pendingChange, disposed = false, changing = false, fpsTime = -Infinity, warmedSignature;
   const ranges = new Map();
   scene.traverse((object) => {
     if (object.isPoints && object.geometry) {
@@ -69,14 +69,20 @@ export async function initializeRenderSession({
       source, depthValid, toneMapping: settings.toneMapping || "agx",
     });
   }
-  async function dispose() {
-    if (disposed) return;
+  function dispose() {
+    if (disposal) return disposal;
     disposed = true;
-    try { pipeline?.dispose(); }
-    finally {
-      try { await handle?.dispose(); }
-      finally { handle?.renderer?.domElement.remove(); }
-    }
+    disposal = (async () => {
+      try { await pendingChange; }
+      finally {
+        try { await Promise.all([pipeline?.dispose(), retiringPipeline?.dispose()]); }
+        finally {
+          try { await handle?.dispose(); }
+          finally { handle?.renderer?.domElement.remove(); }
+        }
+      }
+    })();
+    return disposal;
   }
   try {
     handle = await createRenderer({
@@ -95,7 +101,7 @@ export async function initializeRenderSession({
     } catch (error) {
       if (error.name === "AbortError" || !handle.renderer.isWebGPURenderer) throw error;
       messages(`Node pipeline compilation failed: ${error.message}. Retrying classic WebGL2 once.`);
-      pipeline?.dispose();
+      await pipeline?.dispose();
       pipeline = null;
       await handle.dispose();
       handle = await createRenderer({ quality, scene, camera, signal, reducedMotion, forceBackend: "webgl2", toneMapping: settings.toneMapping || "agx", shadows: !!source?.castShadow, onDiagnostic: messages });
@@ -131,10 +137,15 @@ export async function initializeRenderSession({
       try {
         renderer.setPixelRatio(value.maxDpr);
         if (["temporalSamples", "ssgi", "material"].includes(change.dimension)) {
-          pipeline.dispose();
+          const previousPipeline = pipeline;
           pipeline = null;
-          pipeline = await buildPipeline(value);
-          if (disposed) { pipeline.dispose(); return; }
+          retiringPipeline = previousPipeline;
+          await previousPipeline.dispose();
+          retiringPipeline = null;
+          if (disposed) return;
+          const replacement = await buildPipeline(value);
+          if (disposed) { await replacement.dispose(); return; }
+          pipeline = replacement;
         }
         await warm(value);
         if (disposed) return;
@@ -156,7 +167,7 @@ export async function initializeRenderSession({
       render(delta = 0, now = performance.now(), sample = true, frameMs = delta * 1000) {
         if (disposed || changing) return;
         if (materialSignature(scene) !== warmedSignature) {
-          void changeQuality(governor.quality, { dimension: "material" });
+          pendingChange = changeQuality(governor.quality, { dimension: "material" });
           return;
         }
         pipeline.render(delta);
@@ -166,7 +177,7 @@ export async function initializeRenderSession({
           fpsTime = now;
           renderDiagnostics.update(diagnosticId, { fps: result.fps });
         }
-        if (result.change) void changeQuality(result.quality, result.change);
+        if (result.change) pendingChange = changeQuality(result.quality, result.change);
       },
       dispose: disposeSession,
     };

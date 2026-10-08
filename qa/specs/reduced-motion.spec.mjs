@@ -4,6 +4,7 @@ import { gotoReady } from "./helpers.mjs";
 test.use({ contextOptions: { reducedMotion: "reduce" }, viewport: { width: 1200, height: 800 } });
 
 test("system preference overrides full motion, including pipeline grain, temporal effects and focus travel", async ({ page, context }) => {
+  test.setTimeout(180_000);
   await context.addInitScript(() => {
     window.QGA_RENDER_OPTIONS = { forceBackend: "webgl2" };
     sessionStorage.setItem("horizon-intro", "1");
@@ -34,12 +35,22 @@ test("system preference overrides full motion, including pipeline grain, tempora
 });
 
 test("runtime system reduced-motion change rebuilds safely and leaves interactive keyboard access", async ({ page, context }) => {
+  test.setTimeout(180_000);
   await context.addInitScript(() => { window.QGA_RENDER_OPTIONS = { forceBackend: "webgl2" }; sessionStorage.setItem("horizon-intro", "1"); });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await gotoReady(page, "/?view=bh");
+  // Full motion animates continuously, so "animation-settled" is not a valid
+  // precondition here; wait for mounted, compiled renderers instead.
+  await gotoReady(page, "/?view=sm", ["fonts", "network-idle", "view-mounted"]);
+  await expect.poll(async () => page.evaluate(() => {
+    const entries = QGA_RENDER.renderDiagnostics.snapshot();
+    return entries.length > 0 && entries.every((entry) => entry.phase === "ready" && !entry.reducedMotion);
+  }), { timeout: 120_000 }).toBe(true);
   await expect(page.locator(".s3d-canvas").first()).toBeVisible();
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect.poll(async () => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().every((entry) => entry.phase === "ready" && entry.reducedMotion))).toBe(true);
+  await expect.poll(async () => page.evaluate(() => {
+    const entries = QGA_RENDER.renderDiagnostics.snapshot();
+    return entries.length > 0 && entries.every((entry) => entry.phase === "ready" && entry.reducedMotion);
+  }), { timeout: 120_000 }).toBe(true);
   const stage = page.locator(".s3d-stage").first();
   await stage.focus();
   await page.keyboard.press("ArrowLeft");
