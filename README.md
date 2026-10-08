@@ -404,6 +404,8 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
   <img src="docs/diagrams/03-module-render-sequence.svg" alt="Module render sequence" width="100%" />
 </p>
 
+Prompt 00's renderer/science ownership map, lifecycle contract, fallback policy, and current WebGL inventory live in **[docs/render-architecture.md](docs/render-architecture.md)**.
+
 ---
 
 ## Module Matrix
