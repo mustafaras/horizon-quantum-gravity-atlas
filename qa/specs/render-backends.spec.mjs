@@ -247,7 +247,18 @@ test("real WebGPU availability is measured, not inferred from mocks", async ({ p
 test.describe("real WebGPU API on a software adapter (not hardware evidence)", () => {
   test("atlas and mapped Standard Model scenes initialize native WebGPU and switch all presets", async ({}, info) => {
     test.setTimeout(600_000);
-    const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu"] });
+    // SwiftShader compiles the node graph's WGSL on the CPU; on slow CI runners
+    // that can exceed Chromium's GPU watchdog, which kills the GPU process and
+    // drops the Dawn instance mid-prewarm. Disabling the watchdog changes only
+    // the test browser's process supervision, not any app predicate.
+    const browserLog = [];
+    const browser = await chromium.launch({
+      args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu", "--disable-gpu-watchdog"],
+      logger: {
+        isEnabled: (name) => name === "browser",
+        log: (name, severity, message) => { if (/gpu|watchdog|crash|dawn|lost/i.test(String(message))) browserLog.push(String(message).slice(0, 400)); },
+      },
+    });
     const context = await browser.newContext({ baseURL: process.env.QA_BASE_URL, viewport: { width: 1200, height: 800 } });
     await context.addInitScript(() => {
       window.__qaDeviceDestroyCount = 0;
@@ -298,6 +309,7 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     if (!initialized.some((entry) => entry.backend === "webgpu")) {
       const losses = await page.evaluate(() => window.__qaUnexpectedDeviceLosses);
       await evidence(info, "unexpected-software-device-losses", losses);
+      await evidence(info, "software-gpu-browser-log", browserLog.slice(-200));
       expect(initialized.length).toBeGreaterThan(0);
       expect(observed).toEqual({ errors: [], failures: [] });
       test.skip(losses.length > 0, `Real software GPU device lost: ${JSON.stringify(losses)}; explicit classic fallback verified, native GPU rendering unavailable on this runner`);
