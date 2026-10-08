@@ -247,19 +247,25 @@ function lifecycle({ renderer, scene, camera, effects, draw, resize, release, pr
           const xrEnabled = renderer.xr.enabled;
           const view = camera.view ? { ...camera.view } : null;
           let scopePushed = false;
+          let stage = "scope";
           const failures = [];
           try {
             device?.pushErrorScope("validation");
             scopePushed = !!device;
             check();
+            stage = "compile";
             await renderer.compileAsync(scene, camera);
             check();
+            stage = "prepare";
             if (prepare) await prepare(check);
             check();
+            stage = "draw";
             // Drawing while hidden compiles every normal/depth, fullscreen, blend
             // and render-target variant actually used by the pinned upstream graph.
             draw(0);
+            stage = "submit";
             if (device) await device.queue.onSubmittedWorkDone();
+            stage = "done";
           } catch (error) {
             failures.push(error);
           } finally {
@@ -287,7 +293,7 @@ function lifecycle({ renderer, scene, camera, effects, draw, resize, release, pr
           }
           if (failures.length === 1) throw failures[0];
           if (failures.length > 1) {
-            throw new AggregateError(failures, `Pipeline prewarm failed: ${failures.map((error) => error.message).join("; ")}`, { cause: failures[0] });
+            throw new AggregateError(failures, `Pipeline prewarm failed at ${stage}: ${failures.map((error) => error.message).join("; ")}`, { cause: failures[0] });
           }
           check();
         };

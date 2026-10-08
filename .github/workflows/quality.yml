@@ -54,6 +54,9 @@ jobs:
         run: npm run qa:verify
 
       - name: Verify native renderer boundary first
+        env:
+          # Surface pinned Chromium/GPU-process stderr for software WebGPU triage.
+          DEBUG: pw:browser
         run: npm run qa:test -- qa/specs/render-backends.spec.mjs --grep "real WebGPU API on a software adapter"
 
       - name: Preserve native renderer evidence
