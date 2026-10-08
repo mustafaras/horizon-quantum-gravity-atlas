@@ -247,18 +247,7 @@ test("real WebGPU availability is measured, not inferred from mocks", async ({ p
 test.describe("real WebGPU API on a software adapter (not hardware evidence)", () => {
   test("atlas and mapped Standard Model scenes initialize native WebGPU and switch all presets", async ({}, info) => {
     test.setTimeout(600_000);
-    // SwiftShader compiles the node graph's WGSL on the CPU; on slow CI runners
-    // that can exceed Chromium's GPU watchdog, which kills the GPU process and
-    // drops the Dawn instance mid-prewarm. Disabling the watchdog changes only
-    // the test browser's process supervision, not any app predicate.
-    const browserLog = [];
-    const browser = await chromium.launch({
-      args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu", "--disable-gpu-watchdog"],
-      logger: {
-        isEnabled: (name) => name === "browser",
-        log: (name, severity, message) => { if (/gpu|watchdog|crash|dawn|lost/i.test(String(message))) browserLog.push(String(message).slice(0, 400)); },
-      },
-    });
+    const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu"] });
     const context = await browser.newContext({ baseURL: process.env.QA_BASE_URL, viewport: { width: 1200, height: 800 } });
     await context.addInitScript(() => {
       window.__qaDeviceDestroyCount = 0;
@@ -294,6 +283,51 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     });
     await evidence(info, "software-webgpu-availability", availability);
     test.skip(!availability.available, `Actual software WebGPU unavailable: ${availability.reason}`);
+    // Independent of app code: can this browser present a WebGPU canvas at all?
+    // Headless Linux SwiftShader cannot allocate WebgpuSwapChainTexture shared
+    // images, which drops the Dawn instance on the first canvas draw even though
+    // adapter, device and shader compilation succeed.
+    const probePage = await context.newPage();
+    await probePage.route("**/gpu-present-probe", (route) => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>GPU present probe</title>" }));
+    await probePage.goto("/gpu-present-probe");
+    const presentation = await probePage.evaluate(async () => {
+      const timeout = (ms, label) => new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} did not settle within ${ms} ms`)), ms));
+      let device;
+      try {
+        const adapter = await navigator.gpu.requestAdapter();
+        device = await adapter.requestDevice();
+        const uncaptured = [];
+        device.onuncapturederror = (event) => uncaptured.push(event.error.message);
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 16;
+        document.body.append(canvas);
+        const context = canvas.getContext("webgpu");
+        context.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: "opaque", usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC });
+        device.pushErrorScope("validation");
+        device.pushErrorScope("internal");
+        const texture = context.getCurrentTexture();
+        const buffer = device.createBuffer({ size: 256 * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+        const encoder = device.createCommandEncoder();
+        const pass = encoder.beginRenderPass({ colorAttachments: [{ view: texture.createView(), loadOp: "clear", storeOp: "store", clearValue: { r: 0, g: 1, b: 0, a: 1 } }] });
+        pass.end();
+        encoder.copyTextureToBuffer({ texture }, { buffer, bytesPerRow: 256 }, [16, 16]);
+        device.queue.submit([encoder.finish()]);
+        await Promise.race([buffer.mapAsync(GPUMapMode.READ), timeout(15_000, "swap-chain readback")]);
+        // Green is channel 1 for both bgra8unorm and rgba8unorm.
+        const pixel = [...new Uint8Array(buffer.getMappedRange(), 256 * 8 + 8 * 4, 4)];
+        buffer.unmap();
+        const internal = await Promise.race([device.popErrorScope(), timeout(15_000, "internal popErrorScope")]);
+        const validation = await Promise.race([device.popErrorScope(), timeout(15_000, "validation popErrorScope")]);
+        const errors = [internal?.message, validation?.message, ...uncaptured].filter(Boolean);
+        return { ok: errors.length === 0 && pixel[1] > 200 && pixel[0] < 50 && pixel[2] < 50, pixel, errors };
+      } catch (error) {
+        return { ok: false, errors: [String(error?.message ?? error)] };
+      } finally {
+        try { device?.destroy(); } catch { /* probe teardown */ }
+      }
+    });
+    await probePage.close();
+    await evidence(info, "software-webgpu-canvas-presentation", presentation);
     await context.addInitScript(() => { sessionStorage.setItem("horizon-intro", "1"); });
     const observed = observe(page);
     await gotoReady(page, "/?view=sm&seed=42", RENDER_READINESS);
@@ -309,10 +343,10 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     if (!initialized.some((entry) => entry.backend === "webgpu")) {
       const losses = await page.evaluate(() => window.__qaUnexpectedDeviceLosses);
       await evidence(info, "unexpected-software-device-losses", losses);
-      await evidence(info, "software-gpu-browser-log", browserLog.slice(-200));
       expect(initialized.length).toBeGreaterThan(0);
       expect(observed).toEqual({ errors: [], failures: [] });
       test.skip(losses.length > 0, `Real software GPU device lost: ${JSON.stringify(losses)}; explicit classic fallback verified, native GPU rendering unavailable on this runner`);
+      test.skip(!presentation.ok, `WebGPU canvas presentation unsupported by this browser/runner (independent probe: ${JSON.stringify(presentation)}); explicit classic fallback and clean console verified, native GPU rendering unavailable here`);
     }
     expect(initialized.some((entry) => entry.backend === "webgpu")).toBe(true);
     await page.getByRole("button", { name: "Rendering settings" }).first().click();
