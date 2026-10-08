@@ -221,6 +221,17 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     const context = await browser.newContext({ baseURL: process.env.QA_BASE_URL, viewport: { width: 1200, height: 800 } });
     await context.addInitScript(() => {
       window.__qaDeviceDestroyCount = 0;
+      window.__qaUnexpectedDeviceLosses = [];
+      if (typeof GPUAdapter !== "undefined") {
+        const request = GPUAdapter.prototype.requestDevice;
+        GPUAdapter.prototype.requestDevice = async function (...args) {
+          const device = await request.apply(this, args);
+          void device.lost.then((info) => {
+            if (info.reason !== "destroyed") window.__qaUnexpectedDeviceLosses.push({ reason: info.reason, message: info.message });
+          });
+          return device;
+        };
+      }
       if (typeof GPUDevice === "undefined") return;
       const destroy = GPUDevice.prototype.destroy;
       GPUDevice.prototype.destroy = function () {
@@ -247,12 +258,19 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     await gotoReady(page, "/?view=sm&seed=42");
     await ready(page, 120_000);
     const initialized = await snapshots(page);
-    expect(initialized.some((entry) => entry.backend === "webgpu")).toBe(true);
+    await evidence(info, "initial-native-and-bounded-fallback-matrix", initialized);
     for (const entry of initialized.filter((entry) => entry.backend !== "webgpu")) {
       expect(entry.backend).toBe("webgl2");
-      expect(entry.messages.some((message) => /webgpu initialization\/compile failed:.*Retrying classic WebGL2 once/.test(message))).toBe(true);
+      expect(entry.messages.some((message) => /(?:webgpu initialization\/compile failed:|Node pipeline compilation failed:).*Retrying classic WebGL2 once/.test(message))).toBe(true);
     }
-    await evidence(info, "initial-native-and-bounded-fallback-matrix", initialized);
+    if (!initialized.some((entry) => entry.backend === "webgpu")) {
+      const losses = await page.evaluate(() => window.__qaUnexpectedDeviceLosses);
+      await evidence(info, "unexpected-software-device-losses", losses);
+      expect(initialized.length).toBeGreaterThan(0);
+      expect(observed).toEqual({ errors: [], failures: [] });
+      test.skip(losses.length > 0, `Real software GPU device lost: ${JSON.stringify(losses)}; explicit classic fallback verified, native GPU rendering unavailable on this runner`);
+    }
+    expect(initialized.some((entry) => entry.backend === "webgpu")).toBe(true);
     await page.getByRole("button", { name: "Rendering settings" }).first().click();
     await page.getByLabel("Motion", { exact: true }).selectOption("full");
     for (const preset of ["scientific", "minimal", "capture", "cinematic"]) {

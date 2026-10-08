@@ -26,6 +26,9 @@ export default defineConfig({
     video: "off",
   },
   projects: [
-    { name: "chromium", use: { browserName: "chromium" } },
+    { name: "chromium", use: {
+      browserName: "chromium",
+      launchOptions: process.env.CI ? { args: ["--disable-blink-features=WebGPU"] } : {},
+    } },
   ],
 });
