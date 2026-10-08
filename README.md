@@ -1160,9 +1160,13 @@ horizon-quantum-gravity-atlas/
 │   │   ├── react.development.js
 │   │   └── react-dom.development.js
 │   └── three/
-│       ├── three.min.js
-│       └── examples/js/
+│       ├── VERSION
+│       ├── LICENSE
+│       ├── build/
+│       └── examples/jsm/
 └── js/
+    ├── bootstrap.mjs
+    ├── render/three-runtime.mjs
     ├── app.jsx
     ├── atlas-stage.jsx
     ├── core.jsx
@@ -1189,14 +1193,18 @@ horizon-quantum-gravity-atlas/
 | Layer | Technology | Notes |
 |---|---|---|
 | UI runtime | React 18 UMD | loaded directly in browser |
-| JSX transform | Babel Standalone | no bundler required |
-| 3D renderer | Three.js r147 | WebGL scenes and cinematic modules |
+| JSX transform | Babel Standalone | ordered by the ESM bootstrap, no bundler required |
+| 3D renderer | Three.js 0.186.1 (r186) | self-hosted native ESM; classic WebGL2 renderer for existing GLSL scenes |
 | equations | KaTeX | formula rendering |
 | web fonts | Space Grotesk, Sora, IBM Plex Mono | self-hosted woff2 subsets |
 | third-party assets | `vendor/` | self-hosted, no runtime CDN dependency |
 | fallback simulations | Canvas 2D | analytical and low-support rendering |
 | persistence | `localStorage` | selected view and tweak settings |
 | deployment | static hosting | GitHub Pages compatible |
+
+The import map resolves `three`, `three/webgpu`, `three/tsl`, and `three/addons/` locally. This migration does **not** enable WebGPU or TSL: existing `ShaderMaterial` scenes remain on `WebGLRenderer`. WebGL1-only and non-WebGL devices use the existing explicit analytical fallback. `js/bootstrap.mjs` awaits the ESM runtime, installs the documented small `window.THREE` compatibility surface, then transforms all JSX and evaluates it in document order before React mounts once.
+
+The exact npm package is pinned in both dependency manifests. `vendor/three/VERSION` records the upstream URL, retrieval timestamp, verified package SHA-512 integrity and SHA-256 digests of every copied file (including the MIT license). The vendored subset contains the four mapped builds and only the required transitive post-processing modules. To preserve the old display, the bridge disables automatic color conversion, keeps linear output plus the existing gamma pass, scales ambient/directional light intensity by pi, and retains byte render targets, additive alpha and the old bloom weighting/composition. These are migration compatibility settings, not a new rendering pipeline; see [render architecture](docs/render-architecture.md).
 
 ---
 
@@ -1220,7 +1228,8 @@ The validation currently enforces:
 - `manifest.webmanifest` is valid JSON and points to real icons;
 - PNG assets have the expected dimensions;
 - diagram SVG files are structurally complete;
-- every asset referenced by `index.html` and by the vendored CSS resolves to a real local file, and no third-party asset is loaded from an external host.
+- every asset referenced by `index.html` and by the vendored CSS resolves to a real local file, and no third-party asset is loaded from an external host;
+- the exact Three.js version, import-map entries, transitive ESM dependency closure, local file integrity and license agree with the pinned manifests; legacy global assets and external ESM imports are rejected.
 
 This is not a physics test suite.
 
@@ -2473,7 +2482,7 @@ No complete quantum-gravity theory is presented as experimentally confirmed.
 <br/><br/>
 
 <img alt="React" src="https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react&logoColor=white" />
-<img alt="Three.js" src="https://img.shields.io/badge/Three.js-r147-000000?style=flat-square&logo=threedotjs&logoColor=white" />
+<img alt="Three.js" src="https://img.shields.io/badge/Three.js-0.186.1_ESM-000000?style=flat-square&logo=threedotjs&logoColor=white" />
 <img alt="KaTeX" src="https://img.shields.io/badge/KaTeX-equations-46d4e0?style=flat-square" />
 <img alt="MIT" src="https://img.shields.io/badge/license-MIT-a78bff?style=flat-square" />
 
