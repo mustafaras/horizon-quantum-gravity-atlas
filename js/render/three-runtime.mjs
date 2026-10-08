@@ -16,9 +16,13 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass as CurrentUnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { GammaCorrectionShader } from "three/addons/shaders/GammaCorrectionShader.js";
+import { initializeRenderSession } from "./render-session.mjs";
+import { renderDiagnostics, describeRenderError } from "./error-overlay.mjs";
 
-// Keep the r147 display conventions until an explicitly approved pipeline change.
-ColorManagement.enabled = false;
+export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError });
+
+// Production scenes now use native linear-light color management and HDR output.
+ColorManagement.enabled = true;
 
 class WebGLRenderer extends CurrentWebGLRenderer {
   constructor(options) {
@@ -39,13 +43,13 @@ class WebGLRenderer extends CurrentWebGLRenderer {
 
 class AmbientLight extends CurrentAmbientLight {
   constructor(color, intensity = 1) {
-    super(color, intensity * Math.PI);
+    super(color, intensity);
   }
 }
 
 class DirectionalLight extends CurrentDirectionalLight {
   constructor(color, intensity = 1) {
-    super(color, intensity * Math.PI);
+    super(color, intensity);
   }
 }
 

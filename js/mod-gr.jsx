@@ -807,7 +807,7 @@ function CurvatureEngine3D() {
         const sc = 0.45 + M * 0.07;
         star.scale.setScalar(sc);
         star.position.y = hAt(0.01, 0.01) + sc * 0.4;
-        const pulse = 1 + 0.05 * Math.sin(t * 2.0);
+        const pulse = 1 + 0.05 * Math.sin(t * 2.0) * ctx.motion();
         starGlow.position.copy(star.position); starGlow.scale.setScalar(sc * 4.4 * pulse);
         corona.position.copy(star.position); corona.scale.setScalar(sc * 7 * pulse);
         throat.position.set(0, hAt(0.01, 0.01) - 0.2, 0);

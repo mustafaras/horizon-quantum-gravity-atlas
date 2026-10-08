@@ -574,6 +574,7 @@ function BlackHoleLab3D() {
     const fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
     return {
       autoRotate: false,
+      renderCapabilities: { depth: false },
       update: (t, dt) => {
         const cam = ctx.camera;
         fwd.set(0, 0, 0).sub(cam.position).normalize();

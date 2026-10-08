@@ -12,7 +12,7 @@ export const DEFAULT_READINESS = ["fonts", "network-idle", "view-mounted", "anim
 export async function gotoReady(page, url, readiness = DEFAULT_READINESS, opts = {}) {
   const errors = [];
   const onConsole = (msg) => { if (msg.type() === "error") errors.push(msg.text()); };
-  const onPageError = (err) => errors.push(String(err));
+  const onPageError = (err) => errors.push(err.stack || String(err));
   page.on("console", onConsole);
   page.on("pageerror", onPageError);
   try {

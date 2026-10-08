@@ -1194,7 +1194,7 @@ horizon-quantum-gravity-atlas/
 |---|---|---|
 | UI runtime | React 18 UMD | loaded directly in browser |
 | JSX transform | Babel Standalone | ordered by the ESM bootstrap, no bundler required |
-| 3D renderer | Three.js 0.186.1 (r186) | self-hosted native ESM; classic WebGL2 renderer for existing GLSL scenes |
+| 3D renderer | Three.js 0.186.1 (r186) | asynchronous WebGPU/node path for compatible materials; classic WebGL2 for legacy GLSL; explicit analytical fallback |
 | equations | KaTeX | formula rendering |
 | web fonts | Space Grotesk, Sora, IBM Plex Mono | self-hosted woff2 subsets |
 | third-party assets | `vendor/` | self-hosted, no runtime CDN dependency |
@@ -1202,9 +1202,15 @@ horizon-quantum-gravity-atlas/
 | persistence | `localStorage` | selected view and tweak settings |
 | deployment | static hosting | GitHub Pages compatible |
 
-The import map resolves `three`, `three/webgpu`, `three/tsl`, and `three/addons/` locally. This migration does **not** enable WebGPU or TSL: existing `ShaderMaterial` scenes remain on `WebGLRenderer`. WebGL1-only and non-WebGL devices use the existing explicit analytical fallback. `js/bootstrap.mjs` awaits the ESM runtime, installs the documented small `window.THREE` compatibility surface, then transforms all JSX and evaluates it in document order before React mounts once.
+The import map resolves `three`, `three/webgpu`, `three/tsl`, and `three/addons/` locally. Prompt 02 enables the node renderer only after auditing the actual scene materials. GR and black-hole `ShaderMaterial` scenes remain on classic `WebGLRenderer`, even when WebGPU exists. Compatible standard materials can use `WebGPURenderer`, including its genuine WebGL2 node fallback. WebGL1-only/non-WebGL devices receive an explicit analytical fallback. The factory awaits initialization and shader/pipeline prewarming before revealing a canvas; failed node initialization or compilation has a bounded classic-WebGL2 retry, never an infinite retry. `js/bootstrap.mjs` still transforms JSX in document order and mounts React once.
 
-The exact npm package is pinned in both dependency manifests. `vendor/three/VERSION` records the upstream URL, retrieval timestamp, verified package SHA-512 integrity and SHA-256 digests of every copied file (including the MIT license). The vendored subset contains the four mapped builds and only the required transitive post-processing modules. To preserve the old display, the bridge disables automatic color conversion, keeps linear output plus the existing gamma pass, scales ambient/directional light intensity by pi, and retains byte render targets, additive alpha and the old bloom weighting/composition. These are migration compatibility settings, not a new rendering pipeline; see [render architecture](docs/render-architecture.md).
+The exact npm package is pinned in both dependency manifests. `vendor/three/VERSION` records upstream identity, verified package SHA-512 integrity and SHA-256 digests of every copied file, including the unchanged MIT license. The subset contains the four mapped builds and the complete required addon dependency closure. Production rendering now uses linear-light color management, native light intensities, HDR post-processing, sRGB output, AgX tone mapping and disabled shadows unless an explicitly supported effect/source opts in. Neutral tone mapping is available for comparison; neither mode changes physics. The old alpha/bloom compatibility helpers remain isolated from the production factory; see [render architecture](docs/render-architecture.md).
+
+**Rendering settings** opens accessible controls for scientific/cinematic/minimal/capture presets, motion, detail, auto/WebGL2/static backend policy and AgX/Neutral comparison. The collapsed developer diagnostics drawer lists the *actual initialized* backend/path, measured FPS/DPR, ordered enabled/disabled/unsupported effects and actionable failures. Capture is an effect preset, not an image-export feature. System reduced motion overrides user motion, removes temporal AA, motion blur, animated grain and depth-of-field focus effects, and suppresses automatic camera travel. Scientific simulations can still be paused explicitly.
+
+The adaptive governor uses a 60-frame rolling window, separate slow/fast thresholds (26/14 ms), sustained 2/3-window hysteresis and at least 3 seconds between changes. Only implemented rendering budgets are changed, in DPR/temporal/SSGI/volumetric/particle order; equations, integration accuracy, deterministic seeds, URL values, labels and exported physics are never modified. r186 TRAA uses fixed 32-position jitter, so the temporal budget is an honest on/off gate rather than a fabricated configurable sample count. No source is supplied by current scenes for god rays; lens dirt is unavailable without a verified texture. Unsupported classic-WebGL2 effects are listed, not faked.
+
+The current black-hole raymarch uses a full-screen raster proxy without ray-hit depth. Its scene explicitly rejects depth-dependent AO/DOF/reprojection rather than treating the proxy as physical black-hole geometry. This changes rendering capability metadata only, not the raymarch equations or integration accuracy.
 
 ---
 

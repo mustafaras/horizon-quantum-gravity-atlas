@@ -24,9 +24,17 @@ const ATLAS_PALETTE = {
 };
 
 function AtlasStage({ view = "overview", motion = "balanced", detail = "medium", enabled = true, paused = false }) {
+  const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
   const [failed, setFailed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [phase, setPhase] = useState("initializing");
+  const diagnosticRef = useRef(null);
+  useEffect(() => () => {
+    if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
+  }, []);
+  useEffect(() => { setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
   const targetRef = useRef(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview);
   targetRef.current = ATLAS_PALETTE[view] || ATLAS_PALETTE.overview;
   const motionRef = useRef(motion); motionRef.current = motion;
@@ -35,29 +43,39 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const pausedRef = useRef(paused); pausedRef.current = paused;
 
   useEffect(() => {
-    if (!enabled) return;
-    if (!window.qgaWebGLAvailable || !qgaWebGLAvailable()) { setFailed(true); return; }
+    if (!enabled || failed) return;
     const mount = mountRef.current;
     if (!mount) return;
 
+    const abort = new AbortController();
+    let alive = true, stop = () => {}, renderer, session;
+    if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
+    const diagnosticId = QGA_RENDER.renderDiagnostics.allocate("Atlas backdrop");
+    diagnosticRef.current = diagnosticId;
+    const fail = (error) => {
+      if (!alive || error.name === "AbortError") return;
+      const message = QGA_RENDER.describeRenderError(error);
+      QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
+      QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
+      setErrorMessage(message);
+      setFailed(true);
+      stop();
+    };
+    const start = async () => {
     const detail0 = detailRef.current;
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: detail0 !== "low", alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
-    } catch (e) { setFailed(true); return; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, ATLAS_DPR[detail0] || 1.4));
-    renderer.domElement.style.cssText = "display:block;width:100%;height:100%;";
-    renderer.domElement.setAttribute("aria-hidden", "true");
-    mount.appendChild(renderer.domElement);
-
     const scene = new THREE.Scene();
+    let resourcesReleased = false;
+    stop = () => {
+      if (resourcesReleased) return;
+      resourcesReleased = true;
+      s3dDispose(scene);
+      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+    };
     scene.fog = new THREE.FogExp2(0x04060b, 0.018);
     const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
     camera.position.set(0, 2.5, 34);
 
-    // bloom composer for the backdrop (soft, wide glow)
-    let composer = (detail0 !== "low" && window.qgaMakeComposer) ? qgaMakeComposer(renderer, scene, camera, 100, 100, { strength: 0.66, radius: 0.62, threshold: 0.2 }) : null;
-    const renderFrame = () => { if (composer) composer.render(); else renderer.render(scene, camera); };
+    const renderFrame = (dt = 0, now = performance.now(), sample = false, frameMs = dt * 1000) => session.render(dt, now, sample, frameMs);
 
     const root = new THREE.Group();
     scene.add(root);
@@ -177,6 +195,20 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     }
     fabricAttr.needsUpdate = true;
 
+    camera.lookAt(0, 0, -10);
+    session = await QGA_RENDER.initializeRenderSession({
+      scene, camera, mount, settings: { ...settings, motion: prmRef.current ? "reduced" : motionRef.current },
+      view: "atlas-backdrop", signal: abort.signal, diagnosticId, onError: fail,
+      onPhase: (value) => { if (alive) setPhase(value); },
+    });
+    if (!alive) { await session.dispose(); return; }
+    if (session.backend === "static") {
+      fail(new Error(session.capabilities.diagnostics.join(" ")));
+      return;
+    }
+    renderer = session.renderer;
+    const releaseResources = stop;
+
     // ---------- interaction: pointer parallax ----------
     const mouse = { x: 0, y: 0, ex: 0, ey: 0 };
     const onMove = (e) => {
@@ -188,26 +220,27 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     // ---------- sizing ----------
     const resize = () => {
       const w = Math.max(2, mount.clientWidth), h = Math.max(2, mount.clientHeight);
-      renderer.setSize(w, h, false);
+      session.resize();
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      if (composer) composer.setSize(w, h);
     };
     resize();
     const ro = new ResizeObserver(resize); ro.observe(mount);
 
     // ---------- loop ----------
-    let raf, alive = true, last = performance.now(), clk = 0, hidden = false;
+    let raf, last = performance.now(), clk = 0, hidden = document.hidden;
     const onVis = () => { hidden = document.hidden; };
     document.addEventListener("visibilitychange", onVis);
     const motionVal = () => (prmRef.current ? 0 : (ATLAS_MOTION[motionRef.current] ?? 0.62));
 
     const tick = (now) => {
       if (!alive) return;
-      raf = requestAnimationFrame(tick);
-      const rawDt = Math.min(0.05, (now - last) / 1000);
+      if (!renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
+      try {
+      const frameMs = Math.max(0, now - last);
+      const rawDt = Math.min(0.05, frameMs / 1000);
       last = now;
-      if (pausedRef.current) return; // a fullscreen scene covers the backdrop
+      if (pausedRef.current || hidden) { session.suspend(); return; }
       const mo = motionVal();
       clk += rawDt * (mo > 0 ? 1 : 0);
 
@@ -247,8 +280,6 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       camera.lookAt(0, 0, -10);
 
       // when the tab is hidden, draw a single static frame (never black) and skip heavy work
-      if (hidden) { renderFrame(); return; }
-
       // twinkle a subset of stars
       if (mo > 0) {
         const cnt = Math.min(N, 700);
@@ -300,33 +331,45 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       fabricAttr.needsUpdate = true;
       fabricMat.opacity = 0.16 + 0.08 * warp;
 
-      renderFrame();
+      renderFrame(rawDt, now, mo > 0, frameMs);
+      }
+      catch (error) { fail(error); }
     };
-    // draw one frame synchronously now — rAF may be frozen while the tab is hidden,
-    // so this guarantees the backdrop is painted (never black) on first load.
-    camera.lookAt(0, 0, -10);
-    try { renderFrame(); } catch (e) {}
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      alive = false;
+    let released = false;
+    stop = () => {
+      if (released) return;
+      released = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("visibilitychange", onVis);
-      if (window.s3dDispose) s3dDispose(scene); else scene.traverse((o) => { o.geometry && o.geometry.dispose(); });
-      if (composer && composer.dispose) { try { composer.dispose(); } catch (e) {} }
-      renderer.dispose();
-      if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+      releaseResources();
     };
-  }, [enabled, failed, detail]); // palette/motion handled live via refs
+    try { renderFrame(); }
+    catch (error) { fail(error); return; }
+    if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
+    else raf = requestAnimationFrame(tick);
+    };
+    void start().catch((error) => { fail(error); stop(); });
+    return () => {
+      alive = false;
+      abort.abort();
+      stop();
+    };
+  }, [enabled, failed, detail, settings.motion, settings.vizMode, settings.renderBackend, settings.toneMapping]); // palette handled live
 
   if (!enabled) return null;
   if (failed) {
     // graceful 2D fallback — reuse the lightweight starfield
-    return <Starfield enabled={true} motionScale={ATLAS_MOTION[motion] ?? 0.62} hue={(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview)[0]}></Starfield>;
+    return <React.Fragment>
+      <Starfield enabled={true} motionScale={prm ? 0 : ATLAS_MOTION[motion] ?? 0.62} hue={(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview)[0]}></Starfield>
+      <div className="render-fallback-notice" role="status">Static backdrop: {errorMessage}</div>
+    </React.Fragment>;
   }
-  return <div className="atlas-stage" ref={mountRef} aria-hidden="true"></div>;
+  return <React.Fragment>
+    <div className="atlas-stage" ref={mountRef} aria-hidden="true"></div>
+    {phase !== "ready" ? <div className="render-fallback-notice" role="status">Initializing backdrop and compiling shaders…</div> : null}
+  </React.Fragment>;
 }
 
 Object.assign(window, { AtlasStage });

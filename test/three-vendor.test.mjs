@@ -33,6 +33,13 @@ test("vendor validation rejects mismatched versions, missing imports, CDN and le
     assert.ok(inspectThreeVendor(fixture).some((s) => s.includes("index.html loads an external")));
     fs.appendFileSync(path.join(fixture, "index.html"), '<script src="vendor/three/examples/js/postprocessing/EffectComposer.js"></script>');
     assert.ok(inspectThreeVendor(fixture).some((s) => s.includes("legacy")));
+    fs.writeFileSync(path.join(fixture, "vendor/three/unlisted-addon.js"), "export const unexpected = true;");
+    assert.ok(inspectThreeVendor(fixture).some((s) => s.includes("unlisted-addon.js") && s.includes("integrity metadata")));
+    const metadataPath = path.join(fixture, "vendor/three/VERSION");
+    const metadata = JSON.parse(fs.readFileSync(metadataPath));
+    metadata.files["../../outside"] = "invalid";
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+    assert.ok(inspectThreeVendor(fixture).some((s) => s.includes("Invalid vendored manifest entry")));
   } finally {
     fs.rmSync(fixture, { recursive: true, force: true });
   }
