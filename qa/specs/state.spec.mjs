@@ -2,7 +2,8 @@
 
 import { test, expect } from "playwright/test";
 import { readFile } from "node:fs/promises";
-import { gotoReady } from "./helpers.mjs";
+import { gotoReady, DEFAULT_READINESS } from "./helpers.mjs";
+import { runReadiness } from "../lib/readiness.mjs";
 
 const GR_URL = "/?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2";
 
@@ -13,6 +14,7 @@ test.describe("URL state", () => {
     expect(before.grPreset).toBe("null");
     expect(before.grBeta).toBe(-0.55);
     await page.reload({ waitUntil: "domcontentloaded" });
+    await runReadiness(page, DEFAULT_READINESS);
     const after = await page.evaluate(() => window.qgaReadState(window.location.search));
     expect(after).toEqual(before);
   });

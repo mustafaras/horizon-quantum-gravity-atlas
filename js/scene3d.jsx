@@ -9,7 +9,7 @@ function qgaWebGLAvailable() {
   let ok = false;
   try {
     const c = document.createElement("canvas");
-    ok = !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
+    ok = !!(window.WebGL2RenderingContext && c.getContext("webgl2"));
   } catch (e) { ok = false; }
   window.__qgaWebGL = ok && !!window.THREE;
   return window.__qgaWebGL;
@@ -32,7 +32,7 @@ function qgaMakeComposer(renderer, scene, camera, w, h, opts) {
       opts.threshold != null ? opts.threshold : 0.16);
     composer.addPass(bloom);
     if (T.GammaCorrectionShader && T.ShaderPass) {
-      composer.addPass(new T.ShaderPass(T.GammaCorrectionShader)); // linear → sRGB (fixes r147 darkening)
+      composer.addPass(new T.ShaderPass(T.GammaCorrectionShader)); // preserve the legacy linear → sRGB display pass
     }
     composer.setSize(w, h);
     return composer;

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { inspectThreeVendor } from "./lib/three-vendor.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -157,18 +158,13 @@ for (const file of [
   "vendor/react/react.development.js",
   "vendor/react/react-dom.development.js",
   "vendor/babel/babel.min.js",
-  "vendor/three/three.min.js",
-  "vendor/three/examples/js/shaders/CopyShader.js",
-  "vendor/three/examples/js/shaders/LuminosityHighPassShader.js",
-  "vendor/three/examples/js/shaders/GammaCorrectionShader.js",
-  "vendor/three/examples/js/postprocessing/EffectComposer.js",
-  "vendor/three/examples/js/postprocessing/RenderPass.js",
-  "vendor/three/examples/js/postprocessing/ShaderPass.js",
-  "vendor/three/examples/js/postprocessing/MaskPass.js",
-  "vendor/three/examples/js/postprocessing/UnrealBloomPass.js"
+  "js/bootstrap.mjs",
+  "js/render/three-runtime.mjs"
 ]) {
   requireFile(file);
 }
+
+failures.push(...inspectThreeVendor(root));
 
 for (const cssFile of ["vendor/fonts/fonts.css", "vendor/katex/katex.min.css"]) {
   if (!exists(cssFile)) continue;

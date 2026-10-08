@@ -35,6 +35,9 @@
   ],
   "license": "MIT",
   "private": false,
+  "dependencies": {
+    "three": "0.186.1"
+  },
   "devDependencies": {
     "playwright": "^1.58.0"
   }

@@ -48,7 +48,9 @@ GitHub Pages serves this atlas as static files. Open Graph and Twitter crawlers 
 
 | File | Ownership boundary |
 |---|---|
-| `index.html` | Static document shell, vendor script order, CSS, and Babel-loaded module entrypoints. Current runtime depends on self-hosted React UMD, Babel Standalone, Three.js r147 UMD, and Three example globals. |
+| `index.html` | Static document shell, local import map, React UMD and Babel Standalone dependencies, and inert JSX source entries evaluated by `js/bootstrap.mjs`. |
+| `js/bootstrap.mjs` | Awaits the ESM runtime, installs the compatibility object, fetches/transforms JSX, then evaluates in document order with `js/app.jsx` last. |
+| `js/render/three-runtime.mjs` | Imports pinned classic Three.js ESM and ESM post-processing; owns migration-only display compatibility. |
 | `js/app.jsx` | React application shell, top-level atlas controls, view routing, and JSON export triggers. |
 | `js/core.jsx` | Shared UI/runtime helpers including `usePRM`, `fitCanvas`, and `useSimLoop` for 2D analytical loops. |
 | `js/scene3d.jsx` | Shared interactive WebGL scene host, renderer creation, bloom composer wiring, picking, labels, fallback messaging, and disposal helpers. |
@@ -139,3 +141,48 @@ There is currently **no** canvas/image export path (`toBlob`, `toDataURL`, or eq
   - `listVisualizationProvenance()`
 
 These modules are pure ESM, frozen on return, and safe to test in Node without the browser runtime.
+
+## Prompt 01: pinned ESM migration
+
+Three.js 0.186.1 (r186) was verified against `https://registry.npmjs.org/three/latest` and `npm view three version dist.integrity dist.tarball` on 2026-10-08. The official npm tarball was acquired with `npm pack three@0.186.1`; its package identity and SHA-512 digest were checked before copying. `vendor/three/VERSION` contains that integrity, timestamp, upstream URL and SHA-256 file manifest. The upstream MIT license is included unchanged.
+
+The import map includes `three`, `three/webgpu`, `three/tsl` and `three/addons/`, but the app imports only the classic renderer and existing post-processing passes. WebGPU/TSL builds are self-hosted for the named import-map contract, not activated. Raw GLSL `ShaderMaterial` remains on WebGLRenderer. Since upstream has required WebGL2 since r163, the capability gate now requires WebGL2; a WebGL1-only device receives the same explicit 2D analytical fallback as an unsupported device.
+
+### Deterministic boot
+
+The JSX tags use `application/x-qga-jsx`, not `text/babel`, so Babel's DOMContentLoaded loader cannot execute them. `js/bootstrap.mjs` dynamically imports the runtime (with visible initialization failure handling), installs `window.THREE`, fetches the JSX sources, transforms them all using Babel's `react` and `env` presets, then evaluates them together in document order. A synchronous load/transform/evaluation error prevents the final app mount and displays an actionable alert. `js/app.jsx` still owns the sole `ReactDOM.createRoot` call. No bundler or server runtime is introduced; all paths remain relative for GitHub Pages subdirectory hosting and old URL parameters are unchanged.
+
+`DOMContentLoaded` alone is not an app-readiness signal while the module entry awaits imports/fetches. Browser reload tests wait for the existing measurable view-mounted readiness probes before reading JSX-owned state globals.
+
+### Compatibility global allowlist
+
+Only `window.THREE` is installed by the ESM bootstrap. It is a frozen object with these members, derived from current JSX usage and existing composer wiring:
+
+```text
+AdditiveBlending, AmbientLight, ArrowHelper, BoxGeometry, BufferAttribute,
+BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry,
+CylinderGeometry, DirectionalLight, DoubleSide, EffectComposer, FogExp2,
+GammaCorrectionShader, GridHelper, Group, IcosahedronGeometry, Line,
+LineBasicMaterial, LineDashedMaterial, LineSegments, MathUtils, Mesh,
+MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, PerspectiveCamera,
+PlaneGeometry, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster,
+RenderPass, REVISION, Scene, ShaderMaterial, ShaderPass, SphereGeometry,
+Sprite, SpriteMaterial, TorusGeometry, TorusKnotGeometry, UnrealBloomPass,
+Vector2, Vector3, WebGLRenderer
+```
+
+The other JSX-owned globals remain unchanged; the bootstrap does not copy all Three.js exports to `window`. Later approved prompts should remove this bridge as components become ESM.
+
+### Display and cleanup compatibility
+
+Upstream sources for the pinned package (`src/renderers/WebGLRenderer.js`, `src/math/ColorManagement.js`, `src/renderers/webgl/WebGLState.js`, `src/renderers/shaders/ShaderChunk/lights_pars_begin.glsl.js`, and the vendored post-processing modules) define the migrated APIs. The bridge deliberately retains r147's display conventions: `ColorManagement.enabled = false`, `LinearSRGBColorSpace` output, the existing GammaCorrectionShader pass, and ambient/directional intensities scaled by pi to compensate for removal of legacy lighting. Composer and bloom targets use `UnsignedByteType` rather than the current HDR default, preserving the old clipping/bloom range.
+
+Two upstream defaults caused measurable visual regressions and require narrowly pinned adapters. Non-premultiplied additive blending now accumulates alpha with `ONE, ONE`; the renderer's `state.setMaterial` adapter supplies `CustomBlending` with r147's `SRC_ALPHA, ONE` factors for both color and alpha, without modifying scene materials. Current bloom uses a different Gaussian kernel, RGB-derived alpha and luminance coefficients. The subclass overrides the pinned `_getSeparableBlurMaterial` / `_getCompositeMaterial` hooks to retain normalized r147 weights through the current bilinear sampler, the old alpha-based composition and `0.299, 0.587, 0.114` high-pass coefficients. The small preserved composition shader derives from the upstream MIT-licensed r147 example; vendored r186 sources remain byte-identical to the official package. These adapters are deliberately version-specific and must be reverified before any version upgrade. There is no tone-map, camera or scientific-equation redesign.
+
+The compatibility composer disposes each installed pass as well as its internal targets; upstream `EffectComposer.dispose()` alone does not dispose added passes. Existing scene and backdrop teardown still own their animation frames, observers, listeners, geometry/material disposal and canvas removal.
+
+### Migration gates
+
+`test/three-vendor.test.mjs` and `scripts/lib/three-vendor.mjs` check exact manifest versions, local import-map roots, transitive imports, integrity and absence of legacy assets. `qa/specs/esm-runtime.spec.mjs` checks overview/GR/BH rendering, single mounting, shader/console errors, failed/external requests, old deep links, reload/history, animation cleanup, WebGL1-only/non-WebGL fallback, delayed-module boot ordering, import-map entrypoints and visible bootstrap failure. A pixel-level alpha assertion and normalized bloom/pass-disposal checks protect the compatibility settings. Run `npm test`, `npm run validate`, and `npm run qa:test -- qa/specs/esm-runtime.spec.mjs`; compare seeded reduced-motion overview/GR/BH captures with the pre-migration images without updating committed baselines.
+
+Pre/post visual comparisons on Chromium used seed 42, reduced motion, fixed animation time, a 1600x1000 viewport and separate application/vendor random streams (UUID allocation counts change between releases). The overview viewport and GR/BH renderer regions retained identical geometry/layout; mean absolute RGB channel differences were respectively 0.02625, 0.05634 and 0.16821 on a 0-255 scale. Pixels differing by more than 16 in any channel were 0/1,600,000, 3/480,000 and 0/460,000. The remaining differences are minor rasterization/rounding, not an approved redesign. Ordinary seeded captures can still reposition decorative stars because the legacy app shares `Math.random` with renderer UUID generation; scientific seeded state/equations are unchanged. Committed screenshot baselines were not refreshed.
