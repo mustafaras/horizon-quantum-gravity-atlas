@@ -23,7 +23,10 @@ jobs:
         with:
           node-version: 24
 
-      - name: Run focused physics tests
+      - name: Install pinned test dependencies
+        run: npm ci
+
+      - name: Run physics and renderer contract tests
         run: npm test
 
       - name: Run repository validation
