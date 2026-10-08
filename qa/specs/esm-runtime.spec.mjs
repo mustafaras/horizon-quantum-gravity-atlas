@@ -24,13 +24,16 @@ for (const view of ["overview", "gr", "bh"]) {
     await installDeterministicRandom(context, 42);
     const observed = observe(page);
     await gotoReady(page, `/?view=${view}&seed=42`);
-    await expect(page.locator("#root")).toHaveCount(1);
-    await expect(page.locator("#root > .shell")).toHaveCount(1);
-    expect(await page.evaluate(() => THREE.REVISION)).toBe("186");
     await expect(page.locator("canvas.s3d-canvas, .atlas-stage canvas").first()).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
-    expect(await page.evaluate(() => [...document.querySelectorAll("canvas.s3d-canvas, .atlas-stage canvas")]
-      .every((canvas) => !!canvas.getContext("webgl2")))).toBe(true);
+    const runtime = await page.evaluate(() => ({
+      roots: document.querySelectorAll("#root").length,
+      shells: document.querySelectorAll("#root > .shell").length,
+      revision: THREE.REVISION,
+      motion: document.documentElement.dataset.motion,
+      webgl2: [...document.querySelectorAll("canvas.s3d-canvas, .atlas-stage canvas")]
+        .every((canvas) => !!canvas.getContext("webgl2")),
+    }));
+    expect(runtime).toEqual({ roots: 1, shells: 1, revision: "186", motion: "reduced", webgl2: true });
     expect(observed).toEqual({ errors: [], failed: [] });
   });
 }
