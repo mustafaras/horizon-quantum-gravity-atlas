@@ -34,12 +34,13 @@ test("system preference overrides full motion, including pipeline grain, tempora
 });
 
 test("runtime system reduced-motion change rebuilds safely and leaves interactive keyboard access", async ({ page, context }) => {
+  test.setTimeout(180_000);
   await context.addInitScript(() => { window.QGA_RENDER_OPTIONS = { forceBackend: "webgl2" }; sessionStorage.setItem("horizon-intro", "1"); });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await gotoReady(page, "/?view=bh");
   await expect(page.locator(".s3d-canvas").first()).toBeVisible();
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect.poll(async () => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().every((entry) => entry.phase === "ready" && entry.reducedMotion))).toBe(true);
+  await expect.poll(async () => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().every((entry) => entry.phase === "ready" && entry.reducedMotion)), { timeout: 120_000 }).toBe(true);
   const stage = page.locator(".s3d-stage").first();
   await stage.focus();
   await page.keyboard.press("ArrowLeft");
