@@ -6,6 +6,13 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      full:
+        description: Run the full browser QA suite
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 3 * * 1"
 
 permissions:
   contents: read
@@ -69,7 +76,13 @@ jobs:
             qa/test-results/**/sm-native-webgpu-software.png
           retention-days: 7
 
-      - name: Run remaining browser QA suite
+      # PRs and pushes gate on the critical subset; the full suite runs weekly or on demand.
+      - name: Run critical browser QA
+        if: github.event_name == 'push' || github.event_name == 'pull_request' || !inputs.full
+        run: npm run qa:critical
+
+      - name: Run full browser QA suite
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full)
         run: npm run qa:test -- --grep-invert "real WebGPU API on a software adapter"
 
       - name: Upload failure artifacts

@@ -19,6 +19,7 @@
     "qa:capture": "node qa/capture.mjs",
     "qa:update": "node qa/capture.mjs --update",
     "qa:test": "playwright test --config qa/playwright.config.mjs",
+    "qa:critical": "playwright test --config qa/playwright.config.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs qa/specs/render-contracts.spec.mjs",
     "qa:test:live": "QGA_QA_LIVE=1 playwright test --config qa/playwright.config.mjs qa/specs/live.spec.mjs"
   },
   "keywords": [
