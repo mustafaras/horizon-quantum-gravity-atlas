@@ -6,6 +6,25 @@ import { prewarmShaders, abortIfNeeded, materialSignature } from "./shader-prewa
 import { renderDiagnostics } from "./error-overlay.mjs";
 import { detectSoftwareRenderer } from "./software-renderer.mjs";
 
+/**
+ * Combine the caller's cancellation signal with the session's own teardown
+ * signal. AbortSignal.any is not available everywhere the WebGL2 path runs, so
+ * fall back to a manual bridge that keeps the same semantics.
+ */
+function combineSignals(...signals) {
+  const active = signals.filter(Boolean);
+  if (active.length === 0) return undefined;
+  if (active.length === 1) return active[0];
+  if (typeof AbortSignal.any === "function") return AbortSignal.any(active);
+  const controller = new AbortController();
+  const abort = (event) => controller.abort(event.target.reason);
+  for (const signal of active) {
+    if (signal.aborted) { controller.abort(signal.reason); break; }
+    signal.addEventListener("abort", abort, { once: true });
+  }
+  return controller.signal;
+}
+
 export async function initializeRenderSession({
   scene, camera, mount, settings, view, signal, diagnosticId, onError, onReady, onPhase,
   source = null, applyQuality = null, depthValid = true,
@@ -20,6 +39,11 @@ export async function initializeRenderSession({
   // Its only effective budget change is switching reprojection off at one.
   quality.temporalSamples = Math.min(2, quality.temporalSamples);
   const messages = (message) => renderDiagnostics.message(diagnosticId, message);
+  // Teardown must be able to cancel work that is already in flight. dispose()
+  // aborts this synchronously, so an in-flight quality change can no longer
+  // reach prewarm()/draw() after the host has started releasing the scene.
+  const lifecycle = new AbortController();
+  const sessionSignal = combineSignals(signal, lifecycle.signal);
   let handle, pipeline, retiringPipeline, disposal, pendingChange, disposed = false, changing = false, fpsTime = -Infinity, warmedSignature;
   const ranges = new Map();
   scene.traverse((object) => {
@@ -59,9 +83,9 @@ export async function initializeRenderSession({
     applyBudgets(value);
     await prewarmShaders({
       renderer: handle.renderer, backend: handle.backend, scene, camera, view,
-      quality: value, pipeline, signal,
+      quality: value, pipeline, signal: sessionSignal,
     });
-    abortIfNeeded(signal);
+    abortIfNeeded(sessionSignal);
     warmedSignature = materialSignature(scene);
   }
   async function buildPipeline(value) {
@@ -74,6 +98,7 @@ export async function initializeRenderSession({
   function dispose() {
     if (disposal) return disposal;
     disposed = true;
+    lifecycle.abort();
     disposal = (async () => {
       try { await pendingChange; }
       finally {
@@ -89,7 +114,7 @@ export async function initializeRenderSession({
   try {
     if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
     handle = await createRenderer({
-      quality, scene, camera, signal, reducedMotion, antialias: !softwareRenderer && settings.detail3d !== "low",
+      quality, scene, camera, signal: sessionSignal, reducedMotion, antialias: !softwareRenderer && settings.detail3d !== "low",
       forceBackend: options.forceBackend ?? (settings.renderBackend === "auto" ? null : settings.renderBackend),
       toneMapping: settings.toneMapping || "agx", onDiagnostic: messages, onDeviceLost: onError,
       shadows: !!source?.castShadow,
@@ -107,12 +132,12 @@ export async function initializeRenderSession({
       await pipeline?.dispose();
       pipeline = null;
       await handle.dispose();
-      handle = await createRenderer({ quality, scene, camera, signal, reducedMotion, forceBackend: "webgl2", toneMapping: settings.toneMapping || "agx", shadows: !!source?.castShadow, onDiagnostic: messages });
+      handle = await createRenderer({ quality, scene, camera, signal: sessionSignal, reducedMotion, forceBackend: "webgl2", toneMapping: settings.toneMapping || "agx", shadows: !!source?.castShadow, onDiagnostic: messages });
       if (handle.backend === "static") { publish("static"); return { backend: "static", capabilities: handle.capabilities, dispose }; }
       pipeline = await buildPipeline(quality);
       await warm(quality);
     }
-    abortIfNeeded(signal);
+    abortIfNeeded(sessionSignal);
     const renderer = handle.renderer;
     renderer.domElement.style.cssText = "display:block;width:100%;height:100%";
     renderer.domElement.setAttribute("aria-hidden", "true");

@@ -54,6 +54,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     diagnosticRef.current = diagnosticId;
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
+      alive = false;
       const message = QGA_RENDER.describeRenderError(error);
       QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
       QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
@@ -68,8 +69,17 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     stop = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
-      s3dDispose(scene);
-      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+      // The session owns the renderer that draws this scene, and its dispose()
+      // drains an in-flight quality change that can still submit a frame. Stop
+      // the session first so no submit can reference geometry buffers that
+      // s3dDispose() is about to destroy.
+      if (session) {
+        void session.dispose()
+          .catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message))
+          .finally(() => s3dDispose(scene));
+      } else {
+        s3dDispose(scene);
+      }
     };
     scene.fog = new THREE.FogExp2(0x04060b, 0.018);
     const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
@@ -339,7 +349,14 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     stop = () => {
       if (released) return;
       released = true;
+      alive = false;
       cancelAnimationFrame(raf);
+      // cancelAnimationFrame is a no-op for the WebGPU path: its loop is driven
+      // by renderer.setAnimationLoop, which must be cleared explicitly or tick()
+      // keeps running against a disposed session. getAnimationLoop() is checked
+      // first because setAnimationLoop() awaits init() when the renderer was
+      // never started, which would begin a loop during teardown.
+      if (renderer?.isWebGPURenderer && renderer.getAnimationLoop()) void renderer.setAnimationLoop(null).catch(() => {});
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("visibilitychange", onVis);

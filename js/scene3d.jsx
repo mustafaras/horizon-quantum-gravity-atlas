@@ -160,6 +160,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     setPhase("initializing");
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
+      alive = false;
       const message = QGA_RENDER.describeRenderError(error);
       QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
       QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
@@ -202,9 +203,17 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         try { built.dispose(); }
         catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
       }
-      s3dDispose(scene);
       labelLayer.remove();
-      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+      // Dispose the session before the scene: session.dispose() drains an
+      // in-flight quality change that can still submit a frame, and that frame
+      // must not reference geometry buffers s3dDispose() has already destroyed.
+      if (session) {
+        void session.dispose()
+          .catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message))
+          .finally(() => s3dDispose(scene));
+      } else {
+        s3dDispose(scene);
+      }
     };
     const labels = [];
     const makeLabel = (annotationOnly) => (text, posFn, cls) => {
@@ -478,7 +487,15 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     stop = () => {
       if (released) return;
       released = true;
+      alive = false;
       cancelAnimationFrame(raf);
+      // cancelAnimationFrame does not stop the WebGPU path: its loop is driven
+      // by renderer.setAnimationLoop and must be cleared explicitly, otherwise
+      // tick() keeps running against a disposed session and scene.
+      // getAnimationLoop() is checked first because setAnimationLoop() awaits
+      // init() when the renderer was never started, which would begin a loop
+      // during teardown.
+      if (renderer?.isWebGPURenderer && renderer.getAnimationLoop()) void renderer.setAnimationLoop(null).catch(() => {});
       ro.disconnect(); io.disconnect();
       el.removeEventListener("pointerdown", onPointerDown);
       el.removeEventListener("pointermove", onPointerMove);

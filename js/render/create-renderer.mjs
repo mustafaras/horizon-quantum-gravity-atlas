@@ -14,6 +14,17 @@ let sharedGPU = null;
 const TEARDOWN_BUDGET_MS = 10_000;
 
 /**
+ * Uncaptured WebGPU errors that do not mean the device is gone. A validation
+ * error is reported for one submitted command buffer; the device stays usable
+ * and the next frame can succeed. Escalating it to onDeviceLost would replace
+ * the backdrop with the static fallback permanently, and because a single
+ * GPUDevice is shared by every renderer, one renderer's transient error would
+ * take down all of them. Real device loss arrives through device.lost and
+ * renderer.onDeviceLost, which stay fatal.
+ */
+const RECOVERABLE_GPU_ERRORS = new Set(["GPUValidationError", "GPUInternalError"]);
+
+/**
  * Chromium resolves popErrorScope() asynchronously and r186 pops scopes on
  * pipeline creation without awaiting those promises. Destroying a GPUDevice
  * with unresolved scopes makes Chromium log "Instance dropped in popErrorScope"
@@ -44,7 +55,7 @@ function initializeGPU(operation) {
   return result;
 }
 
-async function acquireGPUDevice({ signal, powerPreference, onError }) {
+async function acquireGPUDevice({ signal, powerPreference, onError, onDiagnostic }) {
   if (!sharedGPU) {
     const request = powerPreference ? navigator.gpu.requestAdapter({ powerPreference }) : navigator.gpu.requestAdapter();
     const adapter = await awaitInitialization(request, { signal, label: "WebGPU adapter request" });
@@ -58,14 +69,20 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
     void device.lost.then(() => { if (sharedGPU === record) sharedGPU = null; });
   }
   const record = sharedGPU;
-  const lease = { onError };
+  const lease = { onError, onDiagnostic };
   record.leases.add(lease);
   let released = false;
   return {
     device: record.device,
     routeErrors() {
       record.device.onuncapturederror = (event) => {
-        for (const listener of record.leases) listener.onError(new Error(`GPU ${event.error.constructor.name}: ${event.error.message}`));
+        const error = event.error;
+        const message = `GPU ${error.constructor.name}: ${error.message}`;
+        if (RECOVERABLE_GPU_ERRORS.has(error.constructor.name)) {
+          for (const listener of record.leases) listener.onDiagnostic?.(message);
+          return;
+        }
+        for (const listener of record.leases) listener.onError(new Error(message));
       };
     },
     async release() {
@@ -141,7 +158,7 @@ export async function createRenderer({
           try { await awaitInitialization(readiness, { signal, label: "Document readiness for WebGPU" }); }
           finally { window.removeEventListener("load", loaded); }
         }
-        deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost });
+        deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost, onDiagnostic: report });
         renderer = new WebGPURenderer({ canvas, alpha, antialias, powerPreference, device: deviceLease.device });
         renderer.onDeviceLost = (info) => onDeviceLost(new Error(`GPU device lost: ${info.message || info.reason}`));
         renderer.onError = (info) => onDeviceLost(new Error(`GPU ${info.type}: ${info.message}`));
