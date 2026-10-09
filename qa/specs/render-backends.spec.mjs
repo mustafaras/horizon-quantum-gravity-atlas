@@ -36,7 +36,7 @@ async function ready(page, timeout = 60_000) {
   }, { timeout }).toEqual([]);
 }
 async function force(context, backend) {
-  await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { forceBackend: value }; sessionStorage.setItem("horizon-intro", "1"); }, backend);
+  await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { forceBackend: value, softwareClamp: false }; sessionStorage.setItem("horizon-intro", "1"); }, backend);
 }
 
 for (const view of ["overview", "gr", "bh"]) {
@@ -250,6 +250,8 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-webgpu"] });
     const context = await browser.newContext({ baseURL: process.env.QA_BASE_URL, viewport: { width: 1200, height: 800 } });
     await context.addInitScript(() => {
+      // Preset contracts are exercised deliberately on this software adapter.
+      window.QGA_RENDER_OPTIONS = { softwareClamp: false };
       window.__qaDeviceDestroyCount = 0;
       window.__qaUnexpectedDeviceLosses = [];
       if (typeof GPUAdapter !== "undefined") {

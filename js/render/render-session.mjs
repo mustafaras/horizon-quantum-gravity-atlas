@@ -4,20 +4,22 @@ import { normalizeRenderQuality } from "./capabilities.mjs";
 import { createQualityGovernor } from "./quality-governor.mjs";
 import { prewarmShaders, abortIfNeeded, materialSignature } from "./shader-prewarm.mjs";
 import { renderDiagnostics } from "./error-overlay.mjs";
+import { detectSoftwareRenderer } from "./software-renderer.mjs";
 
 export async function initializeRenderSession({
   scene, camera, mount, settings, view, signal, diagnosticId, onError, onReady, onPhase,
   source = null, applyQuality = null, depthValid = true,
 }) {
   const reducedMotion = settings.motion === "reduced";
+  const options = globalThis.QGA_RENDER_OPTIONS || {};
+  const softwareRenderer = options.softwareClamp === false ? null : detectSoftwareRenderer();
   const quality = { ...normalizeRenderQuality({
-    preset: settings.detail3d, devicePixelRatio: globalThis.devicePixelRatio || 1, reducedMotion,
-  }), ssgi: settings.vizMode === "capture" && !reducedMotion };
+    preset: softwareRenderer ? "low" : settings.detail3d, devicePixelRatio: globalThis.devicePixelRatio || 1, reducedMotion,
+  }), ssgi: !softwareRenderer && settings.vizMode === "capture" && !reducedMotion };
   // r186 TRAA has a fixed jitter sequence, not a configurable sample count.
   // Its only effective budget change is switching reprojection off at one.
   quality.temporalSamples = Math.min(2, quality.temporalSamples);
   const messages = (message) => renderDiagnostics.message(diagnosticId, message);
-  const options = globalThis.QGA_RENDER_OPTIONS || {};
   let handle, pipeline, retiringPipeline, disposal, pendingChange, disposed = false, changing = false, fpsTime = -Infinity, warmedSignature;
   const ranges = new Map();
   scene.traverse((object) => {
@@ -85,8 +87,9 @@ export async function initializeRenderSession({
     return disposal;
   }
   try {
+    if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
     handle = await createRenderer({
-      quality, scene, camera, signal, reducedMotion, antialias: settings.detail3d !== "low",
+      quality, scene, camera, signal, reducedMotion, antialias: !softwareRenderer && settings.detail3d !== "low",
       forceBackend: options.forceBackend ?? (settings.renderBackend === "auto" ? null : settings.renderBackend),
       toneMapping: settings.toneMapping || "agx", onDiagnostic: messages, onDeviceLost: onError,
       shadows: !!source?.castShadow,
