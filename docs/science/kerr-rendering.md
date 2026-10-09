@@ -112,6 +112,14 @@ equality, on the extremal boundary. No branch produces `NaN`; the
 $\arccos$ argument is clamped by construction because $|a_*| \le 1$ is validated
 on entry.
 
+![Characteristic radii of a Kerr black hole as a function of spin](figures/01-characteristic-radii.png)
+
+*Every curve is a direct call into `kerrHorizonRadii`, `kerrIsco`,
+`kerrPhotonSphere`, and `kerrErgosphereRadius` over $a_* \in [0, 1]$ — no
+interpolation, no fitted constants. The prograde ISCO collapses to the horizon
+at extremality while the retrograde ISCO rises to $9\,r_g$; the two photon
+spheres bracket the horizon and meet it at $a_* = 1$.*
+
 ### Conserved quantities (exact)
 
 For a null geodesic with 4-momentum $p^\mu$, the three conserved quantities are
@@ -206,6 +214,17 @@ error, not integration error. The crossing radius is now converged to eight
 significant digits across tolerances. Refinement costs at most 24 extra RK steps
 per event, and there is at most one event per ray.
 
+![Fan of equatorial null geodesics around a Kerr black hole](figures/05-kerr-ray-fan.png)
+
+*Twenty-seven equatorial null geodesics at $a_* = 0.9$, launched from
+$r = 20\,r_g$ with impact parameters spanning $-8$ to $+8\,r_g$ and integrated by
+`integrateAdaptive` with the radial termination predicates. The asymmetry is the
+frame dragging: rays with negative impact parameter (co-rotating) are captured
+over a much wider band than the counter-rotating ones, and the captured rays
+spiral in to the horizon while the escaped rays are deflected and leave the
+frame. The dashed circle is the prograde photon sphere at
+$r = 1.5579\,r_g$.*
+
 ### Drift bounds (measured)
 
 | Ray | steps | $\Delta E$ | $\Delta L_z$ | $\Delta Q$ | $\Delta H$ |
@@ -279,6 +298,11 @@ Verified identities:
 
 ### Page–Thorne flux (exact formula, numerical quadrature)
 
+Two flux functions are provided. They are **not** the same function, and the
+difference is the subject of this section.
+
+#### The published integral form
+
 `pageThorneFluxGeometric` implements Page & Thorne (1974) equation 11:
 
 $$F(r) = \frac{\dot M}{4\pi r} \cdot \frac{-\mathrm{d}\Omega/\mathrm{d}r}{(E - \Omega L)^2} \int_{r_{\text{in}}}^{r} (E - \Omega L)\frac{\mathrm{d}L}{\mathrm{d}r}\,\mathrm{d}r$$
@@ -293,35 +317,115 @@ optically thick disk in the equatorial plane, steady accretion, zero torque at
 the inner edge, and local blackbody emission. It does not include disk thickness,
 radiative transfer, returning radiation, or magnetic stresses.
 
-#### The ~2% luminosity residual (documented, not hidden)
+#### The energy-conserving closed form (exact)
 
-Integrating the flux over both disk faces should recover the accreted binding
-energy, $L = 1 - E_{\text{ISCO}}$. Measured for $a_* = 0$:
+`pageThorneFluxClosedFormGeometric` implements the closed form
 
-| Quantity | Value |
-| --- | --- |
-| $2\int 2\pi r F_{\text{PT}}\,\mathrm{d}r$ (Simpson, converged to $10^{-9}$) | 0.0582797155 |
-| $1 - E_{\text{ISCO}}$ | 0.05719096 |
-| ratio | **1.019** |
+$$F(r) = \frac{\dot M\,(-\mathrm{d}\Omega/\mathrm{d}r)\,\bigl(L(r) - L(r_{\text{in}})\bigr)}{4\pi r}$$
 
-The differential form of the same equation gives 0.0611679710 (ratio 1.070),
-which is worse, so the integral form is the one implemented. The residual is
-**intrinsic to the published formula**, not a coding error:
+which is the same physics with the radial integral already performed. It is
+**exact** in the sense that it integrates to the accreted binding energy with no
+residual.
 
-- The formula's Newtonian limit is not the standard Newtonian flux. It is
-  $F_N \cdot (1 - 3/(2r))^{-2} \cdot (1 - 3/(2\sqrt{r\,r_i}))$, verified exactly at
-  $r = 10$ ($1.38408 \times 0.80635 = 1.11606$, matching the numerical ratio).
-- Integrating that Newtonian limit gives 0.0847859137 against the exact
-  $1/12 = 0.0833333333$ — 1.7% high, the same order as the relativistic residual.
-- The standard Newtonian flux $3/(8\pi r^3)(1 - \sqrt{r_i/r})$ integrates to
-  0.0833258591, agreeing with $1/12$ to 0.009%. So the quadrature and the
-  integration measure are correct; the discrepancy is in the formula's
-  $O(r^{-1/2})$ corrections.
+**Derivation.** Angular-momentum balance for the annulus $[r, r+\mathrm{d}r]$
+gives $\mathcal{W}' = \dot M L'$, so the outward torque is
+$\mathcal{W} = \dot M\,(L - L_i) > 0$. Energy balance for the same annulus gives
 
-The test suite therefore asserts the luminosity identity with a **2% tolerance**
-and separately asserts that $F_{\text{PT}}/F_N \to 1$ monotonically as
-$r \to \infty$ (ratio 0.954 at $r = 1000$, 0.979 at $r = 5000$; error
-$\approx 9.4/r$).
+$$\dot M E' - (\Omega \mathcal{W})' = 4\pi r F .$$
+
+The work term enters with a **minus**: the annulus loses angular momentum to the
+outside (which does negative work on it) and gains it from the inside.
+Substituting the exact circular-orbit first law $E' = \Omega L'$ and
+$\mathcal{W}' = \dot M L'$:
+
+$$4\pi r F = \dot M \Omega L' - \Omega' \dot M (L - L_i) - \Omega \dot M L' = -\dot M \Omega' (L - L_i).$$
+
+Equivalently, the dissipation rate per unit area is
+$D = \mathcal{W}(-\Omega')/(4\pi r)$ — torque times shear rate, the classic
+Shakura–Sunyaev / Lynden-Bell–Pringle result.
+
+**The plus-sign variant is disproven.** $\dot M E' + (\Omega\mathcal{W})' = 4\pi rF$
+gives $4\pi rF = \dot M r^{-2}\bigl[\tfrac32\sqrt{r_i/r} - \tfrac12\bigr]$, which is
+**negative** for large $r$.
+
+**Newtonian cross-check.** $4\pi rF = \dot M E' - (\Omega\mathcal{W})' = \tfrac{3\dot M}{2r^2}\bigl(1 - \sqrt{r_i/r}\bigr)$,
+so $F = \tfrac{3\dot M}{8\pi r^3}\bigl(1 - \sqrt{r_i/r}\bigr)$ — the standard
+Shakura–Sunyaev flux, integrating to $\dot M/(2r_i) = \dot M/12$ for $r_i = 6$.
+
+**Exact-integration proof.** Integrating by parts with $u = L - L_i$,
+$\mathrm{d}v = -\Omega'\,\mathrm{d}r$ (so $v = -\Omega$):
+
+$$\int_{r_i}^{\infty} 4\pi rF\,\mathrm{d}r = \dot M \int_{r_i}^{\infty} \Omega L'\,\mathrm{d}r = \dot M \int_{L_i}^{L_\infty} \Omega\,\mathrm{d}L = \dot M \int_{E_i}^{E_\infty} \mathrm{d}E = \dot M\,(1 - E_i),$$
+
+using $\mathrm{d}E = \Omega\,\mathrm{d}L$, $\Omega \to 0$ at infinity, and
+$L = L_i$ at $r_i$.
+
+**Reduction to the textbook Schwarzschild closed form.** For $a_* = 0$ the
+expression above becomes
+
+$$F(r) = \frac{3}{8\pi r^3}\left[\left(1 - \frac{3}{r}\right)^{-1/2} - \sqrt{\frac{r_i}{r}}\left(1 - \frac{3}{r_i}\right)^{-1/2}\right],$$
+
+which for $r_i = 6$ is $\tfrac{3}{8\pi r^3}\bigl[(1-3/r)^{-1/2} - \sqrt{12/r}\bigr]$.
+The module reproduces this to $10^{-16}$ relative at $r = 7, 10, 20, 100, 1000$.
+
+#### Why the two forms differ (the ~2% residual, resolved)
+
+The identity that would make the integral form equal the closed form,
+
+$$\int_{r_i}^{r} (E - \Omega L) L'\,\mathrm{d}r \stackrel{?}{=} (E - \Omega L)^2 (L - L_i),$$
+
+**does not hold.** Measured ratio of the two sides: 1.295 at $r = 7$, 1.222 at
+$r = 8$, 1.139 at $r = 10$, 1.021 at $r = 20$, 0.975 at $r = 100$ — converging to 1
+only as $r \to \infty$. Analytically,
+$\frac{\mathrm{d}}{\mathrm{d}r}\bigl[(E-\Omega L)^2(L-L_i)\bigr] = (E-\Omega L)\bigl[-2\Omega' L (L-L_i) + (E-\Omega L)L'\bigr]$
+while the integrand is $(E-\Omega L)L'$; the two differ unless
+$\Omega' L (L - L_i) = 0$.
+
+So the published integral form carries an intrinsic $O(r^{-1/2})$ error, and the
+closed form does not. Measured luminosity for $a_* = 0$, $r_{\text{in}} = 6$,
+$r_{\text{out}} = 10^6$:
+
+| Quantity | Value | Ratio to $1 - E_{\text{ISCO}}$ |
+| --- | --- | --- |
+| $1 - E_{\text{ISCO}}$ (exact) | 0.057190958417936755 | 1 |
+| `diskLuminosityGeometric({ form: "closed-form" })` | 0.05718946188091324 | **0.999974** |
+| `diskLuminosityGeometric({ form: "integral" })` | 0.05828566139984335 | 1.019141 |
+
+The closed form's 2.6e-5 shortfall is **exactly the truncated tail**:
+$\int_{10^6}^{\infty} \tfrac{3}{2r^2}\,\mathrm{d}r = \tfrac{3}{2 \cdot 10^6} = 1.5\times10^{-6}$,
+and $1.5\times10^{-6} / 0.0572 = 2.6\times10^{-5}$. With the outer limit pushed to
+$10^5$ the shortfall is $1.5\times10^{-5}$, again matching to the digit.
+
+Candidate closed forms were tested against the exact target with the
+coordinate-area luminosity integral:
+
+| Candidate | Value | Ratio |
+| --- | --- | --- |
+| $-\Omega'(L-L_i)/(4\pi r)$ | 0.057176067850 | **0.999740** |
+| $-\Omega'(L-L_i)/(4\pi r E)$ | 0.058238973459 | 1.018325 |
+| $-\Omega'(L-L_i)/(4\pi r (E-\Omega L))$ | 0.061160536203 | 1.069409 |
+| $-\Omega'(L-L_i)/(4\pi r (E-\Omega L)^2)$ | 0.065665059916 | 1.148172 |
+| published integral form | 0.058272124299 | 1.018904 |
+| $-\Omega'(L-L_i)/(4\pi r\,u^t)$ | 0.053635568694 | 0.937833 |
+
+The first row is the implemented closed form. (The proper-area element
+$\sqrt{g_{rr}g_{\varphi\varphi}} = \sqrt{A/\Delta}$ makes every candidate *worse* —
+the closed form's ratio becomes 1.043 — so the coordinate-area measure is the
+right one.)
+
+**Both functions are kept.** `pageThorneFluxGeometric` is retained verbatim so
+the module can be checked against published values; `pageThorneFluxClosedFormGeometric`
+is the physically exact alternative and is the default for
+`diskLuminosityGeometric`. The test suite asserts the closed form's luminosity
+identity to $10^{-5}$ relative and the integral form's to 2%.
+
+The Newtonian-limit convergence test still applies to the integral form:
+$F_{\text{PT}}/F_N \to 1$ monotonically as $r \to \infty$ (ratio 0.954 at
+$r = 1000$, 0.979 at $r = 5000$; error $\approx 9.4/r$). The closed form converges
+faster: 0.886 at $r = 100$, 0.967 at $r = 1000$, 0.990 at $r = 10^4$, 0.997 at
+$r = 10^5$.
+
+![Page–Thorne flux: Newtonian, published integral form, and exact closed form](figures/02-page-thorne-flux.png)
 
 ### Disk temperature (exact given the flux)
 
@@ -391,6 +495,15 @@ CSV.
 trapezoid rule (endpoints weighted 0.5) and returns **unnormalised** XYZ.
 `cieXyzBarTabulated(index)` exposes the raw table.
 
+![CIE 1931 spectral locus and the Planckian locus](figures/03-blackbody-locus.png)
+
+*The spectral locus is the chromaticity of the committed colour-matching table,
+read monochromatically through `cieXyzBarInterpolated` — the locus is by
+definition the chromaticity of a single wavelength, so no integration is
+involved. The Planckian locus is the chromaticity returned by `blackbodyToSrgb`
+from 1000 K to 40000 K, and the swatches are the sRGB hex values from the same
+function. The locus is drawn from the data, not from the analytic fit.*
+
 ### Analytic CMF fit (numerical approximation)
 
 `cieXyzBarAnalytic` implements the Wyman, Sloan & Shirley (2013) piecewise-Gaussian
@@ -425,9 +538,15 @@ must.
 
 ### Fast fitted path (display approximation)
 
-`fastBlackbodyToSrgb(T, { stepNm })` uses the analytic CMF fit on a coarse grid
-(default 20 nm) instead of the committed table. It is a **display approximation**
-for interactive use, not a colorimetric reference.
+`fastBlackbodyToSrgb(T, { stepNm, method })` uses a coarse grid (default 20 nm)
+instead of the committed table. It is a **display approximation** for
+interactive use, not a colorimetric reference. Two colour-matching sources are
+selectable through `method` (`FAST_FIT_METHODS`):
+
+| `method` | Colour-matching source | Worst encoded error, 1000–40000 K |
+| --- | --- | --- |
+| `"analytic"` (default) | `cieXyzBarAnalytic` — the Wyman/Sloan/Shirley multi-lobe fit | 0.09404 |
+| `"interpolated"` | `cieXyzBarInterpolated` — linear interpolation of the committed table | **0.002627** |
 
 `fastBlackbodyToSrgbMaxError` quantifies the deviation over a temperature range
 with a deterministic log-uniform scan, reporting three metrics because they
@@ -439,7 +558,7 @@ answer different questions:
 | `maxLinearChannelError` | worst error in linear sRGB — the worst *physical radiance* error |
 | `maxChromaticityError` | worst CIE 1931 $xy$ distance — the standard colorimetric measure |
 
-Measured:
+Measured for the default `method: "analytic"`:
 
 | Range | `maxChannelError` | `maxLinearChannelError` | `maxChromaticityError` |
 | --- | --- | --- | --- |
@@ -450,9 +569,50 @@ Measured:
 The worst case is at 1000 K, where the reference is
 `{r: 1, g: 0.09085, b: 0}` and the fast fit gives `{r: 1, g: 0.18489, b: 0}`.
 **The error is dominated by the published Wyman fit's red tail, not by the
-integration grid** — steps of 5, 10, 20, and 25 nm all give $\approx 0.094$. The
-default range is 1000–40000 K; callers that need better than ~0.01 encoded error
-should use `blackbodyToSrgb` or restrict the range to $\ge 2000$ K.
+integration grid** — steps of 5, 10, 20, and 25 nm all give $\approx 0.094$.
+
+#### The interpolated alternative (36× more accurate)
+
+`cieXyzBarAnalytic` is **already the most accurate published analytic fit** of
+the CIE 1931 2° observer. This was verified against the official JCGT
+supplement: the paper's `multiLobeFit1931.cpp` (its Equation 4) has reciprocal
+widths $1/0.0264 = 37.88$, $1/0.0324 = 30.96$, $1/0.0624 = 16.03$, … which are
+exactly the coefficients in the module. The paper's *other* fit
+(`oneGaussianPerLobe1931.cpp`) is less accurate. So no better published fit
+exists, and the 0.094 error is intrinsic to the analytic approach.
+
+The alternative is to interpolate the committed table instead of fitting it.
+`cieXyzBarInterpolated(λ_nm)` linearly interpolates the 81 committed samples
+(exact at every knot, clamped outside 380–780 nm), and
+`cieXyzFromSpectralRadianceInterpolated` integrates it on the same coarse grid.
+Measured over 1000–40000 K with 400 log-uniform samples:
+
+| `stepNm` | `maxChannelError` | `maxChromaticityError` |
+| --- | --- | --- |
+| 5 | **0** (exactly) | **0** (exactly) |
+| 10 | 0.000774 | 0.000155 |
+| 20 (default) | 0.002627 | 0.000862 |
+| 25 | 0.006222 | 0.002123 |
+
+At `stepNm = 20` the interpolated path is **36× more accurate** than the
+analytic fit (0.002627 vs 0.09404) and 17× better in chromaticity
+(0.000862 vs 0.01496), at the same cost — 21 radiance evaluations. At
+`stepNm = 5` the knots coincide with the table and the result is **bit-identical**
+to the tabulated path (relative error exactly 0). `stepNm = 25` is worse, so
+20 nm is the sweet spot.
+
+**Linear interpolation is the right choice.** Catmull–Rom was measured and gives
+*identical* errors at multiples of 5 nm — the error is dominated by the 5 nm
+table's own sampling, not by the interpolation order. Catmull–Rom only helps at
+off-grid steps (7 nm: 0.0000955 vs 0.000552) and is not worth the boundary
+special-casing.
+
+The default remains `method: "analytic"` for backward compatibility. Callers
+that want the accuracy should pass `method: "interpolated"`; callers that need
+better than ~0.003 encoded error should use `blackbodyToSrgb` or restrict the
+range to $\ge 2000$ K.
+
+![Worst-case fast-fit error versus temperature for both methods](figures/04-fast-fit-error.png)
 
 ## Validation contract
 
@@ -479,11 +639,27 @@ bit-identical output and do not mutate their arguments.
 
 ## Verification
 
-- `npm test` — 254 tests, including 121 new science tests and 12 browser-bridge parity tests.
+- `npm test` — 271 tests, including 138 new science tests and 14 browser-bridge
+  parity tests.
 - `npm run validate` — repository validation.
 - `node scripts/benchmark-kerr.mjs` — reports ray count, median integration time,
   convergence error, and conserved-quantity drift. It prints measurements and
   **enforces no machine-specific timing threshold**.
+- `node scripts/generate-science-figures.mjs` — regenerates every figure in this
+  document from the modules themselves. It serves the worktree over loopback
+  HTTP, imports the real `js/science/*.mjs` modules in a headless Chromium page,
+  draws each figure to a canvas, and screenshots the `<figure>` element at
+  `deviceScaleFactor: 2`. `--check` renders without writing. The script fails
+  loudly on any page error or console error, so a figure can never silently
+  regress to a blank canvas.
+
+  The `canvas` rule in the figure page declares `background: #0b0d12` in
+  addition to painting that colour into the bitmap. This is not cosmetic: the
+  element-screenshot path composites the canvas region against the page
+  default when the element has no opaque background of its own, which produced
+  entirely white figures even though the live canvas was correctly painted.
+  Declaring the background in CSS makes the capture path independent of the
+  compositor's treatment of the backing store.
 
 ## References
 

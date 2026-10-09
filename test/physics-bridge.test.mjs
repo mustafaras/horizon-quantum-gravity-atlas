@@ -417,6 +417,73 @@ test("mirrored spectral conversion matches the ESM module", () => {
   );
 });
 
+test("the bridge mirrors the energy-conserving closed-form disk flux", () => {
+  assert.deepEqual(plain(bridge.FAST_FIT_METHODS), plain(spectrum.FAST_FIT_METHODS));
+  for (const aStar of [0, 0.5, 0.9, 0.998]) {
+    for (const r of [7, 10, 20, 100]) {
+      for (const prograde of [true, false]) {
+        const options = { aStar, r, prograde };
+        closeTo(
+          bridge.pageThorneFluxClosedFormGeometric(options),
+          disk.pageThorneFluxClosedFormGeometric(options),
+          1e-15,
+          `closed-form flux a=${aStar} r=${r} prograde=${prograde}`,
+        );
+      }
+    }
+  }
+  assert.equal(bridge.pageThorneFluxClosedFormGeometric({ aStar: 0, r: 6 }), 0);
+  closeTo(
+    bridge.pageThorneFluxClosedFormSI({ massSolar: 10, aStar: 0.5, r: 10, massRate: 2.4771e-21 }),
+    disk.pageThorneFluxClosedFormSI({ massSolar: 10, aStar: 0.5, r: 10, massRate: 2.4771e-21 }),
+    1e-15,
+    "closed-form SI flux",
+  );
+  for (const form of ["closed-form", "integral"]) {
+    closeTo(
+      bridge.diskLuminosityGeometric({ aStar: 0.5, form }),
+      disk.diskLuminosityGeometric({ aStar: 0.5, form }),
+      1e-14,
+      `disk luminosity (${form})`,
+    );
+  }
+});
+
+test("the bridge mirrors the interpolated colour-matching fast path", () => {
+  for (const wavelengthNm of [380, 400, 425, 500, 555, 600, 700, 780]) {
+    assert.deepEqual(
+      plain(bridge.cieXyzBarInterpolated(wavelengthNm)),
+      plain(spectrum.cieXyzBarInterpolated(wavelengthNm)),
+      `interpolated CMF at ${wavelengthNm} nm`,
+    );
+  }
+  const radiance = (wavelength) => spectrum.planckSpectralRadiance(wavelength, 6500);
+  for (const stepNm of [5, 10, 20]) {
+    assert.deepEqual(
+      plain(bridge.cieXyzFromSpectralRadianceInterpolated(radiance, { stepNm })),
+      plain(spectrum.cieXyzFromSpectralRadianceInterpolated(radiance, { stepNm })),
+      `interpolated XYZ at ${stepNm} nm`,
+    );
+  }
+  for (const method of ["analytic", "interpolated"]) {
+    assert.equal(
+      bridge.fastBlackbodyToSrgb(6500, { method }).hex,
+      spectrum.fastBlackbodyToSrgb(6500, { method }).hex,
+      `fast blackbody (${method})`,
+    );
+    const mirrored = bridge.fastBlackbodyToSrgbMaxError({ method, samples: 40 });
+    const reference = spectrum.fastBlackbodyToSrgbMaxError({ method, samples: 40 });
+    assert.equal(mirrored.method, reference.method);
+    closeTo(mirrored.maxChannelError, reference.maxChannelError, 1e-12, `${method} maxChannelError`);
+    closeTo(
+      mirrored.maxChromaticityError,
+      reference.maxChromaticityError,
+      1e-12,
+      `${method} maxChromaticityError`,
+    );
+  }
+});
+
 test("the bridge rejects the same invalid inputs as the ESM modules", () => {
   const cases = [
     () => bridge.kerrHorizonRadii("not-a-number"),
@@ -429,6 +496,13 @@ test("the bridge rejects the same invalid inputs as the ESM modules", () => {
     () => bridge.rk4Step("nope", [1], 0.1),
     () => bridge.integrateAdaptive({ rhs: (s) => s, state: [1], h0: 0.1, hMin: 1, hMax: 0.1 }),
     () => bridge.pageThorneFluxGeometric({ aStar: 0.5, r: 10, prograde: "yes" }),
+    () => bridge.pageThorneFluxClosedFormGeometric({ aStar: 0.5, r: 10, prograde: "yes" }),
+    () => bridge.pageThorneFluxClosedFormGeometric({ aStar: 2, r: 10 }),
+    () => bridge.diskLuminosityGeometric({ aStar: 0, form: "nope" }),
+    () => bridge.fastBlackbodyToSrgb(6500, { method: "nope" }),
+    () => bridge.fastBlackbodyToSrgbMaxError({ method: 42 }),
+    () => bridge.cieXyzBarInterpolated("abc"),
+    () => bridge.cieXyzFromSpectralRadianceInterpolated((w) => w, { stepNm: 0 }),
   ];
   for (const [index, run] of cases.entries()) {
     assert.throws(

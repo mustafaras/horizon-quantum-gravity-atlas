@@ -3,18 +3,32 @@
  *
  * Model status
  * ------------
- * `pageThorneFluxGeometric` evaluates the *exact* Page & Thorne (1974)
- * time-averaged flux expression for a geometrically thin, optically thick disk
- * in the equatorial plane of a Kerr black hole, under that paper's stated
+ * `pageThorneFluxGeometric` evaluates the Page & Thorne (1974) time-averaged
+ * flux expression for a geometrically thin, optically thick disk in the
+ * equatorial plane of a Kerr black hole, under that paper's stated
  * assumptions: a stationary axisymmetric flow, circular geodesic orbits, no
- * torque at the inner boundary, and zero stress at the ISCO. The only
- * approximation in this module is the numerical quadrature used to evaluate
- * the radial integral; it is a fixed-node Gauss-Legendre rule, so results are
+ * torque at the inner boundary, and zero stress at the ISCO. It is the form
+ * quoted in the literature, and it is reproduced here verbatim so that the
+ * module can be checked against published values. Its radial integral is
+ * evaluated with a fixed-node Gauss-Legendre rule, so results are
  * deterministic and reproducible bit-for-bit.
+ *
+ * `pageThorneFluxClosedFormGeometric` evaluates the *energy-conserving* closed
+ * form of the same physical model,
+ *
+ *   F(r) = Mdot * (-dOmega/dr) * (L(r) - L(r_in)) / (4 pi r),
+ *
+ * obtained from the standard torque-shear dissipation law
+ * 4 pi r F = W(r) * (-dOmega/dr) with the angular-momentum balance
+ * W(r) = Mdot (L(r) - L(r_in)). Unlike the integral form it integrates
+ * *exactly* to the liberated binding energy Mdot (1 - E(r_in)) and reduces
+ * exactly to the Shakura-Sunyaev flux in the Newtonian limit. The integral
+ * form is ~1.9% high on the same luminosity integral; both are provided and
+ * the discrepancy is documented in docs/science/kerr-rendering.md.
  *
  * `newtonianDiskFluxGeometric` is the non-relativistic Shakura-Sunyaev limit
  * 3 Mdot / (8 pi r^3) * (1 - sqrt(r_in / r)). It is provided as a labelled
- * approximation and is used to test the relativistic expression's limits.
+ * approximation and is used to test the relativistic expressions' limits.
  *
  * Units
  * -----
@@ -248,6 +262,142 @@ export function pageThorneFluxGeometric({
 export function pageThorneFluxSI(options = {}) {
   const { massSolar, ...rest } = options;
   return geometricFluxToSI(pageThorneFluxGeometric(rest), massSolar);
+}
+
+/**
+ * Energy-conserving closed form of the relativistic thin-disk flux.
+ *
+ * The standard torque-shear dissipation law for a steady, Keplerian disk with
+ * zero torque at the inner edge is
+ *
+ *   4 pi r F(r) = W(r) * (-dOmega/dr),   W(r) = Mdot (L(r) - L(r_in)),
+ *
+ * where `W` is the outward angular-momentum flux carried by the viscous
+ * torque. Substituting the angular-momentum balance gives the closed form
+ *
+ *   F(r) = Mdot * (-dOmega/dr) * (L(r) - L(r_in)) / (4 pi r).
+ *
+ * This expression integrates *exactly* to the liberated binding energy,
+ *
+ *   integral_{r_in}^{inf} 4 pi r F dr = Mdot (1 - E(r_in)),
+ *
+ * and reduces exactly to the Shakura-Sunyaev flux
+ * `3 Mdot / (8 pi r^3) * (1 - sqrt(r_in / r))` in the Newtonian limit. The
+ * integral form in `pageThorneFluxGeometric` is ~1.9% high on the same
+ * luminosity integral; see docs/science/kerr-rendering.md for the derivation
+ * and the measured comparison.
+ *
+ * @param {{
+ *   aStar?: number,
+ *   r: number,
+ *   massRate?: number,
+ *   prograde?: boolean,
+ *   innerRadius?: number,
+ * }} options
+ * @returns {number} geometric energy flux in c^9/(G^3 M^2)
+ */
+export function pageThorneFluxClosedFormGeometric({
+  aStar = 0,
+  r,
+  massRate = 1,
+  prograde = true,
+  innerRadius,
+} = {}) {
+  const spin = assertSpinParameter(aStar);
+  const radius = assertPositiveNumber(r, "r");
+  const rate = assertNonNegativeNumber(massRate, "massRate");
+  if (typeof prograde !== "boolean") {
+    throw new TypeError("prograde must be a boolean");
+  }
+  const inner =
+    innerRadius === undefined
+      ? kerrIsco(spin, { prograde })
+      : assertPositiveNumber(innerRadius, "innerRadius");
+  if (radius <= inner) return 0;
+  const orbit = kerrCircularOrbit(spin, radius, { prograde });
+  const innerOrbit = kerrCircularOrbit(spin, inner, { prograde });
+  const torque = rate * (orbit.angularMomentum - innerOrbit.angularMomentum);
+  return (torque * -orbit.omegaDerivative) / (4 * Math.PI * radius);
+}
+
+/**
+ * SI wrapper around `pageThorneFluxClosedFormGeometric`.
+ *
+ * @param {{massSolar: number} & Parameters<typeof pageThorneFluxClosedFormGeometric>[0]} options
+ * @returns {number} flux in W/m^2
+ */
+export function pageThorneFluxClosedFormSI(options = {}) {
+  const { massSolar, ...rest } = options;
+  return geometricFluxToSI(pageThorneFluxClosedFormGeometric(rest), massSolar);
+}
+
+/**
+ * Total power radiated by the disk, in geometric units.
+ *
+ * Integrates `4 pi r F(r)` (both faces) from `innerRadius` to `outerRadius`
+ * with composite Gauss-Legendre quadrature on geometrically spaced panels, so
+ * the rule resolves the steep inner region without a prohibitive node count.
+ * The result is deterministic.
+ *
+ * For `form: "closed-form"` the exact answer is `massRate * (1 - E(r_in))`
+ * minus the tail beyond `outerRadius`; for `form: "integral"` the published
+ * integral form is used and the result is ~1.9% high.
+ *
+ * @param {{
+ *   aStar?: number,
+ *   massRate?: number,
+ *   prograde?: boolean,
+ *   innerRadius?: number,
+ *   outerRadius?: number,
+ *   quadratureOrder?: number,
+ *   panels?: number,
+ *   form?: "closed-form" | "integral",
+ * }} options
+ * @returns {number} geometric luminosity in c^5/G
+ */
+export function diskLuminosityGeometric({
+  aStar = 0,
+  massRate = 1,
+  prograde = true,
+  innerRadius,
+  outerRadius = 1e6,
+  quadratureOrder = 32,
+  panels = 96,
+  form = "closed-form",
+} = {}) {
+  const spin = assertSpinParameter(aStar);
+  const rate = assertNonNegativeNumber(massRate, "massRate");
+  if (typeof prograde !== "boolean") {
+    throw new TypeError("prograde must be a boolean");
+  }
+  if (form !== "closed-form" && form !== "integral") {
+    throw new RangeError('form must be "closed-form" or "integral"');
+  }
+  const inner =
+    innerRadius === undefined
+      ? kerrIsco(spin, { prograde })
+      : assertPositiveNumber(innerRadius, "innerRadius");
+  const outer = assertPositiveNumber(outerRadius, "outerRadius");
+  if (outer <= inner) {
+    throw new RangeError("outerRadius must exceed innerRadius");
+  }
+  const order = assertPositiveInteger(quadratureOrder, "quadratureOrder");
+  const panelCount = assertPositiveInteger(panels, "panels");
+  const flux =
+    form === "integral" ? pageThorneFluxGeometric : pageThorneFluxClosedFormGeometric;
+  const ratio = (outer / inner) ** (1 / panelCount);
+  let total = 0;
+  for (let i = 0; i < panelCount; i += 1) {
+    const a = inner * ratio ** i;
+    const b = inner * ratio ** (i + 1);
+    total += gaussLegendreIntegrate(
+      (radius) => 4 * Math.PI * radius * flux({ aStar: spin, r: radius, massRate: rate, prograde, innerRadius: inner }),
+      a,
+      b,
+      order,
+    );
+  }
+  return total;
 }
 
 /**

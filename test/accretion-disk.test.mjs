@@ -18,6 +18,9 @@ import {
   kerrCircularOrbit,
   pageThorneFluxGeometric,
   pageThorneFluxSI,
+  pageThorneFluxClosedFormGeometric,
+  pageThorneFluxClosedFormSI,
+  diskLuminosityGeometric,
   newtonianDiskFluxGeometric,
   geometricStefanBoltzmannConstant,
   diskEffectiveTemperatureKelvin,
@@ -426,4 +429,156 @@ test("invalid redshift inputs are rejected", () => {
 test("the default quadrature order is exported and used", () => {
   assert.equal(DEFAULT_QUADRATURE_ORDER, 64);
   assert.equal(gaussLegendreNodes(DEFAULT_QUADRATURE_ORDER).order, DEFAULT_QUADRATURE_ORDER);
+});
+
+/*
+ * The energy-conserving closed form.
+ *
+ * The published Page & Thorne flux is an integral form whose luminosity
+ * integral comes out ~1.9% above the exact binding energy `1 - E_isco`. That
+ * residual is a property of the integral form, not of the implementation: the
+ * exact form is the torque-shear law
+ *
+ *   F(r) = Mdot * (-dOmega/dr) * (L(r) - L(r_in)) / (4 pi r),
+ *
+ * which integrates exactly to `Mdot * (1 - E(r_in))` and reduces exactly to the
+ * Shakura-Sunyaev flux in the Newtonian limit. These tests pin both.
+ */
+
+const schwarzschildClosedForm = (r, innerRadius = 6) =>
+  (3 / (8 * Math.PI * r ** 3)) *
+  ((1 - 3 / r) ** -0.5 - Math.sqrt(innerRadius / r) * (1 - 3 / innerRadius) ** -0.5);
+
+test("the closed-form flux vanishes inside the ISCO and is finite outside", () => {
+  assert.equal(pageThorneFluxClosedFormGeometric({ aStar: 0, r: 6 }), 0);
+  assert.equal(pageThorneFluxClosedFormGeometric({ aStar: 0, r: 5 }), 0);
+  assert.equal(pageThorneFluxClosedFormGeometric({ aStar: 0.9, r: kerrIsco(0.9) }), 0);
+  assert.equal(pageThorneFluxClosedFormGeometric({ aStar: 0.9, r: kerrIsco(0.9), prograde: false }), 0);
+
+  const justOutside = pageThorneFluxClosedFormGeometric({ aStar: 0, r: 6.0001 });
+  assert.ok(Number.isFinite(justOutside));
+  assert.ok(justOutside > 0);
+  assert.ok(justOutside < 1e-12);
+
+  for (const r of [7, 10, 20, 100, 1000]) {
+    const flux = pageThorneFluxClosedFormGeometric({ aStar: 0, r });
+    assert.ok(Number.isFinite(flux) && flux > 0, `flux at ${r}`);
+  }
+});
+
+test("the closed-form flux reproduces the analytic Schwarzschild solution", () => {
+  // For a = 0 the closed form collapses to
+  //   F = 3 Mdot / (8 pi r^3) * [(1 - 3/r)^-1/2 - sqrt(12/r)].
+  for (const r of [7, 10, 20, 100, 1000]) {
+    const flux = pageThorneFluxClosedFormGeometric({ aStar: 0, r });
+    const analytic = schwarzschildClosedForm(r);
+    assert.ok(
+      Math.abs(flux - analytic) / analytic < 1e-12,
+      `r = ${r}: ${flux} vs ${analytic}`,
+    );
+  }
+  assert.ok(Math.abs(pageThorneFluxClosedFormGeometric({ aStar: 0, r: 10 }) - 1.191078e-5) < 1e-10);
+});
+
+test("the closed-form flux has the exact Newtonian limit", () => {
+  // F_closed / F_Newtonian -> 1 as r -> infinity, with the leading O(r^-1/2)
+  // relativistic correction. The published integral form does not have this
+  // property: its Newtonian limit carries an extra (1 - 3/(2 sqrt(r r_i)))
+  // factor.
+  const ratios = [100, 1000, 1e4, 1e5].map(
+    (r) => pageThorneFluxClosedFormGeometric({ aStar: 0, r }) / newtonianDiskFluxGeometric({ r }),
+  );
+  for (let i = 1; i < ratios.length; i += 1) {
+    assert.ok(ratios[i] > ratios[i - 1], "the ratio must increase monotonically toward 1");
+  }
+  assert.ok(ratios[0] > 0.88 && ratios[0] < 0.89);
+  assert.ok(ratios[3] > 0.996 && ratios[3] < 0.998);
+  assert.ok(ratios[3] < 1, "the relativistic flux stays below the Newtonian flux");
+});
+
+test("the closed form and the published integral form converge to each other", () => {
+  // They differ by O(1/r); the difference must shrink monotonically.
+  const differences = [100, 1000, 1e4].map((r) => {
+    const closed = pageThorneFluxClosedFormGeometric({ aStar: 0, r });
+    const integral = pageThorneFluxGeometric({ aStar: 0, r });
+    return Math.abs(closed / integral - 1);
+  });
+  assert.ok(differences[0] > differences[1]);
+  assert.ok(differences[1] > differences[2]);
+  assert.ok(differences[2] < 5e-3);
+});
+
+test("the closed-form luminosity integrates to the exact binding energy", () => {
+  const bindingEnergy = 1 - kerrCircularOrbit(0, 6).energy;
+  assert.ok(Math.abs(bindingEnergy - 0.057190958417936755) < 1e-15);
+
+  const closed = diskLuminosityGeometric({ form: "closed-form" });
+  const integral = diskLuminosityGeometric({ form: "integral" });
+
+  // The closed form is short by exactly the truncated tail 3 Mdot / (2 r_out).
+  const tail = 3 / (2 * 1e6);
+  assert.ok(Math.abs(closed + tail - bindingEnergy) / bindingEnergy < 1e-6);
+  assert.ok(Math.abs(closed / bindingEnergy - 0.999974) < 1e-5);
+
+  // The published integral form is ~1.9% high.
+  assert.ok(Math.abs(integral / bindingEnergy - 1.019141) < 1e-5);
+  assert.ok(integral > closed, "the integral form overestimates the luminosity");
+  assert.ok(
+    Math.abs(closed - bindingEnergy) < Math.abs(integral - bindingEnergy),
+    "the closed form must be the more accurate of the two",
+  );
+});
+
+test("the closed-form flux has the correct spin dependence", () => {
+  const prograde = (aStar) => pageThorneFluxClosedFormGeometric({ aStar, r: 10 });
+  const retrograde = (aStar) => pageThorneFluxClosedFormGeometric({ aStar, r: 10, prograde: false });
+
+  assert.equal(prograde(0), retrograde(0));
+  for (const aStar of [0.5, 0.9, 0.998]) {
+    assert.ok(prograde(aStar) > prograde(0), `prograde flux must grow with spin at a = ${aStar}`);
+    assert.ok(retrograde(aStar) < retrograde(0), `retrograde flux must shrink with spin at a = ${aStar}`);
+  }
+  assert.ok(prograde(0.998) > prograde(0.9));
+  assert.ok(retrograde(0.998) < retrograde(0.9));
+});
+
+test("the closed-form SI wrapper converts through the geometric flux", () => {
+  const geometric = pageThorneFluxClosedFormGeometric({ aStar: 0.5, r: 10, massRate: 2.4771e-21 });
+  const si = pageThorneFluxClosedFormSI({ massSolar: 10, aStar: 0.5, r: 10, massRate: 2.4771e-21 });
+  assert.equal(si, geometricFluxToSI(geometric, 10));
+  assert.ok(si > 0 && Number.isFinite(si));
+});
+
+test("the disk luminosity is deterministic and honours its options", () => {
+  const first = diskLuminosityGeometric({ form: "closed-form" });
+  const second = diskLuminosityGeometric({ form: "closed-form" });
+  assert.equal(first, second);
+
+  // A larger outer radius captures more of the tail.
+  const small = diskLuminosityGeometric({ form: "closed-form", outerRadius: 1e3 });
+  const large = diskLuminosityGeometric({ form: "closed-form", outerRadius: 1e6 });
+  assert.ok(large > small);
+
+  // The luminosity scales linearly with the mass rate.
+  const doubled = diskLuminosityGeometric({ form: "closed-form", massRate: 2 });
+  assert.ok(Math.abs(doubled - 2 * first) < 1e-12);
+
+  // A custom inner radius is honoured.
+  const wide = diskLuminosityGeometric({ form: "closed-form", innerRadius: 10 });
+  assert.ok(wide < first, "starting further out must radiate less");
+});
+
+test("invalid closed-form inputs are rejected", () => {
+  assert.throws(() => pageThorneFluxClosedFormGeometric({ aStar: 0, r: 10, prograde: "yes" }), TypeError);
+  assert.throws(() => pageThorneFluxClosedFormGeometric({ aStar: 2, r: 10 }), RangeError);
+  assert.throws(() => pageThorneFluxClosedFormGeometric({ aStar: 0, r: -1 }), RangeError);
+  assert.throws(() => pageThorneFluxClosedFormGeometric({ aStar: 0, r: 10, massRate: -1 }), RangeError);
+  assert.throws(() => pageThorneFluxClosedFormGeometric({ aStar: 0, r: 10, innerRadius: 0 }), RangeError);
+
+  assert.throws(() => diskLuminosityGeometric({ form: "nope" }), RangeError);
+  assert.throws(() => diskLuminosityGeometric({ form: 1 }), RangeError);
+  assert.throws(() => diskLuminosityGeometric({ outerRadius: 5 }), RangeError);
+  assert.throws(() => diskLuminosityGeometric({ prograde: "yes" }), TypeError);
+  assert.throws(() => diskLuminosityGeometric({ quadratureOrder: 0 }), RangeError);
+  assert.throws(() => diskLuminosityGeometric({ panels: 0 }), RangeError);
 });

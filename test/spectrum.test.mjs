@@ -21,14 +21,17 @@ import {
   SRGB_GAMMA_EXPONENT,
   XYZ_TO_LINEAR_SRGB,
   FAST_FIT_STEP_NM,
+  FAST_FIT_METHODS,
   planckSpectralRadiance,
   planckSpectralRadiancePerFrequency,
   wienPeakWavelengthMeters,
   wienPeakFrequencyHz,
   cieXyzBarAnalytic,
   cieXyzBarTabulated,
+  cieXyzBarInterpolated,
   cieXyzFromSpectralRadiance,
   cieXyzFromSpectralRadianceFast,
+  cieXyzFromSpectralRadianceInterpolated,
   xyzToChromaticity,
   xyzToLinearSrgb,
   linearSrgbToSrgb,
@@ -464,4 +467,130 @@ test("invalid colour-conversion inputs are rejected", () => {
   assert.throws(() => fastBlackbodyToSrgbMaxError({ samples: 1.5 }), RangeError);
   assert.throws(() => cieXyzFromSpectralRadianceFast(() => 1, { stepNm: 0 }), RangeError);
   assert.throws(() => cieXyzFromSpectralRadiance(null), TypeError);
+});
+
+/*
+ * The interpolated fast path.
+ *
+ * `cieXyzBarAnalytic` is the best published analytic fit, but its red tail is
+ * inaccurate, which is what dominates the 9.4e-2 encoded error at 1000 K. The
+ * alternative is to keep the committed table and interpolate it on the same
+ * coarse grid. These tests pin the two properties that make that safe: the
+ * interpolation is exact at the table's own knots, and the resulting
+ * blackbody error is an order of magnitude smaller than the analytic fit's.
+ */
+
+test("the interpolated colour-matching function is exact at the table knots", () => {
+  for (let index = 0; index < 81; index += 1) {
+    const wavelengthNm = 380 + 5 * index;
+    const bar = cieXyzBarInterpolated(wavelengthNm);
+    const tabulated = cieXyzBarTabulated(index);
+    assert.equal(bar.x, tabulated.x, `xBar at ${wavelengthNm} nm`);
+    assert.equal(bar.y, tabulated.y, `yBar at ${wavelengthNm} nm`);
+    assert.equal(bar.z, tabulated.z, `zBar at ${wavelengthNm} nm`);
+  }
+});
+
+test("the interpolated colour-matching function clamps outside the table", () => {
+  const first = cieXyzBarTabulated(0);
+  const last = cieXyzBarTabulated(80);
+  for (const wavelengthNm of [0, 100, 379.999, 380]) {
+    assert.deepEqual(cieXyzBarInterpolated(wavelengthNm), first);
+  }
+  for (const wavelengthNm of [780, 780.001, 900, 1e6]) {
+    assert.deepEqual(cieXyzBarInterpolated(wavelengthNm), last);
+  }
+});
+
+test("the interpolated colour-matching function is continuous and monotone between knots", () => {
+  // Linear interpolation must never overshoot the bracketing knots.
+  for (let index = 0; index < 80; index += 1) {
+    const low = cieXyzBarTabulated(index);
+    const high = cieXyzBarTabulated(index + 1);
+    for (const fraction of [0.25, 0.5, 0.75]) {
+      const bar = cieXyzBarInterpolated(380 + 5 * (index + fraction));
+      for (const key of ["x", "y", "z"]) {
+        const lo = Math.min(low[key], high[key]);
+        const hi = Math.max(low[key], high[key]);
+        assert.ok(bar[key] >= lo - 1e-15 && bar[key] <= hi + 1e-15, `${key} overshoot at ${index}+${fraction}`);
+      }
+    }
+  }
+});
+
+test("the interpolated fast path reproduces the tabulated path exactly on the table grid", () => {
+  // At stepNm = 5 the coarse grid coincides with the committed table, so the
+  // only difference from `cieXyzFromSpectralRadiance` is the interpolation
+  // itself, which is exact at the knots.
+  for (const temperatureK of [1000, 3000, 5800, 12000, 40000]) {
+    const radiance = (wavelengthNm) => planckSpectralRadiance(wavelengthNm, temperatureK);
+    const reference = cieXyzFromSpectralRadiance(radiance);
+    const interpolated = cieXyzFromSpectralRadianceInterpolated(radiance, { stepNm: 5 });
+    for (const key of ["x", "y", "z"]) {
+      assert.equal(interpolated[key], reference[key], `${key} at ${temperatureK} K`);
+    }
+  }
+});
+
+test("the interpolated fast path is far more accurate than the analytic fit", () => {
+  const analytic = fastBlackbodyToSrgbMaxError({ method: "analytic" });
+  const interpolated = fastBlackbodyToSrgbMaxError({ method: "interpolated" });
+
+  assert.equal(analytic.method, "analytic");
+  assert.equal(interpolated.method, "interpolated");
+
+  // Measured: 9.404e-2 encoded / 1.496e-2 chromaticity for the analytic fit,
+  // 2.627e-3 / 8.621e-4 for the interpolated table at the default 20 nm step.
+  assert.ok(interpolated.maxChannelError < 5e-3, `encoded error ${interpolated.maxChannelError}`);
+  assert.ok(interpolated.maxChromaticityError < 2e-3, `chromaticity error ${interpolated.maxChromaticityError}`);
+  assert.ok(
+    interpolated.maxChannelError < analytic.maxChannelError / 10,
+    `expected an order-of-magnitude improvement; got ${interpolated.maxChannelError} vs ${analytic.maxChannelError}`,
+  );
+  assert.ok(
+    interpolated.maxChromaticityError < analytic.maxChromaticityError / 10,
+    `expected an order-of-magnitude improvement; got ${interpolated.maxChromaticityError} vs ${analytic.maxChromaticityError}`,
+  );
+});
+
+test("the interpolated fast path is exact when the step matches the table spacing", () => {
+  const error = fastBlackbodyToSrgbMaxError({ method: "interpolated", stepNm: 5, samples: 60 });
+  assert.equal(error.maxChannelError, 0);
+  assert.equal(error.maxLinearChannelError, 0);
+  assert.equal(error.maxChromaticityError, 0);
+});
+
+test("the fast-fit method is selectable and deterministic", () => {
+  assert.deepEqual(FAST_FIT_METHODS, ["analytic", "interpolated"]);
+
+  const analytic = fastBlackbodyToSrgb(6500, { method: "analytic" });
+  const interpolated = fastBlackbodyToSrgb(6500, { method: "interpolated" });
+  const defaulted = fastBlackbodyToSrgb(6500);
+  assert.deepEqual(defaulted, analytic, "the analytic fit must remain the default");
+  assert.equal(interpolated.temperatureK, 6500);
+  assert.equal(interpolated.hex.length, 7);
+
+  // Both methods must agree with the tabulated reference to within their
+  // documented bounds at a mid-range temperature.
+  const reference = blackbodyToSrgb(6500);
+  for (const candidate of [analytic, interpolated]) {
+    for (const key of ["r", "g", "b"]) {
+      assert.ok(Math.abs(candidate.srgb[key] - reference.srgb[key]) < 0.02, `${key} at 6500 K`);
+    }
+  }
+
+  const first = fastBlackbodyToSrgbMaxError({ method: "interpolated", samples: 40 });
+  const second = fastBlackbodyToSrgbMaxError({ method: "interpolated", samples: 40 });
+  assert.deepEqual(first, second);
+});
+
+test("an unknown fast-fit method is rejected", () => {
+  for (const method of ["nope", "", 42, null, undefined]) {
+    if (method === undefined) continue; // undefined selects the default
+    assert.throws(() => fastBlackbodyToSrgb(6500, { method }), RangeError, `method ${String(method)}`);
+    assert.throws(() => fastBlackbodyToSrgbMaxError({ method }), RangeError, `method ${String(method)}`);
+  }
+  assert.throws(() => cieXyzFromSpectralRadianceInterpolated(() => 1, { stepNm: 0 }), RangeError);
+  assert.throws(() => cieXyzFromSpectralRadianceInterpolated(null), TypeError);
+  assert.throws(() => cieXyzBarInterpolated("abc"), TypeError);
 });

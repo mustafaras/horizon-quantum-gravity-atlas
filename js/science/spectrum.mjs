@@ -15,13 +15,16 @@
  * IEC 61966-2-1 sRGB transfer function. The only error is the quadrature and
  * the table's 5 nm sampling.
  *
- * `fastBlackbodyToSrgb` is a *display* approximation: it replaces the tabulated
- * colour-matching functions with the Wyman, Sloan & Shirley (2013) piecewise
- * Gaussian fits and evaluates them on a coarse grid. It is intended for
- * per-pixel or per-frame use where the tabulated path is too slow.
- * `fastBlackbodyToSrgbMaxError` measures its worst per-channel deviation from
- * `blackbodyToSrgb` over a temperature range, so the approximation is never
- * used without a quantified bound.
+ * `fastBlackbodyToSrgb` is a *display* approximation with two selectable
+ * colour-matching sources. `method: "analytic"` (the default) replaces the
+ * tabulated colour-matching functions with the Wyman, Sloan & Shirley (2013)
+ * piecewise Gaussian fits and evaluates them on a coarse grid; it needs no
+ * table access but inherits the fit's inaccurate red tail. `method:
+ * "interpolated"` keeps the committed CIE 1931 table and linearly interpolates
+ * it on the same coarse grid, which is roughly 36x more accurate at the default
+ * step. `fastBlackbodyToSrgbMaxError` measures the worst per-channel deviation
+ * from `blackbodyToSrgb` over a temperature range for whichever method is
+ * selected, so the approximation is never used without a quantified bound.
  *
  * Colour-matching data
  * --------------------
@@ -92,6 +95,19 @@ export const XYZ_TO_LINEAR_SRGB = Object.freeze([
 
 /** Default coarse grid step for the fast fitted path, in nanometres. */
 export const FAST_FIT_STEP_NM = 20;
+
+/**
+ * Supported fast-path colour-matching sources.
+ *
+ * - `"analytic"` evaluates the Wyman, Sloan & Shirley (2013) piecewise Gaussian
+ *   fits. No table lookup, but the fit's red tail is inaccurate, which costs
+ *   ~9.4e-2 in the encoded sRGB channels at 1000 K.
+ * - `"interpolated"` linearly interpolates the committed CIE 1931 table. It
+ *   uses the standard observer data itself rather than a fit, so the only
+ *   residual is the coarse-grid quadrature: ~2.6e-3 over 1000-40000 K, and
+ *   exactly zero when `stepNm` is a multiple of the table's 5 nm spacing.
+ */
+export const FAST_FIT_METHODS = Object.freeze(["analytic", "interpolated"]);
 
 /* ---------- Planck law ---------- */
 
@@ -201,6 +217,35 @@ export function cieXyzBarTabulated(index) {
 }
 
 /**
+ * Committed CIE 1931 2-degree colour-matching functions at an arbitrary
+ * wavelength, by linear interpolation of the 5 nm table.
+ *
+ * This is the standard observer data itself, not a fit. It is exact at every
+ * table sample (wavelengths that are multiples of 5 nm from 380 nm) and is
+ * clamped to the endpoint values outside the table's 380-780 nm range, where
+ * the colour-matching functions are effectively zero.
+ *
+ * @param {number} wavelengthNm
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function cieXyzBarInterpolated(wavelengthNm) {
+  const lambda = assertFiniteNumber(wavelengthNm, "wavelengthNm");
+  const last = CIE_1931_2DEG_SAMPLE_COUNT - 1;
+  const u = (lambda - CIE_1931_2DEG_WAVELENGTH_START_NM) / CIE_1931_2DEG_WAVELENGTH_STEP_NM;
+  if (u <= 0) return { x: CIE_1931_2DEG_X[0], y: CIE_1931_2DEG_Y[0], z: CIE_1931_2DEG_Z[0] };
+  if (u >= last) {
+    return { x: CIE_1931_2DEG_X[last], y: CIE_1931_2DEG_Y[last], z: CIE_1931_2DEG_Z[last] };
+  }
+  const i = Math.floor(u);
+  const f = u - i;
+  return {
+    x: CIE_1931_2DEG_X[i] + f * (CIE_1931_2DEG_X[i + 1] - CIE_1931_2DEG_X[i]),
+    y: CIE_1931_2DEG_Y[i] + f * (CIE_1931_2DEG_Y[i + 1] - CIE_1931_2DEG_Y[i]),
+    z: CIE_1931_2DEG_Z[i] + f * (CIE_1931_2DEG_Z[i + 1] - CIE_1931_2DEG_Z[i]),
+  };
+}
+
+/**
  * Integrate a spectral radiance against the committed CIE 1931 table.
  *
  * Trapezoid rule on the table's own 5 nm grid, so the result is deterministic
@@ -230,14 +275,15 @@ export function cieXyzFromSpectralRadiance(radiance) {
 }
 
 /**
- * Integrate a spectral radiance against the analytic fitted colour-matching
- * functions on a coarse uniform grid.
+ * Trapezoid integration of a spectral radiance on a coarse uniform grid, with
+ * the colour-matching functions supplied by `bar`.
  *
  * @param {(wavelengthMeters: number) => number} radiance
- * @param {{stepNm?: number}} [options]
+ * @param {number} stepNm
+ * @param {(wavelengthNm: number) => {x: number, y: number, z: number}} bar
  * @returns {{x: number, y: number, z: number}}
  */
-export function cieXyzFromSpectralRadianceFast(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+function integrateOnCoarseGrid(radiance, stepNm, bar) {
   if (typeof radiance !== "function") throw new TypeError("radiance must be a function");
   const step = assertFiniteNumber(stepNm, "stepNm");
   if (!(step > 0)) throw new RangeError(`stepNm must be greater than zero; received ${step}`);
@@ -256,13 +302,44 @@ export function cieXyzFromSpectralRadianceFast(radiance, { stepNm = FAST_FIT_STE
     if (!Number.isFinite(value)) {
       throw new RangeError(`radiance returned a non-finite value at ${wavelengthNm} nm`);
     }
-    const bar = cieXyzBarAnalytic(wavelengthNm);
+    const barValue = bar(wavelengthNm);
     const weight = i === 0 || i === count ? 0.5 : 1;
-    x += weight * value * bar.x;
-    y += weight * value * bar.y;
-    z += weight * value * bar.z;
+    x += weight * value * barValue.x;
+    y += weight * value * barValue.y;
+    z += weight * value * barValue.z;
   }
   return { x: x * stepMeters, y: y * stepMeters, z: z * stepMeters };
+}
+
+/**
+ * Integrate a spectral radiance against the analytic fitted colour-matching
+ * functions on a coarse uniform grid.
+ *
+ * @param {(wavelengthMeters: number) => number} radiance
+ * @param {{stepNm?: number}} [options]
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function cieXyzFromSpectralRadianceFast(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+  return integrateOnCoarseGrid(radiance, stepNm, cieXyzBarAnalytic);
+}
+
+/**
+ * Integrate a spectral radiance against the committed CIE 1931 table
+ * interpolated on a coarse uniform grid.
+ *
+ * This is the accurate fast path: it evaluates the Planck law on the same
+ * coarse grid as `cieXyzFromSpectralRadianceFast` but takes the colour-matching
+ * functions from the standard observer data instead of a fit. At the default
+ * 20 nm step the worst encoded sRGB error over 1000-40000 K is ~2.6e-3, versus
+ * ~9.4e-2 for the analytic fit; at a 5 nm step it reproduces
+ * `cieXyzFromSpectralRadiance` exactly.
+ *
+ * @param {(wavelengthMeters: number) => number} radiance
+ * @param {{stepNm?: number}} [options]
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function cieXyzFromSpectralRadianceInterpolated(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+  return integrateOnCoarseGrid(radiance, stepNm, cieXyzBarInterpolated);
 }
 
 /* ---------- XYZ -> sRGB ---------- */
@@ -384,14 +461,36 @@ export function blackbodyToSrgb(temperatureK) {
 }
 
 /**
- * Fast fitted blackbody colour.
+ * Resolve a fast-path method name to its coarse-grid XYZ integrator.
  *
- * Display approximation: the tabulated colour-matching functions are replaced
- * by the Wyman-Sloan-Shirley analytic fits evaluated on a coarse grid. Use
- * `fastBlackbodyToSrgbMaxError` to bound the resulting error.
+ * @param {string} method
+ * @returns {(radiance: (wavelengthMeters: number) => number, options: object) => {x: number, y: number, z: number}}
+ */
+function fastXyzForMethod(method) {
+  if (method === "analytic") return cieXyzFromSpectralRadianceFast;
+  if (method === "interpolated") return cieXyzFromSpectralRadianceInterpolated;
+  throw new RangeError(
+    `method must be one of ${FAST_FIT_METHODS.join(", ")}; received ${JSON.stringify(method)}`,
+  );
+}
+
+/**
+ * Fast blackbody colour.
+ *
+ * Display approximation. Two colour-matching sources are available:
+ *
+ * - `method: "analytic"` (default) replaces the tabulated colour-matching
+ *   functions with the Wyman-Sloan-Shirley analytic fits evaluated on a coarse
+ *   grid. No table access at all.
+ * - `method: "interpolated"` keeps the committed CIE 1931 table and linearly
+ *   interpolates it on the same coarse grid. Roughly 36x more accurate at the
+ *   default step, at the cost of a table lookup per sample.
+ *
+ * Use `fastBlackbodyToSrgbMaxError` to bound the resulting error for whichever
+ * method is selected.
  *
  * @param {number} temperatureK
- * @param {{stepNm?: number}} [options]
+ * @param {{stepNm?: number, method?: "analytic" | "interpolated"}} [options]
  * @returns {{
  *   temperatureK: number, xyz: {x: number, y: number, z: number},
  *   linearRgb: {r: number, g: number, b: number},
@@ -400,9 +499,10 @@ export function blackbodyToSrgb(temperatureK) {
  */
 export function fastBlackbodyToSrgb(temperatureK, options = {}) {
   const temperature = assertTemperature(temperatureK);
-  const raw = cieXyzFromSpectralRadianceFast(
+  const { method = "analytic", ...grid } = options ?? {};
+  const raw = fastXyzForMethod(method)(
     (wavelength) => planckSpectralRadiance(wavelength, temperature),
-    options,
+    grid,
   );
   if (!(raw.y > 0)) throw new RangeError(`blackbody at ${temperature} K has zero luminance in the visible band`);
   const xyz = { x: raw.x / raw.y, y: 1, z: raw.z / raw.y };
@@ -431,9 +531,10 @@ export function fastBlackbodyToSrgb(temperatureK, options = {}) {
  * - `maxChromaticityError` is the largest CIE 1931 xy distance, the standard
  *   colorimetric measure of "how different is the colour".
  *
- * @param {{minK?: number, maxK?: number, samples?: number, stepNm?: number}} [options]
+ * @param {{minK?: number, maxK?: number, samples?: number, stepNm?: number,
+ *   method?: "analytic" | "interpolated"}} [options]
  * @returns {{
- *   minK: number, maxK: number, samples: number, stepNm: number,
+ *   minK: number, maxK: number, samples: number, stepNm: number, method: string,
  *   maxChannelError: number, maxLinearChannelError: number,
  *   maxChromaticityError: number, maxErrorTemperatureK: number,
  *   perChannel: {r: number, g: number, b: number},
@@ -444,12 +545,14 @@ export function fastBlackbodyToSrgbMaxError({
   maxK = 40000,
   samples = 400,
   stepNm = FAST_FIT_STEP_NM,
+  method = "analytic",
 } = {}) {
   const low = assertTemperature(minK, "minK");
   const high = assertTemperature(maxK, "maxK");
   if (!(high > low)) throw new RangeError(`maxK must exceed minK; received ${low} and ${high}`);
   const count = assertPositiveInteger(samples, "samples");
   const step = assertFiniteNumber(stepNm, "stepNm");
+  fastXyzForMethod(method);
   const logLow = Math.log(low);
   const logHigh = Math.log(high);
   const perChannel = { r: 0, g: 0, b: 0 };
@@ -460,7 +563,7 @@ export function fastBlackbodyToSrgbMaxError({
   for (let i = 0; i < count; i += 1) {
     const temperature = Math.exp(logLow + ((logHigh - logLow) * i) / (count - 1));
     const reference = blackbodyToSrgb(temperature);
-    const fast = fastBlackbodyToSrgb(temperature, { stepNm: step });
+    const fast = fastBlackbodyToSrgb(temperature, { stepNm: step, method });
     let worst = 0;
     let worstLinear = 0;
     for (const key of ["r", "g", "b"]) {
@@ -488,6 +591,7 @@ export function fastBlackbodyToSrgbMaxError({
     maxK: high,
     samples: count,
     stepNm: step,
+    method,
     maxChannelError,
     maxLinearChannelError,
     maxChromaticityError,

@@ -1185,6 +1185,61 @@ const QGA_SCIENCE = (() => {
     return geometricFluxToSI(pageThorneFluxGeometric(rest), massSolar);
   }
 
+  function pageThorneFluxClosedFormGeometric({
+    aStar = 0, r, massRate = 1, prograde = true, innerRadius,
+  } = {}) {
+    const spin = assertSpinParameter(aStar);
+    const radius = assertPositiveNumber(r, "r");
+    const rate = assertNonNegativeNumber(massRate, "massRate");
+    if (typeof prograde !== "boolean") throw new TypeError("prograde must be a boolean");
+    const inner = innerRadius === undefined
+      ? kerrIsco(spin, { prograde })
+      : assertPositiveNumber(innerRadius, "innerRadius");
+    if (radius <= inner) return 0;
+    const orbit = kerrCircularOrbit(spin, radius, { prograde });
+    const innerOrbit = kerrCircularOrbit(spin, inner, { prograde });
+    const torque = rate * (orbit.angularMomentum - innerOrbit.angularMomentum);
+    return (torque * -orbit.omegaDerivative) / (4 * Math.PI * radius);
+  }
+
+  function pageThorneFluxClosedFormSI(options = {}) {
+    const { massSolar, ...rest } = options;
+    return geometricFluxToSI(pageThorneFluxClosedFormGeometric(rest), massSolar);
+  }
+
+  function diskLuminosityGeometric({
+    aStar = 0, massRate = 1, prograde = true, innerRadius, outerRadius = 1e6,
+    quadratureOrder = 32, panels = 96, form = "closed-form",
+  } = {}) {
+    const spin = assertSpinParameter(aStar);
+    const rate = assertNonNegativeNumber(massRate, "massRate");
+    if (typeof prograde !== "boolean") throw new TypeError("prograde must be a boolean");
+    if (form !== "closed-form" && form !== "integral") {
+      throw new RangeError('form must be "closed-form" or "integral"');
+    }
+    const inner = innerRadius === undefined
+      ? kerrIsco(spin, { prograde })
+      : assertPositiveNumber(innerRadius, "innerRadius");
+    const outer = assertPositiveNumber(outerRadius, "outerRadius");
+    if (outer <= inner) throw new RangeError("outerRadius must exceed innerRadius");
+    const order = assertPositiveInteger(quadratureOrder, "quadratureOrder");
+    const panelCount = assertPositiveInteger(panels, "panels");
+    const flux = form === "integral" ? pageThorneFluxGeometric : pageThorneFluxClosedFormGeometric;
+    const ratio = (outer / inner) ** (1 / panelCount);
+    let total = 0;
+    for (let i = 0; i < panelCount; i += 1) {
+      const a = inner * ratio ** i;
+      const b = inner * ratio ** (i + 1);
+      total += gaussLegendreIntegrate(
+        (radius) => 4 * Math.PI * radius * flux({ aStar: spin, r: radius, massRate: rate, prograde, innerRadius: inner }),
+        a,
+        b,
+        order,
+      );
+    }
+    return total;
+  }
+
   function newtonianDiskFluxGeometric({ r, massRate = 1, innerRadius = 6 } = {}) {
     const radius = assertPositiveNumber(r, "r");
     const rate = assertNonNegativeNumber(massRate, "massRate");
@@ -1262,6 +1317,7 @@ const QGA_SCIENCE = (() => {
   const SRGB_GAMMA_OFFSET = 0.055;
   const SRGB_GAMMA_EXPONENT = 1 / 2.4;
   const FAST_FIT_STEP_NM = 20;
+  const FAST_FIT_METHODS = Object.freeze(["analytic", "interpolated"]);
 
   const XYZ_TO_LINEAR_SRGB = Object.freeze([
     Object.freeze([3.2404542, -1.5371385, -0.4985314]),
@@ -1340,6 +1396,23 @@ const QGA_SCIENCE = (() => {
     return { x: CIE_1931_2DEG_X[i], y: CIE_1931_2DEG_Y[i], z: CIE_1931_2DEG_Z[i] };
   }
 
+  function cieXyzBarInterpolated(wavelengthNm) {
+    const lambda = assertFiniteNumber(wavelengthNm, "wavelengthNm");
+    const u = (lambda - CIE_1931_2DEG_WAVELENGTH_START_NM) / CIE_1931_2DEG_WAVELENGTH_STEP_NM;
+    if (u <= 0) return { x: CIE_1931_2DEG_X[0], y: CIE_1931_2DEG_Y[0], z: CIE_1931_2DEG_Z[0] };
+    const last = CIE_1931_2DEG_SAMPLE_COUNT - 1;
+    if (u >= last) {
+      return { x: CIE_1931_2DEG_X[last], y: CIE_1931_2DEG_Y[last], z: CIE_1931_2DEG_Z[last] };
+    }
+    const i = Math.floor(u);
+    const f = u - i;
+    return {
+      x: CIE_1931_2DEG_X[i] + f * (CIE_1931_2DEG_X[i + 1] - CIE_1931_2DEG_X[i]),
+      y: CIE_1931_2DEG_Y[i] + f * (CIE_1931_2DEG_Y[i + 1] - CIE_1931_2DEG_Y[i]),
+      z: CIE_1931_2DEG_Z[i] + f * (CIE_1931_2DEG_Z[i + 1] - CIE_1931_2DEG_Z[i]),
+    };
+  }
+
   function cieXyzFromSpectralRadiance(radiance) {
     if (typeof radiance !== "function") throw new TypeError("radiance must be a function");
     const stepMeters = CIE_1931_2DEG_WAVELENGTH_STEP_NM * NANOMETRE_TO_METRE;
@@ -1358,7 +1431,7 @@ const QGA_SCIENCE = (() => {
     return { x: x * stepMeters, y: y * stepMeters, z: z * stepMeters };
   }
 
-  function cieXyzFromSpectralRadianceFast(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+  function integrateOnCoarseGrid(radiance, stepNm, bar) {
     if (typeof radiance !== "function") throw new TypeError("radiance must be a function");
     const step = assertFiniteNumber(stepNm, "stepNm");
     if (!(step > 0)) throw new RangeError(`stepNm must be greater than zero; received ${step}`);
@@ -1375,13 +1448,21 @@ const QGA_SCIENCE = (() => {
       const wavelengthNm = start + i * actualStep;
       const value = radiance(wavelengthNm * NANOMETRE_TO_METRE);
       if (!Number.isFinite(value)) throw new RangeError(`radiance returned a non-finite value at ${wavelengthNm} nm`);
-      const bar = cieXyzBarAnalytic(wavelengthNm);
+      const barValue = bar(wavelengthNm);
       const weight = i === 0 || i === count ? 0.5 : 1;
-      x += weight * value * bar.x;
-      y += weight * value * bar.y;
-      z += weight * value * bar.z;
+      x += weight * value * barValue.x;
+      y += weight * value * barValue.y;
+      z += weight * value * barValue.z;
     }
     return { x: x * stepMeters, y: y * stepMeters, z: z * stepMeters };
+  }
+
+  function cieXyzFromSpectralRadianceFast(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+    return integrateOnCoarseGrid(radiance, stepNm, cieXyzBarAnalytic);
+  }
+
+  function cieXyzFromSpectralRadianceInterpolated(radiance, { stepNm = FAST_FIT_STEP_NM } = {}) {
+    return integrateOnCoarseGrid(radiance, stepNm, cieXyzBarInterpolated);
   }
 
   function xyzToChromaticity({ x, y, z } = {}) {
@@ -1453,11 +1534,18 @@ const QGA_SCIENCE = (() => {
     return { temperatureK: temperature, xyz, linearRgb, srgb, hex: linearSrgbToHex(linearRgb) };
   }
 
+  function fastXyzForMethod(method) {
+    if (method === "analytic") return cieXyzFromSpectralRadianceFast;
+    if (method === "interpolated") return cieXyzFromSpectralRadianceInterpolated;
+    throw new RangeError(`method must be one of ${FAST_FIT_METHODS.join(", ")}; received ${String(method)}`);
+  }
+
   function fastBlackbodyToSrgb(temperatureK, options = {}) {
     const temperature = assertTemperature(temperatureK);
-    const raw = cieXyzFromSpectralRadianceFast(
+    const { method = "analytic", ...grid } = options ?? {};
+    const raw = fastXyzForMethod(method)(
       (wavelength) => planckSpectralRadiance(wavelength, temperature),
-      options,
+      grid,
     );
     if (!(raw.y > 0)) throw new RangeError(`blackbody at ${temperature} K has zero luminance in the visible band`);
     const xyz = { x: raw.x / raw.y, y: 1, z: raw.z / raw.y };
@@ -1470,12 +1558,13 @@ const QGA_SCIENCE = (() => {
     return { temperatureK: temperature, xyz, linearRgb, srgb, hex: linearSrgbToHex(linearRgb) };
   }
 
-  function fastBlackbodyToSrgbMaxError({ minK = 1000, maxK = 40000, samples = 400, stepNm = FAST_FIT_STEP_NM } = {}) {
+  function fastBlackbodyToSrgbMaxError({ minK = 1000, maxK = 40000, samples = 400, stepNm = FAST_FIT_STEP_NM, method = "analytic" } = {}) {
     const low = assertTemperature(minK, "minK");
     const high = assertTemperature(maxK, "maxK");
     if (!(high > low)) throw new RangeError(`maxK must exceed minK; received ${low} and ${high}`);
     const count = assertPositiveInteger(samples, "samples");
     const step = assertFiniteNumber(stepNm, "stepNm");
+    fastXyzForMethod(method);
     const logLow = Math.log(low);
     const logHigh = Math.log(high);
     const perChannel = { r: 0, g: 0, b: 0 };
@@ -1486,7 +1575,7 @@ const QGA_SCIENCE = (() => {
     for (let i = 0; i < count; i += 1) {
       const temperature = Math.exp(logLow + ((logHigh - logLow) * i) / (count - 1));
       const reference = blackbodyToSrgb(temperature);
-      const fast = fastBlackbodyToSrgb(temperature, { stepNm: step });
+      const fast = fastBlackbodyToSrgb(temperature, { stepNm: step, method });
       let worst = 0;
       let worstLinear = 0;
       for (const key of ["r", "g", "b"]) {
@@ -1510,7 +1599,7 @@ const QGA_SCIENCE = (() => {
       if (worstLinear > maxLinearChannelError) maxLinearChannelError = worstLinear;
     }
     return {
-      minK: low, maxK: high, samples: count, stepNm: step,
+      minK: low, maxK: high, samples: count, stepNm: step, method,
       maxChannelError, maxLinearChannelError, maxChromaticityError, maxErrorTemperatureK, perChannel,
     };
   }
@@ -1542,15 +1631,19 @@ const QGA_SCIENCE = (() => {
     /* accretion disk */
     DEFAULT_QUADRATURE_ORDER, gaussLegendreNodes, gaussLegendreIntegrate, kerrCircularOrbit,
     pageThorneFluxGeometric, pageThorneFluxSI, newtonianDiskFluxGeometric,
+    pageThorneFluxClosedFormGeometric, pageThorneFluxClosedFormSI, diskLuminosityGeometric,
     geometricStefanBoltzmannConstant, diskEffectiveTemperatureKelvin, diskEffectiveTemperatureGeometric,
     kerrGravitationalRedshiftOrbiting, kerrOrbitalDopplerFactor, kerrTotalRedshiftFactor,
     kerrGravitationalRedshiftStatic, observedTemperatureKelvin,
     /* spectrum */
     CIE_1931_2DEG_SOURCE, NANOMETRE_TO_METRE, WIEN_FREQUENCY_COEFFICIENT, SRGB_GAMMA_THRESHOLD,
     SRGB_GAMMA_SLOPE, SRGB_GAMMA_OFFSET, SRGB_GAMMA_EXPONENT, XYZ_TO_LINEAR_SRGB, FAST_FIT_STEP_NM,
+    FAST_FIT_METHODS,
     planckSpectralRadiance, planckSpectralRadiancePerFrequency, wienPeakWavelengthMeters,
-    wienPeakFrequencyHz, cieXyzBarAnalytic, cieXyzBarTabulated, cieXyzFromSpectralRadiance,
-    cieXyzFromSpectralRadianceFast, xyzToChromaticity, xyzToLinearSrgb, linearSrgbToSrgb,
+    wienPeakFrequencyHz, cieXyzBarAnalytic, cieXyzBarTabulated, cieXyzBarInterpolated,
+    cieXyzFromSpectralRadiance,
+    cieXyzFromSpectralRadianceFast, cieXyzFromSpectralRadianceInterpolated,
+    xyzToChromaticity, xyzToLinearSrgb, linearSrgbToSrgb,
     srgbToLinearSrgb, linearSrgbToHex, blackbodyToSrgb, fastBlackbodyToSrgb, fastBlackbodyToSrgbMaxError,
   };
 })();
