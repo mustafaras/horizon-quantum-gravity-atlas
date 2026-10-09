@@ -124,12 +124,19 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   const prm = usePRM();
   const mountRef = useRef(null);
   const hudStateRef = useRef({});
-  const [failed, setFailed] = useState(!qgaWebGLAvailable());
+  const [failed, setFailed] = useState(false);
+  const [phase, setPhase] = useState("initializing");
+  const [errorMessage, setErrorMessage] = useState("");
+  const diagnosticRef = useRef(null);
   const [playing, setPlaying] = useState(true);
   const [full, setFull] = useState(false);
   const settingsRef = useRef(settings); settingsRef.current = settings;
   const prmRef = useRef(prm); prmRef.current = prm;
   const playingRef = useRef(playing); playingRef.current = playing;
+  useEffect(() => () => {
+    if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
+  }, []);
+  useEffect(() => { setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
   // WebGL scene; the frame loop glides the orbit rig toward it instead.
   const goalRef = useRef(null);
@@ -142,25 +149,30 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   }, [cameraGoal]);
 
   useEffect(() => {
-    if (!qgaWebGLAvailable()) { setFailed(true); return; }
+    if (failed) return;
     const mount = mountRef.current;
     if (!mount) return;
-
-    const detail = settingsRef.current.detail3d || "medium";
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        antialias: detail !== "low", alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true,
-      });
-    } catch (e) { setFailed(true); return; }
-
-    const scene = new THREE.Scene();
+    const abort = new AbortController();
+    let alive = true, stop = () => {}, renderer, session, scene, built = {};
+    if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
+    const diagnosticId = QGA_RENDER.renderDiagnostics.allocate(aria || "Module scene");
+    diagnosticRef.current = diagnosticId;
+    setPhase("initializing");
+    const fail = (error) => {
+      if (!alive || error.name === "AbortError") return;
+      const message = QGA_RENDER.describeRenderError(error);
+      QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
+      QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
+      setErrorMessage(message);
+      setFailed(true);
+      stop();
+    };
+    const start = async () => {
+    scene = new THREE.Scene();
     const fov = initial.fov || 45;
     const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 600);
     const target = new THREE.Vector3(...(initial.target || [0, 0, 0]));
-    // bloom composer (skip on low detail for performance)
-    let composer = detail !== "low" ? qgaMakeComposer(renderer, scene, camera, 100, 100, initial.bloom) : null;
-    const renderFrame = () => { if (composer) composer.render(); else renderer.render(scene, camera); };
+    const renderFrame = (dt = 0, now = performance.now(), sample = false, frameMs = dt * 1000) => session.render(dt, now, sample, frameMs);
 
     // orbit rig state
     const orbit = {
@@ -178,15 +190,22 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     // cinematic intro: ease in from a pulled-back camera
     if (motion() > 0) { orbit.radius = home.radius * 1.45; orbit.introT = 1; }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, S3D_DPR[detail] || 1.5));
-    renderer.domElement.className = "s3d-canvas";
-    renderer.domElement.setAttribute("aria-hidden", "true");
-    mount.appendChild(renderer.domElement);
-
     // label overlay
     const labelLayer = document.createElement("div");
     labelLayer.className = "s3d-labels";
     mount.appendChild(labelLayer);
+    let resourcesReleased = false;
+    stop = () => {
+      if (resourcesReleased) return;
+      resourcesReleased = true;
+      if (built.dispose) {
+        try { built.dispose(); }
+        catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
+      }
+      s3dDispose(scene);
+      labelLayer.remove();
+      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+    };
     const labels = [];
     const makeLabel = (annotationOnly) => (text, posFn, cls) => {
       const el = document.createElement("div");
@@ -204,16 +223,37 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     };
 
     const ctx = {
-      THREE, scene, camera, renderer,
+      THREE, scene, camera, get renderer() { return renderer; },
       settings: settingsRef, motion,
       label: makeLabel(false),
       annotation: makeLabel(true),
       glow: s3dGlow, line: s3dLine, grid: s3dGrid,
     };
 
-    let built = {};
-    try { built = build(ctx) || {}; }
-    catch (e) { console.error("Scene3D build failed:", e); setFailed(true); }
+    built = build(ctx) || {};
+    camera.position.set(
+      target.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+      target.y + orbit.radius * Math.cos(orbit.phi),
+      target.z + orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta)
+    );
+    camera.lookAt(target);
+    if (built.update) built.update(0, 0);
+    setPhase("prewarming");
+    session = await QGA_RENDER.initializeRenderSession({
+      scene, camera, mount, settings: settingsRef.current, view: aria || "scene",
+      signal: abort.signal, diagnosticId, onError: fail, onPhase: (value) => { if (alive) setPhase(value); },
+      source: built.lightSource || null, applyQuality: built.applyRenderQuality || null,
+      depthValid: built.renderCapabilities?.depth !== false,
+    });
+    if (!alive) { await session.dispose(); return; }
+    if (session.backend === "static") {
+      fail(new Error(session.capabilities.diagnostics.join(" ")));
+      return;
+    }
+    renderer = session.renderer;
+    renderer.domElement.className = "s3d-canvas";
+    setPhase("ready");
+    const releaseResources = stop;
 
     // ---------- interaction ----------
     const el = renderer.domElement;
@@ -323,20 +363,15 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     el.addEventListener("wheel", onWheel, { passive: false });
     mount.addEventListener("keydown", onKeyDown);
 
-    const onContextLost = (e) => { e.preventDefault(); setFailed(true); };
-    el.addEventListener("webglcontextlost", onContextLost);
-
     // ---------- sizing ----------
     const resize = () => {
       const w = Math.max(40, mount.clientWidth);
       const h = Math.max(40, mount.clientHeight);
-      renderer.setSize(w, h, false);
+      session.resize();
       renderer.domElement.style.width = "100%";
       renderer.domElement.style.height = "100%";
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      if (composer) composer.setSize(w, h);
-      try { renderFrame(); } catch (e) {}
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -348,14 +383,16 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     io.observe(mount);
 
     // ---------- frame loop ----------
-    let raf, alive = true, last = performance.now(), clockT = 0;
+    let raf, last = performance.now(), clockT = 0;
     const v3 = new THREE.Vector3();
     const tick = (now) => {
       if (!alive) return;
-      raf = requestAnimationFrame(tick);
-      const rawDt = Math.min(0.05, (now - last) / 1000);
+      if (!renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
+      try {
+      const frameMs = Math.max(0, now - last);
+      const rawDt = Math.min(0.05, frameMs / 1000);
       last = now;
-      if (!visible) return; // offscreen: keep rAF cheap, do no work
+      if (!visible || document.hidden) { session.suspend(); return; }
 
       clockT += rawDt;
       const mo = motion();
@@ -433,23 +470,14 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
           ((v3.x * 0.5 + 0.5) * r.width).toFixed(1) + "px," +
           ((-v3.y * 0.5 + 0.5) * r.height).toFixed(1) + "px)";
       }
-      renderFrame();
+      renderFrame(rawDt, now, mo > 0 && playingRef.current, frameMs);
+      }
+      catch (error) { fail(error); }
     };
-    // one synchronous frame so the scene paints instantly even if rAF is throttled/frozen
-    try {
-      camera.position.set(
-        target.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
-        target.y + orbit.radius * Math.cos(orbit.phi),
-        target.z + orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta)
-      );
-      camera.lookAt(target);
-      if (built.update) built.update(0, 0);
-      renderFrame();
-    } catch (e) {}
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      alive = false;
+    let released = false;
+    stop = () => {
+      if (released) return;
+      released = true;
       cancelAnimationFrame(raf);
       ro.disconnect(); io.disconnect();
       el.removeEventListener("pointerdown", onPointerDown);
@@ -457,16 +485,24 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       el.removeEventListener("pointerup", onPointerUp);
       el.removeEventListener("pointercancel", onPointerUp);
       el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("webglcontextlost", onContextLost);
       mount.removeEventListener("keydown", onKeyDown);
-      if (built.dispose) { try { built.dispose(); } catch (e) {} }
-      s3dDispose(scene);
-      if (composer && composer.dispose) { try { composer.dispose(); } catch (e) {} }
-      renderer.dispose();
-      if (labelLayer.parentNode) labelLayer.parentNode.removeChild(labelLayer);
-      if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+      releaseResources();
     };
-  }, [failed, settings.detail3d, ...deps]); // eslint-disable-line
+    try { renderFrame(); }
+    catch (error) { fail(error); return; }
+    if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
+    else raf = requestAnimationFrame(tick);
+    };
+    void start().catch((error) => {
+      fail(error);
+      stop();
+    });
+    return () => {
+      alive = false;
+      abort.abort();
+      stop();
+    };
+  }, [failed, settings.detail3d, settings.vizMode, settings.motion, settings.renderBackend, settings.toneMapping, ...deps]); // eslint-disable-line
 
   // exit fullscreen on Escape
   useEffect(() => {
@@ -484,14 +520,17 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         <div className="s3d-fallback-note">
           <span className="badge badge-schematic">3D unavailable</span>
           <span className="small dim">Interactive 3D rendering could not start on this device — showing the 2D analytical view instead. All scientific content remains available.</span>
+          <span className="small" role="alert">{errorMessage}</span>
+          <button className="btn" onClick={() => setFailed(false)}>Retry 3D initialization</button>
         </div>
         {fallback}
       </div>
     );
   }
   return (
-    <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application"
+    <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application" aria-busy={phase !== "ready"}
       aria-label={(aria || "Interactive 3D scientific visualization") + ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen."}>
+      {phase !== "ready" ? <div className="render-loading" role="status">Initializing renderer and compiling shaders…</div> : null}
       <div className="s3d-hud" data-omelette-chrome="">
         <button className="s3d-hud-btn" title="Reset camera (R)" aria-label="Reset camera"
           onClick={() => hudStateRef.current.reset && hudStateRef.current.reset()}>⌖</button>

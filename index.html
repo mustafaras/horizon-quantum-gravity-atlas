@@ -1669,6 +1669,20 @@ body { background:
 @media (prefers-reduced-motion: reduce) {
   .causal-event.selected > circle:first-child, .causal-signal circle { animation: none !important; }
 }
+.render-loading { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 24px; background: #070b14; color: var(--head); }
+.s3d-stage[aria-busy="true"] .s3d-labels { visibility: hidden; }
+.render-fallback-notice { position: fixed; bottom: 12px; left: 12px; max-width: min(500px, 90vw); z-index: 45; padding: 12px; border: 1px solid var(--line-strong); background: #070b14; font-size: 12px; }
+.render-diagnostics { margin: 12px 0; padding: 10px; max-height: 55vh; overflow: auto; font-size: 12px; background: #070b14; color: var(--text); border-radius: 7px; }
+.render-select, .render-settings-btn { min-height: 44px; }
+.sidebar-foot .render-settings-btn { margin-top: 12px; width: 100%; }
+.topbar .render-settings-btn { font-size: 10px; padding: 4px; }
+.render-diagnostics summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.render-diagnostics summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.render-diagnostic-entry { border-top: 1px solid var(--line); padding-top: 12px; overflow-wrap: anywhere; }
+.render-diagnostic-entry h3 { font-size: 14px; }
+.render-diagnostic-entry ul { padding-left: 18px; }
+.s3d-fallback .btn { min-height: 44px; }
+.s3d-hud-btn { min-width: 44px; min-height: 44px; }
 </style>
 <link rel="stylesheet" href="styles/rg-flow.css">
 </head>

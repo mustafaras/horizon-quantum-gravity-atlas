@@ -6,6 +6,13 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      full:
+        description: Run the full browser QA suite
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 3 * * 1"
 
 permissions:
   contents: read
@@ -23,7 +30,10 @@ jobs:
         with:
           node-version: 24
 
-      - name: Run focused physics tests
+      - name: Install pinned test dependencies
+        run: npm ci
+
+      - name: Run physics and renderer contract tests
         run: npm test
 
       - name: Run repository validation
@@ -50,8 +60,30 @@ jobs:
       - name: Verify capture manifest
         run: npm run qa:verify
 
-      - name: Run browser QA suite
-        run: npm run qa:test
+      - name: Verify native renderer boundary first
+        env:
+          # Surface pinned Chromium/GPU-process stderr for software WebGPU triage.
+          DEBUG: pw:browser
+        run: npm run qa:test -- qa/specs/render-backends.spec.mjs --grep "real WebGPU API on a software adapter"
+
+      - name: Preserve native renderer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-renderer-evidence
+          path: |
+            qa/test-results/**/*.json
+            qa/test-results/**/sm-native-webgpu-software.png
+          retention-days: 7
+
+      # PRs and pushes gate on the critical subset; the full suite runs weekly or on demand.
+      - name: Run critical browser QA
+        if: github.event_name == 'push' || github.event_name == 'pull_request' || !inputs.full
+        run: npm run qa:critical
+
+      - name: Run full browser QA suite
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full)
+        run: npm run qa:test -- --grep-invert "real WebGPU API on a software adapter"
 
       - name: Upload failure artifacts
         if: failure()

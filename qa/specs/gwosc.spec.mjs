@@ -10,6 +10,13 @@ const LOADED = "GWOSC observation loaded";
 const FALLBACK = "GWOSC unavailable";
 
 test.describe("GWOSC fixture", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      window.QGA_RENDER_OPTIONS = { forceBackend: "static" };
+      sessionStorage.setItem("horizon-intro", "1");
+    });
+  });
+
   test("ok mode: observation loads with provenance", async ({ page }) => {
     await installGwoscFixture(page, "ok");
     await gotoReady(page, REAL_URL, [
@@ -35,14 +42,17 @@ test.describe("GWOSC fixture", () => {
 
   test("cancel during load reports the cancelled phase", async ({ page }) => {
     await installGwoscFixture(page, "ok");
-    // Registered after the fixture, so this delaying route wins for the strain download.
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
     await page.route("**/fixture/GW150914-synthetic-strain.txt", async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      await route.continue();
+      await gate;
+      await route.fallback();
     });
-    await gotoReady(page, REAL_URL, ["fonts", "view-mounted"]);
-    await page.locator(".gw-theatre").getByRole("button", { name: "Cancel" }).click();
-    await expect(page.locator(".gw-theatre")).toContainText(/cancelled/i);
+    try {
+      await gotoReady(page, REAL_URL, ["view-mounted"]);
+      await page.locator(".gw-theatre").getByRole("button", { name: "Cancel" }).click();
+      await expect(page.locator(".gw-theatre")).toContainText(/cancelled/i);
+    } finally { release(); }
   });
 
   test("parser contract: bounded samples, calibrated provenance", async ({ page }) => {

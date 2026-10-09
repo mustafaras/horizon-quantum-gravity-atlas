@@ -1,7 +1,8 @@
 async function bootstrap() {
   try {
-    const { threeCompatibility } = await import("./render/three-runtime.mjs");
+    const { threeCompatibility, renderRuntime } = await import("./render/three-runtime.mjs");
     Object.defineProperty(window, "THREE", { value: threeCompatibility, configurable: true });
+    Object.defineProperty(window, "QGA_RENDER", { value: renderRuntime, configurable: true });
 
     const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
     const sources = await Promise.all(scripts.map(async (script) => {

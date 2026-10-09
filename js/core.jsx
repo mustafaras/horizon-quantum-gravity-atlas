@@ -6,6 +6,8 @@ const QGA_SETTINGS_DEFAULTS = {
   vizMode: "cinematic",      // scientific | cinematic | minimal
   motion: "balanced",        // reduced | balanced | full
   detail3d: "medium",        // low | medium | ultra
+  renderBackend: "auto",
+  toneMapping: "agx",
   labels3d: true,
   annotations3d: true,
   pathway: "student",        // beginner | student | advanced

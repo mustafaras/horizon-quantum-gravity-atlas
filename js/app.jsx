@@ -54,6 +54,8 @@ const QGA_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "vizMode": "cinematic",
   "motion": "balanced",
   "detail3d": "medium",
+  "renderBackend": "auto",
+  "toneMapping": "agx",
   "labels3d": true,
   "annotations3d": true,
   "pathway": "student"
@@ -128,6 +130,33 @@ function PathwaySelector({ value, onChange }) {
   );
 }
 
+function RenderDiagnosticsDrawer() {
+  const [entries, setEntries] = useState(() => QGA_RENDER.renderDiagnostics.snapshot());
+  useEffect(() => QGA_RENDER.renderDiagnostics.subscribe(() => setEntries(QGA_RENDER.renderDiagnostics.snapshot())), []);
+  return <details className="render-diagnostics">
+    <summary>Developer rendering diagnostics</summary>
+    <p className="small dim">Actual initialized backends and effects. Adaptive budgets change rendering only, not scientific state.</p>
+    {entries.map((entry) => <section key={entry.id} className="render-diagnostic-entry">
+      <h3>{entry.label}</h3>
+      <p className="mono small">{entry.phase} · {entry.backend} / {entry.capabilities?.rendererPath || "pending"} ·
+        {" "}{entry.fps ? entry.fps.toFixed(1) + " FPS" : "FPS not sampled"} · DPR {entry.dpr?.toFixed(2) || "—"}</p>
+      {entry.quality ? <p className="small">Particles ≤ {entry.quality.particleBudget}; temporal budget gate {entry.quality.temporalSamples} (TRAA uses fixed 32-position jitter);
+        {" "}volumetric budget {entry.quality.raySteps} (used only by opt-in visual effects).</p> : null}
+      <ul>{entry.effects.map((effect) => <li key={effect.name}>{effect.name}: <strong>{effect.status}</strong>{effect.reason ? " — " + effect.reason : ""}</li>)}</ul>
+      {entry.messages.map((message, i) => <p className="small" key={i}>{message}</p>)}
+    </section>)}
+  </details>;
+}
+
+function RenderSetting({ label, value, options, onChange }) {
+  return <label className="twk-row">
+    <span className="twk-lbl">{label}</span>
+    <select className="twk-field render-select" aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
+      {options.map((option) => <option key={option} value={option}>{option}</option>)}
+    </select>
+  </label>;
+}
+
 function App() {
   const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
@@ -142,6 +171,7 @@ function App() {
   useEffect(() => { if (stateView !== view) setView(stateView); }, [stateView]); // eslint-disable-line
   const [menuOpen, setMenuOpen] = useState(false);
   const contentRef = useRef(null);
+  const openRenderingSettings = () => window.postMessage({ type: "__activate_edit_mode" }, location.origin);
 
   const go = (id) => {
     setView(id);
@@ -156,8 +186,9 @@ function App() {
   const effMotion = prm ? "reduced" : t.motion;
   const settings = useMemo(() => ({
     vizMode: t.vizMode, motion: effMotion, detail3d: t.detail3d,
+    renderBackend: t.renderBackend || "auto", toneMapping: t.toneMapping || "agx",
     labels3d: !!t.labels3d, annotations3d: !!t.annotations3d, pathway: atlasState.pathway,
-  }), [t.vizMode, effMotion, t.detail3d, t.labels3d, t.annotations3d, atlasState.pathway]);
+  }), [t.vizMode, effMotion, t.detail3d, t.renderBackend, t.toneMapping, t.labels3d, t.annotations3d, atlasState.pathway]);
 
   // apply tweaks to CSS custom properties + motion attribute
   useEffect(() => {
@@ -193,10 +224,12 @@ function App() {
           <div className="sidebar-foot">
             Scientific status labels mark every claim.<br></br>
             No quantum gravity theory is experimentally confirmed.
+            <button className="btn render-settings-btn" onClick={openRenderingSettings}>Rendering settings</button>
           </div>
         </nav>
         <div className="topbar">
           <span className="topbar-title">HORIZON</span>
+          <button className="btn render-settings-btn" onClick={openRenderingSettings}>Rendering settings</button>
           <button className="btn" onClick={async () => { try { await QGA_COPY_LINK(qgaReadState()); } catch (e) {} }}>Copy link</button>
           <button className="btn" onClick={() => QGA_EXPORT_JSON(qgaReadState())}>Export JSON</button>
           <button className="menu-btn" onClick={() => setMenuOpen(true)}>MODULES ☰</button>
@@ -219,15 +252,23 @@ function App() {
       ) : null}
       <TweaksPanel>
         <TweakSection label="Visualization"></TweakSection>
-        <TweakRadio label="Mode" value={t.vizMode}
-          options={["scientific", "cinematic", "minimal"]}
-          onChange={(v) => setTweak("vizMode", v)}></TweakRadio>
-        <TweakRadio label="Motion" value={t.motion}
+        <RenderSetting label="Mode" value={t.vizMode}
+          options={["scientific", "cinematic", "minimal", "capture"]}
+          onChange={(v) => setTweak("vizMode", v)}></RenderSetting>
+        <RenderSetting label="Motion" value={t.motion}
           options={["reduced", "balanced", "full"]}
-          onChange={(v) => setTweak("motion", v)}></TweakRadio>
-        <TweakRadio label="3D detail" value={t.detail3d}
+          onChange={(v) => setTweak("motion", v)}></RenderSetting>
+        <RenderSetting label="3D detail" value={t.detail3d}
           options={["low", "medium", "ultra"]}
-          onChange={(v) => setTweak("detail3d", v)}></TweakRadio>
+          onChange={(v) => setTweak("detail3d", v)}></RenderSetting>
+        <RenderSetting label="Render backend" value={t.renderBackend || "auto"}
+          options={["auto", "webgl2", "static"]}
+          onChange={(v) => setTweak("renderBackend", v)}></RenderSetting>
+        <RenderSetting label="Tone mapping" value={t.toneMapping || "agx"}
+          options={["agx", "neutral"]}
+          onChange={(v) => setTweak("toneMapping", v)}></RenderSetting>
+        {prm ? <p className="small dim">System reduced-motion overrides Motion settings and disables temporal effects.</p> : null}
+        <RenderDiagnosticsDrawer></RenderDiagnosticsDrawer>
         <TweakToggle label="3D labels" value={t.labels3d}
           onChange={(v) => setTweak("labels3d", v)}></TweakToggle>
         <TweakToggle label="Annotations" value={t.annotations3d}

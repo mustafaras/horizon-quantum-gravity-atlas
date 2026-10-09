@@ -45,7 +45,20 @@ export function inspectThreeVendor(root) {
   }
   const files = metadata.files ?? {};
   if (!files.LICENSE || !Object.keys(files).length) failures.push("Missing vendored file integrity/license manifest");
+  const inspectAssets = (directory) => {
+    for (const entry of fs.readdirSync(path.join(root, "vendor/three", directory), { withFileTypes: true })) {
+      const file = path.posix.join(directory, entry.name);
+      if (entry.isDirectory()) inspectAssets(file);
+      else if (entry.isSymbolicLink()) failures.push(`Vendored asset must not be a symlink: ${file}`);
+      else if (file !== "VERSION" && !Object.hasOwn(files, file)) failures.push(`Vendored asset lacks integrity metadata: ${file}`);
+    }
+  };
+  inspectAssets("");
   for (const [file, digest] of Object.entries(files)) {
+    if (file.startsWith("/") || file.split("/").includes("..") || !/^[a-f0-9]{64}$/.test(digest)) {
+      failures.push(`Invalid vendored manifest entry: ${file}`);
+      continue;
+    }
     const asset = `vendor/three/${file}`;
     if (!exists(asset)) { failures.push(`Missing vendored asset: ${asset}`); continue; }
     const actual = createHash("sha256").update(fs.readFileSync(path.join(root, asset))).digest("hex");
