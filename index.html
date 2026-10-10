@@ -1396,13 +1396,6 @@ body { background:
   .horizon-intro { animation: introWrapOut 0.3s ease 1.4s forwards; }
   .intro-mark, .intro-word span, .intro-tag, .intro-line, .intro-mark .bm-orbit { animation: none !important; opacity: 1 !important; transform: none !important; width: min(360px,60vw); }
 }
-.ov-card { transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s, background 0.18s; }
-.ov-card:hover {
-  border-color: var(--acc) !important;
-  box-shadow: 0 24px 60px -34px rgba(0,0,0,0.9), 0 0 0 1px var(--acc-soft);
-  transform: translateY(-3px);
-  background: rgba(14,20,33,0.7) !important;
-}
 .ov-card:hover .gs-group { color: #fff; }
 
 /* ---- Feynman lab: process templates ---- */
@@ -1683,6 +1676,47 @@ body { background:
 .render-diagnostic-entry ul { padding-left: 18px; }
 .s3d-fallback .btn { min-height: 44px; }
 .s3d-hud-btn { min-width: 44px; min-height: 44px; }
+
+/* ---------- atlas overview: scientific hero ---------- */
+.ov-hero { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; padding-bottom: 24px; }
+.ov-hero-ladder {
+  position: relative; border: 1px solid var(--line); border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(10,16,28,0.55), rgba(7,10,17,0.82));
+  box-shadow: 0 18px 48px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(148,176,224,0.05);
+  overflow: hidden; backdrop-filter: blur(8px);
+}
+.ov-ladder-canvas { display: block; }
+.ov-physics-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;
+  margin: 26px 0 4px 0; padding: 16px 18px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); backdrop-filter: blur(10px);
+}
+.ov-physics-cell + .ov-physics-cell { border-left: 1px solid var(--line); padding-left: 14px; }
+@media (max-width: 760px) { .ov-physics-cell + .ov-physics-cell { border-left: none; padding-left: 0; border-top: 1px solid var(--line); padding-top: 10px; } }
+.ov-physics-note { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; color: var(--text-dim); margin-top: 5px; }
+.ov-card { transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s, background 0.18s; }
+.ov-card:hover {
+  border-color: var(--acc) !important;
+  box-shadow: 0 24px 60px -34px rgba(0,0,0,0.9), 0 0 0 1px var(--acc-soft);
+  transform: translateY(-3px);
+  background: rgba(14,20,33,0.7) !important;
+}
+.ov-card:hover .gs-group { color: #fff; }
+.ov-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.ov-cue { font-size: 10px; letter-spacing: 0.1em; color: var(--cyan); }
+.ov-scale { font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); }
+@media (prefers-reduced-motion: reduce) {
+  .ov-ladder-canvas { animation: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion="full"] .ov-hero-ladder, html[data-motion="balanced"] .ov-hero-ladder {
+    transition: box-shadow 0.5s ease;
+  }
+  html[data-motion="full"] .ov-hero-ladder:hover {
+    box-shadow: 0 22px 60px rgba(0,0,0,0.5), 0 0 34px -10px rgba(84,174,255,0.35);
+  }
+}
 </style>
 <link rel="stylesheet" href="styles/rg-flow.css">
 </head>
