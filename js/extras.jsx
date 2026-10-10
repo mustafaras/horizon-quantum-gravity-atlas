@@ -1,16 +1,166 @@
 // extras.jsx — Overview, Glossary, References, Open Problems
+
+/* Deterministic scientific hero: a live "energy ladder" spanning 60 decades,
+   from the largest cosmic structures to the Planck length. Pure canvas reads
+   its x-positions from real exponents; motion (drift + probe pulse) is gated
+   by prefers-reduced-motion and the atlas motion setting. No randomness:
+   every render is bit-identical for a given frame index. */
+const OVERVIEW_LADDER = [
+  { e: 27, label: "observable universe", tag: "horizon ≃ 93 Gly" },
+  { e: 21, label: "galactic voids", tag: "Laniakea scale" },
+  { e: 16, label: "stellar system", tag: "Neptune orbit" },
+  { e: 9, label: "human", tag: "1.7 m" },
+  { e: 6, label: "cell nucleus", tag: "optics fails" },
+  { e: -9, label: "atom", tag: "Bohr radius" },
+  { e: -12, label: "proton", tag: "LHC resolves" },
+  { e: -15, label: "electroweak", tag: "W, Z probes" },
+  { e: -18, label: "collider frontier", tag: "14 TeV → ħc/E" },
+  { e: -35, label: "Planck length", tag: "quantum gravity" },
+];
+const OVERVIEW_L_MIN = -35, OVERVIEW_L_MAX = 27;
+
+function OverviewEnergyLadder() {
+  const prm = usePRM();
+  const { motion } = useAtlasSettings();
+  const ref = useRef(null);
+  const motionRef = useRef(0);
+  const tRef = useRef(0);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return undefined;
+    const drift = prm ? 0 : (motion === "full" ? 1 : 0.45);
+    motionRef.current = drift;
+    let raf; let alive = true;
+    let last = performance.now();
+    const draw = (now) => {
+      if (!alive) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      tRef.current += dt * motionRef.current;
+      const t = tRef.current;
+      const { ctx, w, h } = fitCanvas(cv);
+      const xOf = (e) => 40 + ((e - OVERVIEW_L_MIN) / (OVERVIEW_L_MAX - OVERVIEW_L_MIN)) * (w - 80);
+      const midY = h * 0.52;
+      ctx.clearRect(0, 0, w, h);
+      // decade ticks: 62 decades, minor labels every 10
+      ctx.font = "9px var(--font-mono, monospace)";
+      for (let e = Math.ceil(OVERVIEW_L_MIN / 5) * 5; e <= OVERVIEW_L_MAX; e += 5) {
+        const x = xOf(e);
+        const major = e % 10 === 0;
+        ctx.strokeStyle = major ? "rgba(148,176,224,0.3)" : "rgba(148,176,224,0.12)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, midY - (major ? 15 : 8)); ctx.lineTo(x, midY + (major ? 15 : 8)); ctx.stroke();
+        if (major && e >= -30) {
+          ctx.fillStyle = "rgba(147,161,186,0.85)";
+          ctx.fillText("10" + supScript(e) + " m", x - 14, midY + 32);
+        }
+      }
+      // the axis itself
+      const grad = ctx.createLinearGradient(40, 0, w - 40, 0);
+      grad.addColorStop(0, "rgba(70,212,224,0.55)");
+      grad.addColorStop(0.55, "rgba(84,174,255,0.55)");
+      grad.addColorStop(1, "rgba(255,141,22,0.55)");
+      ctx.strokeStyle = grad; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(40, midY); ctx.lineTo(w - 40, midY); ctx.stroke();
+      // ladder stops with a slow, deterministic probe sweep
+      const sweep = Math.sin(t * 0.55);
+      OVERVIEW_LADDER.forEach((stop, i) => {
+        const x = xOf(stop.e);
+        const phase = Math.sin(t * 0.9 - i * 0.7);
+        const lift = (motionRef.current > 0 ? phase * 3.2 : 0) - 12;
+        const near = Math.max(0, 1 - Math.abs(sweep * (w - 80) * 0.5 + 20 - (x - 40)) / 140);
+        const y = midY + lift;
+        const hot = 0.55 + 0.45 * near;
+        ctx.beginPath();
+        ctx.arc(x, y, 3.1 + 1.1 * near, 0, Math.PI * 2);
+        ctx.fillStyle = stop.e === -35
+          ? "rgba(255,123,114," + hot.toFixed(3) + ")"
+          : "rgba(84,174,255," + hot.toFixed(3) + ")";
+        ctx.fill();
+        if (stop.e === -35 || stop.e === 27) {
+          ctx.strokeStyle = "rgba(255,123,114,0.4)"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(x, y, 7.5 + 2.5 * near, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.fillStyle = near > 0.45 ? "#f3f7fe" : "rgba(232,238,248,0.85)";
+        ctx.font = "600 10.5px var(--font-head, sans-serif)";
+        ctx.textAlign = "center";
+        ctx.fillText(stop.label, x, y - 9);
+        // alternating leader lines below the axis
+        const below = i % 2 === 0;
+        ctx.strokeStyle = "rgba(148,176,224,0.34)"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (below) { ctx.moveTo(x, y + 5); ctx.lineTo(x, midY - 4); }
+        else { ctx.moveTo(x, y + 5); ctx.lineTo(x, midY + 18); }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, midY - (i % 2 === 0 ? 0 : 0), 0, 0, Math.PI * 2); ctx.stroke();
+        if (below) {
+          ctx.fillStyle = "rgba(70,212,224,0.75)";
+          ctx.font = "9px var(--font-mono, monospace)";
+          ctx.fillText(stop.tag, x, y + 15);
+        } else {
+          ctx.fillStyle = "rgba(70,212,224,0.75)";
+          ctx.font = "9px var(--font-mono, monospace)";
+          ctx.fillText(stop.tag, x, y - 22);
+        }
+        ctx.textAlign = "start";
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { alive = false; cancelAnimationFrame(raf); };
+  }, [prm, motion]);
+  return <canvas ref={ref} className="ov-ladder-canvas" style={{ width: "100%", height: 190 }} aria-label="Logarithmic length scale ladder from the observable universe to the Planck length, sixty orders of magnitude"></canvas>;
+}
+
+/* Live readouts computed in-page from the pure physics layer,
+   window.QGA_PHYSICS (js/physics.mjs → js/science/). */
+function OverviewPhysicsStrip() {
+  const p = window.QGA_PHYSICS || {};
+  const units = p.planckUnits ? p.planckUnits() : null;
+  const items = units ? [
+    { label: "Planck length", value: "1.616 × 10⁻³⁵ m", note: "where gravity quantizes" },
+    { label: "Planck energy", value: "1.2209 × 10¹⁹ GeV", note: "proton collider limit ≈ 14 × 10³ GeV" },
+    { label: "Mercury perihelion", value: "42.98″/century", note: "6πGM/c²a(1−e²), confirmed" },
+    { label: "1919 light deflection", value: "1.75″ at the limb", note: "4GM/c²b, twice Newton" },
+  ] : [];
+  return (
+    <div className="ov-physics-strip">
+      {items.map((it) => (
+        <div key={it.label} className="ov-physics-cell">
+          <div className="readout-label">{it.label}</div>
+          <div className="readout-value" style={{ fontSize: 13.5 }}>{it.value}</div>
+          <div className="ov-physics-note">{it.note}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Per-module scientific metadata so the module grid reads like a map of
+   domains of validity, not a menu. Blurb text stays honest and short. */
+const OVERVIEW_MODULE_META = {
+  sm: { scale: "1–10 TeV", statusKind: "established", cue: "SU(3)×SU(2)×U(1)" },
+  qft: { scale: "all E (effective)", statusKind: "established", cue: "ħ drives the path integral" },
+  rg: { scale: "μ runs to 10¹⁹ GeV", statusKind: "established", cue: "β(g) flow" },
+  gr: { scale: "weak field to horizons", statusKind: "established", cue: "g_μν geometry" },
+  planck: { scale: "10¹⁹ GeV", statusKind: "open", cue: "16 empty decades" },
+  approaches: { scale: "untested", statusKind: "conjectural", cue: "5 rival programs" },
+  bh: { scale: "r₊ … ISCO", statusKind: "effective", cue: "S = k_B A/4" },
+  exp: { scale: "GW: 10⁻²¹ strain", statusKind: "effective", cue: "GW150914 + collider" },
+};
+
 function ViewOverview({ go }) {
   return (
     <article data-screen-label="Overview">
-      <header style={{ minHeight: "62vh", display: "flex", flexDirection: "column", justifyContent: "center", paddingBottom: 24 }}>
+      <header className="ov-hero" data-screen-label="Overview">
         <div className="module-kicker" style={{ fontSize: 12, letterSpacing: "0.34em" }}>HORIZON · Quantum Gravity Atlas</div>
         <h1 style={{ fontSize: "clamp(40px, 6.4vw, 76px)", lineHeight: 1.02, margin: "16px 0 18px 0", maxWidth: 900, letterSpacing: "-0.02em" }}>
-          From particles<br></br>to spacetime.
+          From fields to geometry —<br></br>then past both.
         </h1>
-        <p className="module-lede" style={{ fontSize: 19, maxWidth: 720 }}>
-          A cinematic, interactive map of modern physics — eight modules tracing the path from the Standard Model to
-          the open frontier of quantum gravity, with rigorous explanation, real-time 3D simulation, and an honest
-          accounting of what is established, what is effective, and what remains conjecture.
+        <p className="module-lede" style={{ fontSize: 19, maxWidth: 760 }}>
+          A quantitative, interactive map of modern physics: eight modules sweep the sixty decades between the
+          observable universe and the Planck length, each rendering computed live and labeled with what is
+          <em> established</em>, <em>effective</em>, or <em>conjectural</em>. Nothing here is shown as confirmed that is not.
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 22 }}>
           <button className="bridge-go" style={{ fontSize: 14.5, padding: "13px 22px" }} onClick={() => go("sm")}>
@@ -19,21 +169,39 @@ function ViewOverview({ go }) {
           <button className="btn" onClick={() => go("bh")}>Jump to Black Holes</button>
           <span className="mono dim" style={{ fontSize: 11, letterSpacing: "0.14em" }}>8 MODULES · INTERACTIVE 3D · LIVE FORMULAS</span>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 26 }}>
+        <div className="ov-hero-ladder" style={{ marginTop: 30 }}>
+          <OverviewEnergyLadder></OverviewEnergyLadder>
+          <div className="ov-ladder-caption viz-caption" style={{ borderTop: "none", padding: "2px 6px 10px 6px" }}>
+            <span>fig. 1 — the arena: every length scale the atlas traverses, on one log axis</span>
+            <span className="mono dim">60 decades · 63 powers of ten</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
           <Badge kind="established"></Badge> <Badge kind="effective"></Badge> <Badge kind="conjectural"></Badge> <Badge kind="schematic"></Badge> <Badge kind="open"></Badge>
         </div>
       </header>
+      <OverviewPhysicsStrip></OverviewPhysicsStrip>
       <Section title="The eight modules">
         <div className="formula-grid">
-          {QGA_MODULES.map((m) => (
-            <button key={m.id} className="ov-card gauge-sector" style={{ "--sector-color": "var(--acc)", position: "relative", overflow: "hidden" }}
-              onClick={() => go(m.id)}>
-              <span aria-hidden="true" style={{ position: "absolute", right: 10, top: -14, fontFamily: "var(--font-head)", fontSize: 64, fontWeight: 700, color: "var(--head)", opacity: 0.05, lineHeight: 1 }}>{m.num}</span>
-              <div className="gs-name" style={{ color: "var(--acc)" }}>Module {m.num}</div>
-              <div className="gs-group" style={{ fontSize: 17, marginTop: 4 }}>{m.title}</div>
-              <p className="small dim" style={{ margin: "8px 0 0 0" }}>{MODULE_BLURBS[m.id]}</p>
-            </button>
-          ))}
+          {QGA_MODULES.map((m) => {
+            const meta = OVERVIEW_MODULE_META[m.id];
+            return (
+              <button key={m.id} className="ov-card gauge-sector" style={{ "--sector-color": "var(--acc)", position: "relative", overflow: "hidden" }}
+                onClick={() => go(m.id)}>
+                <span aria-hidden="true" style={{ position: "absolute", right: 10, top: -14, fontFamily: "var(--font-head)", fontSize: 64, fontWeight: 700, color: "var(--head)", opacity: 0.05, lineHeight: 1 }}>{m.num}</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                  <div className="gs-name" style={{ color: "var(--acc)" }}>Module {m.num}</div>
+                  <Badge kind={meta.statusKind}></Badge>
+                </div>
+                <div className="gs-group" style={{ fontSize: 17, marginTop: 4 }}>{m.title}</div>
+                <p className="small dim" style={{ margin: "8px 0 0 0" }}>{MODULE_BLURBS[m.id]}</p>
+                <div className="ov-card-meta" style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+                  <span className="ov-cue mono">{meta.cue}</span>
+                  <span className="ov-scale mono">{meta.scale}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </Section>
       <Section title="A note on scientific honesty">
