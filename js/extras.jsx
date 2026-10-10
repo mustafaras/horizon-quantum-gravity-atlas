@@ -112,6 +112,208 @@ function OverviewEnergyLadder() {
   return <canvas ref={ref} className="ov-ladder-canvas" style={{ width: "100%", height: 190 }} aria-label="Logarithmic length scale ladder from the observable universe to the Planck length, sixty orders of magnitude"></canvas>;
 }
 
+/* ---------- 3D "Arena of Scales" premium hero ---------- */
+// Exponent → scene z along a straight luminous corridor: Planck at the deep
+// end (z = 0), the observable-universe horizon at the far end (z = +RAMP_LEN).
+// The mapping is the scientific content — distance in the scene IS Δlog₁₀ l.
+const ARENA_RAMP_LEN = 44;
+const ARENA_SPAN = OVERVIEW_L_MAX - OVERVIEW_L_MIN; // 62 decades walked + 1 gate each
+const arenaZ = (e) => (e - OVERVIEW_L_MIN) / (OVERVIEW_L_MAX - OVERVIEW_L_MIN) * ARENA_RAMP_LEN;
+const ARENA_COLORS = { cosmic: 0x54aeff, human: 0x46d4e0, quantum: 0xffd08a, planck: 0xff7b72 };
+
+function OverviewArena3D() {
+  const [focus, setFocus] = useState(null);
+  const focusRef = useRef(null); focusRef.current = focus;
+  const rng = window.QGA_PHYSICS && window.QGA_PHYSICS.seededRng ? window.QGA_PHYSICS.seededRng(42) : () => 0.5;
+
+  const build = (ctx) => {
+    const { THREE, scene } = ctx;
+    scene.fog = new THREE.FogExp2(0x03050a, 0.0042);
+    scene.add(new THREE.AmbientLight(0x8fa3c8, 0.5));
+    const key = new THREE.DirectionalLight(0xcdd9ff, 0.7);
+    key.position.set(10, 26, -18);
+    scene.add(key);
+
+    const det = ctx.settings.current.detail3d;
+    const dustN = det === "low" ? 240 : 640;
+    const disposables = [];
+    const track = (obj) => { disposables.push(obj); return obj; };
+    // Shared materials only: every per-frame animation is an object transform,
+    // so materialSignature stays constant and the prewarm/change loop terminates
+    // instead of rebuilding the shader graph every frame.
+    const classMat = {
+      cosmic: track(new THREE.MeshBasicMaterial({ color: ARENA_COLORS.cosmic, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })),
+      human: track(new THREE.MeshBasicMaterial({ color: ARENA_COLORS.human, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })),
+      quantum: track(new THREE.MeshBasicMaterial({ color: ARENA_COLORS.quantum, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })),
+      planck: track(new THREE.MeshBasicMaterial({ color: ARENA_COLORS.planck, transparent: true, opacity: 0.62, blending: THREE.AdditiveBlending, depthWrite: false })),
+    };
+    const glowMat = {
+      cosmic: track(new THREE.SpriteMaterial({ map: qgaGlowTexture(), color: ARENA_COLORS.cosmic, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending })),
+      human: track(new THREE.SpriteMaterial({ map: qgaGlowTexture(), color: ARENA_COLORS.human, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending })),
+      quantum: track(new THREE.SpriteMaterial({ map: qgaGlowTexture(), color: ARENA_COLORS.quantum, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending })),
+      planck: track(new THREE.SpriteMaterial({ map: qgaGlowTexture(), color: ARENA_COLORS.planck, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending })),
+    };
+    const classOf = (stop) => (stop.e === -35 ? "planck" : stop.e < 0 ? "quantum" : stop.e <= 16 ? "human" : "cosmic");
+    const hoopGeo = track(new THREE.TorusGeometry(4.2, 0.085, 10, det === "low" ? 32 : 72));
+    const coreGeo = track(new THREE.SphereGeometry(0.16, 12, 10));
+    const coreMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+
+    // ---------- seeded drifting dust (deterministic layout) ----------
+    const dustGeo = track(new THREE.BufferGeometry());
+    const dustPos = new Float32Array(dustN * 3);
+    const dustSeed = new Float32Array(dustN);
+    for (let i = 0; i < dustN; i++) {
+      const jitter = 8 + rng() * 5;
+      dustPos[i * 3] = (rng() * 2 - 1) * jitter;
+      dustPos[i * 3 + 1] = rng() * 8.4;
+      dustPos[i * 3 + 2] = rng() * (ARENA_RAMP_LEN + 14) - 8;
+      dustSeed[i] = rng() * Math.PI * 2;
+    }
+    dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+    const dust = new THREE.Points(dustGeo, track(new THREE.PointsMaterial({
+      size: 0.55, map: qgaGlowTexture(),
+      color: 0xbdd2ff, transparent: true, opacity: 0.5,
+      depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+    })));
+    scene.add(dust);
+
+    // ---------- corridor: floor panel + grid, rails and ticks merged ----------
+    const floor = new THREE.Mesh(
+      track(new THREE.PlaneGeometry(16, ARENA_RAMP_LEN + 10)),
+      track(new THREE.MeshBasicMaterial({ color: 0x0a1424, transparent: true, opacity: 0.22, depthWrite: false })),
+    );
+    floor.geometry.rotateX(-Math.PI / 2);
+    floor.position.set(0, -0.02, ARENA_RAMP_LEN / 2 - 6);
+    floor.renderOrder = -3;
+    scene.add(floor);
+    const grid = s3dGrid(16, 16, 0x2a3a58, 0.16);
+    grid.geometry.rotateX(-Math.PI / 2);
+    grid.position.set(0, 0.01, ARENA_RAMP_LEN / 2 - 6);
+    grid.renderOrder = -2;
+    scene.add(grid);
+    const railPts = [];
+    const railColors = [];
+    const pushSeg = (x1, z1, x2, z2, color) => {
+      railPts.push(x1, 0.04, z1, x2, 0.04, z2);
+      railColors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+    };
+    const cRail = new THREE.Color(0x3d5a8f), cTick = new THREE.Color(0x2a3a58), cMajor = new THREE.Color(0x5382c8);
+    pushSeg(-6.2, -5, -6.2, ARENA_RAMP_LEN + 3, cRail);
+    pushSeg(6.2, -5, 6.2, ARENA_RAMP_LEN + 3, cRail);
+    for (let e = Math.ceil(OVERVIEW_L_MIN / 5) * 5; e <= OVERVIEW_L_MAX; e += 5) {
+      const z = arenaZ(e);
+      pushSeg(-6.2, z, 6.2, z, e % 10 === 0 ? cMajor : cTick);
+    }
+    const railGeo = track(new THREE.BufferGeometry());
+    railGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(railPts), 3));
+    railGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(railColors), 3));
+    scene.add(new THREE.LineSegments(railGeo, track(new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55 }))));
+
+    // ---------- gates: one per scale stop ----------
+    const gates = [];
+    for (let i = 0; i < OVERVIEW_LADDER.length; i++) {
+      const stop = OVERVIEW_LADDER[i];
+      const cls = classOf(stop);
+      const z = arenaZ(stop.e);
+      const hoop = new THREE.Mesh(hoopGeo, classMat[cls]);
+      hoop.position.set(0, 4.2, z);
+      if (cls === "planck") hoop.scale.setScalar(1.06);
+      scene.add(hoop);
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      core.position.set(0, 4.2, z);
+      core.userData = { gateIndex: i };
+      scene.add(core);
+      const glow = new THREE.Sprite(glowMat[cls]);
+      glow.position.set(0, 4.2, z);
+      glow.scale.setScalar(2.6 + (cls === "planck" ? 1.4 : 0));
+      scene.add(glow);
+      gates.push({ hoop, core, glow, cls, phase: i * 0.61 });
+      ctx.label(stop.label, () => ({ x: 0, y: 6.7 + (i % 2) * 1.0, z }), "s3d-strong");
+      ctx.label("10" + supScript(stop.e) + " m", () => ({ x: 0, y: 0.7, z }), "s3d-quiet");
+      if (stop.tag) ctx.annotation(stop.tag, () => ({ x: 0, y: 5.15, z }));
+    }
+
+    // ---------- traveling probe pulse ----------
+    const probe = new THREE.Sprite(glowMat.human);
+    probe.scale.setScalar(2.0);
+    probe.position.set(0, 4.2, ARENA_RAMP_LEN * 0.5);
+    scene.add(probe);
+
+    // ---------- the Planck end-wall: where measurement ends ----------
+    const wall = new THREE.Mesh(
+      track(new THREE.CircleGeometry(4.6, 40)),
+      track(new THREE.MeshBasicMaterial({
+        color: 0xff7b72, transparent: true, opacity: 0.16, side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      })),
+    );
+    wall.position.set(0, 4.2, -2.6);
+    scene.add(wall);
+    ctx.annotation("measurement and geometry entangle — the Planck gate", () => ({ x: 0, y: 9.4, z: -2.6 }));
+
+    // ---------- per-frame: transforms only, never material mutations ----------
+    return {
+      dispose() {
+        for (const obj of disposables) obj.dispose();
+      },
+      pickables: gates.map((g) => g.core),
+      onPick: (obj) => { if (obj && obj.userData && obj.userData.gateIndex != null) setFocus(OVERVIEW_LADDER[obj.userData.gateIndex]); },
+      update(t, dt) {
+        const mo = ctx.motion();
+        const wave = mo > 0 ? 1 : 0;
+        // probe glides cosmic → Planck and back, one cosine period
+        const cycle = (t * 0.35) % 1;
+        const eased = 0.5 - 0.5 * Math.cos(Math.PI * cycle);
+        probe.position.set(0, 4.2, ARENA_RAMP_LEN * (1 - eased) + 0.6);
+        probe.scale.setScalar(1.6 + 0.9 * Math.sin(t * 2.2) * wave + 0.9);
+        for (const gate of gates) {
+          const s = 1 + 0.1 * Math.sin(t * 1.2 - gate.phase) * wave;
+          gate.core.scale.setScalar(s);
+          gate.glow.scale.setScalar((gate.cls === "planck" ? 2.4 : 1.5) * (1 + 0.18 * Math.sin(t * 1.1 - gate.phase) * wave));
+          gate.hoop.rotation.set(Math.sin(t * 0.22 * wave + gate.phase) * 0.05, 0, Math.cos(t * 0.17 * wave + gate.phase) * 0.05);
+        }
+        wall.scale.setScalar(1 + 0.05 * Math.sin(t * 1.7) * (wave ? 1 : 0.35));
+        if (mo > 0 && dt > 0) {
+          const positions = dustGeo.attributes.position;
+          for (let i = 0; i < dustN; i++) {
+            const next = positions.getY(i) + dt * (0.35 + 0.3 * Math.sin(dustSeed[i]));
+            positions.setY(i, next > 8.4 ? 0 : next);
+          }
+          positions.needsUpdate = true;
+        }
+      },
+    };
+  };
+
+  const focused = focusRef.current;
+  return (
+    <div className="ov-arena">
+      <Scene3D height={440} aria="Three-dimensional corridor of decade gates from the observable universe down to the Planck length; click a glowing gate to focus its scale"
+        initial={{ fov: 55, radius: 30, theta: 0.32, phi: 0.95, target: [0, 2.0, ARENA_RAMP_LEN * 0.52], minR: 10, maxR: 60 }}
+        build={build} fallback={<OverviewEnergyLadder></OverviewEnergyLadder>}></Scene3D>
+      <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
+        <div className="readout">
+          <div className="readout-label">focused stop {focus ? "" : "— click a gate"}</div>
+          <div className="readout-value" style={{ fontSize: 12.5 }}>{focus ? focus.label : "the corridor"}</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">exponent</div>
+          <div className="readout-value">10{focus ? supScript(focus.e) : "·"}<span className="unit">m</span></div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">meaning</div>
+          <div className="readout-value" style={{ fontSize: 12.5 }}>{focus ? focus.tag : "sixty decades, one map"}</div>
+        </div>
+      </div>
+      <VizCaption status="schematic">
+        Distance in this corridor is logarithmic: every gate is a fixed ratio of ten in length. The probe travels from
+        the cosmic horizon to the Planck gate, where probing would require a black hole — the atlas marks the frontier
+        instead of crossing it.
+      </VizCaption>
+    </div>
+  );
+}
+
 /* Live readouts computed in-page from the pure physics layer,
    window.QGA_PHYSICS (js/physics.mjs → js/science/). */
 function OverviewPhysicsStrip() {
@@ -170,10 +372,10 @@ function ViewOverview({ go }) {
           <span className="mono dim" style={{ fontSize: 11, letterSpacing: "0.14em" }}>8 MODULES · INTERACTIVE 3D · LIVE FORMULAS</span>
         </div>
         <div className="ov-hero-ladder" style={{ marginTop: 30 }}>
-          <OverviewEnergyLadder></OverviewEnergyLadder>
+          <OverviewArena3D></OverviewArena3D>
           <div className="ov-ladder-caption viz-caption" style={{ borderTop: "none", padding: "2px 6px 10px 6px" }}>
-            <span>fig. 1 — the arena: every length scale the atlas traverses, on one log axis</span>
-            <span className="mono dim">60 decades · 63 powers of ten</span>
+            <span>fig. 1 — the arena: sixty decades walked, one gate per scale, from the cosmic horizon to the Planck gate</span>
+            <span className="mono dim">drag to orbit · click a gate to focus</span>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
