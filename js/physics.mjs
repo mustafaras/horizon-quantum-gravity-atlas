@@ -1,3 +1,18 @@
+/* The Kerr, integrator, accretion-disk and spectral cores live in
+   `js/science/`. This module is the canonical pure-science surface, so it
+   re-exports them rather than restating their formulas. `js/physics.jsx`
+   mirrors the same names onto `window.QGA_PHYSICS` for the no-build runtime. */
+import {
+  kerrGeometry as scienceKerrGeometry,
+  kerrErgosphere as scienceKerrErgosphere,
+} from "./science/kerr.mjs";
+
+export * from "./science/constants.mjs";
+export * from "./science/kerr.mjs";
+export * from "./science/integrators.mjs";
+export * from "./science/accretion-disk.mjs";
+export * from "./science/spectrum.mjs";
+
 const G = 6.67430e-11;
 const C = 299792458;
 const HBAR = 1.054571817e-34;
@@ -8,31 +23,17 @@ export function schwarzschildRadius(massSolar) {
   return (2 * G * massSolar * SOLAR_MASS) / (C * C);
 }
 
+/* Legacy spin-clamped geometry, kept byte-compatible with the historical
+   implementation. The formula itself lives in `js/science/kerr.mjs`. */
 export function kerrGeometry(spin) {
-  const a = Math.min(0.998, Math.max(0, Number(spin) || 0));
-  const root = Math.sqrt(Math.max(0, 1 - a * a));
-  const rPlus = 1 + root;
-  const rMinus = 1 - root;
-  const z1 = 1 + Math.cbrt(1 - a * a) * (Math.cbrt(1 + a) + Math.cbrt(1 - a));
-  const z2 = Math.sqrt(3 * a * a + z1 * z1);
-  const rIsco = 3 + z2 - Math.sqrt(Math.max(0, (3 - z1) * (3 + z1 + 2 * z2)));
-  const rIscoRetrograde = 3 + z2 + Math.sqrt(Math.max(0, (3 - z1) * (3 + z1 + 2 * z2)));
-  const rPhoton = 2 * (1 + Math.cos((2 / 3) * Math.acos(-a)));
-  const rPhotonRetrograde = 2 * (1 + Math.cos((2 / 3) * Math.acos(a)));
-  const surfaceGravity = (rPlus - 1) / (rPlus * rPlus + a * a);
-  return {
-    a, rPlus, rMinus, rErgoEquator: 2, rIsco, rIscoRetrograde, rPhoton, rPhotonRetrograde,
-    z1, z2, surfaceGravity, temperatureFactor: surfaceGravity / 0.25,
-  };
+  return scienceKerrGeometry(spin);
 }
 
 /* Stationary-limit (ergo) surface in Boyer-Lindquist coordinates,
    r_E(theta) = M + sqrt(M^2 - a^2 cos^2 theta), in units of GM/c^2.
    At theta = pi/2 this reduces exactly to kerrGeometry().rErgoEquator. */
 export function kerrErgosphere(spin, theta = Math.PI / 2) {
-  const a = Math.min(0.998, Math.max(0, Number(spin) || 0));
-  const c = Math.cos(Number(theta) || 0);
-  return 1 + Math.sqrt(Math.max(0, 1 - a * a * c * c));
+  return scienceKerrErgosphere(spin, theta);
 }
 
 export function hawkingTemperature(massSolar, spin = 0) {

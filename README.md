@@ -406,6 +406,8 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 
 Prompt 00's renderer/science ownership map, lifecycle contract, fallback policy, and current WebGL inventory live in **[docs/render-architecture.md](docs/render-architecture.md)**.
 
+The Kerr ray-tracing science core — null geodesics, spin-dependent characteristic radii, thin-disk thermodynamics, relativistic frequency shifts, and spectral colour conversion — is specified in **[docs/science/kerr-rendering.md](docs/science/kerr-rendering.md)**, which separates exact equations from numerical, display, and conjectural approximations and documents the measured drift and convergence bounds. Run `npm run benchmark:kerr` to reproduce the ray count, median integration time, convergence error, and conserved-quantity drift on your own machine.
+
 ---
 
 ## Module Matrix
