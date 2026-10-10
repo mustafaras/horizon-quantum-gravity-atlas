@@ -85,7 +85,9 @@ function s3dGrid(size, divisions, color = 0x2a3a58, opacity = 0.35) {
 }
 function s3dDispose(root) {
   root.traverse((o) => {
-    if (o.geometry) o.geometry.dispose();
+    // THREE.Sprite instances share one module-level geometry across every
+    // scene and renderer; disposing it destroys GPU buffers still in use elsewhere.
+    if (o.geometry && !o.isSprite) o.geometry.dispose();
     const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
     for (const m of mats) {
       // shared glow texture is cached globally — never dispose it
