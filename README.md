@@ -19,7 +19,7 @@
   <img alt="modules" src="https://img.shields.io/badge/modules-8%20scientific%20chapters-46d4e0?style=flat-square&labelColor=0d1117" />
   <img alt="field theory" src="https://img.shields.io/badge/QFT-live%20field%20lab-54aeff?style=flat-square&labelColor=0d1117" />
   <img alt="relativity" src="https://img.shields.io/badge/GR-curvature%20engine-ffb454?style=flat-square&labelColor=0d1117" />
-  <img alt="black holes" src="https://img.shields.io/badge/black%20holes-raymarched%20horizon-f28b82?style=flat-square&labelColor=0d1117" />
+  <img alt="black holes" src="https://img.shields.io/badge/black%20holes-ray--traced%20Kerr-f28b82?style=flat-square&labelColor=0d1117" />
   <img alt="holography" src="https://img.shields.io/badge/holography-boundary%20bulk-b388ff?style=flat-square&labelColor=0d1117" />
   <img alt="experiments" src="https://img.shields.io/badge/experiments-collider%20%2B%20GW-8ee59b?style=flat-square&labelColor=0d1117" />
   <img alt="no build" src="https://img.shields.io/badge/build-zero%20bundler-7ab8ff?style=flat-square&labelColor=0d1117" />
@@ -152,7 +152,7 @@ Black-hole screenshots are included prominently because the black-hole module is
 <td width="50%">
 <img src="docs/screenshots/01-black-hole-kerr-raymarch.png" alt="Black hole raymarching laboratory" width="100%" />
 <br/>
-<sub><strong>Black-hole Kerr laboratory</strong> — raymarched accretion disk, photon ring, horizon readouts, entropy and temperature scaling.</sub>
+<sub><strong>Black-hole Kerr laboratory</strong> — ray-traced Kerr accretion disk with Doppler beaming and gravitational redshift, higher-order images, lensed stars, horizon readouts, entropy and temperature scaling.</sub>
 </td>
 <td width="50%">
 <img src="docs/screenshots/02-holographic-boundary-bulk.png" alt="Holographic boundary-bulk scene" width="100%" />
@@ -218,7 +218,7 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <td width="50%">
 <img src="docs/screenshots/10-kerr-observatory-layers.png" alt="Kerr Black Hole Observatory at high spin with exact coordinate-radius map, geometry layers, camera presets, lensing scene, and thermodynamic readouts" width="100%" />
 <br/>
-<sub><strong>Kerr geometry observatory</strong> — live high-spin view with horizon, equatorial ergosphere, prograde/retrograde photon-orbit and ISCO layers. The map uses Kerr coordinate radii; the image remains an explicitly approximate raymarch.</sub>
+<sub><strong>Kerr geometry observatory</strong> — live high-spin view with horizon, equatorial ergosphere, prograde/retrograde photon-orbit and ISCO layers. The map uses exact Kerr coordinate radii; the image beside it integrates Carter's Kerr geodesics per pixel (WebGPU compute or WebGL2), with display-scaled colour — see <a href="docs/science/kerr-observatory.md">docs/science/kerr-observatory.md</a>.</sub>
 </td>
 <td width="50%">
 <img src="docs/screenshots/11-kerr-observatory-mobile.png" alt="Mobile Kerr observatory with a compact control for the collapsible exact-coordinate radii map" width="100%" />
@@ -406,7 +406,7 @@ Yet the README presents it as a long-form scientific artifact, not only as a web
 
 Prompt 00's renderer/science ownership map, lifecycle contract, fallback policy, and current WebGL inventory live in **[docs/render-architecture.md](docs/render-architecture.md)**.
 
-The Kerr ray-tracing science core — null geodesics, spin-dependent characteristic radii, thin-disk thermodynamics, relativistic frequency shifts, and spectral colour conversion — is specified in **[docs/science/kerr-rendering.md](docs/science/kerr-rendering.md)**, which separates exact equations from numerical, display, and conjectural approximations and documents the measured drift and convergence bounds. Run `npm run benchmark:kerr` to reproduce the ray count, median integration time, convergence error, and conserved-quantity drift on your own machine.
+The Kerr ray-tracing science core — null geodesics, spin-dependent characteristic radii, thin-disk thermodynamics, relativistic frequency shifts, and spectral colour conversion — is specified in **[docs/science/kerr-rendering.md](docs/science/kerr-rendering.md)**, which separates exact equations from numerical, display, and conjectural approximations and documents the measured drift and convergence bounds. Run `npm run benchmark:kerr` to reproduce the ray count, median integration time, convergence error, and conserved-quantity drift on your own machine. The renderer built on that core — quality budgets, temporal accumulation, image-order tinting, distortion-aware star filtering, focus picking and the documented operation order — is specified in **[docs/science/kerr-observatory.md](docs/science/kerr-observatory.md)**.
 
 ---
 
@@ -955,7 +955,7 @@ The Hawking temperature tends toward zero in the extremal limit.
 
 **Limit:** the information paradox remains open in operational detail.
 
-**Limit:** the Kerr Observatory's coordinate-radius map is exact Kerr geometry, but the image beside it is a Schwarzschild-based geodesic raymarch with visual spin cues only — frame dragging is not integrated. The interface keeps the two separated: the map and the live formulation panel print exact Kerr coordinate radii, while the rendered image is labelled as an approximate raymarch.
+**Limit:** the Kerr Observatory image is a numerical ray trace — Carter's separated null-geodesic equations integrated per pixel in the full Kerr metric, so frame dragging, the spin-dependent shadow and higher-order images are computed, not painted. It remains a *model*: the disk is razor-thin and equatorial, its peak temperature is display-scaled (7000 K), the per-crossing disk transmittance that separates image orders and the synthetic star catalogue are display parameters, rays that exhaust the step budget are drawn as shadow (never as an enhanced ring), and the exterior-only tracer never crosses the horizon. The map and live formulation panel print exact Kerr coordinate radii from the validated science core.
 
 ### 8. Page Curve and Information
 
@@ -1082,7 +1082,7 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 | learning pathways | `QGA_PATHWAYS` and tweaks | adapts explanatory depth |
 | status badges | `Badge`, `VizCaption`, `FormulaCard` | keeps epistemic claims visible |
 | formula cards | KaTeX rendering and symbol definitions | turns equations into readable interface units |
-| black-hole raymarcher | shader-based scene in `mod-blackholes.jsx` | strongest visual surface for horizon physics |
+| Kerr observatory | `js/visualizations/kerr/` (WebGPU TSL compute + WebGL2 fragment integrators) wired in `mod-blackholes.jsx` | strongest visual surface for horizon physics |
 | QFT collision lab | process selector and 3D scene in `mod-qft.jsx` | connects amplitudes, diagrams, and event intuition |
 | QFT amplitude room | live Mandelstam/angular/resonance bench in `mod-qft.jsx` | turns the Feynman rules into numbers the reader can move |
 | RG Flow Landscape | `mod-gauge-rg.jsx`, `mod-rg-stage3.jsx`, and shared pure helpers | synchronizes coupling running, β phase lines, fixed points, termination, and epistemic boundaries |
@@ -1212,7 +1212,7 @@ The exact npm package is pinned in both dependency manifests. `vendor/three/VERS
 
 The adaptive governor uses a 60-frame rolling window, separate slow/fast thresholds (26/14 ms), sustained 2/3-window hysteresis and at least 3 seconds between changes. Only implemented rendering budgets are changed, in DPR/temporal/SSGI/volumetric/particle order; equations, integration accuracy, deterministic seeds, URL values, labels and exported physics are never modified. r186 TRAA uses fixed 32-position jitter, so the temporal budget is an honest on/off gate rather than a fabricated configurable sample count. No source is supplied by current scenes for god rays; lens dirt is unavailable without a verified texture. Unsupported classic-WebGL2 effects are listed, not faked.
 
-The current black-hole raymarch uses a full-screen raster proxy without ray-hit depth. Its scene explicitly rejects depth-dependent AO/DOF/reprojection rather than treating the proxy as physical black-hole geometry. This changes rendering capability metadata only, not the raymarch equations or integration accuracy.
+The Kerr observatory renders through a full-screen quad without ray-hit depth. Its scene explicitly rejects depth-dependent AO/DOF/reprojection rather than treating the proxy as physical black-hole geometry (focus defocus is an image-plane effect inside the observatory itself). This changes rendering capability metadata only, not the geodesic equations or integration accuracy.
 
 ---
 
@@ -1259,7 +1259,7 @@ Generated visual data uses the recorded seed rather than ambient randomness, so 
 
 The theatre's presentation is driven by an explicit state machine — `idle`, `loading`, `real`, `generated`, `error`, `cancelled` — surfaced as a colour-coded status pill with a live dot, the human-readable status sentence, and a contextual **Cancel** (while loading) or **Retry** (after an error or cancellation) action. A superseded or user-cancelled request never overwrites the phase the reader has already moved on to. The shared vertical scale eases toward the new peak whenever the signal changes, so switching seed, mode, or component masses rescales the trace smoothly instead of jumping; the ease is bounded (it stops once settled) and snaps instantly under reduced motion. The observation readout group and the provenance line animate in when real data lands, and the leading edge of the revealed trace carries a mode-coloured glow — blue for the generated teaching signal, cyan for the GWOSC observation — so the two are never visually confusable.
 
-The **Kerr Black Hole Observatory** animates its equatorial coordinate map rather than redrawing it: horizon, ergosphere, photon-orbit, and ISCO radii interpolate with a cubic ease-out whenever mass or spin changes, the map reports a `settling` state while it moves, and the camera presets ease between viewpoints instead of cutting. A **live formulation** panel prints the governing relations with the current numbers substituted — the horizon pair $r_\pm = M \pm \sqrt{M^2 - a^2}$, the ergosurface $r_E = M + \sqrt{M^2 - a^2\cos^2\theta}$ at both the equator and the pole, the prograde and retrograde photon orbits, the ISCO closed form with its $Z_1$/$Z_2$ intermediates, the surface-gravity ratio, the entropy area law, and the Hawking temperature — each row updating as the sliders move. Printed numbers always come from the exact geometry, never from the eased animation values, and the panel closes with an explicit note separating the exact Kerr coordinate radii from the approximate raymarch image.
+The **Kerr Black Hole Observatory** animates its equatorial coordinate map rather than redrawing it: horizon, ergosphere, photon-orbit, and ISCO radii interpolate with a cubic ease-out whenever mass or spin changes, the map reports a `settling` state while it moves, and the camera presets ease between viewpoints instead of cutting. A **live formulation** panel prints the governing relations with the current numbers substituted — the horizon pair $r_\pm = M \pm \sqrt{M^2 - a^2}$, the ergosurface $r_E = M + \sqrt{M^2 - a^2\cos^2\theta}$ at both the equator and the pole, the prograde and retrograde photon orbits, the ISCO closed form with its $Z_1$/$Z_2$ intermediates, the surface-gravity ratio, the entropy area law, and the Hawking temperature — each row updating as the sliders move. Printed numbers always come from the exact geometry, never from the eased animation values, and the panel closes with an explicit note separating the exact Kerr coordinate radii from the numerically ray-traced image (display-scaled colour, no enhanced rings).
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 

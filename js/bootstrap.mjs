@@ -4,6 +4,14 @@ async function bootstrap() {
     Object.defineProperty(window, "THREE", { value: threeCompatibility, configurable: true });
     Object.defineProperty(window, "QGA_RENDER", { value: renderRuntime, configurable: true });
 
+    // Kerr observatory (science-backed, Node-testable) exposed to the classic-script runtime.
+    const kerr = await import("./visualizations/kerr/kerr-observatory.mjs");
+    kerr.registerKerrObservatoryProvenance();
+    Object.defineProperty(window, "QGA_KERR", {
+      value: Object.freeze({ ...kerr, loadRuntime: () => import("./visualizations/kerr/kerr-material.mjs") }),
+      configurable: true,
+    });
+
     const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
     const sources = await Promise.all(scripts.map(async (script) => {
       const response = await fetch(script.src);

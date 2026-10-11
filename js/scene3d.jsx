@@ -127,6 +127,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   const mountRef = useRef(null);
   const hudStateRef = useRef({});
   const [failed, setFailed] = useState(false);
+  const [rebuildNonce, setRebuildNonce] = useState(0);
   const [phase, setPhase] = useState("initializing");
   const [errorMessage, setErrorMessage] = useState("");
   const diagnosticRef = useRef(null);
@@ -155,13 +156,21 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const mount = mountRef.current;
     if (!mount) return;
     const abort = new AbortController();
-    let alive = true, stop = () => {}, renderer, session, scene, built = {};
+    let alive = true, stop = () => {}, renderer, session, scene, built = {}, recovered = false;
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate(aria || "Module scene");
     diagnosticRef.current = diagnosticId;
     setPhase("initializing");
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
+      // A scene may declare one automatic recovery (e.g. rebuild on a different material backend).
+      if (!recovered && built.recoverable && built.recoverable(error)) {
+        recovered = true;
+        QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering scene: ${QGA_RENDER.describeRenderError(error)}`);
+        stop();
+        setRebuildNonce((n) => n + 1);
+        return;
+      }
       const message = QGA_RENDER.describeRenderError(error);
       QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
       QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
@@ -232,7 +241,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       glow: s3dGlow, line: s3dLine, grid: s3dGrid,
     };
 
-    built = build(ctx) || {};
+    built = (await build(ctx)) || {};
+    if (!alive) { if (built.dispose) built.dispose(); s3dDispose(scene); labelLayer.remove(); return; }
     camera.position.set(
       target.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
       target.y + orbit.radius * Math.cos(orbit.phi),
@@ -303,6 +313,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       if (e.pointerId === ptr.id) {
         ptr.down = false;
         if (ptr.moved < 6 && built.onPick && built.pickables) pickAt(e);
+        else if (ptr.moved < 6 && built.onScreenPick) built.onScreenPick(ndc(e), e);
       }
       ptr.pinch = 0;
     };
@@ -504,7 +515,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       abort.abort();
       stop();
     };
-  }, [failed, settings.detail3d, settings.vizMode, settings.motion, settings.renderBackend, settings.toneMapping, ...deps]); // eslint-disable-line
+  }, [failed, settings.detail3d, settings.vizMode, settings.motion, settings.renderBackend, settings.toneMapping, rebuildNonce, ...deps]); // eslint-disable-line
 
   // exit fullscreen on Escape
   useEffect(() => {

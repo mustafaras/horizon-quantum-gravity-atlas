@@ -1,0 +1,75 @@
+{
+  "capturedAt": "2026-10-10T14:05Z",
+  "liveUrl": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/?view=bh&bhs=0.9",
+  "mergedPr": 8,
+  "scienceCoreCommit": "236fe22",
+  "consoleErrors": [],
+  "scienceSurfaceLive": true,
+  "kerrGeometryAtA0p9": {
+    "rPlus": 1.4358898943540672,
+    "iscoPrograde": 2.320883041761887,
+    "iscoRetrograde": 8.717352279606489
+  },
+  "rayTracerAtDefaults": {
+    "aStar": 0.9,
+    "status": "escaped",
+    "steps": 10515,
+    "absDriftQ": 2.24e-10,
+    "absDriftE": 0,
+    "absDriftLz": 0
+  },
+  "extremalSpinChecks": {
+    "a0Horizon": 2.0,
+    "a0Isco": 6.0,
+    "a0998Horizon": 1.0632139225171164,
+    "a0998Isco": 1.2369706551751847,
+    "extremalEscapedRay": {
+      "status": "escaped",
+      "steps": 10238,
+      "absDriftQ": 1.78e-09
+    },
+    "capturedRayTerminatesOutsideHorizon": {
+      "status": "captured",
+      "finalR": 1.800983590680864,
+      "rPlusAtA0p6": 1.8,
+      "absDriftH": 2.84e-08
+    }
+  },
+  "spectralProof": {
+    "planckRadiance550nmAt5772K": 25734915475999.74,
+    "fastBlackbody5900KHex": "#fff2ed"
+  },
+  "screenshots": [
+    "live-01-live-home.png (DEPLOYED site, landing)",
+    "01-overview.png (local preview, atlas landing)",
+    "02-kerr-observatory.png (local preview, observatory at a*=0.9)",
+    "03-kerr-observatory-full.png (local preview, full page)",
+    "04-observatory-top.png",
+    "05-observatory-map.png",
+    "live-02-kerr-observatory.png (DEPLOYED site, a*=0.900, r+=1.436)",
+    "live-05-observatory-map.png (DEPLOYED site, radii map)",
+    "live-06-high-spin-observatory.png (DEPLOYED site, a*=0.998, ISCO readouts 1.237/8.994/3.998/1.074)",
+    "live-07-high-spin-map.png (DEPLOYED site, high-spin radii map)"
+  ],
+  "allViewsSweep": {
+    "views": [
+      "overview",
+      "sm",
+      "qft",
+      "rg",
+      "gr",
+      "planck",
+      "approaches",
+      "bh",
+      "exp",
+      "glossary",
+      "symbols",
+      "refs",
+      "open",
+      "paper"
+    ],
+    "allReady": true,
+    "consoleErrors": 0,
+    "note": "every deployed view loads with QGA_PHYSICS present and zero console/page errors"
+  }
+}
