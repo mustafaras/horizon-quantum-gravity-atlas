@@ -302,11 +302,12 @@ function KerrValidity({ geometry }) {
           </dd>
           <dt>Ray-traced Kerr geodesics</dt>
           <dd>
-            The observatory integrates Carter's separated null-geodesic equations in the full Kerr metric for every
+            The observatory integrates Carter's null-geodesic equations in the full Kerr metric for every
             pixel (Runge–Kutta 4 in Mino time, first integrals re-imposed each step) — frame dragging is part of the
             integration. Disk flux, orbital kinematics, redshift and blackbody colour come from the validated science
-            core. What is <em>not</em> physical: the display-scaled 7000 K peak temperature, the per-crossing disk
-            transmittance used to separate image orders, the synthetic star catalogue and the 16 GM/c² disk outer edge.
+            core. What is <em>not</em> physical: the display-scaled 5000 K peak temperature, the heuristic turbulence
+            texture, the per-crossing transmittance of the smooth disk models, the synthetic star catalogue and the
+            24 GM/c² disk outer edge.
             Orders beyond the ray budget are not drawn; no photon ring is thickened.
           </dd>
           <dt>Semiclassical</dt>
@@ -523,12 +524,15 @@ function BlackHoleLab3D() {
     const runtime = await createKerrRuntime({
       backendPreference: window.QGA_RENDER_OPTIONS?.forceBackend ?? ctx.settings.current.renderBackend ?? "auto",
       seed: stateRef.current.seed ?? 42,
+      diskModel: stateRef.current.bhDiskModel,
     });
     scene.add(runtime.mesh);
     let lastLens = { tanHalfFov: 0.35, aspect: 1.6 };
     let lastPlan = null;
     let settleTimer = 0;
     let lastObserver = null;
+    // Seconds of *playing* time (dt is 0 while paused) drive the disk plasma animation.
+    let playingSeconds = 0;
 
     const publish = (frame) => {
       window.__qgaKerrRuntime = {
@@ -547,10 +551,11 @@ function BlackHoleLab3D() {
         if (!renderer) return;
         const cam = ctx.camera;
         lastLens = { tanHalfFov: Math.tan((cam.fov * Math.PI) / 360), aspect: cam.aspect || 1 };
+        playingSeconds += dt;
         lastPlan = runtime.sync({
           renderer, camera: cam, atlasState: { ...stateRef.current, bhMass: logRef.current, bhSpin: spinRef.current },
           detail3d: ctx.settings.current.detail3d, reducedMotion: ctx.motion() === 0,
-          governorRaySteps: governorRef.current,
+          governorRaySteps: governorRef.current, time: playingSeconds,
         });
         runtime.setFocus(focusRef.current);
         publish(lastPlan);
@@ -658,7 +663,7 @@ function BlackHoleLab3D() {
         overlay={<KerrGeometryMap geometry={eased} exact={exactGeometry} layers={layers} open={mapOpen}
           settling={settling} motion={!prm}
           onToggle={() => setMapOpen((current) => !current)}></KerrGeometryMap>}
-        build={build} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
+        build={build} deps={[atlasState.bhDiskModel === "page-thorne-turbulent", atlasState.seed]} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
       <KerrObservatoryControls state={atlasState} setState={setAtlasState} onCameraRequest={requestCamera}
         onFocusKind={(kind) => focusFeature(kind, null)} focusKind={focus?.kind ?? null}></KerrObservatoryControls>
       <KerrFocusPanel focus={focus} onClose={clearFocus}></KerrFocusPanel>

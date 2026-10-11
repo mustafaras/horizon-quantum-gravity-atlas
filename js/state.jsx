@@ -1,8 +1,8 @@
 /* URL/history state, reproducibility controls, sharing, and bounded GWOSC access. */
 const QGA_DEFAULT_STATE = {
   view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
-  bhStateVersion: 1, bhInclination: 75, bhObserverDistance: 40, bhDiskModel: "page-thorne",
-  bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: true,
+  bhStateVersion: 2, bhInclination: 75, bhObserverDistance: 40, bhDiskModel: "page-thorne-turbulent",
+  bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: false,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
   qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
@@ -29,15 +29,20 @@ const QGA_ENUMS = {
   rgPreset: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety", "custom"],
   rgPresetOrigin: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety"],
   rgModel: ["qed", "qcd", "gaussian", "linear", "asymptotic-safety"],
-  bhDiskModel: ["page-thorne", "page-thorne-opaque", "newtonian"],
+  bhDiskModel: ["page-thorne-turbulent", "page-thorne", "page-thorne-opaque", "newtonian"],
   bhRenderQuality: ["performance", "balanced", "ultra"],
 };
 const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
-// Versioned Kerr-observatory URL keys. Links without them (old links) take the defaults;
-// a link written by a future schema version is ignored rather than misread.
+// Unversioned and v1 Kerr links retain the smooth disk/annotation defaults.
+// New black-hole links carry bhv=2, making the turbulent default unambiguous.
 const QGA_KERR_KEYS = ["bhInclination", "bhObserverDistance", "bhDiskModel", "bhRenderQuality", "bhExposure", "bhAnnotations"];
+const QGA_KERR_V1_DEFAULTS = { bhDiskModel: "page-thorne", bhAnnotations: true };
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
+  const version = params.has(QGA_STATE_KEYS.bhStateVersion)
+    ? Number(params.get(QGA_STATE_KEYS.bhStateVersion))
+    : params.get(QGA_STATE_KEYS.view) === "bh" ? 1 : QGA_DEFAULT_STATE.bhStateVersion;
+  if (version === 1) Object.assign(state, QGA_KERR_V1_DEFAULTS);
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
@@ -45,7 +50,8 @@ function qgaReadState(search = window.location.search) {
     else if (key === "bhAnnotations") { if (raw === "true" || raw === "false") state[key] = raw === "true"; }
     else if (QGA_NUMBERS.includes(key) && Number.isFinite(Number(raw))) state[key] = Number(raw);
   }
-  if (state.bhStateVersion !== QGA_DEFAULT_STATE.bhStateVersion) {
+  if (version === 1) state.bhStateVersion = 1;
+  else if (version !== QGA_DEFAULT_STATE.bhStateVersion) {
     for (const key of QGA_KERR_KEYS) state[key] = QGA_DEFAULT_STATE[key];
     state.bhStateVersion = QGA_DEFAULT_STATE.bhStateVersion;
   }
@@ -110,11 +116,16 @@ function qgaReadState(search = window.location.search) {
 }
 function qgaStateSearch(state) {
   const params = new URLSearchParams();
+  const defaults = state.bhStateVersion === 1
+    ? { ...QGA_DEFAULT_STATE, ...QGA_KERR_V1_DEFAULTS }
+    : QGA_DEFAULT_STATE;
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
     if (key === "bhStateVersion") continue;
-    if (state[key] !== QGA_DEFAULT_STATE[key]) params.set(param, String(state[key]));
+    if (state[key] !== defaults[key]) params.set(param, String(state[key]));
   }
-  if (QGA_KERR_KEYS.some((key) => params.has(QGA_STATE_KEYS[key]))) params.set(QGA_STATE_KEYS.bhStateVersion, String(QGA_DEFAULT_STATE.bhStateVersion));
+  if (state.view === "bh" || QGA_KERR_KEYS.some((key) => params.has(QGA_STATE_KEYS[key]))) {
+    params.set(QGA_STATE_KEYS.bhStateVersion, String(state.bhStateVersion === 1 ? 1 : QGA_DEFAULT_STATE.bhStateVersion));
+  }
   const query = params.toString();
   return query ? "?" + query : "";
 }

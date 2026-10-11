@@ -36,7 +36,7 @@ import {
   kerrQualityBudget,
   normalizeKerrState,
 } from "./kerr-observatory.mjs";
-import { STARFIELD_MAX_FOOTPRINT_RAD, STARFIELD_VMAX, renderStarfield } from "./starfield-sampler.mjs";
+import { STARFIELD_MAX_FOOTPRINT_RAD, STARFIELD_VMAX, renderStarfield } from "./starfield-texture.mjs";
 
 const TWO_PI = 2 * Math.PI;
 const WORKGROUP = 64;

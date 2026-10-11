@@ -138,6 +138,26 @@ test.describe("forced WebGL2, reduced motion", () => {
     });
   }
 
+  test("v2 turbulent disk renders on WebGL2 and freezes under reduced motion", async ({ page, context }) => {
+    await force(context, "webgl2");
+    const problems = observe(page);
+    await gotoReady(page, `/?view=bh&bhv=2&bhs=0.9&seed=${SEED}`, READINESS);
+    await settled(page);
+    const state = await page.evaluate(() => window.QGA_READ_STATE());
+    expect(state).toMatchObject({ bhStateVersion: 2, bhDiskModel: "page-thorne-turbulent", bhAnnotations: false });
+    const info = await page.evaluate(() => window.__qgaKerrRuntime);
+    expect(info.backend).toBe("webgl2");
+    expect(info.reducedMotion).toBe(true);
+    expect(info.plasmaTime).toBe(0);
+    const png = await canvasPng(page);
+    const measured = await halves(page, png);
+    expect(measured.lit / measured.pixels).toBeGreaterThan(0.05);
+    if (COMPARE_BASELINES) {
+      expect(png).toMatchSnapshot("kerr-observatory-ref-turbulent.png", { maxDiffPixelRatio: 0.02 });
+    }
+    expect(problems).toEqual([]);
+  });
+
   test("beaming asymmetry: visible when inclined, the same side for both spin signs, near zero face-on", async ({ page, context }) => {
     await force(context, "webgl2");
     const measure = async (query) => {
@@ -159,6 +179,8 @@ test.describe("forced WebGL2, reduced motion", () => {
     await gotoReady(page, "/?view=bh&bhm=1&bhs=0.7", READINESS);
     const old = await page.evaluate(() => window.QGA_READ_STATE());
     expect(old).toMatchObject({ bhSpin: 0.7, bhInclination: 75, bhObserverDistance: 40, bhDiskModel: "page-thorne", bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: true });
+    const v2 = await page.evaluate(() => window.QGA_READ_STATE("?view=bh&bhv=2"));
+    expect(v2).toMatchObject({ bhStateVersion: 2, bhDiskModel: "page-thorne-turbulent", bhAnnotations: false });
     const future = await page.evaluate(() => window.QGA_READ_STATE("?view=bh&bhv=9&bhi=30&bhq=ultra&bhs=-0.5"));
     expect(future).toMatchObject({ bhSpin: -0.5, bhInclination: 75, bhRenderQuality: "balanced" });
     const trip = await page.evaluate(() => {
