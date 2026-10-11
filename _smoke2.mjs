@@ -1,0 +1,17 @@
+import { chromium } from "playwright";
+const qs = process.argv[2] || "view=bh&bhm=1&bhs=0.9&seed=42";
+const out = process.argv[3] || "/tmp/kerr-gpu.png";
+const browser = await chromium.launch({ channel: "chromium", args: ["--enable-unsafe-webgpu", "--enable-features=Vulkan,WebGPU", "--use-angle=metal", "--ignore-gpu-blocklist"] });
+const context = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
+await context.addInitScript(() => { window.QGA_RENDER_OPTIONS = { softwareClamp: false }; sessionStorage.setItem("horizon-intro", "1"); });
+const page = await context.newPage();
+const logs = [];
+page.on("console", (m) => { if (["error", "warning", "log"].includes(m.type())) logs.push(m.type() + ": " + m.text().slice(0, 700)); });
+page.on("pageerror", (e) => logs.push("pageerror: " + (e.stack || e.message).slice(0, 800)));
+await page.goto("http://127.0.0.1:8790/?" + qs, { waitUntil: "domcontentloaded" });
+await page.waitForSelector(".s3d-canvas", { timeout: 90000 }).catch((e) => logs.push("no canvas: " + e.message.slice(0, 100)));
+await page.waitForTimeout(Number(process.env.WAIT || 9000));
+const info = await page.evaluate(() => ({ gpu: !!navigator.gpu, rt: window.__qgaKerrRuntime && { backend: window.__qgaKerrRuntime.backend, frames: window.__qgaKerrRuntime.frames, resets: window.__qgaKerrRuntime.resets }, failed: window.__qgaKerrWebGpuFailed, diag: window.QGA_RENDER?.renderDiagnostics.snapshot().filter(d => d.label !== "Atlas backdrop").map((d) => ({ phase: d.phase, backend: d.backend, msgs: (d.messages||[]).slice(-6) })) }));
+console.log(JSON.stringify(info, null, 1));
+console.log(logs.filter(l => !/GL Driver|KHR_parallel/.test(l)).slice(0, 25).join("\n") || "no console output");
+await page.screenshot({ path: out }); await browser.close();
