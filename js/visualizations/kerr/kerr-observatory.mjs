@@ -35,14 +35,14 @@ import {
 } from "../../science/accretion-disk.mjs";
 import { blackbodyToSrgb } from "../../science/spectrum.mjs";
 import { getVisualizationProvenance, registerVisualization } from "../../science/provenance.mjs";
-import { STARFIELD_PRESETS } from "./starfield-sampler.mjs";
+import { KERR_PLASMA, plasmaEdgeOpacity } from "./kerr-plasma.mjs";
 
 /* ------------------------------------------------------------------ */
 /* Identity, provenance                                                */
 /* ------------------------------------------------------------------ */
 
 export const KERR_VIEW_ID = "bh-kerr-observatory";
-export const KERR_STATE_VERSION = 1;
+export const KERR_STATE_VERSION = 2;
 export const KERR_EXPORT_SCHEMA = "horizon-qga-kerr-observatory/v1";
 
 export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
@@ -52,21 +52,24 @@ export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
     "Kerr exterior in Boyer-Lindquist coordinates, G = c = M = 1, |a*| <= 0.998",
     "Observer is a zero-angular-momentum observer (ZAMO) at the stated radius and inclination",
     "Disk is razor-thin, equatorial, circular-orbit (prograde in +phi), zero-torque at the ISCO; emission inside the ISCO is neglected",
-    "Local emission is blackbody at the Page-Thorne (or Newtonian Shakura-Sunyaev) effective temperature; the peak temperature is DISPLAY-SCALED to 7000 K and is not a measured value",
-    "Per-crossing disk transmittance (translucent models) is a display parameter that makes image orders separable; it is not a measured optical depth",
-    "Background stars are a seeded synthetic catalogue at infinity, not an observed sky",
+    "Local emission is blackbody at the Page-Thorne (or Newtonian Shakura-Sunyaev) effective temperature; the peak temperature is DISPLAY-SCALED to 5000 K and is not a measured value",
+    "The default disk is optically thick (opaque), as blackbody emission assumes; per-crossing transmittance of the translucent models is a display parameter that makes image orders separable, not a measured optical depth",
+    "HEURISTIC plasma texture (turbulent model only): a seeded unit-mean log-normal emissivity field, advected at the local Kerr angular velocity Omega(r) and renewed every orbital period, stands in for MRI turbulence; the azimuthally averaged flux stays Page-Thorne, the filament shapes are not an MHD solution",
+    "Disk animation runs at a display time scale of 14 GM/c^3 per second and ignores light-travel-time differences between image points (fast-light snapshot); reduced motion freezes it",
+    "Background stars are a seeded synthetic catalogue at infinity, rasterized into a filtered sky map; not an observed sky",
   ],
   validity: [
     "Exterior region only: rays terminate at r+ + 0.02 and are reported as captured",
     "Rays that exhaust the step budget (windings beyond the quality budget) are unresolved and drawn as shadow, not as an enhanced ring",
     "Photon-ring subimages beyond the resolved image order are not drawn; no ring is thickened for aesthetics",
     "Finite escape radius 160 GM/c^2: sky direction comes from the ray velocity, residual error well below one star width",
-    "Disk outer radius 16 GM/c^2 is a display truncation",
+    "Disk outer radius 24 GM/c^2 is a display truncation; the turbulent disk thins smoothly to transparent beyond 0.55 r_out",
   ],
   numericalMethod:
-    "Fixed-form RK4 in Mino time on the second-order Carter equations (r'' = R'/2, u'' = Theta_u'/2 with u = cos(theta)), "
-    + "geometric step law dlambda = k min(1/r, (r - r+)/(|r'| + 1)); disk crossings by sign change of u with linear interpolation; "
-    + "blackbody chromaticity from the committed CIE 1931 table; sky filtered with textureGrad over the lensed-direction derivatives; "
+    "Fixed-form RK4 in Mino time on Carter's equations; the CPU reference and WebGL2 backend use a pole-regular unit-vector representation of polar motion, while the WebGPU smooth-disk backend retains the separated u and phi representation; "
+    + "first integrals re-imposed every step; geometric step law dlambda = k min(1/r, (r - r+)/(|r'| + 1)); disk crossings by sign change of the polar coordinate with linear interpolation; "
+    + "blackbody chromaticity from the committed CIE 1931 table; synthetic stars rasterized into a spherical-Gaussian sky map with a solid-angle-weighted mip chain and lensed-footprint filtering; "
+    + "WebGL2 turbulent model evaluates the plasma texture per frame from the stored disk-plane hit position and band-limits it by its screen-space footprint; "
     + "temporal accumulation as a running mean of Halton-jittered samples, reset on any geometry, camera, resolution, backend or quality change.",
   references: [
     "Carter (1968), Phys. Rev. 174, 1559",
@@ -94,14 +97,15 @@ export const KERR_STATE_DEFAULTS = Object.freeze({
   bhSpin: 0,
   bhInclination: 75,
   bhObserverDistance: 40,
-  bhDiskModel: "page-thorne",
+  bhDiskModel: "page-thorne-turbulent",
   bhRenderQuality: "balanced",
   bhExposure: 0,
-  bhAnnotations: true,
+  bhAnnotations: false,
 });
+const KERR_V1_DEFAULTS = Object.freeze({ ...KERR_STATE_DEFAULTS, bhDiskModel: "page-thorne", bhAnnotations: true });
 
 export const KERR_ENUMS = Object.freeze({
-  bhDiskModel: Object.freeze(["page-thorne", "page-thorne-opaque", "newtonian"]),
+  bhDiskModel: Object.freeze(["page-thorne-turbulent", "page-thorne", "page-thorne-opaque", "newtonian"]),
   bhRenderQuality: Object.freeze(["performance", "balanced", "ultra"]),
 });
 
@@ -113,6 +117,10 @@ export const KERR_LIMITS = Object.freeze({
 });
 
 export const KERR_DISK_MODELS = Object.freeze({
+  "page-thorne-turbulent": Object.freeze({
+    label: "Page–Thorne + turbulence", flux: "page-thorne", transmittance: 0, plasma: true, softEdge: true,
+    note: "Optically thick Page–Thorne disk with a heuristic unit-mean MRI-like plasma texture rotating at the local Kerr Ω(r); thins smoothly beyond 0.55 r_out.",
+  }),
   "page-thorne": Object.freeze({
     label: "Page–Thorne, translucent", flux: "page-thorne", transmittance: 0.35,
     note: "Relativistic thin-disk flux; per-crossing transmittance 0.35 (display) separates image orders.",
@@ -129,15 +137,16 @@ export const KERR_DISK_MODELS = Object.freeze({
 
 /** Constants shared by the CPU tracer and both shader backends. */
 export const KERR_RENDER_CONSTANTS = Object.freeze({
-  diskOuter: 16,
+  diskOuter: 24,
   escapeRadius: 160,
   captureMargin: 0.02,
   diskLutSize: 256,
   colorLutSize: 256,
   colorMinKelvin: 500,
   colorMaxKelvin: 60000,
-  displayPeakKelvin: 7000,
-  diskGain: 0.55,
+  displayPeakKelvin: 5000,
+  /** HDR display gain: the flux peak maps to ~3x display white so the single tone map rolls it off. */
+  diskGain: 2.4,
   skyGain: 1,
   photonBandFactor: 1.35,
 });
@@ -157,9 +166,9 @@ function finite(value, name) {
  * missing fields fall back to the defaults, so old links keep working.
  */
 export function normalizeKerrState(state = {}) {
-  const d = KERR_STATE_DEFAULTS;
   const version = state.bhStateVersion;
-  const known = version === undefined || version === null || version === KERR_STATE_VERSION;
+  const d = version === 1 ? KERR_V1_DEFAULTS : KERR_STATE_DEFAULTS;
+  const known = version === undefined || version === null || version === 1 || version === KERR_STATE_VERSION;
   const read = (key) => (known && state[key] !== undefined ? state[key] : d[key]);
   const pick = (key) => (KERR_ENUMS[key].includes(read(key)) ? read(key) : d[key]);
   return Object.freeze({
@@ -187,7 +196,7 @@ export function normalizeKerrState(state = {}) {
  *                    smaller k = finer steps near the photon region
  *   temporalSamples  frames averaged by temporal accumulation (1 = no history)
  *   samplesPerFrame  jittered rays per pixel per frame (rotated-grid supersampling)
- *   sky              starfield resolution preset (see starfield-sampler.mjs)
+ *   sky              starfield resolution preset (see starfield-texture.mjs)
  *
  * Quality changes only sampling density and resolution; the equations and
  * claim labels never change.
@@ -227,7 +236,6 @@ export function kerrQualityBudget(quality, { detail3d = "medium", reducedMotion 
     temporalSamples: reducedMotion ? 1 : base.temporalSamples,
     samplesPerFrame: reducedMotion ? Math.max(4, base.samplesPerFrame) : base.samplesPerFrame,
     sky: base.sky,
-    skyTexels: [STARFIELD_PRESETS[base.sky].width, STARFIELD_PRESETS[base.sky].height],
   });
 }
 
@@ -428,6 +436,8 @@ export function buildKerrRenderState(normalized, { observer, budget, backend = "
     disk,
     colorTable,
     transmittance: model.transmittance,
+    plasma: model.plasma === true,
+    softEdge: model.softEdge === true,
     exposure: 2 ** normalized.exposureEv,
     annotations: normalized.annotations,
     observer: Object.freeze({ r0, theta0, phi0, u0: Math.cos(theta0), coef }),
@@ -451,65 +461,119 @@ export function kerrRayConstants(renderState, direction) {
   const sin2 = Math.max(1 - u0 * u0, 1e-12);
   const Q = ptheta * ptheta + u0 * u0 * (-a * a * E * E + (Lz * Lz) / sin2);
   const delta = r0 * r0 - 2 * r0 + a * a;
-  return { E, Lz, Q, vr: delta * coef.R1 * nr, vu: -Math.sin(theta0) * ptheta };
+  return { E, Lz, Q, ptheta, vr: delta * coef.R1 * nr, vu: -Math.sin(theta0) * ptheta };
 }
 
-function rhs(a, E, Lz, Q, r, u) {
+/**
+ * Pole-regular form of Carter's equations. The polar and azimuthal motion is
+ * carried by a unit vector m on the sphere (z along the spin axis) with
+ * m' = w and
+ *
+ *   w' = -(Q + L_z^2 + a^2 E^2 m_z^2) m + a^2 E^2 m_z (z - m_z m)
+ *
+ * which reproduces u'' = Theta_u'(u)/2 for u = m_z and phi' = L_z / sin^2(theta)
+ * for the azimuth of m, without the coordinate singularity at the poles
+ * (rays passing over the axis move smoothly through m = +-z). Frame dragging
+ * is the remaining azimuthal rate a (P/Delta - E), integrated as a separate
+ * rotation angle phi_d about the axis: the ray's direction is R_z(phi_d) m.
+ *
+ * State: [r, r', m_x, m_y, m_z, w_x, w_y, w_z, phi_d].
+ */
+function derivative(a, E, Lz, Q, s) {
+  const [r, vr, mx, my, mz, wx, wy, wz] = s;
   const a2 = a * a;
+  const aE2 = a2 * E * E;
   const P = E * (r * r + a2) - a * Lz;
   const K = (Lz - a * E) * (Lz - a * E) + Q;
   const delta = Math.max(r * r - 2 * r + a2, 1e-6);
+  const omega2 = Q + Lz * Lz + aE2 * mz * mz;
+  const pull = aE2 * mz;
   return [
+    vr,
     2 * E * r * P - (r - 1) * K,
-    -u * (Q + Lz * Lz - a2 * E * E) - 2 * a2 * E * E * u * u * u,
-    -(a * E - Lz / Math.max(1 - u * u, 1e-6)) + (a * P) / delta,
+    wx, wy, wz,
+    -omega2 * mx - pull * mz * mx,
+    -omega2 * my - pull * mz * my,
+    -omega2 * mz + pull * (1 - mz * mz),
+    (a * P) / delta - a * E,
   ];
 }
 
-function deriv(a, E, Lz, Q, s) {
-  const [ar, au, dphi] = rhs(a, E, Lz, Q, s[0], s[2]);
-  return [s[1], ar, s[3], au, dphi];
+/** Angular speed |m'| on the sphere: the first integral sqrt(Q + L_z^2 + a^2 E^2 m_z^2). */
+function angularSpeed(a, E, Lz, Q, mz) {
+  return Math.sqrt(Math.max(Q + Lz * Lz + a * a * E * E * mz * mz, 0));
 }
 
 function rk4(a, E, Lz, Q, s, h) {
   const add = (x, k, c) => x.map((v, i) => v + c * k[i]);
-  const k1 = deriv(a, E, Lz, Q, s);
-  const k2 = deriv(a, E, Lz, Q, add(s, k1, h / 2));
-  const k3 = deriv(a, E, Lz, Q, add(s, k2, h / 2));
-  const k4 = deriv(a, E, Lz, Q, add(s, k3, h));
+  const k1 = derivative(a, E, Lz, Q, s);
+  const k2 = derivative(a, E, Lz, Q, add(s, k1, h / 2));
+  const k3 = derivative(a, E, Lz, Q, add(s, k2, h / 2));
+  const k4 = derivative(a, E, Lz, Q, add(s, k3, h));
   const next = s.map((v, i) => v + (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
-  // First-integral projection: |r'| = sqrt(R(r)) and |u'| = sqrt(Theta_u(u)) are exact
-  // constraints of Carter's equations. Re-imposing them each step removes the
-  // secular drift of the second-order form (which otherwise mis-classifies
-  // near-critical rays) while the sign, i.e. the direction of motion, is kept.
+  // First-integral projection: |r'| = sqrt(R(r)), |m| = 1, w tangent to the sphere and
+  // |w| = sqrt(Q + L_z^2 + a^2 E^2 m_z^2) are exact constraints. Re-imposing them each
+  // step removes the secular drift of the second-order form (which otherwise
+  // mis-classifies near-critical rays) while the direction of motion is kept.
   const a2 = a * a;
-  const [r, , u] = next;
+  const r = next[0];
   const P = E * (r * r + a2) - a * Lz;
   const K = (Lz - a * E) * (Lz - a * E) + Q;
   const R = P * P - (r * r - 2 * r + a2) * K;
-  const Theta = Q - u * u * (Q + Lz * Lz - a2 * E * E) - a2 * E * E * u * u * u * u;
   next[1] = (next[1] >= 0 ? 1 : -1) * Math.sqrt(Math.max(R, 0));
-  next[3] = (next[3] >= 0 ? 1 : -1) * Math.sqrt(Math.max(Theta, 0));
+  const mLength = Math.hypot(next[2], next[3], next[4]) || 1;
+  for (let i = 2; i <= 4; i += 1) next[i] /= mLength;
+  const radialW = next[5] * next[2] + next[6] * next[3] + next[7] * next[4];
+  for (let i = 5; i <= 7; i += 1) next[i] -= radialW * next[i - 3];
+  const wLength = Math.hypot(next[5], next[6], next[7]);
+  if (wLength > 1e-12) {
+    const scale = angularSpeed(a, E, Lz, Q, next[4]) / wLength;
+    for (let i = 5; i <= 7; i += 1) next[i] *= scale;
+  }
   return next;
+}
+
+/** Initial sphere state of a ray leaving the observer at (theta0, phi0). */
+export function kerrInitialSphereState(theta0, phi0, ptheta, Lz) {
+  const st = Math.sin(theta0);
+  const ct = Math.cos(theta0);
+  const sp = Math.sin(phi0);
+  const cp = Math.cos(phi0);
+  const sinT = Math.max(st, 1e-6);
+  // m' = theta' e_theta + sin(theta) phi' e_phi with theta' = p_theta and sin(theta) phi' = L_z / sin(theta)
+  const azimuthal = Lz / sinT;
+  return {
+    m: [st * cp, st * sp, ct],
+    w: [ptheta * ct * cp - azimuthal * sp, ptheta * ct * sp + azimuthal * cp, -ptheta * st],
+  };
+}
+
+/** Rotate (x, y) of a BL-Cartesian vector about the spin axis by `angle`. */
+function rotateZ([x, y, z], angle) {
+  const c = Math.cos(angle);
+  const sn = Math.sin(angle);
+  return [c * x - sn * y, sn * x + c * y, z];
 }
 
 /**
  * Trace one ray. Returns the status (`captured`, `escaped`, `unresolved`),
  * every equatorial crossing (`hits`, `order` = crossings before it, `inDisk`
- * when it lies in [r_in, r_out]), the closest approach and, for escaped rays,
- * the asymptotic world-space direction.
+ * when it lies in [r_in, r_out], `phi` = Boyer-Lindquist azimuth of the
+ * crossing), the closest approach and, for escaped rays, the asymptotic
+ * world-space direction.
  */
 export function traceKerrReferenceRay(renderState, direction, { maxSteps, stepK } = {}) {
   const a = renderState.aStar;
-  const { r0, phi0, u0 } = renderState.observer;
+  const { r0, phi0, theta0 } = renderState.observer;
   const budget = renderState.budget;
   const steps = maxSteps ?? budget.maxSteps;
   const k = stepK ?? budget.stepK;
-  const { E, Lz, Q, vr, vu } = kerrRayConstants(renderState, direction);
+  const { E, Lz, Q, vr, ptheta } = kerrRayConstants(renderState, direction);
   const rPlus = renderState.radii.rPlus;
   const { escapeRadius, captureMargin } = KERR_RENDER_CONSTANTS;
   const { rIn, rOut } = renderState.disk;
-  let s = [r0, vr, u0, vu, phi0];
+  const start = kerrInitialSphereState(theta0, phi0, ptheta, Lz);
+  let s = [r0, vr, ...start.m, ...start.w, 0];
   const hits = [];
   let crossings = 0;
   let rMin = r0;
@@ -520,10 +584,13 @@ export function traceKerrReferenceRay(renderState, direction, { maxSteps, stepK 
     const h = k * Math.min(1 / r, (r - rPlus) / (Math.abs(rv) + 1));
     const next = rk4(a, E, Lz, Q, s, h);
     if (!next.every(Number.isFinite)) break;
-    if (s[2] * next[2] < 0) {
-      const f = s[2] / (s[2] - next[2]);
+    if (s[4] * next[4] < 0) {
+      const f = s[4] / (s[4] - next[4]);
       const rc = s[0] + f * (next[0] - s[0]);
-      hits.push({ order: crossings, r: rc, inDisk: rc >= rIn && rc <= rOut });
+      const mx = s[2] + f * (next[2] - s[2]);
+      const my = s[3] + f * (next[3] - s[3]);
+      const drag = s[8] + f * (next[8] - s[8]);
+      hits.push({ order: crossings, r: rc, phi: Math.atan2(my, mx) + drag, inDisk: rc >= rIn && rc <= rOut });
       crossings += 1;
     }
     s = next;
@@ -531,36 +598,42 @@ export function traceKerrReferenceRay(renderState, direction, { maxSteps, stepK 
     if (s[0] < rPlus + captureMargin && s[1] < 0) { status = "captured"; break; }
     if (s[0] > escapeRadius && s[1] > 0) { status = "escaped"; break; }
   }
-  const [r, rv, u, vuEnd, phi] = s;
-  const sinT = Math.max(Math.sqrt(Math.max(0, 1 - u * u)), 1e-4);
-  const sp = Math.sin(phi);
-  const cp = Math.cos(phi);
-  // Asymptotic direction of motion. The tangential part is written without any
-  // 1/sin(theta): sin(theta)*phi' = L_phi / sin(theta) and theta' = -u'/sin(theta)
-  // share that factor, so the unit tangent and |L| = sqrt(Q + Lz^2 + a^2 E^2 u^2)
-  // are exact and stay well conditioned on the spin axis, where the naive
-  // velocity formula divides noise by sin(theta).
-  const P = E * (r * r + a * a) - a * Lz;
-  const cDrift = (a * P) / Math.max(r * r - 2 * r + a * a, 1e-6) - a * E;
-  const lPhi = Lz + (1 - u * u) * cDrift;
-  const er = [sinT * cp, u, sinT * sp];
-  const tangent = [-vuEnd * u * cp - lPhi * sp, vuEnd * sinT, -vuEnd * u * sp + lPhi * cp];
-  const tangentNorm = Math.hypot(...tangent);
-  const angularMomentum = Math.sqrt(Math.max(Q + Lz * Lz + a * a * E * E * u * u, 0));
-  const v = er.map((component, i) => rv * component
-    + (tangentNorm > 1e-12 ? (r * angularMomentum * tangent[i]) / tangentNorm : 0));
+  const [r, rv] = s;
+  const drag = s[8];
+  // Asymptotic direction of motion d(r n)/dlambda = r' n + r n', with
+  // n = R_z(phi_d) m and n' = R_z(phi_d) w + phi_d' z x n.
+  const n = rotateZ([s[2], s[3], s[4]], drag);
+  const dragRate = derivative(a, E, Lz, Q, s)[8];
+  const turned = rotateZ([s[5], s[6], s[7]], drag);
+  const nDot = [turned[0] - dragRate * n[1], turned[1] + dragRate * n[0], turned[2]];
+  const v = [0, 1, 2].map((i) => rv * n[i] + r * nDot[i]);
   const norm = Math.hypot(...v) || 1;
+  // World axes have the spin along +y: world = (x, z, y) of the BL-Cartesian frame.
+  const world = [v[0] / norm, v[2] / norm, v[1] / norm];
+  const phi = Math.atan2(n[1], n[0]);
   return {
     status, steps: used, hits, rMin, E, Lz, Q,
-    escapeDirection: v.map((c) => c / norm),
-    final: { r, vr: rv, u, vu: vuEnd, phi },
+    escapeDirection: world,
+    final: { r, vr: rv, u: n[2], phi },
   };
 }
 
 /**
+ * Emission weight and transmission factor of one in-disk crossing:
+ * constant-transmittance models emit fully and pass `transmittance`; the
+ * soft-edged model has opacity alpha(r) (1 inside, thinning to 0 at r_out)
+ * and, by Kirchhoff's law, emits alpha(r) of the blackbody intensity.
+ */
+export function diskCrossingWeights(renderState, r) {
+  if (!renderState.softEdge) return { emit: 1, pass: renderState.transmittance };
+  const alpha = plasmaEdgeOpacity(r, renderState.disk.rOut);
+  return { emit: alpha, pass: 1 - alpha };
+}
+
+/**
  * Disk radiance of a traced ray (sky excluded), applying per-crossing
- * transmittance exactly like the shaders: each in-disk crossing emits and then
- * transmits `transmittance` of the remaining light (0 = opaque).
+ * weights exactly like the shaders (see diskCrossingWeights). The plasma
+ * texture is a per-frame display factor and is not part of this reference.
  */
 export function shadeKerrReferenceRay(renderState, trace) {
   let transmit = 1;
@@ -568,8 +641,9 @@ export function shadeKerrReferenceRay(renderState, trace) {
   for (const hit of trace.hits) {
     if (!hit.inDisk) continue;
     const shaded = shadeDiskHit(renderState, hit.r, trace.E, trace.Lz);
-    for (let c = 0; c < 3; c += 1) rgb[c] += transmit * shaded.rgb[c];
-    transmit *= renderState.transmittance;
+    const { emit, pass } = diskCrossingWeights(renderState, hit.r);
+    for (let c = 0; c < 3; c += 1) rgb[c] += transmit * emit * shaded.rgb[c];
+    transmit *= pass;
     if (transmit <= 1e-4) { transmit = 0; break; }
   }
   return { rgb, transmit, escaped: trace.status === "escaped" };
@@ -605,7 +679,10 @@ export function pickKerrPixel(renderState, ndcX, ndcY, { tanHalfFov, aspect }) {
  */
 export function locateKerrFeature(renderState, kind, lens) {
   if (kind === "horizon") return { x: 0, y: 0 };
-  const scan = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+  const scan = Array.from({ length: 24 }, (_, i) => {
+    const angle = (2 * Math.PI * i) / 24;
+    return [Math.cos(angle), Math.sin(angle)];
+  });
   for (let step = 1; step <= 160; step += 1) {
     const radius = step / 160;
     for (const [dx, dy] of scan) {
@@ -809,9 +886,13 @@ export function kerrExportMetadata(atlasState, runtime = {}) {
         outer: renderState.disk.rOut,
         displayPeakKelvin: KERR_RENDER_CONSTANTS.displayPeakKelvin,
         transmittancePerCrossing: renderState.transmittance,
+        softEdgeStartFraction: renderState.softEdge ? KERR_PLASMA.edgeStart : null,
         tableChecksum: checksum(renderState.disk.data),
         colorTableChecksum: checksum(renderState.colorTable.data),
       },
+      plasma: renderState.plasma
+        ? { status: "heuristic", seed: Math.trunc(Number(atlasState.seed ?? 42)) || 42, ...KERR_PLASMA }
+        : null,
       observerCoefficients: renderState.observer.coef,
       constants: KERR_RENDER_CONSTANTS,
     },

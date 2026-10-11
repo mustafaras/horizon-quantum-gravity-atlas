@@ -52,7 +52,7 @@ import {
   renderStarfield,
   starfieldGradients,
   starfieldLod,
-} from "../js/visualizations/kerr/starfield-sampler.mjs";
+} from "../js/visualizations/kerr/starfield-texture.mjs";
 import {
   kerrConservedQuantities,
   kerrHorizonRadii,
@@ -76,7 +76,7 @@ function stateFor({ a = 0.9, incl = 75, dist = 40, quality = "balanced", disk = 
 
 /* ---------- state ---------- */
 
-test("old links (no observatory keys) take the documented defaults", () => {
+test("v2 defaults are turbulent and v1 defaults preserve old shared links", () => {
   const n = normalizeKerrState({ bhMass: 1, bhSpin: 0.7 });
   assert.equal(n.aStar, 0.7);
   assert.equal(n.inclinationDeg, KERR_STATE_DEFAULTS.bhInclination);
@@ -84,7 +84,10 @@ test("old links (no observatory keys) take the documented defaults", () => {
   assert.equal(n.diskModel, KERR_STATE_DEFAULTS.bhDiskModel);
   assert.equal(n.quality, KERR_STATE_DEFAULTS.bhRenderQuality);
   assert.equal(n.exposureEv, 0);
-  assert.equal(n.annotations, true);
+  assert.equal(n.annotations, false);
+  const old = normalizeKerrState({ bhStateVersion: 1, bhSpin: 0.7 });
+  assert.equal(old.diskModel, "page-thorne");
+  assert.equal(old.annotations, true);
 });
 
 test("state is clamped to the documented domain and enums fall back safely", () => {
@@ -125,7 +128,8 @@ test("URL state: old link, versioned round trip, future version, junk values", (
   assert.equal(old.bhSpin, 0.7);
   assert.equal(old.bhInclination, 75);
   assert.equal(old.bhDiskModel, "page-thorne");
-  assert.equal(api.qgaStateSearch(old), "?view=bh&bhs=0.7".replace("&bhs", "&bhs"));
+  assert.equal(old.bhAnnotations, true);
+  assert.match(api.qgaStateSearch(old), /bhv=1/);
 
   const next = { ...old, bhSpin: -0.9, bhInclination: 60, bhObserverDistance: 25, bhDiskModel: "newtonian",
     bhRenderQuality: "ultra", bhExposure: 1.5, bhAnnotations: false };
@@ -136,7 +140,11 @@ test("URL state: old link, versioned round trip, future version, junk values", (
     assert.equal(back[key], next[key], key);
   }
 
-  const future = api.qgaReadState("?view=bh&bhv=2&bhi=33&bhq=ultra&bhs=0.5");
+  const current = api.qgaReadState("?view=bh&bhv=2&bhs=0.5");
+  assert.equal(current.bhDiskModel, "page-thorne-turbulent");
+  assert.equal(current.bhAnnotations, false);
+  assert.match(api.qgaStateSearch(current), /bhv=2/);
+  const future = api.qgaReadState("?view=bh&bhv=3&bhi=33&bhq=ultra&bhs=0.5");
   assert.equal(future.bhInclination, 75);
   assert.equal(future.bhRenderQuality, "balanced");
   assert.equal(future.bhSpin, 0.5);

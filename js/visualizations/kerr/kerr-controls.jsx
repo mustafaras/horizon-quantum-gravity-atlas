@@ -6,6 +6,7 @@
 // computes physics.
 
 const KERR_DISK_LABELS = {
+  "page-thorne-turbulent": "Page–Thorne + turbulence",
   "page-thorne": "Page–Thorne",
   "page-thorne-opaque": "Page–Thorne opaque",
   "newtonian": "Newtonian S–S",

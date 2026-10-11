@@ -955,7 +955,7 @@ The Hawking temperature tends toward zero in the extremal limit.
 
 **Limit:** the information paradox remains open in operational detail.
 
-**Limit:** the Kerr Observatory image is a numerical ray trace — Carter's separated null-geodesic equations integrated per pixel in the full Kerr metric, so frame dragging, the spin-dependent shadow and higher-order images are computed, not painted. It remains a *model*: the disk is razor-thin and equatorial, its peak temperature is display-scaled (7000 K), the per-crossing disk transmittance that separates image orders and the synthetic star catalogue are display parameters, rays that exhaust the step budget are drawn as shadow (never as an enhanced ring), and the exterior-only tracer never crosses the horizon. The map and live formulation panel print exact Kerr coordinate radii from the validated science core.
+**Limit:** the Kerr Observatory image is a numerical ray trace — Carter's null-geodesic equations integrated per pixel in the full Kerr metric, so frame dragging, the spin-dependent shadow and higher-order images are computed, not painted. It remains a *model*: the disk is razor-thin and equatorial, its peak temperature is display-scaled (5000 K), the turbulent disk texture is a heuristic unit-mean emissivity pattern rather than an MHD solution, and the transmittance and synthetic star catalogue are display parameters. Rays that exhaust the step budget are drawn as shadow (never as an enhanced ring), and the exterior-only tracer never crosses the horizon. The map and live formulation panel print exact Kerr coordinate radii from the validated science core.
 
 ### 8. Page Curve and Information
 
