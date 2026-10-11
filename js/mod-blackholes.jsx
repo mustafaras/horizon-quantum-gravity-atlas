@@ -123,12 +123,17 @@ function PageCurvePlot() {
     aria-label="Page curve: entanglement entropy of Hawking radiation rising then falling for unitary evaporation"></canvas></div>;
 }
 
+// Camera presets expressed as observatory state: inclination from the spin axis (deg) and
+// observer distance (GM/c²). The orbit camera is the observer, so these drive the render.
 const KERR_CAMERA_PRESETS = {
-  edge: { radius: 30, theta: 0.35, phi: 1.31, minR: 12, maxR: 60 },
-  polar: { radius: 30, theta: 0.25, phi: 0.18, minR: 12, maxR: 60 },
-  photon: { radius: 16, theta: 0.5, phi: 1.12, minR: 12, maxR: 60 },
-  wide: { radius: 44, theta: -0.45, phi: 1.2, minR: 12, maxR: 60 },
+  edge: { inclination: 80, distance: 40, theta: 0.35 },
+  polar: { inclination: 8, distance: 40, theta: 0.25 },
+  photon: { inclination: 70, distance: 22, theta: 0.5 },
+  wide: { inclination: 75, distance: 90, theta: -0.45 },
 };
+function kerrCameraGoal(inclinationDeg, distance, theta = 0.35) {
+  return { radius: distance, theta, phi: (inclinationDeg * Math.PI) / 180 };
+}
 
 const KERR_CURVES = [
   { key: "isco", sense: "retro", color: "#b388ff", dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
@@ -295,10 +300,14 @@ function KerrValidity({ geometry }) {
             expressions (Bardeen, Press &amp; Teukolsky 1972). They are evaluated analytically, not fitted,
             and are reported in geometrised units <Eq tex="GM/c^2"></Eq>.
           </dd>
-          <dt>Approximation</dt>
+          <dt>Ray-traced Kerr geodesics</dt>
           <dd>
-            The raymarched image uses a Schwarzschild-based geodesic approximation with visual spin cues.
-            It is a teaching render, not a ray-traced Kerr image; frame dragging is not integrated.
+            The observatory integrates Carter's separated null-geodesic equations in the full Kerr metric for every
+            pixel (Runge–Kutta 4 in Mino time, first integrals re-imposed each step) — frame dragging is part of the
+            integration. Disk flux, orbital kinematics, redshift and blackbody colour come from the validated science
+            core. What is <em>not</em> physical: the display-scaled 7000 K peak temperature, the per-crossing disk
+            transmittance used to separate image orders, the synthetic star catalogue and the 16 GM/c² disk outer edge.
+            Orders beyond the ray budget are not drawn; no photon ring is thickened.
           </dd>
           <dt>Semiclassical</dt>
           <dd>
@@ -413,7 +422,7 @@ function KerrFormulation({ geometry, massSolar, temperature, entropy }) {
       </ol>
       <p className="kerr-formulation-note">
         Closed-form Kerr quantities in Boyer–Lindquist coordinates, evaluated at the current sliders.
-        These are exact coordinate radii; the raymarched image above is an approximate lensing render.
+        These are exact coordinate radii; the ray-traced image above integrates Carter's Kerr geodesics numerically (see the validity panel).
       </p>
     </section>
   );
@@ -443,6 +452,56 @@ function BlackHoleLab3D() {
   const aStar = atlasState.bhSpin;
   const logRef = useRef(logM); logRef.current = logM;
   const spinRef = useRef(aStar); spinRef.current = aStar;
+  const stateRef = useRef(atlasState); stateRef.current = atlasState;
+  const governorRef = useRef(null);
+  const [focus, setFocus] = useState(null);
+  const focusRef = useRef({ x: 0, y: 0, radius: 0.2, strength: 0 });
+  const [cameraGoal, setCameraGoal] = useState(null);
+
+  // Focus: dolly the camera toward the feature (snaps under reduced motion — Scene3D
+  // applies a goal instantly when motion is 0) and drive the image-plane defocus disc.
+  const orbitThetaOf = (observer) => (observer ? Math.PI / 2 - observer.phi0 : 0.35);
+  const focusFeature = (kind, ndc) => {
+    const kerrApi = window.QGA_KERR;
+    if (!kerrApi) return;
+    const cur = stateRef.current;
+    const normalized = kerrApi.normalizeKerrState({ ...cur, bhMass: cur.bhMass, bhSpin: cur.bhSpin });
+    const snapshot = window.__qgaKerrRuntime;
+    const observer = snapshot?.observer;
+    const budget = kerrApi.kerrQualityBudget(normalized.quality, { detail3d: snapshot?.detail3d ?? "medium" });
+    const renderState = kerrApi.buildKerrRenderState(normalized, { observer, budget });
+    const lens = snapshot?.lens ?? { tanHalfFov: Math.tan((40 * Math.PI) / 360), aspect: 1.6 };
+    // A click classifies the traced pixel; a Focus button locates its feature in the image first.
+    const point = ndc ?? kerrApi.locateKerrFeature(renderState, kind, lens);
+    const picked = kerrApi.pickKerrPixel(renderState, point.x, point.y, lens);
+    const resolved = ndc ? picked.kind : kind;
+    const hit = picked.trace.hits.find((h) => h.inDisk);
+    const extra = hit
+      ? { order: hit.order, r: hit.r, g: kerrApi.shadeDiskHit(renderState, hit.r, picked.trace.E, picked.trace.Lz).g }
+      : {};
+    const plan = kerrApi.kerrFocusPlan(resolved, { observerDistance: normalized.observerDistance, rIscoPro: renderState.radii.rIsco });
+    focusRef.current = { x: point.x, y: point.y, radius: plan.radius, strength: plan.strength };
+    if (resolved !== "sky") {
+      setCameraGoal(kerrCameraGoal(observer ? (observer.theta0 * 180) / Math.PI : normalized.inclinationDeg,
+        plan.distance, orbitThetaOf(observer)));
+      setAtlasState({ bhObserverDistance: Math.round(plan.distance) });
+    }
+    setFocus({ kind: resolved, explanation: kerrApi.kerrFeatureExplanation(resolved, renderState, extra), ndc: point });
+  };
+  const onFocusRef = useRef(null);
+  onFocusRef.current = ({ ndc }) => focusFeature(null, ndc);
+  const onCameraSettledRef = useRef(null);
+  onCameraSettledRef.current = (patch) => setAtlasState(patch);
+  const clearFocus = () => {
+    focusRef.current = { ...focusRef.current, strength: 0 };
+    setFocus(null);
+  };
+  const requestCamera = ({ inclination, distance }) => {
+    const cur = stateRef.current;
+    const o = window.__qgaKerrRuntime?.observer;
+    setCameraGoal(kerrCameraGoal(inclination ?? cur.bhInclination, distance ?? cur.bhObserverDistance,
+      orbitThetaOf(o)));
+  };
 
   useEffect(() => {
     try {
@@ -452,162 +511,96 @@ function BlackHoleLab3D() {
     }
   }, [mapOpen, mapPreferenceKey]);
 
-  const build = (ctx) => {
-    const { THREE, scene } = ctx;
-    const det = ctx.settings.current.detail3d;
-    const STEPS = det === "low" ? 150 : det === "ultra" ? 380 : 260;
+  // Kerr observatory scene (Prompt 04). The runtime (WebGPU compute path when the
+  // device offers it, WebGL2 fragment integrator otherwise) integrates Carter's
+  // geodesic equations per pixel; every physical number comes from js/science/
+  // via window.QGA_KERR. This build only wires camera, state, picking and focus.
+  const build = async (ctx) => {
+    const { scene } = ctx;
+    const kerr = window.QGA_KERR;
+    if (!kerr) throw new Error("Kerr observatory module is unavailable; reload the page.");
+    const { createKerrRuntime } = await kerr.loadRuntime();
+    const runtime = await createKerrRuntime({
+      backendPreference: window.QGA_RENDER_OPTIONS?.forceBackend ?? ctx.settings.current.renderBackend ?? "auto",
+      seed: stateRef.current.seed ?? 42,
+    });
+    scene.add(runtime.mesh);
+    let lastLens = { tanHalfFov: 0.35, aspect: 1.6 };
+    let lastPlan = null;
+    let settleTimer = 0;
+    let lastObserver = null;
 
-    // ---- Gargantua: full-frame gravitational-lensing raymarch shader ----
-    // A screen quad reconstructs a view ray per pixel from the real orbit camera,
-    // marches it while bending toward the hole (geodesic approximation), samples a
-    // thin equatorial accretion disk with Doppler beaming + relativistic temperature,
-    // and reads a lensed star field for escaped rays — the Interstellar look.
-    const uniforms = {
-      uCamPos: { value: new THREE.Vector3() },
-      uFwd: { value: new THREE.Vector3() },
-      uRight: { value: new THREE.Vector3() },
-      uUp: { value: new THREE.Vector3() },
-      uTanFov: { value: Math.tan(THREE.MathUtils.degToRad(45 / 2)) },
-      uAspect: { value: 1 },
-      uTime: { value: 0 },
-      uSteps: { value: STEPS },
-      uDiskGlow: { value: 1.0 },
-      uSpin: { value: 0.0 },
+    const publish = (frame) => {
+      window.__qgaKerrRuntime = {
+        ...runtime.snapshot(), detail3d: ctx.settings.current.detail3d,
+        reducedMotion: ctx.motion() === 0, observer: frame.observer, lens: lastLens,
+      };
     };
-    const frag = `
-      precision highp float;
-      varying vec2 vUv;
-      uniform vec3 uCamPos, uFwd, uRight, uUp;
-      uniform float uTanFov, uAspect, uTime, uSteps, uDiskGlow, uSpin;
-      float hash3(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,37.719)))*43758.5453); }
-      vec3 stars(vec3 d){
-        vec3 c = vec3(0.0);
-        for(int k=0;k<3;k++){
-          float scl = 140.0 + float(k)*190.0;
-          vec3 g = floor(d*scl);
-          float h = hash3(g + float(k)*7.1);
-          if(h > 0.984){
-            float b = (h-0.984)/0.016;
-            vec3 tint = mix(vec3(0.7,0.8,1.0), vec3(1.0,0.92,0.8), hash3(g+2.0));
-            c += tint * b*b * 1.5;
-          }
-        }
-        c += vec3(0.07,0.10,0.18) * exp(-pow(d.y*2.0, 2.0)) * 0.06;
-        return c;
-      }
-      void main(){
-        vec2 ndc = vUv*2.0 - 1.0;
-        vec3 dir = normalize(uFwd + ndc.x*uTanFov*uAspect*uRight + ndc.y*uTanFov*uUp);
-        float SC = 2.7;                         // world units per gravitational unit (horizon at r=1)
-        vec3 p = uCamPos / SC;
-        vec3 v = dir;
-        vec3 hvec = cross(p, v); float h2 = dot(hvec, hvec);   // conserved angular momentum (impact parameter)
-        float diskIn = 2.6 - 1.2*uSpin, diskOut = 6.2;   // prograde ISCO shrinks with spin
-        vec3 col = vec3(0.0);
-        float transmit = 1.0;
-        bool captured = false;
-        float minr = 1e9;
-        float dt = 0.14;
-        int steps = int(uSteps);
-        for(int i=0;i<450;i++){
-          if(i>=steps) break;
-          float r = length(p);
-          minr = min(minr, r);
-          if(r < 1.0){ captured = true; break; }              // event horizon
-          if(r > 26.0 && dot(v,p) > 0.0) break;
-          vec3 acc = -1.5 * h2 * p / pow(dot(p,p), 2.5);       // null geodesic, Schwarzschild
-          vec3 pnew = p + v*dt;
-          vec3 vnew = v + acc*dt;
-          vec3 midp = (p+pnew)*0.5;
-          float rr = length(midp.xz);
-          if(rr > diskIn && rr < diskOut){
-            float thick = 0.10 + rr*0.02;
-            float dens = exp(-(midp.y*midp.y)/(thick*thick));
-            if(dens > 0.004){
-              float tn = (rr-diskIn)/(diskOut-diskIn);
-              vec3 hotC = vec3(1.0,0.97,0.90), midC = vec3(1.0,0.60,0.25), coolC = vec3(0.90,0.26,0.07);
-              vec3 dcol = mix(hotC, midC, smoothstep(0.0,0.4,tn));
-              dcol = mix(dcol, coolC, smoothstep(0.4,1.0,tn));
-              float ang = atan(midp.z, midp.x);
-              float orb = uTime * 1.3 * (1.0 + 0.9*uSpin) / pow(rr/diskIn, 1.5);   // frame dragging speeds the inner disk
-              float sw = ang - orb;
-              float n = 0.6 + 0.25*sin(sw*3.0) + 0.17*sin(sw*7.0 + rr*2.0) + 0.10*sin(sw*15.0 - rr);
-              n = clamp(n, 0.2, 1.4);
-              vec3 vel = normalize(vec3(-midp.z, 0.0, midp.x));
-              float dop = dot(vel, -normalize(v));
-              float beam = pow(clamp(0.5 + 0.7*dop, 0.0, 2.1), 2.8);    // relativistic Doppler beaming
-              float bright = (1.2/(1.0+(rr-diskIn)*0.5)) * n * beam * uDiskGlow;
-              float em = dens * bright * dt * SC;
-              col += transmit * dcol * em;
-              transmit *= exp(-dens * dt * SC * 1.2);
-            }
-          }
-          p = pnew; v = vnew;
-        }
-        // photon ring: rays that grazed the photon sphere (r = 1.5) and escaped
-        if(!captured){
-          float ring = exp(-pow((minr - 1.5)/0.10, 2.0));
-          col += vec3(1.0,0.85,0.62) * ring * 0.9;
-          col += transmit * stars(normalize(v));
-        }
-        col = col/(col+vec3(1.0));
-        col = pow(col, vec3(0.82));
-        gl_FragColor = vec4(col, 1.0);
-      }`;
-    const vert = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
-    const quad = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
-      new THREE.ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag, depthTest: false, depthWrite: false })
-    );
-    quad.frustumCulled = false;
-    quad.renderOrder = -10;
-    scene.add(quad);
-
-    ctx.label("event horizon", () => ({ x: 0, y: -2.5, z: 0 }), "s3d-quiet");
-    ctx.label("photon ring", () => ({ x: -2.8, y: 2.9, z: 0 }), "s3d-quiet");
-    ctx.annotation("S = k_B A / 4 l_P² — entropy scales with horizon AREA, not volume",
-      () => ({ x: 0, y: -4.2, z: 0 }));
-    ctx.annotation("the far side of the disk wraps over and under the shadow",
-      () => ({ x: 0, y: 5.2, z: 0 }));
-
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
     return {
       autoRotate: false,
       renderCapabilities: { depth: false },
+      applyRenderQuality: (quality) => { governorRef.current = quality.raySteps; },
+      recoverable: (error) => runtime.recoverable ? runtime.recoverable(error) : false,
+      onScreenPick: (ndc) => { if (lastPlan) onFocusRef.current({ ndc }); },
       update: (t, dt) => {
+        const renderer = ctx.renderer;
+        if (!renderer) return;
         const cam = ctx.camera;
-        fwd.set(0, 0, 0).sub(cam.position).normalize();
-        right.crossVectors(fwd, worldUp).normalize();
-        up.crossVectors(right, fwd).normalize();
-        uniforms.uCamPos.value.copy(cam.position);
-        uniforms.uFwd.value.copy(fwd);
-        uniforms.uRight.value.copy(right);
-        uniforms.uUp.value.copy(up);
-        uniforms.uTanFov.value = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-        uniforms.uAspect.value = cam.aspect || 1;
-        uniforms.uTime.value += dt * ctx.motion();
-        // smaller holes glow a touch hotter (visual cue tied to the mass slider)
-        uniforms.uDiskGlow.value = 0.85 + 0.4 * (1 - logRef.current / 9);
-        uniforms.uSpin.value += (spinRef.current - uniforms.uSpin.value) * Math.min(1, dt * 4);
+        lastLens = { tanHalfFov: Math.tan((cam.fov * Math.PI) / 360), aspect: cam.aspect || 1 };
+        lastPlan = runtime.sync({
+          renderer, camera: cam, atlasState: { ...stateRef.current, bhMass: logRef.current, bhSpin: spinRef.current },
+          detail3d: ctx.settings.current.detail3d, reducedMotion: ctx.motion() === 0,
+          governorRaySteps: governorRef.current,
+        });
+        runtime.setFocus(focusRef.current);
+        publish(lastPlan);
+        // Camera is the observer: write a settled orbit back to the shareable state.
+        const o = lastPlan.observer;
+        const incl = (o.theta0 * 180) / Math.PI;
+        if (!lastObserver || Math.abs(lastObserver.r0 - o.r0) > 1e-3 || Math.abs(lastObserver.theta0 - o.theta0) > 1e-4) {
+          lastObserver = o;
+          window.clearTimeout(settleTimer);
+          settleTimer = window.setTimeout(() => {
+            const cur = stateRef.current;
+            const nextIncl = Math.min(89, Math.max(3, Math.round(incl)));
+            const nextDist = Math.min(120, Math.max(12, Math.round(o.r0)));
+            if (Math.abs(cur.bhInclination - nextIncl) >= 1 || Math.abs(cur.bhObserverDistance - nextDist) >= 1) {
+              onCameraSettledRef.current({ bhInclination: nextIncl, bhObserverDistance: nextDist });
+            }
+          }, 450);
+        }
+      },
+      dispose() {
+        window.clearTimeout(settleTimer);
+        window.__qgaKerrRuntime = null;
+        runtime.dispose();
       },
     };
   };
 
   const M = Math.pow(10, logM);
   const rs_km = window.QGA_PHYSICS.schwarzschildRadius(M);
-  const kerr = window.QGA_PHYSICS.kerrGeometry(aStar);
-  const eased = useEasedKerr(kerr);
-  const settling = Math.abs(eased.a - kerr.a) > 1e-4;
+  // Thermodynamic quantities are symmetric in the sign of a★; the legacy summary is spin-clamped to ≥ 0.
+  const kerr = window.QGA_PHYSICS.kerrGeometry(Math.abs(aStar));
   const a = kerr.a;
-  const rPlus = kerr.rPlus;          // outer horizon
-  const rIsco = kerr.rIsco;
-  const rPhoton = kerr.rPhoton;
+  // Characteristic radii for the signed spin come straight from the validated science core;
+  // "prograde" means orbiting in the +φ sense of the disk, so a★ < 0 is a retrograde disk.
+  const sci = window.QGA_PHYSICS;
+  const horizons = sci.kerrHorizonRadii(aStar);
+  const rPlus = horizons.rPlus;          // outer horizon
+  const rIsco = sci.kerrIsco(aStar, { prograde: true });
+  const rPhoton = sci.kerrPhotonSphere(aStar, { prograde: true });
+  const exactGeometry = {
+    ...kerr, a: aStar, rPlus, rMinus: horizons.rMinus, rIsco,
+    rIscoRetrograde: sci.kerrIsco(aStar, { prograde: false }),
+    rPhoton, rPhotonRetrograde: sci.kerrPhotonSphere(aStar, { prograde: false }),
+  };
+  const eased = useEasedKerr(exactGeometry);
+  const settling = Math.abs(eased.a - aStar) > 1e-4;
   const tempFactor = kerr.temperatureFactor;
   const T_H = window.QGA_PHYSICS.hawkingTemperature(M, a);
   const S = window.QGA_PHYSICS.blackHoleEntropyAreaUnits(M, a);
   const t_ev = window.QGA_PHYSICS.blackHoleEvaporationTimeYears(M);
-  const cameraGoal = KERR_CAMERA_PRESETS[cameraPreset];
 
   return (
     <div className="viz-frame">
@@ -616,11 +609,11 @@ function BlackHoleLab3D() {
           <div className="kerr-head-ident">KERR<span>OBS</span></div>
           <div>
             <h3>Black Hole Observatory</h3>
-            <p>An approximate lensing render read against exact Kerr coordinate radii.</p>
+            <p>Ray-traced Kerr geodesics read against exact Kerr coordinate radii.</p>
           </div>
         </div>
         <div className="kerr-head-state">
-          <span className="badge badge-effective">Kerr geometry + approximate raymarch</span>
+          <span className="badge badge-effective">Kerr null geodesics · thin disk · display-scaled colour</span>
           <div className="kerr-state-line">
             M = {sciNotation(M, 2)} M☉ · a★ = {aStar.toFixed(3)} · r₊ = {rPlus.toFixed(3)} GM/c²
           </div>
@@ -629,7 +622,7 @@ function BlackHoleLab3D() {
       <div className="viz-toolbar">
         <SliderRow label="black hole mass" min={0} max={9} step={0.05} value={logM} onChange={(v) => setAtlasState({ bhMass: v })}
           format={(v) => sciNotation(Math.pow(10, v), 2) + " M☉"}></SliderRow>
-        <SliderRow label="spin a★" min={0} max={0.998} step={0.002} value={aStar} onChange={(v) => setAtlasState({ bhSpin: v })}
+        <SliderRow label="spin a★ (negative = retrograde disk)" min={-0.998} max={0.998} step={0.002} value={aStar} onChange={(v) => setAtlasState({ bhSpin: v })}
           format={(v) => v.toFixed(3)}></SliderRow>
       </div>
       <div className="kerr-instrument-bar">
@@ -650,21 +643,30 @@ function BlackHoleLab3D() {
             ["edge", "Disk edge"], ["polar", "Polar"], ["photon", "Photon ring"], ["wide", "Wide field"],
           ].map(([key, label]) => (
             <button key={key} className={"kerr-chip" + (cameraPreset === key ? " on" : "")}
-              aria-pressed={cameraPreset === key} onClick={() => setCameraPreset(key)}>{label}</button>
+              aria-pressed={cameraPreset === key} onClick={() => {
+                const preset = KERR_CAMERA_PRESETS[key];
+                setCameraPreset(key);
+                setAtlasState({ bhInclination: preset.inclination, bhObserverDistance: preset.distance });
+                setCameraGoal(kerrCameraGoal(preset.inclination, preset.distance, preset.theta));
+              }}>{label}</button>
           ))}
         </div>
       </div>
-      <Scene3D height={460} aria="Three-dimensional black hole with accretion disk, photon ring, and physical readouts"
-        initial={KERR_CAMERA_PRESETS.edge} cameraGoal={cameraGoal}
-        overlay={<KerrGeometryMap geometry={eased} exact={kerr} layers={layers} open={mapOpen}
+      <Scene3D height={460} aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
+        initial={{ ...kerrCameraGoal(atlasState.bhInclination, atlasState.bhObserverDistance, 0.35), fov: 40, minR: 12, maxR: 120 }}
+        cameraGoal={cameraGoal}
+        overlay={<KerrGeometryMap geometry={eased} exact={exactGeometry} layers={layers} open={mapOpen}
           settling={settling} motion={!prm}
           onToggle={() => setMapOpen((current) => !current)}></KerrGeometryMap>}
         build={build} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
+      <KerrObservatoryControls state={atlasState} setState={setAtlasState} onCameraRequest={requestCamera}
+        onFocusKind={(kind) => focusFeature(kind, null)} focusKind={focus?.kind ?? null}></KerrObservatoryControls>
+      <KerrFocusPanel focus={focus} onClose={clearFocus}></KerrFocusPanel>
       <div className="kerr-deck">
         <section className="kerr-rgroup">
           <header>
             <h4>Geometry</h4>
-            <span>exact Kerr · Boyer–Lindquist · GM/c²</span>
+            <span>exact Kerr · Boyer–Lindquist · GM/c² · prograde = disk orbit sense</span>
           </header>
           <div className="kerr-rgrid">
             <KerrReadout lead label="outer horizon r₊" value={rPlus.toFixed(3)} unit="GM/c²"
@@ -674,19 +676,19 @@ function BlackHoleLab3D() {
               formula="r_E(θ) = M + √(M² − a² cos²θ)"
               sub={"θ = 90° → 1 + √(1 − " + a.toFixed(3) + "²·0) = " + kerr.rErgoEquator.toFixed(3)}></KerrReadout>
             <KerrReadout lead label="ISCO" unit="GM/c²"
-              pair={[["prograde", rIsco.toFixed(3)], ["retrograde", kerr.rIscoRetrograde.toFixed(3)]]}
+              pair={[["prograde", rIsco.toFixed(3)], ["retrograde", exactGeometry.rIscoRetrograde.toFixed(3)]]}
               formula="3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))"
-              sub={"Z₁ = " + kerr.z1.toFixed(3) + " · Z₂ = " + kerr.z2.toFixed(3)}></KerrReadout>
+              sub={"Z₁ = " + kerr.z1.toFixed(3) + " · Z₂ = " + kerr.z2.toFixed(3) + (aStar < 0 ? " · a★ < 0: the +φ disk is retrograde" : "")}></KerrReadout>
             <KerrReadout label="photon orbit" unit="GM/c²"
-              pair={[["prograde", rPhoton.toFixed(3)], ["retrograde", kerr.rPhotonRetrograde.toFixed(3)]]}
+              pair={[["prograde", rPhoton.toFixed(3)], ["retrograde", exactGeometry.rPhotonRetrograde.toFixed(3)]]}
               formula="2[1 + cos(⅔ arccos(∓a★))]"
-              sub={"2[1 + cos(⅔ arccos(−" + a.toFixed(3) + "))] = " + rPhoton.toFixed(3)}></KerrReadout>
+              sub={"2[1 + cos(⅔ arccos(−" + aStar.toFixed(3) + "))] = " + rPhoton.toFixed(3)}></KerrReadout>
             <KerrReadout label="Schwarzschild radius r_s" value={sciNotation(rs_km)} unit="km"
               formula="2GM/c²"
               sub={"2.95 km × " + sciNotation(M, 2) + " = " + sciNotation(rs_km) + " km"}></KerrReadout>
-            <KerrReadout label="spin a★" value={a.toFixed(3)}
-              formula="a★ = Jc/GM², extremal at 1"
-              sub={"clamped to a★ ≤ 0.998 · r₋ = " + kerr.rMinus.toFixed(3) + " GM/c²"}></KerrReadout>
+            <KerrReadout label="spin a★" value={aStar.toFixed(3)}
+              formula="a★ = Jc/GM², extremal at |a★| = 1"
+              sub={"clamped to |a★| ≤ 0.998 · r₋ = " + horizons.rMinus.toFixed(3) + " GM/c²"}></KerrReadout>
           </div>
         </section>
         <section className="kerr-rgroup">

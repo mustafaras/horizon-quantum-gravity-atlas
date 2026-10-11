@@ -74,7 +74,8 @@ All other scene code assumes a global `THREE` symbol injected by `index.html`, b
 
 | File | Construct | Role |
 |---|---|---|
-| `js/mod-blackholes.jsx` | `new THREE.ShaderMaterial(...)` | Full-screen Kerr black-hole raymarch material for the flagship black-hole observatory. |
+| `js/visualizations/kerr/kerr-material.mjs` | `new ShaderMaterial(...)` | WebGL2 Kerr geodesic integrator and display quad (ping-pong accumulation); selected unless a native WebGPU adapter is available. |
+| `js/visualizations/kerr/kerr-material.tsl.js` | `MeshBasicNodeMaterial` + TSL compute | WebGPU Kerr integrator: compute pass with storage-buffer temporal accumulation and a node display quad. |
 | `js/mod-gr.jsx` | `new THREE.ShaderMaterial(...)` | Curved-spacetime well material in the GR module. |
 | _(none)_ | `RawShaderMaterial` | No current usage. |
 
@@ -250,7 +251,7 @@ Every diagnostics entry includes all effect stages, in this order: base render, 
 
 Low-detail and system/user reduced-motion quality disable all optional effects. Reduced motion also removes automatic orbit intro/drift/parallax, animated focus and the GR decorative star pulse. It does not change science equations; analytical simulation pause remains explicit. Capture excludes optical distortions/DOF/motion blur/grain. Focus is fixed at `max(2*near,8)` world units; current cameras have far planes comfortably beyond this value. Current scenes do not supply light sources for volumetric effects.
 
-Scene depth is an independent capability. The black-hole fullscreen raymarch does not write ray-hit depth; `renderCapabilities.depth = false` therefore marks requested AO, SSGI, god rays, DOF, temporal AA and motion blur unsupported. Proxy-quad depth is never relabeled physical geometry. Other scenes retain the default geometric-depth policy.
+Scene depth is an independent capability. The Kerr observatory's full-screen quad does not write ray-hit depth; `renderCapabilities.depth = false` therefore marks requested AO, SSGI, god rays, DOF, temporal AA and motion blur unsupported (the observatory does its own temporal accumulation and focus defocus; see `docs/science/kerr-observatory.md`). Proxy-quad depth is never relabeled physical geometry. Other scenes retain the default geometric-depth policy.
 
 ### Lifecycle and adaptive budgets
 

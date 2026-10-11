@@ -1,6 +1,8 @@
 /* URL/history state, reproducibility controls, sharing, and bounded GWOSC access. */
 const QGA_DEFAULT_STATE = {
   view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
+  bhStateVersion: 1, bhInclination: 75, bhObserverDistance: 40, bhDiskModel: "page-thorne",
+  bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: true,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
   qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
@@ -10,6 +12,8 @@ const QGA_DEFAULT_STATE = {
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
+  bhStateVersion: "bhv", bhInclination: "bhi", bhObserverDistance: "bhd", bhDiskModel: "bhdm",
+  bhRenderQuality: "bhq", bhExposure: "bhe", bhAnnotations: "bha",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
   gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
   qftProcess: "qfp", qftSqrtS: "qfs", qftAngle: "qfa", qftPhotonX: "qfx",
@@ -25,15 +29,25 @@ const QGA_ENUMS = {
   rgPreset: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety", "custom"],
   rgPresetOrigin: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety"],
   rgModel: ["qed", "qcd", "gaussian", "linear", "asymptotic-safety"],
+  bhDiskModel: ["page-thorne", "page-thorne-opaque", "newtonian"],
+  bhRenderQuality: ["performance", "balanced", "ultra"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
+// Versioned Kerr-observatory URL keys. Links without them (old links) take the defaults;
+// a link written by a future schema version is ignored rather than misread.
+const QGA_KERR_KEYS = ["bhInclination", "bhObserverDistance", "bhDiskModel", "bhRenderQuality", "bhExposure", "bhAnnotations"];
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
+    else if (key === "bhAnnotations") { if (raw === "true" || raw === "false") state[key] = raw === "true"; }
     else if (QGA_NUMBERS.includes(key) && Number.isFinite(Number(raw))) state[key] = Number(raw);
+  }
+  if (state.bhStateVersion !== QGA_DEFAULT_STATE.bhStateVersion) {
+    for (const key of QGA_KERR_KEYS) state[key] = QGA_DEFAULT_STATE[key];
+    state.bhStateVersion = QGA_DEFAULT_STATE.bhStateVersion;
   }
   if (!params.has(QGA_STATE_KEYS.view)) {
     try {
@@ -41,7 +55,10 @@ function qgaReadState(search = window.location.search) {
       if (QGA_ENUMS.view.includes(legacyView)) state.view = legacyView;
     } catch (e) {}
   }
-  state.bhMass = qgaClamp(state.bhMass, 0, 9); state.bhSpin = qgaClamp(state.bhSpin, 0, 0.998);
+  state.bhMass = qgaClamp(state.bhMass, 0, 9); state.bhSpin = qgaClamp(state.bhSpin, -0.998, 0.998);
+  state.bhInclination = qgaClamp(state.bhInclination, 3, 89);
+  state.bhObserverDistance = qgaClamp(state.bhObserverDistance, 12, 120);
+  state.bhExposure = qgaClamp(state.bhExposure, -3, 3);
   state.gwStart = qgaClamp(Math.round(state.gwStart), 1126259000, 1126260000);
   state.gwDuration = qgaClamp(Math.round(state.gwDuration), 1, 32); state.seed = Math.trunc(state.seed) || 42;
   state.gwM1 = qgaClamp(Math.round(state.gwM1), 5, 200); state.gwM2 = qgaClamp(Math.round(state.gwM2), 5, 200);
@@ -94,8 +111,10 @@ function qgaReadState(search = window.location.search) {
 function qgaStateSearch(state) {
   const params = new URLSearchParams();
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
+    if (key === "bhStateVersion") continue;
     if (state[key] !== QGA_DEFAULT_STATE[key]) params.set(param, String(state[key]));
   }
+  if (QGA_KERR_KEYS.some((key) => params.has(QGA_STATE_KEYS[key]))) params.set(QGA_STATE_KEYS.bhStateVersion, String(QGA_DEFAULT_STATE.bhStateVersion));
   const query = params.toString();
   return query ? "?" + query : "";
 }
@@ -167,7 +186,7 @@ function qgaExportJson(state, extra = {}) {
         references: ["Gross & Wilczek (1973)", "Politzer (1973)", "Peskin & Schroeder (1995)", "Weinberg (1979)"],
       },
     };
-  })() : {};
+  })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {}) : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));

@@ -16,6 +16,14 @@ import { performance } from "node:perf_hooks";
 
 import { traceKerrRay } from "../js/science/kerr.mjs";
 import { kerrIsco } from "../js/science/kerr.mjs";
+import {
+  buildKerrRenderState,
+  kerrLocalDirection,
+  kerrQualityBudget,
+  normalizeKerrState,
+  shadeKerrReferenceRay,
+  traceKerrReferenceRay,
+} from "../js/visualizations/kerr/kerr-observatory.mjs";
 
 const args = process.argv.slice(2);
 const asJson = args.includes("--json");
@@ -156,6 +164,50 @@ const convergence = {
   driftQError: Math.abs(loose.drift.Q - tight.drift.Q),
 };
 
+/**
+ * Renderer budgets (Prompt 04): the CPU reference tracer mirrors the shader
+ * integrator exactly, so its step counts and outcome mix per quality preset are
+ * the budget the GPU backends see. A fixed 24 x 14 pixel grid, a* = 0.9,
+ * 75 degrees, 40 GM/c^2. Informational, like every timing here; only a
+ * non-finite result is a failure.
+ */
+const renderer = {};
+{
+  const normalized = normalizeKerrState({ bhSpin: 0.9, bhInclination: 75, bhObserverDistance: 40 });
+  const tableStart = performance.now();
+  buildKerrRenderState(normalized, { budget: kerrQualityBudget("balanced", { detail3d: "ultra" }) });
+  renderer.tableBuildMs = performance.now() - tableStart;
+  const lens = { tanHalfFov: Math.tan((20 * Math.PI) / 180), aspect: 1.6 };
+  for (const quality of ["performance", "balanced", "ultra"]) {
+    const state = buildKerrRenderState(normalized, { budget: kerrQualityBudget(quality, { detail3d: "ultra" }) });
+    const counts = { captured: 0, escaped: 0, unresolved: 0 };
+    const steps = [];
+    const start = performance.now();
+    for (let j = 0; j < 14; j += 1) {
+      for (let i = 0; i < 24; i += 1) {
+        const x = ((i + 0.5) / 24) * 2 - 1;
+        const y = 1 - ((j + 0.5) / 14) * 2;
+        const trace = traceKerrReferenceRay(state, kerrLocalDirection(x, y, lens.tanHalfFov, lens.aspect));
+        const shaded = shadeKerrReferenceRay(state, trace);
+        counts[trace.status] += 1;
+        steps.push(trace.steps);
+        if (![...shaded.rgb, ...trace.escapeDirection].every(Number.isFinite)) {
+          failures.push(`renderer ${quality}: non-finite pixel (${x.toFixed(2)}, ${y.toFixed(2)})`);
+        }
+      }
+    }
+    const elapsed = performance.now() - start;
+    renderer[quality] = {
+      maxSteps: state.budget.maxSteps,
+      stepK: state.budget.stepK,
+      outcomes: counts,
+      medianSteps: median(steps),
+      maxStepsUsed: Math.max(...steps),
+      msPerRay: elapsed / steps.length,
+    };
+  }
+}
+
 const report = {
   rayCount: rays.length,
   statusCounts: Object.fromEntries([...byStatus].map(([status, b]) => [status, b.count])),
@@ -174,6 +226,7 @@ const report = {
     maxAbsHamiltonian: maxDriftH,
   },
   convergence,
+  renderer,
   failures,
 };
 
@@ -207,6 +260,16 @@ if (asJson) {
   line("steps loose / tight", `${convergence.looseSteps} / ${convergence.tightSteps}`);
   line("azimuth error", convergence.azimuthError.toExponential(3));
   line("dQ difference", convergence.driftQError.toExponential(3));
+  console.log("");
+  console.log("Renderer budgets (CPU mirror of the shader integrator, 336 px grid, a*=0.9, 75 deg, 40 GM/c^2)");
+  line("render-state build (tables)", `${renderer.tableBuildMs.toFixed(2)} ms`);
+  for (const quality of ["performance", "balanced", "ultra"]) {
+    const r = renderer[quality];
+    line(`${quality} budget / k`, `${r.maxSteps} steps / ${r.stepK}`);
+    line(`  outcomes`, JSON.stringify(r.outcomes));
+    line(`  steps median / max`, `${r.medianSteps} / ${r.maxStepsUsed}`);
+    line(`  ms per ray`, r.msPerRay.toFixed(4));
+  }
   console.log("");
   if (failures.length === 0) {
     console.log("Physics invariants: OK");

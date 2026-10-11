@@ -6,6 +6,8 @@
     "basePath": "/",
     "stateKeys": {
       "view": "view", "pathway": "pathway", "bhMass": "bhm", "bhSpin": "bhs",
+      "bhStateVersion": "bhv", "bhInclination": "bhi", "bhObserverDistance": "bhd", "bhDiskModel": "bhdm",
+      "bhRenderQuality": "bhq", "bhExposure": "bhe", "bhAnnotations": "bha",
       "gwMode": "gwm", "gwEvent": "gwe", "gwDetector": "gwd", "gwStart": "gws",
       "gwDuration": "gwt", "gwM1": "gwm1", "gwM2": "gwm2", "seed": "seed",
       "qftProcess": "qfp", "qftSqrtS": "qfs", "qftAngle": "qfa", "qftPhotonX": "qfx",
@@ -27,16 +29,16 @@
     {
       "id": "bh-kerr-hero",
       "file": "docs/screenshots/01-black-hole-kerr-raymarch.png",
-      "description": "Black-hole module hero: approximate Kerr lensing raymarch with horizon and accretion disk.",
+      "description": "Black-hole module hero: ray-traced Kerr geodesics with a lensed thin disk, Doppler beaming and higher-order images.",
       "view": "bh",
       "url": "?view=bh&bhm=1&bhs=0.7",
       "viewport": { "width": 1600, "height": 1000, "deviceScaleFactor": 1, "label": "desktop-hi" },
       "scope": "viewport",
       "readiness": ["fonts", "network-idle", "view-mounted", "canvas-nonblank", "animation-settled"],
       "scientificStatus": "approximation",
-      "statusNote": "Cinematic approximate raymarch; not an observational image.",
+      "statusNote": "Numerical Kerr ray trace with display-scaled disk colour and a synthetic star field; not an observational image.",
       "readme": true,
-      "baseline": { "maxDiffPixelRatio": 0.02, "note": "WebGL raymarch: GPU-dependent dithering; 2% pixel tolerance, structural checks carry the semantics." }
+      "baseline": { "maxDiffPixelRatio": 0.02, "note": "WebGL2/WebGPU ray trace: GPU-dependent rounding; 2% pixel tolerance, structural checks carry the semantics." }
     },
     {
       "id": "bh-holography-boundary-bulk",
@@ -157,7 +159,7 @@
     {
       "id": "bh-kerr-observatory",
       "file": "docs/screenshots/10-kerr-observatory-layers.png",
-      "description": "Kerr Observatory: exact coordinate-radius map read against the approximate lensing render.",
+      "description": "Kerr Observatory: exact coordinate-radius map read against the ray-traced Kerr image.",
       "view": "bh",
       "url": "?view=bh&bhm=1&bhs=0.7",
       "viewport": { "width": 1440, "height": 1200, "deviceScaleFactor": 1, "label": "desktop" },
@@ -165,7 +167,7 @@
       "target": ".viz-frame:has-text(\"Black Hole Observatory\")",
       "readiness": ["fonts", "network-idle", "view-mounted", "canvas-nonblank", "animation-settled"],
       "scientificStatus": "approximation",
-      "statusNote": "Exact Kerr coordinate radii plus an explicitly approximate raymarch render.",
+      "statusNote": "Exact Kerr coordinate radii plus a numerical ray trace with display-scaled colour.",
       "readme": true,
       "baseline": { "maxDiffPixelRatio": 0.02, "note": "Mixed SVG map (deterministic) and WebGL render (GPU-dependent); 2% tolerance." }
     },
