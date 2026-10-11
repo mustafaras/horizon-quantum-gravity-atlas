@@ -532,6 +532,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   return (
     <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application" aria-busy={phase !== "ready"}
       aria-label={(aria || "Interactive 3D scientific visualization") + ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen."}>
+      {/* adaptive material prewarms no longer republish "prewarming" (they keep
+          the last frame on screen), so this overlay only appears for the first
+          setup and true pipeline swaps */}
       {phase !== "ready" ? <div className="render-loading" role="status">Initializing renderer and compiling shaders…</div> : null}
       <div className="s3d-hud" data-omelette-chrome="">
         <button className="s3d-hud-btn" title="Reset camera (R)" aria-label="Reset camera"

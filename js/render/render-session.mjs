@@ -135,11 +135,17 @@ export async function initializeRenderSession({
     };
     async function changeQuality(value, change) {
       changing = true;
-      publish("prewarming", value);
-      renderer.domElement.style.visibility = "hidden";
+      const pipelineSwap = ["temporalSamples", "ssgi"].includes(change.dimension);
+      // A material-signature change only adds shader derivations to compile —
+      // the pipeline effect graph is unaffected, so keep the canvas visible
+      // instead of tearing the pipeline down and hiding the frame (the visible
+      // outcome was a blank scene for the whole prewarm, which on software
+      // rasterizers reads as "fullscreen goes black").
+      publish(pipelineSwap ? "prewarming" : "ready", value);
+      if (pipelineSwap) renderer.domElement.style.visibility = "hidden";
       try {
         renderer.setPixelRatio(value.maxDpr);
-        if (["temporalSamples", "ssgi", "material"].includes(change.dimension)) {
+        if (pipelineSwap) {
           const previousPipeline = pipeline;
           pipeline = null;
           retiringPipeline = previousPipeline;

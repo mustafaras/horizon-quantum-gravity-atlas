@@ -1679,12 +1679,17 @@ body { background:
 
 /* ---------- atlas overview: scientific hero ---------- */
 .ov-hero { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; padding-bottom: 24px; }
+/* NO backdrop-filter and NO overflow clipping here: the hero hosts a fullscreen
+   Scene3D, and a filtered background turns the card into a containing block
+   while overflow:hidden strands the fixed fullscreen stage inside the 440px
+   card (same rule the .viz-frame comment documents). */
 .ov-hero-ladder {
   position: relative; border: 1px solid var(--line); border-radius: var(--radius);
   background: linear-gradient(180deg, rgba(10,16,28,0.55), rgba(7,10,17,0.82));
   box-shadow: 0 18px 48px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(148,176,224,0.05);
-  overflow: hidden; backdrop-filter: blur(8px);
 }
+/* Fullscreen escape: unclip the hero card only while a scene is fullscreen. */
+.s3d-fs-open .ov-hero-ladder { overflow: visible; }
 .ov-ladder-canvas { display: block; }
 .ov-physics-strip {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;
