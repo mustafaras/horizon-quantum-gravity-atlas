@@ -188,7 +188,8 @@ function App() {
     vizMode: t.vizMode, motion: effMotion, detail3d: t.detail3d,
     renderBackend: t.renderBackend || "auto", toneMapping: t.toneMapping || "agx",
     labels3d: !!t.labels3d, annotations3d: !!t.annotations3d, pathway: atlasState.pathway,
-  }), [t.vizMode, effMotion, t.detail3d, t.renderBackend, t.toneMapping, t.labels3d, t.annotations3d, atlasState.pathway]);
+    hdrEnvironment: t.hdrEnvironment === true,
+  }), [t.vizMode, effMotion, t.detail3d, t.renderBackend, t.toneMapping, t.labels3d, t.annotations3d, atlasState.pathway, t.hdrEnvironment]);
 
   // apply tweaks to CSS custom properties + motion attribute
   useEffect(() => {
@@ -267,6 +268,9 @@ function App() {
         <RenderSetting label="Tone mapping" value={t.toneMapping || "agx"}
           options={["agx", "neutral"]}
           onChange={(v) => setTweak("toneMapping", v)}></RenderSetting>
+        <TweakToggle label="HDR environment lighting" value={t.hdrEnvironment === true}
+          onChange={(v) => setTweak("hdrEnvironment", v)}></TweakToggle>
+        {t.hdrEnvironment ? <p className="small dim">Seeded HDR sky lighting for 3D materials. Never applied to the Kerr observatory: its horizon is ray-traced black.</p> : null}
         {prm ? <p className="small dim">System reduced-motion overrides Motion settings and disables temporal effects.</p> : null}
         <RenderDiagnosticsDrawer></RenderDiagnosticsDrawer>
         <TweakToggle label="3D labels" value={t.labels3d}

@@ -69,6 +69,7 @@ export async function initializeRenderSession({
       renderer: handle.renderer, backend: handle.backend, scene, camera, quality: value,
       preset: settings.vizMode, reducedMotion, fullMotion: settings.motion === "full",
       source, depthValid, toneMapping: settings.toneMapping || "agx",
+      environment: settings.hdrEnvironment === true ? "hdr" : null, viewId: view ?? null,
     });
   }
   function dispose() {

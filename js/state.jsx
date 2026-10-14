@@ -2,7 +2,7 @@
 const QGA_DEFAULT_STATE = {
   view: "overview", pathway: "student", bhMass: 1, bhSpin: 0,
   bhStateVersion: 2, bhInclination: 75, bhObserverDistance: 40, bhDiskModel: "page-thorne-turbulent",
-  bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: false,
+  bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: false, bhCorona: true, bhJets: true,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
   qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
@@ -13,7 +13,7 @@ const QGA_DEFAULT_STATE = {
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
   bhStateVersion: "bhv", bhInclination: "bhi", bhObserverDistance: "bhd", bhDiskModel: "bhdm",
-  bhRenderQuality: "bhq", bhExposure: "bhe", bhAnnotations: "bha",
+  bhRenderQuality: "bhq", bhExposure: "bhe", bhAnnotations: "bha", bhCorona: "bhc", bhJets: "bhj",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
   gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
   qftProcess: "qfp", qftSqrtS: "qfs", qftAngle: "qfa", qftPhotonX: "qfx",
@@ -35,7 +35,9 @@ const QGA_ENUMS = {
 const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
 // Unversioned and v1 Kerr links retain the smooth disk/annotation defaults.
 // New black-hole links carry bhv=2, making the turbulent default unambiguous.
-const QGA_KERR_KEYS = ["bhInclination", "bhObserverDistance", "bhDiskModel", "bhRenderQuality", "bhExposure", "bhAnnotations"];
+// The Prompt 05 volume keys (bhCorona, bhJets) are additive with safe
+// defaults: links without them render exactly as before they existed.
+const QGA_KERR_KEYS = ["bhInclination", "bhObserverDistance", "bhDiskModel", "bhRenderQuality", "bhExposure", "bhAnnotations", "bhCorona", "bhJets"];
 const QGA_KERR_V1_DEFAULTS = { bhDiskModel: "page-thorne", bhAnnotations: true };
 function qgaReadState(search = window.location.search) {
   const params = new URLSearchParams(search), state = { ...QGA_DEFAULT_STATE };
@@ -47,7 +49,9 @@ function qgaReadState(search = window.location.search) {
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
-    else if (key === "bhAnnotations") { if (raw === "true" || raw === "false") state[key] = raw === "true"; }
+    else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets") {
+      if (raw === "true" || raw === "false") state[key] = raw === "true";
+    }
     else if (QGA_NUMBERS.includes(key) && Number.isFinite(Number(raw))) state[key] = Number(raw);
   }
   if (version === 1) state.bhStateVersion = 1;

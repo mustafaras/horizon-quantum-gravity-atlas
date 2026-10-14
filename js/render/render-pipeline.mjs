@@ -4,6 +4,7 @@
  * Prewarming draws the complete graph while the host keeps its canvas hidden.
  */
 import { attachWebGPUValidation, getWebGPUValidation } from "./webgpu-validation.mjs";
+import { applyHdrEnvironment, createHdrEnvironmentTexture } from "./hdr-environment.mjs";
 
 export const EFFECT_ORDER = Object.freeze([
   "base-render", "ao", "ssgi", "bloom", "god-rays", "depth-of-field",
@@ -143,11 +144,17 @@ function dimensions(width, height) {
  * The renderer/scene/camera remain host-owned. A pipeline must be rebuilt when
  * its preset, quality, source, physical-depth validity or material capabilities change.
  * Await dispose() before disposing the renderer if prewarm is still pending.
+ *
+ * `environment`: null (default) or "hdr" — an opt-in HDR environment for
+ * image-based lighting. It is applied only where it affects material lighting
+ * (scenes with lit PBR materials) and never to the excluded views (the Kerr
+ * observatory's ray-traced horizon must not receive environment reflection);
+ * see hdr-environment.mjs for the tested contract.
  */
 export async function createRenderPipeline({
   renderer, backend, scene, camera, quality = {}, preset = "cinematic",
   reducedMotion = false,   fullMotion = false, source = null, toneMapping = "agx", seed = 0,
-  depthValid = true,
+  depthValid = true, environment = null, viewId = null,
 } = {}) {
   const nodePipeline = renderer?.isWebGPURenderer === true;
   if (!["webgpu", "webgl2"].includes(backend)) throw new TypeError("Pipeline requires a WebGPU or WebGL2 backend");
@@ -178,9 +185,33 @@ export async function createRenderPipeline({
   const three = await import("three");
   renderer.toneMapping = toneMapping === "agx" ? three.AgXToneMapping : three.NeutralToneMapping;
   renderer.outputColorSpace = three.SRGBColorSpace;
-  return nodePipeline
+  // Opt-in HDR environment for material lighting (never on excluded views;
+  // restored on dispose so the scene is left as it was found).
+  let environmentHandle = null;
+  let environmentResult = { applied: false, reason: "No environment requested." };
+  const previousEnvironment = scene.environment ?? null;
+  if (environment === "hdr") {
+    environmentHandle = await createHdrEnvironmentTexture({ seed });
+    environmentResult = applyHdrEnvironment(scene, { viewId, texture: environmentHandle.texture });
+  }
+  const releaseEnvironment = () => {
+    scene.environment = previousEnvironment;
+    environmentHandle?.dispose();
+    environmentHandle = null;
+  };
+  const pipeline = await (nodePipeline
     ? buildNodePipeline({ renderer, scene, camera, quality, effects, enabled, source, seed })
-    : buildClassicPipeline({ renderer, scene, camera, effects, enabled, three, seed });
+    : buildClassicPipeline({ renderer, scene, camera, effects, enabled, three, seed }));
+  const baseDispose = pipeline.dispose.bind(pipeline);
+  let disposing = null;
+  pipeline.dispose = () => {
+    // Memoize so repeated calls return the same promise (the base pipeline
+    // guarantees this) while the environment is still released exactly once.
+    if (!disposing) disposing = Promise.resolve(baseDispose()).finally(releaseEnvironment);
+    return disposing;
+  };
+  pipeline.environment = environmentResult;
+  return pipeline;
 }
 
 function seedNoiseTexture(texture, SimplexNoise, seed) {

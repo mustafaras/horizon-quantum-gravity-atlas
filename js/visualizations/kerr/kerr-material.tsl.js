@@ -20,14 +20,16 @@
 import {
   Break, Fn, If, Loop, Return, acos, atan, clamp, cos, exp2, float, floor, instanceIndex, instancedArray,
   int, ivec2, length, log, max, min, mix, mod, positionGeometry, pow, screenCoordinate, select, sin, sqrt,
-  texture, textureLoad, uniform, vec2, vec3, vec4,
+  texture, textureLoad, uniform, vec2, vec3, vec4, toneMapping, toneMappingExposure, workingToColorSpace,
 } from "three/tsl";
 import {
   ClampToEdgeWrapping, DataTexture, FloatType, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshBasicNodeMaterial,
-  NearestFilter, NoColorSpace, PlaneGeometry, RGBAFormat, RepeatWrapping, UnsignedByteType, Vector2, Vector4,
+  NearestFilter, NoColorSpace, OrthographicCamera, PlaneGeometry, RGBAFormat, RepeatWrapping, Scene, UnsignedByteType,
+  Vector2, Vector4, WebGLRenderTarget,
 } from "three/webgpu";
 import {
   KERR_RENDER_CONSTANTS,
+  KERR_VIEW_ID,
   KerrTemporalAccumulator,
   buildKerrRenderState,
   kerrAccumulationKey,
@@ -35,8 +37,18 @@ import {
   kerrObserverFromCamera,
   kerrQualityBudget,
   normalizeKerrState,
+  registerKerrObservatoryProvenance,
 } from "./kerr-observatory.mjs";
 import { STARFIELD_MAX_FOOTPRINT_RAD, STARFIELD_VMAX, renderStarfield } from "./starfield-texture.mjs";
+import {
+  buildCaptureMetadata,
+  encodePng,
+  flipRgbaVertically,
+  resolveCaptureDimensions,
+  runProgressiveCapture,
+  upscaleRgba,
+  validateCaptureRequest,
+} from "../../render/progressive-capture.mjs";
 
 const TWO_PI = 2 * Math.PI;
 const WORKGROUP = 64;
@@ -370,10 +382,15 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
   // The first display mesh exists up front so it can be added to the scene before a renderer does.
   ensureCapacity(1280 * 720);
 
+  let capturing = false;
+  let lastPlan = null;
+  let captureContext = null;
+
   function sync({ renderer, camera, atlasState, detail3d = "medium", reducedMotion = false, governorRaySteps = null }) {
     if (!renderer.isWebGPURenderer || !renderer.backend?.isWebGPUBackend) {
       throw new Error("Kerr compute path requires the native WebGPU backend");
     }
+    if (capturing) return lastPlan;
     renderer.getDrawingBufferSize(size);
     const width = Math.max(2, Math.round(size.x));
     const height = Math.max(2, Math.round(size.y));
@@ -385,6 +402,11 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
     const budget = kerrQualityBudget(normalized.quality, { detail3d, reducedMotion, governorRaySteps });
     const observer = kerrObserverFromCamera([camera.position.x, camera.position.y, camera.position.z]);
     const state = buildKerrRenderState(normalized, { observer, budget, backend: "webgpu" });
+    captureContext = {
+      renderer, normalized, observer, state,
+      lens: { tanHalfFov: Math.tan((camera.fov * Math.PI) / 360), aspect: camera.aspect || 1 },
+      reducedMotion,
+    };
 
     if (skyQuality !== budget.sky) {
       skyQuality = budget.sky;
@@ -446,13 +468,197 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
     latest = {
       backend: "webgpu", frames: step.frame + 1, resets: accumulator.resets,
       resolution: [width, height], budget, converged: step.converged, reducedMotion,
+      // The Prompt 05 volumetric layer is served by the WebGL2 integrator only;
+      // the compute path reports the gate so the status readout can name it.
+      volume: { corona: false, jets: false, capable: false },
     };
-    return { state, budget, observer, step };
+    lastPlan = { state, budget, observer, step };
+    return lastPlan;
+  }
+
+  /**
+   * Progressive ultra-quality still capture on the WebGPU compute path
+   * (Prompt 05). Pauses the live sync, rebuilds the storage buffer at the
+   * capture resolution, accumulates Halton-jittered samples in chunks, then
+   * composes through a capture mesh whose fragment node applies the exact
+   * tone mapping and sRGB transform of the live pipeline. The live view is
+   * restored (and the big buffer released) on completion, cancellation and
+   * error. The volumetric layer is WebGL2-only; this captures the smooth
+   * disk models the compute path serves.
+   */
+  async function captureStill(request = {}) {
+    const {
+      preset = "2k", width = null, height = null, samples = 96, samplesPerChunk = 4,
+      denoise = false, upscale = 1, quality = "ultra", signal = null, onProgress = null, commitHash = null,
+    } = request;
+    if (!captureContext) throw new Error("The observatory must render at least one frame before capture.");
+    const { renderer, normalized, observer, lens } = captureContext;
+    const factor = Math.max(1, Math.min(4, Math.round(Number(upscale) || 1)));
+    const resolved = resolveCaptureDimensions({ preset, aspect: lens.aspect, width, height });
+    const renderWidth = Math.max(2, Math.round(resolved.width / factor));
+    const renderHeight = Math.max(2, Math.round(resolved.height / factor));
+    const maxDimension = renderer.backend?.device?.limits?.maxTextureDimension2D ?? 8192;
+    validateCaptureRequest({ width: renderWidth, height: renderHeight, maxDimension, floatBytesPerPixel: 16 });
+
+    const budget = kerrQualityBudget(quality, { detail3d: "ultra" });
+    const state = buildKerrRenderState(normalized, { observer, budget, backend: "webgpu" });
+    const provenance = registerKerrObservatoryProvenance();
+    const liveRes = U.res.value.clone();
+    const livePixelCount = U.pixelCount.value;
+    const liveMeshVisible = mesh.visible;
+    let captureMesh = null;
+    let captureScene = null;
+    let outputTarget = null;
+    capturing = true;
+    mesh.visible = false;
+    const release = () => {
+      capturing = false;
+      // Force a rebuild at the live size so the capture-sized storage buffer
+      // is released instead of lingering as unused capacity.
+      capacity = 0;
+      ensureCapacity(Math.max(2, liveRes.x) * Math.max(2, liveRes.y));
+      U.res.value.copy(liveRes);
+      U.pixelCount.value = livePixelCount;
+      mesh.visible = liveMeshVisible;
+      captureMesh?.material.dispose();
+      captureMesh?.geometry.dispose();
+      outputTarget?.dispose();
+      pending = true;
+      wasConverged = false;
+    };
+    try {
+      // Capture uniforms: the ultra budget on the current geometry.
+      const { coef } = state.observer;
+      U.tanHalfFov.value = lens.tanHalfFov;
+      U.aspect.value = lens.aspect;
+      U.spin.value = state.aStar;
+      U.rPlus.value = state.radii.rPlus;
+      U.rIn.value = state.disk.rIn;
+      U.rOut.value = state.disk.rOut;
+      // Read the *derived* observer (state.observer): kerrObserverFromCamera
+      // returns only { r0, theta0, phi0 }, so u0 must come from the render state
+      // or the ray collapses into the equatorial plane and the still is black.
+      U.r0.value = state.observer.r0;
+      U.u0.value = state.observer.u0;
+      U.sinT0.value = Math.sin(state.observer.theta0);
+      U.phi0.value = state.observer.phi0;
+      U.coef.value.set(coef.E0, coef.E1, coef.L0, coef.L1);
+      U.mom.value.set(coef.P1, coef.R1);
+      U.stepK.value = budget.stepK;
+      U.maxSteps.value = Math.min(MAX_STEPS, budget.maxSteps);
+      U.samples.value = 1;
+      U.transmit.value = state.transmittance;
+      U.exposure.value = state.exposure;
+      U.orderTint.value = 0;
+      U.res.value.set(renderWidth, renderHeight);
+      U.pixelCount.value = renderWidth * renderHeight;
+      ensureCapacity(renderWidth * renderHeight);
+
+      // Capture mesh: the same buffer read and focus defocus as the live
+      // display, with the pipeline's tone mapping and sRGB transform applied
+      // in the fragment node (render targets skip the renderer's output pass).
+      const read = (ox, oy) => {
+        const x = clamp(floor(screenCoordinate.x).add(ox), 0, U.res.x.sub(1));
+        const y = clamp(floor(screenCoordinate.y).add(oy), 0, U.res.y.sub(1));
+        return buffer.element(int(y.mul(U.res.x).add(x))).xyz;
+      };
+      const captureMaterial = new MeshBasicNodeMaterial();
+      captureMaterial.name = "kerr-capture-display-node";
+      captureMaterial.depthTest = false;
+      captureMaterial.depthWrite = false;
+      captureMaterial.toneMapped = false;
+      captureMaterial.vertexNode = vec4(positionGeometry.xy, 0, 1);
+      captureMaterial.fragmentNode = Fn(() => {
+        const c = read(0, 0).toVar("c");
+        const uvTop = screenCoordinate.xy.div(U.res);
+        const d = length(uvTop.sub(U.focus.xy).mul(vec2(U.aspect, 1)));
+        const defocus = U.focus.w.mul(clamp(d.sub(U.focus.z).div(U.focus.z.mul(1.4)), 0, 1));
+        If(defocus.greaterThan(0.001), () => {
+          const blur = vec3(0).toVar("blur");
+          const radius = float(1).add(defocus.mul(2.5));
+          for (let j = -2; j <= 2; j += 1) {
+            for (let i = -2; i <= 2; i += 1) blur.addAssign(read(radius.mul(i), radius.mul(j)));
+          }
+          c.assign(mix(c, blur.div(25), defocus));
+        });
+        const mapped = toneMapping(renderer.toneMapping, toneMappingExposure, c);
+        return workingToColorSpace(vec4(mapped, 1), renderer.outputColorSpace);
+      })();
+      captureMesh = new Mesh(new PlaneGeometry(2, 2), captureMaterial);
+      captureMesh.frustumCulled = false;
+      captureScene = new Scene();
+      captureScene.add(captureMesh);
+      const captureCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      outputTarget = new WebGLRenderTarget(renderWidth, renderHeight, {
+        type: UnsignedByteType, format: RGBAFormat, minFilter: NearestFilter, magFilter: NearestFilter,
+        depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
+      });
+
+      const result = await runProgressiveCapture({
+        width: renderWidth, height: renderHeight, samples, samplesPerChunk, signal, onProgress,
+        prepare() {},
+        drawSample(sampleIndex) {
+          const [jx, jy] = kerrJitter(sampleIndex);
+          U.j0.value.set(jx, jy);
+          U.historyWeight.value = 1 / (sampleIndex + 1);
+          renderer.compute(kernel);
+        },
+        async compose() {
+          const previous = renderer.getRenderTarget();
+          renderer.setRenderTarget(outputTarget);
+          renderer.render(captureScene, captureCamera);
+          renderer.setRenderTarget(previous);
+          const rgba = new Uint8Array(renderWidth * renderHeight * 4);
+          await renderer.readRenderTargetPixelsAsync(outputTarget, 0, 0, renderWidth, renderHeight, rgba);
+          // readRenderTargetPixelsAsync returns rows bottom-to-top; PNG and the
+          // upscaler expect top-to-bottom.
+          return flipRgbaVertically(rgba, renderWidth, renderHeight);
+        },
+      });
+      let rgba = result.rgba;
+      let finalWidth = renderWidth;
+      let finalHeight = renderHeight;
+      if (factor > 1) {
+        rgba = upscaleRgba(rgba, renderWidth, renderHeight, factor);
+        finalWidth = renderWidth * factor;
+        finalHeight = renderHeight * factor;
+      }
+      const metadata = buildCaptureMetadata({
+        state: normalized,
+        provenance: {
+          registryId: KERR_VIEW_ID,
+          model: provenance.model,
+          status: provenance.status,
+          numericalMethod: provenance.numericalMethod,
+          references: provenance.references,
+        },
+        backend: "webgpu",
+        quality: { requested: budget.requested, effective: budget.effective, budget },
+        resolution: { width: finalWidth, height: finalHeight, renderWidth, renderHeight, upscale: factor, preset: resolved.preset },
+        sampleCount: result.samplesCompleted,
+        seed,
+        commitHash,
+        volume: { corona: false, jets: false, note: "The WebGPU compute path serves the smooth disk models; the volumetric layer is WebGL2-only." },
+        deterministic: { note: "The compute path has no animated display layer; captures are deterministic for a fixed state." },
+      });
+      const png = await encodePng({
+        width: finalWidth, height: finalHeight, rgba,
+        textChunks: {
+          Software: "HORIZON Quantum Gravity Atlas",
+          Description: "Kerr observatory ultra-quality still; see the horizon-qga-capture metadata",
+          "horizon-qga-capture": JSON.stringify(metadata),
+        },
+      });
+      return { png, metadata, width: finalWidth, height: finalHeight };
+    } finally {
+      release();
+    }
   }
 
   return {
     get mesh() { return mesh; },
     sync,
+    captureStill,
     setFocus({ x, y, radius, strength }) {
       U.focus.value.set(x * 0.5 + 0.5, 0.5 - y * 0.5, radius, strength);
     },
