@@ -859,12 +859,18 @@ function useQFTCanvas(draw, deps) {
   return ref;
 }
 
-function QFTReadout({ label, value, unit, formula, lead }) {
+/* Readout card. `formula` stays the plain-text caption for callers that pass
+   prose; `formulaTex` carries the governing relation as KaTeX, and `note` keeps
+   a prose gloss that would otherwise have to be crammed into the TeX. */
+function QFTReadout({ label, value, unit, formula, formulaTex, note, lead }) {
   return (
     <div className={"kerr-readout" + (lead ? " lead" : "")}>
       <div className="kerr-readout-label">{label}</div>
       <div className="kerr-readout-value">{value}{unit ? <span className="unit">{unit}</span> : null}</div>
-      <div className="kerr-readout-formula">{formula}</div>
+      {formulaTex
+        ? <div className="kerr-readout-formula"><Eq tex={formulaTex}></Eq></div>
+        : formula ? <div className="kerr-readout-formula">{formula}</div> : null}
+      {note ? <div className="kerr-readout-note">{note}</div> : null}
     </div>);
 
 }
@@ -1365,13 +1371,14 @@ function AmplitudeRoom() {
           <div className="kerr-rgrid">
             <QFTReadout lead label="√s" value={sqrtS.toFixed(1)} unit="GeV"
             formula="centre-of-mass energy"></QFTReadout>
-            <QFTReadout label="s" value={kin.s.toFixed(2)} unit="GeV²" formula="(p₁+p₂)²"></QFTReadout>
+            <QFTReadout label="s" value={kin.s.toFixed(2)} unit="GeV²"
+            formulaTex="s = (p_1 + p_2)^2"></QFTReadout>
             <QFTReadout label="t" value={kin.t.toFixed(2)} unit="GeV²"
-            formula="m₁²+m₃²−2E₁E₃+2p₁p₃cos θ"></QFTReadout>
+            formulaTex="t = m_1^2 + m_3^2 - 2E_1E_3 + 2p_1p_3\cos\theta"></QFTReadout>
             <QFTReadout label="u" value={kin.u.toFixed(2)} unit="GeV²"
-            formula="m₁²+m₄²−2E₁E₄−2p₁p₃cos θ"></QFTReadout>
+            formulaTex="u = m_1^2 + m_4^2 - 2E_1E_4 - 2p_1p_3\cos\theta"></QFTReadout>
             <QFTReadout label="Σ mᵢ²" value={kin.sum.toFixed(4)} unit="GeV²"
-            formula="m₁²+m₂²+m₃²+m₄²"></QFTReadout>
+            formulaTex="\Sigma\, m_i^2 = m_1^2 + m_2^2 + m_3^2 + m_4^2"></QFTReadout>
             <QFTReadout label="s+t+u−Σmᵢ²" value={kin.residual.toExponential(1)} unit="GeV²"
             formula="exact identity — residual is floating-point noise"></QFTReadout>
           </div>
@@ -1380,14 +1387,16 @@ function AmplitudeRoom() {
           <header><h4>Observables</h4><span>leading order</span></header>
           <div className="kerr-rgrid">
             <QFTReadout lead label="σ_γ" value={sigma.toFixed(4)} unit="nb"
-            formula="4πα²/3s · massless s-channel benchmark"></QFTReadout>
+            formulaTex="\sigma_\gamma = \dfrac{4\pi\alpha^2}{3s}"
+            note="massless s-channel benchmark"></QFTReadout>
             <QFTReadout label="Z⁰ Breit–Wigner" value={bw.toFixed(4)}
-            formula="m²Γ²/[(s−m²)²+m²Γ²] · 1 at √s = m"></QFTReadout>
+            formulaTex="\dfrac{m^2\Gamma^2}{(s - m^2)^2 + m^2\Gamma^2}"
+            note="1 at √s = m"></QFTReadout>
             <QFTReadout label="dσ/dΩ at cos θ" value={(shapeNow / shape90).toFixed(3)} unit="× 90°"
-            formula={process.shapeLabel}></QFTReadout>
+            formulaTex={process.shapeTex}></QFTReadout>
             {process.id === "compton" ?
             <QFTReadout label="photon energy ratio" value={photonX.toFixed(2)} unit="× mₑc²"
-            formula="x = E_γ/mₑc² · lab frame"></QFTReadout> :
+            formulaTex="x = E_\gamma / m_e c^2" note="lab frame"></QFTReadout> :
             <QFTReadout label="beam energy E₁" value={kin.E1.toFixed(2)} unit="GeV"
             formula="centre-of-mass frame"></QFTReadout>}
           </div>

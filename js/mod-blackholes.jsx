@@ -293,13 +293,18 @@ function KerrReadout({ label, value, unit, formula, formulaTex, sub, subTex, lea
 
 function KerrValidity({ geometry }) {
   const limit = window.QGA_PHYSICS.kerrGeometry(0);
+  // [plain label (React key), TeX label, computed value, Schwarzschild target]
   const checks = [
-    ["r₊ → 2", limit.rPlus, 2],
-    ["ISCO → 6", limit.rIsco, 6],
-    ["photon → 3", limit.rPhoton, 3],
-    ["T_H / T_Schw → 1", limit.temperatureFactor, 1],
+    ["r₊ → 2", "r_+ \\to 2", limit.rPlus, 2],
+    ["ISCO → 6", "\\text{ISCO} \\to 6", limit.rIsco, 6],
+    ["photon → 3", "\\text{photon} \\to 3", limit.rPhoton, 3],
+    ["T_H / T_Schw → 1", "T_H / T_{\\rm Schw} \\to 1", limit.temperatureFactor, 1],
   ];
-  const allPass = checks.every(([, got, want]) => Math.abs(got - want) < 1e-9);
+  const allPass = checks.every(([, , got, want]) => Math.abs(got - want) < 1e-9);
+  const stateTex = "\\text{Current state: } a_\\star = " + geometry.a.toFixed(3) +
+    " \\;\\cdot\\; r_+ = " + geometry.rPlus.toFixed(3) +
+    " \\;\\cdot\\; \\text{ergoregion width} = " +
+    (geometry.rErgoEquator - geometry.rPlus).toFixed(3) + "\\;\\mathrm{GM}/c^2";
   return (
     <details className="kerr-validity">
       <summary>
@@ -334,15 +339,12 @@ function KerrValidity({ geometry }) {
           </dd>
           <dt>Self-check at a★ = 0</dt>
           <dd className="kerr-limit-row">
-            {checks.map(([name, got]) => (
-              <span key={name}>{name} = {got.toFixed(3)}</span>
+            {checks.map(([name, tex, got]) => (
+              <span key={name}><Eq tex={tex + " = " + got.toFixed(3)}></Eq></span>
             ))}
           </dd>
         </dl>
-        <p className="kerr-validity-state">
-          Current state: a★ = {geometry.a.toFixed(3)} · r₊ = {geometry.rPlus.toFixed(3)} ·
-          ergoregion width = {(geometry.rErgoEquator - geometry.rPlus).toFixed(3)} GM/c²
-        </p>
+        <p className="kerr-validity-state"><Eq tex={stateTex}></Eq></p>
       </div>
     </details>
   );

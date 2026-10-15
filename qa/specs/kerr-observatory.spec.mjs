@@ -93,6 +93,45 @@ async function audit(page) {
   expect(text, "NaN or Infinity in the observatory UI").not.toMatch(/NaN|Infinity/);
 }
 
+/**
+ * KaTeX coverage guard. The readouts, the live formulation and the validity
+ * self-check are typeset mathematics. If `Eq` breaks, a `formulaTex` prop is
+ * dropped, or vendor/katex fails to load, they silently fall back to blank or
+ * raw TeX and every other assertion in this file still passes. This inspects
+ * the rendered output itself: KaTeX nodes exist, none errored, a known readout
+ * carries its symbols and its live number, and nothing overflows or clips.
+ */
+async function katexAudit(page) {
+  expect(await page.locator(".kerr-readout .katex").count(), "readout panel typesets").toBeGreaterThan(0);
+  expect(await page.locator(".kerr-formulation .katex").count(), "live formulation typesets").toBeGreaterThan(0);
+  await expect(page.locator(".katex-error"), "no KaTeX error node anywhere on the page").toHaveCount(0);
+
+  const horizonKatex = page.locator(".kerr-readout.lead").first().locator(".katex");
+  expect(await horizonKatex.count(), "outer-horizon readout typesets").toBeGreaterThan(0);
+  const horizonText = (await horizonKatex.allInnerTexts()).join(" ");
+  expect(horizonText, "outer-horizon readout renders r").toContain("r");
+  expect(horizonText, "outer-horizon readout renders +").toContain("+");
+  expect(horizonText, "outer-horizon readout renders the live r+ value")
+    .toContain(kerrHorizonRadii(0.9).rPlus.toFixed(3));
+  expect(horizonText, "readout is typeset, not raw TeX").not.toContain("\\");
+
+  // The validity self-check is collapsed by default; KaTeX renders while hidden.
+  await page.locator(".kerr-validity > summary").first().click();
+  await expect(page.locator(".kerr-limit-row .katex"), "self-check labels typeset").toHaveCount(4);
+  await expect(page.locator(".kerr-validity-state .katex"), "state line typesets").toHaveCount(1);
+
+  const layout = await page.evaluate(() => {
+    const doc = document.documentElement;
+    const clipped = [];
+    for (const el of document.querySelectorAll(".kerr-readout, .kerr-formulation-row, .kerr-validity, .kerr-limit-row span, .kerr-validity-state")) {
+      if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX === "visible") clipped.push(el.className);
+    }
+    return { scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth, clipped };
+  });
+  expect(layout.scrollWidth, "no page-level horizontal overflow").toBeLessThanOrEqual(layout.clientWidth);
+  expect(layout.clipped, "no clipped readout card").toEqual([]);
+}
+
 function assertFiniteDeep(value, path = "export") {
   if (typeof value === "number") expect(Number.isFinite(value), `${path} is not finite`).toBe(true);
   else if (Array.isArray(value)) value.forEach((entry, index) => assertFiniteDeep(entry, `${path}[${index}]`));
@@ -284,6 +323,30 @@ test.describe("forced WebGL2, reduced motion", () => {
     expect(payload.provenance.references.length).toBeGreaterThan(3);
     expect(payload.validity.some((line) => /unresolved/.test(line))).toBe(true);
     assertFiniteDeep(payload);
+  });
+});
+
+test.describe("KaTeX coverage guard", () => {
+  test.use({ viewport: VIEWPORT, contextOptions: { reducedMotion: "reduce" } });
+
+  test("desktop: the readouts, live formulation and validity self-check typeset as KaTeX", async ({ page, context }) => {
+    await force(context, "webgl2");
+    const problems = observe(page);
+    await gotoReady(page, `/?view=bh&bhm=1&bhs=0.9&seed=${SEED}`);
+    await katexAudit(page);
+    expect(problems).toEqual([]);
+  });
+});
+
+test.describe("KaTeX coverage guard, mobile", () => {
+  test.use({ viewport: { width: 390, height: 844 }, contextOptions: { reducedMotion: "reduce" } });
+
+  test("mobile: the same panels typeset without overflowing the 390 px layout", async ({ page, context }) => {
+    await force(context, "webgl2");
+    const problems = observe(page);
+    await gotoReady(page, `/?view=bh&bhm=1&bhs=0.9&seed=${SEED}`);
+    await katexAudit(page);
+    expect(problems).toEqual([]);
   });
 });
 

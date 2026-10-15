@@ -487,6 +487,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .kerr-readout-formula::-webkit-scrollbar-thumb, .kerr-readout-sub::-webkit-scrollbar-thumb {
   background: rgba(120,160,220,0.32); border-radius: 2px;
 }
+.kerr-readout-note {
+  margin-top: 3px; font: 400 10px/1.35 var(--font-mono);
+  color: rgba(148,176,224,0.78); overflow-wrap: anywhere;
+}
 .kerr-readout-pair { margin-top: 4px; }
 .kerr-readout-pair > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .kerr-readout-pair .sense {
@@ -521,11 +525,22 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   font-size: 12.5px; line-height: 1.6; color: var(--text-dim);
 }
 .kerr-limit-row { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.kerr-limit-row span { font: 400 10px/1.6 var(--font-mono); color: rgba(205,219,241,0.85); }
+.kerr-limit-row span {
+  font: 400 10px/1.6 var(--font-mono); color: rgba(205,219,241,0.85);
+  max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+}
 .kerr-validity-state {
   margin: 10px 0 0; font: 400 9.5px/1.5 var(--font-mono);
   letter-spacing: 0.04em; color: rgba(148,176,224,0.7);
 }
+/* The self-check labels and the state line are live KaTeX. Math never wraps, so
+   the state line scrolls horizontally instead of widening the validity panel. */
+.kerr-limit-row .katex, .kerr-validity-state .katex {
+  font-size: 1em; color: inherit; letter-spacing: normal;
+}
+.kerr-validity-state { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.kerr-validity-state::-webkit-scrollbar { height: 3px; }
+.kerr-validity-state::-webkit-scrollbar-thumb { background: rgba(120,160,220,0.32); border-radius: 2px; }
 
 /* ---------- live formulation panel ---------- */
 .kerr-formulation {
