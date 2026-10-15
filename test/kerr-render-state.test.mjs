@@ -37,6 +37,7 @@ import {
   kerrObserverFromCamera,
   kerrQualityBudget,
   kerrRayConstants,
+  kerrVolumeReason,
   locateKerrFeature,
   normalizeKerrState,
   pickKerrPixel,
@@ -178,6 +179,26 @@ test("budget folds to the device tier, scales with the governor and drops histor
   const reduced = kerrQualityBudget("ultra", { detail3d: "ultra", reducedMotion: true });
   assert.equal(reduced.temporalSamples, 1);
   assert.ok(reduced.samplesPerFrame >= 4);
+});
+
+test("the volume gate names the reason it stopped, in gate order", () => {
+  const capable = kerrQualityBudget("balanced", { detail3d: "medium" });
+  const gated = kerrQualityBudget("balanced", { detail3d: "low" });
+  assert.equal(capable.volume, true);
+  assert.equal(gated.volume, false);
+  // The backend gate outranks every other reason: the compute path has no
+  // volumetric pass at all, so it can never read as a quality choice.
+  assert.equal(kerrVolumeReason({ backend: "webgpu", softwareClamped: true, budget: gated }), "webgpu");
+  // A CPU rasterizer is clamped to the low tier, so it must not read as the
+  // user having chosen the performance budget.
+  assert.equal(kerrVolumeReason({ softwareClamped: true, budget: gated, corona: true, jets: true }), "software");
+  assert.equal(kerrVolumeReason({ budget: gated, corona: true, jets: true }), "quality");
+  assert.equal(kerrVolumeReason({ budget: capable, corona: false, jets: false }), "toggles");
+  assert.equal(kerrVolumeReason({ budget: capable, corona: true, jets: false }), "on");
+  assert.equal(kerrVolumeReason({ budget: capable, corona: false, jets: true }), "on");
+  // A missing budget is not a licence to claim the layer is running.
+  assert.equal(kerrVolumeReason({ corona: true, jets: true }), "quality");
+  assert.equal(kerrVolumeReason(), "quality");
 });
 
 /* ---------- observer frame and conserved quantities ---------- */

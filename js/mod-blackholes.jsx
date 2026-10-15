@@ -522,11 +522,17 @@ function BlackHoleLab3D() {
     const kerr = window.QGA_KERR;
     if (!kerr) throw new Error("Kerr observatory module is unavailable; reload the page.");
     const { createKerrRuntime } = await kerr.loadRuntime();
+    // The render session clamps CPU rasterizers (SwiftShader, llvmpipe...) to
+    // the low tier. The volumetric layer and the Kerr ray budget must honour
+    // that same *effective* tier, not the requested one, or a software
+    // rasterizer pays seconds per frame for a layer it cannot afford.
+    const softwareClamped = () => window.QGA_RENDER?.softwareRendererClamp?.() ?? null;
+    const effectiveDetail3d = () => (softwareClamped() ? "low" : ctx.settings.current.detail3d);
     // The volumetric layer (corona + jets) renders on the WebGL2 integrator;
     // requesting it selects that backend (the same policy as the turbulent
     // disk texture). The performance quality ceiling gates it off inside sync.
     const wantsVolume = (stateRef.current.bhCorona !== false || stateRef.current.bhJets !== false)
-      && ctx.settings.current.detail3d !== "low";
+      && effectiveDetail3d() !== "low";
     const runtime = await createKerrRuntime({
       backendPreference: window.QGA_RENDER_OPTIONS?.forceBackend ?? ctx.settings.current.renderBackend ?? "auto",
       seed: stateRef.current.seed ?? 42,
@@ -552,7 +558,7 @@ function BlackHoleLab3D() {
 
     const publish = (frame) => {
       window.__qgaKerrRuntime = {
-        ...runtime.snapshot(), detail3d: ctx.settings.current.detail3d,
+        ...runtime.snapshot(), detail3d: effectiveDetail3d(),
         reducedMotion: ctx.motion() === 0, observer: frame.observer, lens: lastLens,
       };
     };
@@ -570,8 +576,9 @@ function BlackHoleLab3D() {
         playingSeconds += dt;
         lastPlan = runtime.sync({
           renderer, camera: cam, atlasState: { ...stateRef.current, bhMass: logRef.current, bhSpin: spinRef.current },
-          detail3d: ctx.settings.current.detail3d, reducedMotion: ctx.motion() === 0,
+          detail3d: effectiveDetail3d(), reducedMotion: ctx.motion() === 0,
           governorRaySteps: governorRef.current, time: playingSeconds,
+          softwareClamped: softwareClamped() !== null,
         });
         runtime.setFocus(focusRef.current);
         publish(lastPlan);

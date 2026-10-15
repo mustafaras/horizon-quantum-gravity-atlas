@@ -264,6 +264,25 @@ export function kerrQualityBudget(quality, { detail3d = "medium", reducedMotion 
   });
 }
 
+/**
+ * Why the volumetric layer is (or is not) running, in the order the gates
+ * apply. The control deck prints this verbatim, so a CPU rasterizer never
+ * reads as "the user turned it off" and a WebGPU session never reads as a
+ * quality choice.
+ *
+ *   webgpu   — the compute path serves the smooth disk models only
+ *   software — a CPU rasterizer is clamped to the low tier
+ *   quality  — the effective tier is the performance budget
+ *   toggles  — both the corona and the jets are switched off
+ *   on       — the layer is rendering
+ */
+export function kerrVolumeReason({ backend = "webgl2", softwareClamped = false, budget = null, corona = false, jets = false } = {}) {
+  if (backend !== "webgl2") return "webgpu";
+  if (softwareClamped) return "software";
+  if (budget?.volume !== true) return "quality";
+  return corona || jets ? "on" : "toggles";
+}
+
 /* ------------------------------------------------------------------ */
 /* Observer frame                                                      */
 /* ------------------------------------------------------------------ */

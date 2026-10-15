@@ -470,7 +470,7 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
       resolution: [width, height], budget, converged: step.converged, reducedMotion,
       // The Prompt 05 volumetric layer is served by the WebGL2 integrator only;
       // the compute path reports the gate so the status readout can name it.
-      volume: { corona: false, jets: false, capable: false },
+      volume: { corona: false, jets: false, capable: false, reason: "webgpu" },
     };
     lastPlan = { state, budget, observer, step };
     return lastPlan;

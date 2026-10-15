@@ -126,6 +126,23 @@ WebGPU compute path keep the smooth Prompt 04 image, and the status readout
 says which one is live. Requesting the layer selects the WebGL2 backend; the
 equations and claim labels never change with the backend.
 
+The gate is evaluated against the **effective** quality tier, not the requested
+one. A CPU rasterizer (SwiftShader, llvmpipe, softpipe, lavapipe) is clamped to
+the `low` tier by the render session, and the volumetric layer and the Kerr ray
+budget both honour that clamp: on such a device the layer is off and the ray
+budget is the `performance` budget, so the frame cost stays inside the
+interactive budget instead of paying seconds per frame for a layer the device
+cannot afford. `softwareRendererClamp()` in `js/render/software-renderer.mjs`
+is the single source of that decision — it is exposed on the render runtime and
+consumed by both the session and the observatory, so the opt-out
+(`QGA_RENDER_OPTIONS.softwareClamp === false`) is honoured in exactly one
+place. `kerrVolumeReason()` names the reason the layer is off in gate order —
+`webgpu` → `software` → `quality` → `toggles` → `on` — and the status readout
+reports it verbatim, so a disabled layer is never mistaken for a quality
+choice. The clamp is a performance policy only: it changes the RK4 step budget
+and the layer's presence, never the equations, the claim labels or the
+provenance.
+
 ### Compositing
 
 The integrator writes four attachments: disk radiance, sky radiance, jet

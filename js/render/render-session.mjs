@@ -4,7 +4,7 @@ import { normalizeRenderQuality } from "./capabilities.mjs";
 import { createQualityGovernor } from "./quality-governor.mjs";
 import { prewarmShaders, abortIfNeeded, materialSignature } from "./shader-prewarm.mjs";
 import { renderDiagnostics } from "./error-overlay.mjs";
-import { detectSoftwareRenderer } from "./software-renderer.mjs";
+import { softwareRendererClamp } from "./software-renderer.mjs";
 
 export async function initializeRenderSession({
   scene, camera, mount, settings, view, signal, diagnosticId, onError, onReady, onPhase,
@@ -12,7 +12,7 @@ export async function initializeRenderSession({
 }) {
   const reducedMotion = settings.motion === "reduced";
   const options = globalThis.QGA_RENDER_OPTIONS || {};
-  const softwareRenderer = options.softwareClamp === false ? null : detectSoftwareRenderer();
+  const softwareRenderer = softwareRendererClamp();
   const quality = { ...normalizeRenderQuality({
     preset: softwareRenderer ? "low" : settings.detail3d, devicePixelRatio: globalThis.devicePixelRatio || 1, reducedMotion,
   }), ssgi: !softwareRenderer && settings.vizMode === "capture" && !reducedMotion };

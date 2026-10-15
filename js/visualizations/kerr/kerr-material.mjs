@@ -42,6 +42,7 @@ import {
   kerrJitter,
   kerrObserverFromCamera,
   kerrQualityBudget,
+  kerrVolumeReason,
   normalizeKerrState,
   registerKerrObservatoryProvenance,
 } from "./kerr-observatory.mjs";
@@ -594,10 +595,12 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
   /**
    * Per-frame synchronisation.
    * @param {{ renderer: object, camera: object, atlasState: object, detail3d: string,
-   *           reducedMotion: boolean, governorRaySteps?: number, time?: number }} input
+   *           reducedMotion: boolean, governorRaySteps?: number, time?: number,
+   *           softwareClamped?: boolean }} input
    *   time: wall-clock seconds driving the plasma texture (frozen under reduced motion)
+   *   softwareClamped: the session clamped a CPU rasterizer to the low tier
    */
-  function sync({ renderer, camera, atlasState, detail3d = "medium", reducedMotion = false, governorRaySteps = null, time = 0 }) {
+  function sync({ renderer, camera, atlasState, detail3d = "medium", reducedMotion = false, governorRaySteps = null, time = 0, softwareClamped = false }) {
     renderer.getDrawingBufferSize(size);
     const width = Math.max(2, Math.round(size.x));
     const height = Math.max(2, Math.round(size.y));
@@ -674,7 +677,10 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
       backend: "webgl2", frames: step.frame + 1, resets: accumulator.resets,
       resolution: [width, height], budget, converged: step.converged, reducedMotion,
       plasmaTime: displayUniforms.uTime.value, animated: state.plasma && !reducedMotion,
-      volume: { corona: state.corona, jets: state.jets, capable: budget.volume === true },
+      volume: {
+        corona: state.corona, jets: state.jets, capable: budget.volume === true,
+        reason: kerrVolumeReason({ backend: "webgl2", softwareClamped, budget, corona: state.corona, jets: state.jets }),
+      },
     };
     return { state, budget, observer, step };
   }

@@ -39,11 +39,19 @@ function KerrRuntimeStatus() {
   }
   const b = info.budget;
   const volume = info.volume || { corona: false, jets: false, capable: false };
-  const volumeNote = info.backend !== "webgl2"
+  // The runtime names the gate that stopped the layer (kerrVolumeReason), so a
+  // CPU rasterizer never reads as a quality choice the user made.
+  const volumeNote = {
+    webgpu: "off (WebGL2 integrator only)",
+    software: "off (software rasterizer)",
+    quality: "off (performance quality gate)",
+    toggles: "off (toggles)",
+    on: "on",
+  }[volume.reason] || (info.backend !== "webgl2"
     ? "off (WebGL2 integrator only)"
     : !volume.capable
       ? "off (performance quality gate)"
-      : (volume.corona || volume.jets) ? "on" : "off (toggles)";
+      : (volume.corona || volume.jets) ? "on" : "off (toggles)");
   return (
     <div className="kerr-status" role="status" aria-label="Kerr observatory render budget">
       <span className="kerr-status-item"><em>backend</em>{info.backend}</span>
