@@ -510,7 +510,7 @@ function CausalSpacetimeLab() {
           <div className="kerr-rgrid">
             <div className="kerr-readout lead"><div className="kerr-readout-label">separation</div>
               <div className="kerr-readout-value">{classification.type}</div>
-              <div className="kerr-readout-formula">Δs² {interval < 0 ? "<" : interval > 0 ? ">" : "="} 0</div></div>
+              <div className="kerr-readout-formula"><Eq tex={"\\Delta s^2 " + (interval < 0 ? "<" : interval > 0 ? ">" : "=") + " 0"}></Eq></div></div>
             <div className="kerr-readout"><div className="kerr-readout-label">Δct / Δx</div>
               <div className="kerr-readout-value">{deltaCt.toFixed(3)} / {deltaX.toFixed(3)}</div>
               <div className="kerr-readout-formula">B − A in frame S</div></div>
@@ -522,7 +522,7 @@ function CausalSpacetimeLab() {
               <div className="kerr-readout-formula">{Number.isFinite(proper) ? "timelike pair · seconds" : "requires Δs² < 0"}</div></div>
             <div className="kerr-readout"><div className="kerr-readout-label">S′ interval residual</div>
               <div className="kerr-readout-value">{invariantResidual.toExponential(1)}</div>
-              <div className="kerr-readout-formula">Δs′² − Δs² · floating-point</div></div>
+              <div className="kerr-readout-formula"><Eq tex="\Delta s'^2 - \Delta s^2"></Eq> · floating-point</div></div>
             <div className="kerr-readout"><div className="kerr-readout-label">simultaneity frame</div>
               <div className="kerr-readout-value">{simultaneityBeta == null ? "none" : `β = ${simultaneityBeta.toFixed(4)}`}</div>
               <div className="kerr-readout-formula">exists only for spacelike Δx ≠ 0</div></div>
@@ -533,7 +533,7 @@ function CausalSpacetimeLab() {
           <div className="kerr-rgrid">
             <div className="kerr-readout lead"><div className="kerr-readout-label">β / γ</div>
               <div className="kerr-readout-value">{beta.toFixed(3)} / {gamma.toFixed(4)}</div>
-              <div className="kerr-readout-formula">|β| ≤ 0.95</div></div>
+              <div className="kerr-readout-formula"><Eq tex="|\beta| \le 0.95"></Eq></div></div>
             <div className="kerr-readout"><div className="kerr-readout-label">Δct′ / Δx′</div>
               <div className="kerr-readout-value">{transform.deltaCtPrime.toFixed(3)} / {transform.deltaXPrime.toFixed(3)}</div>
               <div className="kerr-readout-formula">Lorentz transformed pair</div></div>
