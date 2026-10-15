@@ -251,7 +251,19 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
   );
 }
 
-function KerrReadout({ label, value, unit, formula, sub, lead, pair }) {
+/* TeX twin of sciNotation() for the KaTeX readouts: 8.9×10³ → 8.9\times10^{3}. */
+function kerrTexSci(x, digits = 2) {
+  if (!Number.isFinite(x) || x === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  const m = x / Math.pow(10, e);
+  if (e >= -2 && e <= 3) return x.toPrecision(digits);
+  return m.toFixed(digits - 1) + "\\times10^{" + e + "}";
+}
+
+/* Readout card. `formula`/`sub` stay as plain-text fallbacks for callers that
+   pass prose; `formulaTex`/`subTex` carry the same content as KaTeX so the
+   governing relation and its substituted numbers typeset as real mathematics. */
+function KerrReadout({ label, value, unit, formula, formulaTex, sub, subTex, lead, pair }) {
   return (
     <div className={"kerr-readout" + (lead ? " lead" : "")}>
       <div className="kerr-readout-label">
@@ -269,8 +281,12 @@ function KerrReadout({ label, value, unit, formula, sub, lead, pair }) {
       ) : (
         <div className="kerr-readout-value">{value}{unit ? <span className="unit">{unit}</span> : null}</div>
       )}
-      <div className="kerr-readout-formula">{formula}</div>
-      {sub ? <div className="kerr-readout-sub">{sub}</div> : null}
+      {formulaTex
+        ? <div className="kerr-readout-formula"><Eq tex={formulaTex}></Eq></div>
+        : formula ? <div className="kerr-readout-formula">{formula}</div> : null}
+      {subTex
+        ? <div className="kerr-readout-sub"><Eq tex={subTex}></Eq></div>
+        : sub ? <div className="kerr-readout-sub">{sub}</div> : null}
     </div>
   );
 }
@@ -334,71 +350,74 @@ function KerrValidity({ geometry }) {
 
 /* ---------- Live formulation: governing equations with the current numbers
    substituted. Every expression below is the closed form already implemented in
-   js/physics.mjs (kerrGeometry / kerrErgosphere); nothing new is asserted here. */
+   js/physics.mjs (kerrGeometry / kerrErgosphere); nothing new is asserted here.
+   Each row carries the relation and its substitution as KaTeX. */
 function KerrFormulation({ geometry, massSolar, temperature, entropy }) {
   const g = geometry;
   const a = g.a;
+  const aTex = a.toFixed(3);
   const rows = [
     {
       id: "rpm",
       name: "Horizon pair",
-      sym: "r± = M ± √(M² − a²)",
-      sub: "r₊ = 1 + √(1 − " + a.toFixed(3) + "²) = " + g.rPlus.toFixed(3) +
-        "  ·  r₋ = 1 − √(1 − " + a.toFixed(3) + "²) = " + g.rMinus.toFixed(3),
+      symTex: "r_\\pm = M \\pm \\sqrt{M^2 - a^2}",
+      subTex: "r_+ = 1 + \\sqrt{1 - " + aTex + "^2} = " + g.rPlus.toFixed(3) +
+        " \\qquad r_- = 1 - \\sqrt{1 - " + aTex + "^2} = " + g.rMinus.toFixed(3),
       val: g.rPlus.toFixed(3) + " / " + g.rMinus.toFixed(3),
       unit: "GM/c²",
     },
     {
       id: "ergo",
       name: "Ergosurface",
-      sym: "r_E(θ) = M + √(M² − a² cos²θ)",
-      sub: "θ = 90° → 1 + √(1 − " + a.toFixed(3) + "²·0) = " + g.rErgoEquator.toFixed(3) +
-        "  ·  θ = 0° → " + g.rPlus.toFixed(3),
+      symTex: "r_E(\\theta) = M + \\sqrt{M^2 - a^2\\cos^2\\theta}",
+      subTex: "\\theta = 90^\\circ \\Rightarrow 1 + \\sqrt{1 - " + aTex + "^2 \\cdot 0} = " +
+        g.rErgoEquator.toFixed(3) + " \\qquad \\theta = 0^\\circ \\Rightarrow " + g.rPlus.toFixed(3),
       val: g.rErgoEquator.toFixed(3),
       unit: "GM/c²",
     },
     {
       id: "photon",
       name: "Photon orbit",
-      sym: "r_ph = 2M[1 + cos(⅔ arccos(∓a★))]",
-      sub: "pro: 2[1 + cos(⅔ arccos(−" + a.toFixed(3) + "))] = " + g.rPhoton.toFixed(3) +
-        "  ·  retro: " + g.rPhotonRetrograde.toFixed(3),
+      symTex: "r_{\\rm ph} = 2M\\left[1 + \\cos\\!\\left(\\tfrac{2}{3}\\arccos(\\mp a_\\star)\\right)\\right]",
+      subTex: "\\text{pro: } 2\\left[1 + \\cos\\!\\left(\\tfrac{2}{3}\\arccos(-" + aTex + ")\\right)\\right] = " +
+        g.rPhoton.toFixed(3) + " \\qquad \\text{retro: } " + g.rPhotonRetrograde.toFixed(3),
       val: g.rPhoton.toFixed(3) + " / " + g.rPhotonRetrograde.toFixed(3),
       unit: "GM/c²",
     },
     {
       id: "isco",
       name: "ISCO",
-      sym: "r_isco = M[3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))]",
-      sub: "Z₁ = " + g.z1.toFixed(3) + "  ·  Z₂ = " + g.z2.toFixed(3) +
-        "  →  pro " + g.rIsco.toFixed(3) + "  ·  retro " + g.rIscoRetrograde.toFixed(3),
+      symTex: "r_{\\rm isco} = M\\left[3 + Z_2 \\mp \\sqrt{(3 - Z_1)(3 + Z_1 + 2Z_2)}\\right]",
+      subTex: "Z_1 = " + g.z1.toFixed(3) + " \\qquad Z_2 = " + g.z2.toFixed(3) +
+        " \\;\\Rightarrow\\; \\text{pro } " + g.rIsco.toFixed(3) +
+        " \\qquad \\text{retro } " + g.rIscoRetrograde.toFixed(3),
       val: g.rIsco.toFixed(3) + " / " + g.rIscoRetrograde.toFixed(3),
       unit: "GM/c²",
     },
     {
       id: "kappa",
       name: "Surface gravity",
-      sym: "κ = (r₊ − M) / (r₊² + a²)",
-      sub: "(" + g.rPlus.toFixed(3) + " − 1) / (" + g.rPlus.toFixed(3) + "² + " + a.toFixed(3) +
-        "²) = " + g.surfaceGravity.toFixed(4) + "  →  T_H/T_Schw = " + g.temperatureFactor.toFixed(3),
+      symTex: "\\kappa = \\dfrac{r_+ - M}{r_+^2 + a^2}",
+      subTex: "\\dfrac{" + g.rPlus.toFixed(3) + " - 1}{" + g.rPlus.toFixed(3) + "^2 + " + aTex + "^2} = " +
+        g.surfaceGravity.toFixed(4) + " \\;\\Rightarrow\\; T_H/T_{\\rm Schw} = " + g.temperatureFactor.toFixed(3),
       val: g.temperatureFactor.toFixed(3),
       unit: "× T_Schw",
     },
     {
       id: "entropy",
       name: "Bekenstein–Hawking entropy",
-      sym: "S/k_B = 1.05×10⁷⁷ (M/M☉)² (r₊/2M)",
-      sub: "1.05×10⁷⁷ × " + sciNotation(massSolar, 2) + "² × " + (g.rPlus / 2).toFixed(3) +
-        " = " + sciNotation(entropy, 2),
+      symTex: "S/k_B = 1.05\\times10^{77}\\,(M/M_\\odot)^2\\,(r_+/2M)",
+      subTex: "1.05\\times10^{77} \\times \\left(" + kerrTexSci(massSolar, 2) + "\\right)^2 \\times " +
+        (g.rPlus / 2).toFixed(3) + " = " + kerrTexSci(entropy, 2),
       val: sciNotation(entropy, 2),
       unit: "k_B",
     },
     {
       id: "temp",
       name: "Hawking temperature",
-      sym: "T_H = (ħc³ / 8πGMk_B) · κ/κ₀",
-      sub: "6.17×10⁻⁸ K / " + sciNotation(massSolar, 2) + " × " + g.temperatureFactor.toFixed(3) +
-        " = " + sciNotation(temperature, 2),
+      symTex: "T_H = \\dfrac{\\hbar c^3}{8\\pi G M k_B} \\cdot \\dfrac{\\kappa}{\\kappa_0}",
+      subTex: "\\dfrac{6.17\\times10^{-8}\\;\\mathrm{K}}{" + kerrTexSci(massSolar, 2) + "} \\times " +
+        g.temperatureFactor.toFixed(3) + " = " + kerrTexSci(temperature, 2) + "\\;\\mathrm{K}",
       val: sciNotation(temperature, 2),
       unit: "K",
     },
@@ -415,8 +434,8 @@ function KerrFormulation({ geometry, massSolar, temperature, entropy }) {
         {rows.map((row) => (
           <li key={row.id} className="kerr-formulation-row">
             <span className="kerr-formulation-name">{row.name}</span>
-            <span className="kerr-formulation-sym">{row.sym}</span>
-            <span className="kerr-formulation-sub">{row.sub}</span>
+            <span className="kerr-formulation-sym"><Eq tex={row.symTex}></Eq></span>
+            <span className="kerr-formulation-sub"><Eq tex={row.subTex}></Eq></span>
             <span className="kerr-formulation-val">{row.val}<em>{row.unit}</em></span>
           </li>
         ))}
@@ -702,25 +721,27 @@ function BlackHoleLab3D() {
           </header>
           <div className="kerr-rgrid">
             <KerrReadout lead label="outer horizon r₊" value={rPlus.toFixed(3)} unit="GM/c²"
-              formula="M + √(M² − a²)"
-              sub={"1 + √(1 − " + a.toFixed(3) + "²) = " + rPlus.toFixed(3)}></KerrReadout>
+              formulaTex="r_+ = M + \sqrt{M^2 - a^2}"
+              subTex={"1 + \\sqrt{1 - " + a.toFixed(3) + "^2} = " + rPlus.toFixed(3)}></KerrReadout>
             <KerrReadout label="ergosurface (equator)" value={kerr.rErgoEquator.toFixed(3)} unit="GM/c²"
-              formula="r_E(θ) = M + √(M² − a² cos²θ)"
-              sub={"θ = 90° → 1 + √(1 − " + a.toFixed(3) + "²·0) = " + kerr.rErgoEquator.toFixed(3)}></KerrReadout>
+              formulaTex="r_E(\theta) = M + \sqrt{M^2 - a^2\cos^2\theta}"
+              subTex={"\\theta = 90^\\circ \\Rightarrow 1 + \\sqrt{1 - " + a.toFixed(3) + "^2 \\cdot 0} = " + kerr.rErgoEquator.toFixed(3)}></KerrReadout>
             <KerrReadout lead label="ISCO" unit="GM/c²"
               pair={[["prograde", rIsco.toFixed(3)], ["retrograde", exactGeometry.rIscoRetrograde.toFixed(3)]]}
-              formula="3 + Z₂ ∓ √((3−Z₁)(3+Z₁+2Z₂))"
-              sub={"Z₁ = " + kerr.z1.toFixed(3) + " · Z₂ = " + kerr.z2.toFixed(3) + (aStar < 0 ? " · a★ < 0: the +φ disk is retrograde" : "")}></KerrReadout>
+              formulaTex="r_{\rm isco} = M\left[3 + Z_2 \mp \sqrt{(3 - Z_1)(3 + Z_1 + 2Z_2)}\right]"
+              subTex={"Z_1 = " + kerr.z1.toFixed(3) + ",\\; Z_2 = " + kerr.z2.toFixed(3) +
+                " \\;\\Rightarrow\\; r_{\\rm pro} = " + rIsco.toFixed(3) + ",\\; r_{\\rm retro} = " + exactGeometry.rIscoRetrograde.toFixed(3) +
+                (aStar < 0 ? " \\;\\cdot\\; a_\\star < 0\\text{: the } +\\varphi \\text{ disk is retrograde}" : "")}></KerrReadout>
             <KerrReadout label="photon orbit" unit="GM/c²"
               pair={[["prograde", rPhoton.toFixed(3)], ["retrograde", exactGeometry.rPhotonRetrograde.toFixed(3)]]}
-              formula="2[1 + cos(⅔ arccos(∓a★))]"
-              sub={"2[1 + cos(⅔ arccos(−" + aStar.toFixed(3) + "))] = " + rPhoton.toFixed(3)}></KerrReadout>
+              formulaTex="r_{\rm ph} = 2M\left[1 + \cos\!\left(\tfrac{2}{3}\arccos(\mp a_\star)\right)\right]"
+              subTex={"2\\left[1 + \\cos\\!\\left(\\tfrac{2}{3}\\arccos(-" + aStar.toFixed(3) + ")\\right)\\right] = " + rPhoton.toFixed(3)}></KerrReadout>
             <KerrReadout label="Schwarzschild radius r_s" value={sciNotation(rs_km)} unit="km"
-              formula="2GM/c²"
-              sub={"2.95 km × " + sciNotation(M, 2) + " = " + sciNotation(rs_km) + " km"}></KerrReadout>
+              formulaTex="r_s = 2GM/c^2"
+              subTex={"2.95\\;\\mathrm{km} \\times " + kerrTexSci(M, 2) + " = " + kerrTexSci(rs_km) + "\\;\\mathrm{km}"}></KerrReadout>
             <KerrReadout label="spin a★" value={aStar.toFixed(3)}
-              formula="a★ = Jc/GM², extremal at |a★| = 1"
-              sub={"clamped to |a★| ≤ 0.998 · r₋ = " + horizons.rMinus.toFixed(3) + " GM/c²"}></KerrReadout>
+              formulaTex="a_\star = Jc/GM^2, \;\text{extremal at } |a_\star| = 1"
+              subTex={"\\text{clamped to } |a_\\star| \\le 0.998, \\; r_- = " + horizons.rMinus.toFixed(3) + "\\;\\mathrm{GM}/c^2"}></KerrReadout>
           </div>
         </section>
         <section className="kerr-rgroup">
@@ -730,17 +751,17 @@ function BlackHoleLab3D() {
           </header>
           <div className="kerr-rgrid">
             <KerrReadout lead label="Hawking temperature T_H" value={sciNotation(T_H)} unit="K"
-              formula="T_H = ħκ / 2πck_B"
-              sub={"6.17×10⁻⁸ K / " + sciNotation(M, 2) + " × " + tempFactor.toFixed(3) + " = " + sciNotation(T_H) + " K"}></KerrReadout>
+              formulaTex="T_H = \dfrac{\hbar\kappa}{2\pi c\,k_B}"
+              subTex={"\\dfrac{6.17\\times10^{-8}\\;\\mathrm{K}}{" + kerrTexSci(M, 2) + "} \\times " + tempFactor.toFixed(3) + " = " + kerrTexSci(T_H) + "\\;\\mathrm{K}"}></KerrReadout>
             <KerrReadout label="T_H / T_Schw at this spin" value={tempFactor.toFixed(3)}
-              formula="κ(a) / κ(0), → 0 at extremality"
-              sub={"κ = (" + rPlus.toFixed(3) + " − 1) / (" + rPlus.toFixed(3) + "² + " + a.toFixed(3) + "²) = " + kerr.surfaceGravity.toFixed(4)}></KerrReadout>
+              formulaTex="\dfrac{T_H}{T_{\rm Schw}} = \dfrac{\kappa(a)}{\kappa(0)} \;\to\; 0 \text{ at extremality}"
+              subTex={"\\kappa = \\dfrac{" + rPlus.toFixed(3) + " - 1}{" + rPlus.toFixed(3) + "^2 + " + a.toFixed(3) + "^2} = " + kerr.surfaceGravity.toFixed(4)}></KerrReadout>
             <KerrReadout lead label="entropy S / k_B" value={sciNotation(S, 2)}
-              formula="S = A c³ / 4Għ"
-              sub={"1.05×10⁷⁷ × " + sciNotation(M, 2) + "² × " + (rPlus / 2).toFixed(3) + " = " + sciNotation(S, 2)}></KerrReadout>
+              formulaTex="S/k_B = \dfrac{A c^3}{4G\hbar}"
+              subTex={"1.05\\times10^{77} \\times \\left(" + kerrTexSci(M, 2) + "\\right)^2 \\times " + (rPlus / 2).toFixed(3) + " = " + kerrTexSci(S, 2)}></KerrReadout>
             <KerrReadout label="evaporation time" value={sciNotation(t_ev, 2)} unit="yr"
-              formula="∝ M³, order of magnitude"
-              sub={"2.1×10⁶⁷ yr × " + sciNotation(M, 2) + "³ = " + sciNotation(t_ev, 2) + " yr"}></KerrReadout>
+              formulaTex="t_{\rm ev} \propto M^3 \;\;\text{(order of magnitude)}"
+              subTex={"2.1\\times10^{67}\\;\\mathrm{yr} \\times \\left(" + kerrTexSci(M, 2) + "\\right)^3 = " + kerrTexSci(t_ev, 2) + "\\;\\mathrm{yr}"}></KerrReadout>
           </div>
         </section>
       </div>
