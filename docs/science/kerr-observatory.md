@@ -143,6 +143,17 @@ choice. The clamp is a performance policy only: it changes the RK4 step budget
 and the layer's presence, never the equations, the claim labels or the
 provenance.
 
+The volumetric GLSL is a **compile-time** switch, not a uniform. A CPU
+rasterizer has no `KHR_parallel_shader_compile`, so three.js cannot compile
+asynchronously and the browser main thread stalls for the whole compile; the
+volumetric layer roughly doubles the fragment shader, and on such a device it is
+gated off anyway. `kerrAccumulateFragment({ volume })` therefore splices the
+corona and jet chunks out entirely and drops the body that calls them behind
+`#ifdef KERR_VOLUME`, so a software rasterizer compiles the pre-volumetric
+integrator (~11.5 kB instead of ~20 kB) and reaches its first frame in a
+fraction of the time. The volume path is byte-identical to before, and the
+capture path asks for the layer whenever the still it is rendering has it on.
+
 ### Compositing
 
 The integrator writes four attachments: disk radiance, sky radiance, jet

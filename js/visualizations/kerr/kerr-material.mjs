@@ -88,8 +88,19 @@ vec3 chroma(float kelvin) {
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 `;
 
-/** Integrator + shading. Constants of the model come in as uniforms. */
-export const KERR_ACCUMULATE_FRAGMENT = /* glsl */ `
+/**
+ * Integrator + shading. Constants of the model come in as uniforms.
+ *
+ * `volume` is a *compile-time* switch, not a uniform. On a CPU rasterizer the
+ * volumetric layer is gated off, so the GLSL it needs is dead code there — but
+ * dead code is not free: SwiftShader has no `KHR_parallel_shader_compile`, so
+ * three.js cannot compile asynchronously and the browser main thread stalls for
+ * the whole compile. With `volume: false` the shader is the pre-volumetric
+ * integrator: the corona/jet chunks are not spliced in at all, and the
+ * `#ifdef KERR_VOLUME` guards drop the body that calls them.
+ */
+export function kerrAccumulateFragment({ volume = true } = {}) {
+  return /* glsl */ `
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -113,10 +124,10 @@ uniform float uSkyVmax, uMaxFootprint, uHistoryWeight;
 uniform float uCorona, uJets, uCoronaRIn, uCoronaROut;
 uniform uint uSeed;
 uniform sampler2D uHistoryDisk, uHistorySky, uHistoryJet, uHistoryJetPos, uSkyTexture;
+${volume ? "#define KERR_VOLUME 1" : ""}
 ${TABLES_GLSL}
 ${KERR_PLASMA_GLSL}
-${PLASMA_VOLUME_GLSL}
-${JET_FIELD_GLSL}
+${volume ? `${PLASMA_VOLUME_GLSL}\n${JET_FIELD_GLSL}` : ""}
 const float PI = 3.14159265358979;
 
 vec3 skyColor(vec3 dir, float footprint) {
@@ -178,6 +189,7 @@ RayState rayStep(RayState s, float h, float E, float Lz, float Q, float a) {
   return t;
 }
 
+#ifdef KERR_VOLUME
 // Jet radiance (chroma included) at a BL-Cartesian sample: the chunk's
 // jetEmission provides the beamed emissivity and the emission-weighted mean
 // frequency shift; this wrapper applies the chroma table.
@@ -243,6 +255,7 @@ void volumeSegment(RayState s, RayState next, float f, float h, float E, float L
     }
   }
 }
+#endif
 
 // out: rgb = disk radiance, hit = luminance-weighted disk-plane (x, y) of the emitting crossings,
 //      transmit = leftover, dir = world direction (escape or last position),
@@ -280,7 +293,9 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
   jetPos = vec4(0.0);
   float order = 0.0;
   bool done = false;
+#ifdef KERR_VOLUME
   bool volume = (uCorona + uJets) > 0.5;
+#endif
 
   for (int i = 0; i < 512; i++) {
     if (i >= uMaxSteps) break;
@@ -292,7 +307,9 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
     float fCross = 1.0;
     bool crossing = s.m.z * next.m.z < 0.0;
     if (crossing) fCross = s.m.z / (s.m.z - next.m.z);
+#ifdef KERR_VOLUME
     if (volume) volumeSegment(s, next, 0.5 * fCross, h * fCross, E, Lz, Q, a, transmit, corona, jet, jetPos);
+#endif
     if (crossing) {
       float f = fCross;
       float rc = s.r + f * (next.r - s.r);
@@ -319,9 +336,11 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
       }
       order += 1.0;
     }
+#ifdef KERR_VOLUME
     if (volume && fCross < 1.0 && !done) {
       volumeSegment(s, next, fCross + 0.5 * (1.0 - fCross), h * (1.0 - fCross), E, Lz, Q, a, transmit, corona, jet, jetPos);
     }
+#endif
     s = next;
     if (done) break;
     if (s.r < uRPlus + uMargin && s.vr < 0.0) { transmit = 0.0; break; }
@@ -368,6 +387,10 @@ void main() {
   oJet = mix(texelFetch(uHistoryJet, texel, 0), vec4(jetSum, jetLuma) * inv, uHistoryWeight);
   oJetPos = mix(texelFetch(uHistoryJetPos, texel, 0), jetPosSum * inv, uHistoryWeight);
 }`;
+}
+
+/** The volumetric integrator: the default for callers that do not choose. */
+export const KERR_ACCUMULATE_FRAGMENT = kerrAccumulateFragment();
 
 /** Edge-aware (bilateral) denoise for the capture path: a gentle 3x3 kernel
  *  on the linear radiance before tone mapping. Deterministic (no randomness). */
@@ -460,7 +483,7 @@ void main() {
  * Create the WebGL2 runtime. Add `runtime.mesh` to the scene; call
  * `runtime.sync(...)` once per frame before rendering.
  */
-export function createKerrGlslRuntime({ seed = 42 } = {}) {
+export function createKerrGlslRuntime({ seed = 42, volume = true } = {}) {
   const accumulator = new KerrTemporalAccumulator(1);
   const tables = createKerrTables();
   const clock = kerrPlasmaClock();
@@ -526,7 +549,8 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
   };
 
   const accumulateMaterial = new ShaderMaterial({
-    name: "kerr-accumulate", glslVersion: GLSL3, vertexShader: VERTEX, fragmentShader: KERR_ACCUMULATE_FRAGMENT,
+    name: "kerr-accumulate", glslVersion: GLSL3, vertexShader: VERTEX,
+    fragmentShader: kerrAccumulateFragment({ volume }),
     uniforms, depthTest: false, depthWrite: false, toneMapped: false,
   });
   const accumulateScene = new Scene();
@@ -798,7 +822,7 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     };
     const captureAccumulateMaterial = new ShaderMaterial({
       name: "kerr-capture-accumulate", glslVersion: GLSL3, vertexShader: VERTEX,
-      fragmentShader: KERR_ACCUMULATE_FRAGMENT,
+      fragmentShader: kerrAccumulateFragment({ volume: state.corona || state.jets }),
       uniforms: captureUniforms, depthTest: false, depthWrite: false, toneMapped: false,
     });
     const captureDisplayMaterial = new ShaderMaterial({
@@ -1007,6 +1031,6 @@ export async function createKerrRuntime({ backendPreference = "auto", seed = 42,
       console.warn("Kerr WebGPU compute path unavailable; using the WebGL2 integrator.", error);
     }
   }
-  const runtime = createKerrGlslRuntime({ seed });
+  const runtime = createKerrGlslRuntime({ seed, volume: wantsVolume === true });
   return Object.assign(runtime, { kind: "webgl2", recoverable: () => false });
 }
