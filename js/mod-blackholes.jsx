@@ -512,19 +512,32 @@ function BlackHoleLab3D() {
     }
   }, [mapOpen, mapPreferenceKey]);
 
-  // Kerr observatory scene (Prompt 04). The runtime (WebGPU compute path when the
-  // device offers it, WebGL2 fragment integrator otherwise) integrates Carter's
-  // geodesic equations per pixel; every physical number comes from js/science/
-  // via window.QGA_KERR. This build only wires camera, state, picking and focus.
+  // Kerr observatory scene (Prompt 04 + the Prompt 05 volumetric layer). The
+  // runtime (WebGPU compute path when the device offers it, WebGL2 fragment
+  // integrator otherwise) integrates Carter's geodesic equations per pixel;
+  // every physical number comes from js/science/ via window.QGA_KERR. This
+  // build wires camera, state, picking, focus and the ultra-quality capture.
   const build = async (ctx) => {
     const { scene } = ctx;
     const kerr = window.QGA_KERR;
     if (!kerr) throw new Error("Kerr observatory module is unavailable; reload the page.");
     const { createKerrRuntime } = await kerr.loadRuntime();
+    // The render session clamps CPU rasterizers (SwiftShader, llvmpipe...) to
+    // the low tier. The volumetric layer and the Kerr ray budget must honour
+    // that same *effective* tier, not the requested one, or a software
+    // rasterizer pays seconds per frame for a layer it cannot afford.
+    const softwareClamped = () => window.QGA_RENDER?.softwareRendererClamp?.() ?? null;
+    const effectiveDetail3d = () => (softwareClamped() ? "low" : ctx.settings.current.detail3d);
+    // The volumetric layer (corona + jets) renders on the WebGL2 integrator;
+    // requesting it selects that backend (the same policy as the turbulent
+    // disk texture). The performance quality ceiling gates it off inside sync.
+    const wantsVolume = (stateRef.current.bhCorona !== false || stateRef.current.bhJets !== false)
+      && effectiveDetail3d() !== "low";
     const runtime = await createKerrRuntime({
       backendPreference: window.QGA_RENDER_OPTIONS?.forceBackend ?? ctx.settings.current.renderBackend ?? "auto",
       seed: stateRef.current.seed ?? 42,
       diskModel: stateRef.current.bhDiskModel,
+      wantsVolume,
     });
     scene.add(runtime.mesh);
     let lastLens = { tanHalfFov: 0.35, aspect: 1.6 };
@@ -533,10 +546,19 @@ function BlackHoleLab3D() {
     let lastObserver = null;
     // Seconds of *playing* time (dt is 0 while paused) drive the disk plasma animation.
     let playingSeconds = 0;
+    // Ultra-quality still capture (Prompt 05), exposed for the control deck
+    // and the QA harness. The runtime owns the passes; this only forwards.
+    const captureStill = (request) => {
+      if (typeof runtime.captureStill !== "function") {
+        return Promise.reject(new Error("This backend does not implement still capture yet."));
+      }
+      return runtime.captureStill(request);
+    };
+    window.__qgaKerrCapture = captureStill;
 
     const publish = (frame) => {
       window.__qgaKerrRuntime = {
-        ...runtime.snapshot(), detail3d: ctx.settings.current.detail3d,
+        ...runtime.snapshot(), detail3d: effectiveDetail3d(),
         reducedMotion: ctx.motion() === 0, observer: frame.observer, lens: lastLens,
       };
     };
@@ -554,8 +576,9 @@ function BlackHoleLab3D() {
         playingSeconds += dt;
         lastPlan = runtime.sync({
           renderer, camera: cam, atlasState: { ...stateRef.current, bhMass: logRef.current, bhSpin: spinRef.current },
-          detail3d: ctx.settings.current.detail3d, reducedMotion: ctx.motion() === 0,
+          detail3d: effectiveDetail3d(), reducedMotion: ctx.motion() === 0,
           governorRaySteps: governorRef.current, time: playingSeconds,
+          softwareClamped: softwareClamped() !== null,
         });
         runtime.setFocus(focusRef.current);
         publish(lastPlan);
@@ -665,7 +688,11 @@ function BlackHoleLab3D() {
           onToggle={() => setMapOpen((current) => !current)}></KerrGeometryMap>}
         build={build} deps={[atlasState.bhDiskModel === "page-thorne-turbulent", atlasState.seed]} fallback={<BlackHoleSim></BlackHoleSim>}></Scene3D>
       <KerrObservatoryControls state={atlasState} setState={setAtlasState} onCameraRequest={requestCamera}
-        onFocusKind={(kind) => focusFeature(kind, null)} focusKind={focus?.kind ?? null}></KerrObservatoryControls>
+        onFocusKind={(kind) => focusFeature(kind, null)} focusKind={focus?.kind ?? null}
+        onCapture={(request) => {
+          if (!window.__qgaKerrCapture) throw new Error("The capture path is still starting; try again in a moment.");
+          return window.__qgaKerrCapture(request);
+        }}></KerrObservatoryControls>
       <KerrFocusPanel focus={focus} onClose={clearFocus}></KerrFocusPanel>
       <div className="kerr-deck">
         <section className="kerr-rgroup">

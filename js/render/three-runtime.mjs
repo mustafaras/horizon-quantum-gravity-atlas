@@ -18,8 +18,9 @@ import { UnrealBloomPass as CurrentUnrealBloomPass } from "three/addons/postproc
 import { GammaCorrectionShader } from "three/addons/shaders/GammaCorrectionShader.js";
 import { initializeRenderSession } from "./render-session.mjs";
 import { renderDiagnostics, describeRenderError } from "./error-overlay.mjs";
+import { softwareRendererClamp } from "./software-renderer.mjs";
 
-export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError });
+export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError, softwareRendererClamp });
 
 // Production scenes now use native linear-light color management and HDR output.
 ColorManagement.enabled = true;

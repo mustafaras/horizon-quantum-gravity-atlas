@@ -7,7 +7,7 @@
     "stateKeys": {
       "view": "view", "pathway": "pathway", "bhMass": "bhm", "bhSpin": "bhs",
       "bhStateVersion": "bhv", "bhInclination": "bhi", "bhObserverDistance": "bhd", "bhDiskModel": "bhdm",
-      "bhRenderQuality": "bhq", "bhExposure": "bhe", "bhAnnotations": "bha",
+      "bhRenderQuality": "bhq", "bhExposure": "bhe", "bhAnnotations": "bha", "bhCorona": "bhc", "bhJets": "bhj",
       "gwMode": "gwm", "gwEvent": "gwe", "gwDetector": "gwd", "gwStart": "gws",
       "gwDuration": "gwt", "gwM1": "gwm1", "gwM2": "gwm2", "seed": "seed",
       "qftProcess": "qfp", "qftSqrtS": "qfs", "qftAngle": "qfa", "qftPhotonX": "qfx",

@@ -50,6 +50,8 @@ qa/
 | `rg.spec.mjs` | Conjectural badge on asymptotic safety, Custom transition, Reset preset. |
 | `gwosc.spec.mjs` | Deterministic fixture: ok / http-error / abort / oversized / cancel phases, parser contract (≤1200 samples, provenance). |
 | `visual.spec.mjs` | Per-capture screenshot vs committed baseline, each with its justified `maxDiffPixelRatio`. |
+| `kerr-observatory.spec.mjs` | Kerr observatory: geodesic integration, backend selection, focus picking, URL/export state. |
+| `kerr-ultra-capture.spec.mjs` | Ultra-quality still capture: 2K PNG + metadata sidecar, pixel stability, memory guard, cancellation, volumetric layer and Blandford–Znajek spin scaling, Doppler beaming, volume URL keys. |
 | `live.spec.mjs` | Real GWOSC fetch. Skipped unless `QGA_QA_LIVE=1`. |
 
 ## Principles

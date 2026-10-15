@@ -85,6 +85,10 @@ export function inspectThreeVendor(root) {
         failures.push(`${file} imports an external runtime asset: ${specifier}`);
         continue;
       }
+      // Node builtin specifiers appear only inside Node-guarded branches
+      // (e.g. the PNG encoder's node:zlib fallback for the test runner);
+      // they never resolve in the browser and vendor nothing.
+      if (specifier.startsWith("node:")) continue;
       let resolved;
       if (specifier.startsWith(".")) resolved = path.join(path.dirname(file), specifier);
       else if (imports[specifier]) resolved = imports[specifier];

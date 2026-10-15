@@ -35,17 +35,31 @@ import {
 } from "three";
 import {
   KERR_RENDER_CONSTANTS,
+  KERR_VIEW_ID,
   KerrTemporalAccumulator,
   buildKerrRenderState,
   kerrAccumulationKey,
   kerrJitter,
   kerrObserverFromCamera,
   kerrQualityBudget,
+  kerrVolumeReason,
   normalizeKerrState,
+  registerKerrObservatoryProvenance,
 } from "./kerr-observatory.mjs";
 import { KERR_PLASMA_GLSL } from "./kerr-plasma.mjs";
+import { PLASMA_VOLUME_GLSL, PLASMA_VOLUME } from "./plasma-volume.mjs";
+import { JET_FIELD_GLSL, JET_KNOTS_GLSL, JET_FIELD } from "./jet-field.mjs";
 import { STARFIELD_MAX_FOOTPRINT_RAD, STARFIELD_VMAX, renderStarfield } from "./starfield-texture.mjs";
 import { createKerrTables, kerrPlasmaClock, kerrSeed } from "./kerr-runtime-shared.mjs";
+import {
+  buildCaptureMetadata,
+  encodePng,
+  flipRgbaVertically,
+  resolveCaptureDimensions,
+  runProgressiveCapture,
+  upscaleRgba,
+  validateCaptureRequest,
+} from "../../render/progressive-capture.mjs";
 
 const VERTEX = /* glsl */ `
 varying vec2 vUv;
@@ -74,14 +88,27 @@ vec3 chroma(float kelvin) {
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 `;
 
-/** Integrator + shading. Constants of the model come in as uniforms. */
-export const KERR_ACCUMULATE_FRAGMENT = /* glsl */ `
+/**
+ * Integrator + shading. Constants of the model come in as uniforms.
+ *
+ * `volume` is a *compile-time* switch, not a uniform. On a CPU rasterizer the
+ * volumetric layer is gated off, so the GLSL it needs is dead code there — but
+ * dead code is not free: SwiftShader has no `KHR_parallel_shader_compile`, so
+ * three.js cannot compile asynchronously and the browser main thread stalls for
+ * the whole compile. With `volume: false` the shader is the pre-volumetric
+ * integrator: the corona/jet chunks are not spliced in at all, and the
+ * `#ifdef KERR_VOLUME` guards drop the body that calls them.
+ */
+export function kerrAccumulateFragment({ volume = true } = {}) {
+  return /* glsl */ `
 precision highp float;
 precision highp int;
 precision highp sampler2D;
 varying vec2 vUv;
 layout(location = 0) out vec4 oDisk;
 layout(location = 1) out vec4 oSky;
+layout(location = 2) out vec4 oJet;
+layout(location = 3) out vec4 oJetPos;
 
 uniform vec2 uResolution;
 uniform float uTanHalfFov, uAspect;
@@ -94,10 +121,13 @@ uniform int uMaxSteps, uSamples;
 uniform vec2 uJitter[4];
 uniform float uTransmit, uSoftEdge, uExposure, uDiskGain, uSkyGain, uOrderTint;
 uniform float uSkyVmax, uMaxFootprint, uHistoryWeight;
+uniform float uCorona, uJets, uCoronaRIn, uCoronaROut;
 uniform uint uSeed;
-uniform sampler2D uHistoryDisk, uHistorySky, uSkyTexture;
+uniform sampler2D uHistoryDisk, uHistorySky, uHistoryJet, uHistoryJetPos, uSkyTexture;
+${volume ? "#define KERR_VOLUME 1" : ""}
 ${TABLES_GLSL}
 ${KERR_PLASMA_GLSL}
+${volume ? `${PLASMA_VOLUME_GLSL}\n${JET_FIELD_GLSL}` : ""}
 const float PI = 3.14159265358979;
 
 vec3 skyColor(vec3 dir, float footprint) {
@@ -158,9 +188,81 @@ RayState rayStep(RayState s, float h, float E, float Lz, float Q, float a) {
   if (wLength > 1e-12) t.w *= speed / wLength;
   return t;
 }
+
+#ifdef KERR_VOLUME
+// Jet radiance (chroma included) at a BL-Cartesian sample: the chunk's
+// jetEmission provides the beamed emissivity and the emission-weighted mean
+// frequency shift; this wrapper applies the chroma table.
+vec3 jetRadiance(vec3 pos, vec3 rayDir, float r, float u, float a, float sMin) {
+  float meanShift;
+  float kelvin;
+  float emissivity = jetEmission(pos, rayDir, r, u, a, sMin, meanShift, kelvin);
+  if (emissivity <= 0.0) return vec3(0.0);
+  return chroma(meanShift * kelvin) * emissivity;
+}
+
+// Volumetric emission/absorption over one (sub)segment of the geodesic,
+// composited front-to-back with the current transmittance. The corona adds
+// into the sky/static target; the jet adds into the jet target together with
+// the luminance-weighted mean jet position (s, rho, cos phi, sin phi) that
+// the display pass re-evaluates per frame with the knot modulation.
+void volumeSegment(RayState s, RayState next, float f, float h, float E, float Lz, float Q, float a,
+                   inout float transmit, inout vec3 corona, inout vec3 jet, inout vec4 jetPos) {
+  if (h <= 0.0 || transmit <= 0.0) return;
+  RayState mid;
+  mid.r = mix(s.r, next.r, f);
+  mid.vr = mix(s.vr, next.vr, f);
+  mid.m = normalize(mix(s.m, next.m, f));
+  mid.w = mix(s.w, next.w, f);
+  mid.drag = mix(s.drag, next.drag, f);
+  // ZAMO spatial path length: dl/dlambda = sqrt((Sigma/Delta) vr^2 + Sigma |w + dragRate z x m|^2)
+  // (azimuthal coefficient approximated by Sigma; exact for a = 0 and the polar part).
+  float a2 = a * a;
+  float Sigma = mid.r * mid.r + a2 * mid.m.z * mid.m.z;
+  float Delta = max(mid.r * mid.r - 2.0 * mid.r + a2, 1e-6);
+  float dragRate = rayDerivative(mid, E, Lz, Q, a).drag;
+  vec3 angRate = mid.w + dragRate * vec3(-mid.m.y, mid.m.x, 0.0);
+  float dl = h * sqrt(max((Sigma / Delta) * mid.vr * mid.vr + Sigma * dot(angRate, angRate), 0.0));
+  if (dl <= 0.0) return;
+  vec3 n = rotateAxis(mid.m, mid.drag);
+  vec3 pos = mid.r * n;
+  vec3 velocity = mid.vr * n + mid.r * rotateAxis(angRate, mid.drag);
+  float vNorm = length(velocity);
+  if (vNorm < 1e-12) return;
+  vec3 rayDir = velocity / vNorm;
+
+  if (uCorona > 0.5 && mid.r >= uCoronaRIn && mid.r <= uCoronaROut) {
+    float density = coronaDensity(pos, mid.r, uCoronaRIn, uCoronaROut, uSeed);
+    if (density > 0.0) {
+      vec4 row = diskRow(clamp(mid.r, uRIn, uROut));
+      float den = row.y * (E - row.x * Lz);
+      if (den > 1e-4) {
+        float g = 1.0 / den;
+        float intensity = coronaEmissionScale(density, g) * uExposure * dl;
+        corona += transmit * chroma(g * coronaKelvin(row.w)) * intensity;
+      }
+      transmit *= exp(-coronaAbsorption(density) * dl);
+    }
+  }
+
+  if (uJets > 0.5) {
+    vec3 radiance = jetRadiance(pos, rayDir, mid.r, mid.m.z, uSpin, uRPlus) * uExposure * dl;
+    float luma = dot(radiance, LUMA);
+    if (luma > 0.0) {
+      jet += transmit * radiance;
+      float phi = atan(pos.y, pos.x);
+      jetPos += transmit * luma * vec4(abs(pos.z), length(pos.xy), cos(phi), sin(phi));
+    }
+  }
+}
+#endif
+
 // out: rgb = disk radiance, hit = luminance-weighted disk-plane (x, y) of the emitting crossings,
-//      transmit = leftover, dir = world direction (escape or last position)
-void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 dir, out float escaped) {
+//      transmit = leftover, dir = world direction (escape or last position),
+//      corona = static volumetric corona radiance, jet/jetPos = jet base radiance and
+//      its luminance-weighted mean (s, rho, cos phi, sin phi) for the knot modulation
+void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 dir, out float escaped,
+           out vec3 corona, out vec3 jet, out vec4 jetPos) {
   float sx = ndc.x * uTanHalfFov * uAspect;
   float sy = ndc.y * uTanHalfFov;
   float inv = inversesqrt(1.0 + sx * sx + sy * sy);
@@ -186,15 +288,30 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
   hit = vec2(0.0);
   transmit = 1.0;
   escaped = 0.0;
+  corona = vec3(0.0);
+  jet = vec3(0.0);
+  jetPos = vec4(0.0);
   float order = 0.0;
   bool done = false;
+#ifdef KERR_VOLUME
+  bool volume = (uCorona + uJets) > 0.5;
+#endif
 
   for (int i = 0; i < 512; i++) {
     if (i >= uMaxSteps) break;
     float h = uStepK * min(1.0 / s.r, (s.r - uRPlus) / (abs(s.vr) + 1.0));
     RayState next = rayStep(s, h, E, Lz, Q, a);
-    if (s.m.z * next.m.z < 0.0) {
-      float f = s.m.z / (s.m.z - next.m.z);
+    // Disk crossing fraction within this segment (1 when there is none); the
+    // volumetric segment is split there so the volume and the disk composite
+    // in depth order.
+    float fCross = 1.0;
+    bool crossing = s.m.z * next.m.z < 0.0;
+    if (crossing) fCross = s.m.z / (s.m.z - next.m.z);
+#ifdef KERR_VOLUME
+    if (volume) volumeSegment(s, next, 0.5 * fCross, h * fCross, E, Lz, Q, a, transmit, corona, jet, jetPos);
+#endif
+    if (crossing) {
+      float f = fCross;
       float rc = s.r + f * (next.r - s.r);
       if (rc >= uRIn && rc <= uROut) {
         float alpha = uSoftEdge > 0.5 ? kerrEdgeOpacity(rc, uROut) : 1.0;
@@ -219,6 +336,11 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
       }
       order += 1.0;
     }
+#ifdef KERR_VOLUME
+    if (volume && fCross < 1.0 && !done) {
+      volumeSegment(s, next, fCross + 0.5 * (1.0 - fCross), h * (1.0 - fCross), E, Lz, Q, a, transmit, corona, jet, jetPos);
+    }
+#endif
     s = next;
     if (done) break;
     if (s.r < uRPlus + uMargin && s.vr < 0.0) { transmit = 0.0; break; }
@@ -236,40 +358,84 @@ void trace(vec2 ndc, out vec3 rgb, out vec2 hit, out float transmit, out vec3 di
 void main() {
   vec3 disk = vec3(0.0), sky = vec3(0.0);
   vec2 hits = vec2(0.0);
+  vec3 jetSum = vec3(0.0);
+  float jetLuma = 0.0;
+  vec4 jetPosSum = vec4(0.0);
   for (int s = 0; s < 4; s++) {
     if (s >= uSamples) break;
     vec2 uv = vUv + uJitter[s] / uResolution;
     vec3 rgb; vec2 hit; float transmit; vec3 dir; float escaped;
-    trace(uv * 2.0 - 1.0, rgb, hit, transmit, dir, escaped);
+    vec3 corona; vec3 jet; vec4 jetPos;
+    trace(uv * 2.0 - 1.0, rgb, hit, transmit, dir, escaped, corona, jet, jetPos);
     float fp = max(length(dFdx(dir)), length(dFdy(dir)));
     disk += rgb;
     hits += hit;
+    sky += corona;
     if (escaped > 0.5 && transmit > 0.0) {
       sky += transmit * skyColor(dir, fp);
     }
+    // The jet target keeps the base radiance and the luminance-weighted mean
+    // position; the knot modulation is a per-frame display factor.
+    jetSum += jet;
+    jetLuma += dot(jet, LUMA);
+    jetPosSum += jetPos;
   }
   float inv = 1.0 / float(uSamples);
   ivec2 texel = ivec2(gl_FragCoord.xy);
   oDisk = mix(texelFetch(uHistoryDisk, texel, 0), vec4(disk, hits.x) * inv, uHistoryWeight);
   oSky = mix(texelFetch(uHistorySky, texel, 0), vec4(sky, hits.y) * inv, uHistoryWeight);
+  oJet = mix(texelFetch(uHistoryJet, texel, 0), vec4(jetSum, jetLuma) * inv, uHistoryWeight);
+  oJetPos = mix(texelFetch(uHistoryJetPos, texel, 0), jetPosSum * inv, uHistoryWeight);
+}`;
+}
+
+/** The volumetric integrator: the default for callers that do not choose. */
+export const KERR_ACCUMULATE_FRAGMENT = kerrAccumulateFragment();
+
+/** Edge-aware (bilateral) denoise for the capture path: a gentle 3x3 kernel
+ *  on the linear radiance before tone mapping. Deterministic (no randomness). */
+const CAPTURE_DENOISE_FRAGMENT = /* glsl */ `
+precision highp float;
+varying vec2 vUv;
+layout(location = 0) out vec4 oColor;
+uniform sampler2D tDiffuse;
+uniform vec2 uTexel;
+uniform float uSigma;
+const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+void main() {
+  vec3 center = texture(tDiffuse, vUv).rgb;
+  float centerLuma = dot(center, LUMA);
+  vec3 sum = center;
+  float weightSum = 1.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      if (i == 0 && j == 0) continue;
+      vec3 neighbour = texture(tDiffuse, vUv + vec2(float(i), float(j)) * uTexel).rgb;
+      float dl = dot(neighbour, LUMA) - centerLuma;
+      float w = exp(-dl * dl / (2.0 * uSigma * uSigma));
+      sum += neighbour * w;
+      weightSum += w;
+    }
+  }
+  oColor = vec4(sum / weightSum, 1.0);
 }`;
 
-const DISPLAY_FRAGMENT = /* glsl */ `
-precision highp float;
+const DISPLAY_FRAGMENT = /* glsl */ `precision highp float;
 precision highp int;
 precision highp sampler2D;
 varying vec2 vUv;
 layout(location = 0) out vec4 oColor;
-uniform sampler2D uDisk, uSky;
+uniform sampler2D uDisk, uSky, uJet, uJetPos;
 uniform vec2 uTexel;
-uniform float uAspect, uTime, uPlasma;
+uniform float uAspect, uTime, uPlasma, uJets;
 uniform uint uSeed;
 uniform vec4 uFocus; // center uv.xy, radius, strength
 ${TABLES_GLSL}
 ${KERR_PLASMA_GLSL}
+${JET_KNOTS_GLSL}
 
-vec3 radiance(vec2 uv, float m) {
-  return texture(uDisk, uv).rgb * m + texture(uSky, uv).rgb;
+vec3 radiance(vec2 uv, float m, float mj) {
+  return texture(uDisk, uv).rgb * m + texture(uSky, uv).rgb + texture(uJet, uv).rgb * mj;
 }
 
 void main() {
@@ -286,14 +452,26 @@ void main() {
   if (uPlasma > 0.5 && lum > 1e-9 && r >= uRIn && r <= uROut) {
     m = kerrPlasma(r, atan(xy.y, xy.x), diskRow(r).x, uTime, footprint, uSeed);
   }
-  vec3 c = d.rgb * m + s.rgb;
+  // Jet knot modulation at the luminance-weighted mean jet position; the
+  // pattern advects along the jet with the same display clock as the disk.
+  float mj = 1.0;
+  vec4 j = texture(uJet, vUv);
+  if (uJets > 0.5 && j.a > 1e-9) {
+    vec4 jp = texture(uJetPos, vUv);
+    float jLuma = max(j.a, 1e-12);
+    float js = jp.x / jLuma;
+    float jrho = jp.y / jLuma;
+    float jphi = atan(jp.w, jp.z);
+    mj = jetKnots(js, jrho, jphi, uTime, uSeed);
+  }
+  vec3 c = d.rgb * m + s.rgb + j.rgb * mj;
   float dist = length((vUv - uFocus.xy) * vec2(uAspect, 1.0));
   float defocus = uFocus.w * smoothstep(uFocus.z, uFocus.z * 2.4, dist);
   if (defocus > 0.001) {
     vec3 b = vec3(0.0);
-    for (int j = -2; j <= 2; j++) {
-      for (int i = -2; i <= 2; i++) {
-        b += radiance(vUv + vec2(float(i), float(j)) * uTexel * (1.0 + 2.5 * defocus), m);
+    for (int jy = -2; jy <= 2; jy++) {
+      for (int jx = -2; jx <= 2; jx++) {
+        b += radiance(vUv + vec2(float(jx), float(jy)) * uTexel * (1.0 + 2.5 * defocus), m, mj);
       }
     }
     c = mix(c, b / 25.0, defocus);
@@ -305,7 +483,7 @@ void main() {
  * Create the WebGL2 runtime. Add `runtime.mesh` to the scene; call
  * `runtime.sync(...)` once per frame before rendering.
  */
-export function createKerrGlslRuntime({ seed = 42 } = {}) {
+export function createKerrGlslRuntime({ seed = 42, volume = true } = {}) {
   const accumulator = new KerrTemporalAccumulator(1);
   const tables = createKerrTables();
   const clock = kerrPlasmaClock();
@@ -337,6 +515,7 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
   let writeIndex = 0;
   let pending = true;
   let wasConverged = false;
+  let captureContext = null;
   let latest = { backend: "webgl2", frames: 0, resets: 0, resolution: [0, 0], budget: null };
 
   const shared = {
@@ -363,11 +542,15 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     uSkyTexture: { value: null }, uSkyVmax: { value: STARFIELD_VMAX },
     uMaxFootprint: { value: STARFIELD_MAX_FOOTPRINT_RAD },
     uHistoryWeight: { value: 1 },
+    uCorona: { value: 0 }, uJets: { value: 0 },
+    uCoronaRIn: { value: 5 }, uCoronaROut: { value: 29 },
     uHistoryDisk: { value: null }, uHistorySky: { value: null },
+    uHistoryJet: { value: null }, uHistoryJetPos: { value: null },
   };
 
   const accumulateMaterial = new ShaderMaterial({
-    name: "kerr-accumulate", glslVersion: GLSL3, vertexShader: VERTEX, fragmentShader: KERR_ACCUMULATE_FRAGMENT,
+    name: "kerr-accumulate", glslVersion: GLSL3, vertexShader: VERTEX,
+    fragmentShader: kerrAccumulateFragment({ volume }),
     uniforms, depthTest: false, depthWrite: false, toneMapped: false,
   });
   const accumulateScene = new Scene();
@@ -379,8 +562,9 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
   const displayUniforms = {
     ...shared,
     uDisk: { value: null }, uSky: { value: null },
+    uJet: { value: null }, uJetPos: { value: null },
     uTexel: { value: new Vector2(1 / 2, 1 / 2) }, uAspect: { value: 1 },
-    uTime: { value: 0 }, uPlasma: { value: 1 },
+    uTime: { value: 0 }, uPlasma: { value: 1 }, uJets: { value: 0 },
     uFocus: { value: { x: 0.5, y: 0.5, z: 0.2, w: 0 } },
   };
   const displayMaterial = new ShaderMaterial({
@@ -395,10 +579,10 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
   function ensureTargets(renderer, width, height) {
     if (targets[0] && targets[0].width === width && targets[0].height === height) return;
     for (const target of targets) target?.dispose();
-    // 32-bit targets keep the luminance-weighted hit position exact; half floats are the fallback.
+    // 32-bit targets keep the luminance-weighted hit positions exact; half floats are the fallback.
     const type = renderer.extensions?.has?.("EXT_color_buffer_float") ? FloatType : HalfFloatType;
     const make = () => new WebGLRenderTarget(width, height, {
-      count: 2, type, format: RGBAFormat, minFilter: NearestFilter, magFilter: NearestFilter,
+      count: 4, type, format: RGBAFormat, minFilter: NearestFilter, magFilter: NearestFilter,
       depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
     });
     targets = [make(), make()];
@@ -419,22 +603,28 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     const write = targets[writeIndex];
     uniforms.uHistoryDisk.value = history.textures[0];
     uniforms.uHistorySky.value = history.textures[1];
+    uniforms.uHistoryJet.value = history.textures[2];
+    uniforms.uHistoryJetPos.value = history.textures[3];
     const previous = renderer.getRenderTarget();
     renderer.setRenderTarget(write);
     renderer.render(accumulateScene, accumulateCamera);
     renderer.setRenderTarget(previous);
     displayUniforms.uDisk.value = write.textures[0];
     displayUniforms.uSky.value = write.textures[1];
+    displayUniforms.uJet.value = write.textures[2];
+    displayUniforms.uJetPos.value = write.textures[3];
     writeIndex = 1 - writeIndex;
   };
 
   /**
    * Per-frame synchronisation.
    * @param {{ renderer: object, camera: object, atlasState: object, detail3d: string,
-   *           reducedMotion: boolean, governorRaySteps?: number, time?: number }} input
+   *           reducedMotion: boolean, governorRaySteps?: number, time?: number,
+   *           softwareClamped?: boolean }} input
    *   time: wall-clock seconds driving the plasma texture (frozen under reduced motion)
+   *   softwareClamped: the session clamped a CPU rasterizer to the low tier
    */
-  function sync({ renderer, camera, atlasState, detail3d = "medium", reducedMotion = false, governorRaySteps = null, time = 0 }) {
+  function sync({ renderer, camera, atlasState, detail3d = "medium", reducedMotion = false, governorRaySteps = null, time = 0, softwareClamped = false }) {
     renderer.getDrawingBufferSize(size);
     const width = Math.max(2, Math.round(size.x));
     const height = Math.max(2, Math.round(size.y));
@@ -443,6 +633,12 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     const budget = kerrQualityBudget(normalized.quality, { detail3d, reducedMotion, governorRaySteps });
     const observer = kerrObserverFromCamera([camera.position.x, camera.position.y, camera.position.z]);
     const state = buildKerrRenderState(normalized, { observer, budget, backend: "webgl2" });
+    captureContext = {
+      renderer, normalized, observer, state,
+      lens: { tanHalfFov: Math.tan((camera.fov * Math.PI) / 360), aspect: camera.aspect || 1 },
+      reducedMotion, plasmaTime: displayUniforms.uTime.value,
+      focus: { ...displayUniforms.uFocus.value },
+    };
     const textures = tables.update(state);
     if (skyQuality !== budget.sky) {
       skyTex?.dispose();
@@ -459,6 +655,7 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
       aStar: state.aStar, massLog10: state.massLog10, inclinationDeg: normalized.inclinationDeg,
       observer: state.observer, resolution: [width, height], backend: "webgl2",
       quality: budget.effective, diskModel: normalized.diskModel, budget,
+      corona: state.corona, jets: state.jets,
     });
     const step = accumulator.update(key, budget.temporalSamples);
     const advance = step.reset || !wasConverged;
@@ -485,6 +682,10 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     uniforms.uSoftEdge.value = state.softEdge ? 1 : 0;
     uniforms.uExposure.value = state.exposure;
     uniforms.uOrderTint.value = state.annotations ? 1 : 0;
+    uniforms.uCorona.value = state.corona ? 1 : 0;
+    uniforms.uJets.value = state.jets ? 1 : 0;
+    uniforms.uCoronaRIn.value = state.coronaRadii.rIn;
+    uniforms.uCoronaROut.value = state.coronaRadii.rOut;
     uniforms.uHistoryWeight.value = step.reset ? 1 : 1 / (step.frame + 1);
     for (let s = 0; s < 4; s += 1) {
       const [jx, jy] = kerrJitter(step.frame * uniforms.uSamples.value + s);
@@ -493,19 +694,278 @@ export function createKerrGlslRuntime({ seed = 42 } = {}) {
     if (advance) pending = true;
 
     displayUniforms.uPlasma.value = state.plasma ? 1 : 0;
+    displayUniforms.uJets.value = state.jets ? 1 : 0;
     displayUniforms.uTime.value = clock.tick(time, reducedMotion);
 
     latest = {
       backend: "webgl2", frames: step.frame + 1, resets: accumulator.resets,
       resolution: [width, height], budget, converged: step.converged, reducedMotion,
       plasmaTime: displayUniforms.uTime.value, animated: state.plasma && !reducedMotion,
+      volume: {
+        corona: state.corona, jets: state.jets, capable: budget.volume === true,
+        reason: kerrVolumeReason({ backend: "webgl2", softwareClamped, budget, corona: state.corona, jets: state.jets }),
+      },
     };
     return { state, budget, observer, step };
+  }
+
+  /**
+   * Progressive ultra-quality still capture (Prompt 05). Renders the current
+   * observatory view offscreen at 2K/4K/8K (or explicit dimensions) with the
+   * ultra ray budget, accumulates Halton-jittered samples in chunks, applies
+   * the display pass at a frozen plasma time, an optional edge-aware denoise,
+   * the pipeline's exact tone mapping, an optional Lanczos-3 upscale, and
+   * encodes a PNG with the metadata sidecar. All capture-side targets and
+   * materials are disposed on completion, cancellation and error.
+   *
+   * @param {object} request
+   *   preset: "2k" | "4k" | "8k" (height-driven; width follows the live aspect)
+   *   width/height: explicit dimensions (overrides the preset)
+   *   samples: total jittered samples (default 96)
+   *   samplesPerChunk: samples per animation frame (default 4)
+   *   denoise: edge-aware denoise pass (default true)
+   *   upscale: integer upscale factor 1-4 (renders smaller, upscales)
+   *   signal: { aborted } or AbortSignal to cancel
+   *   onProgress({ stage, fraction }): progress sink
+   *   commitHash: recorded in the metadata sidecar
+   * @returns {Promise<{ png: Uint8Array, metadata: object, width: number, height: number }>}
+   */
+  async function captureStill(request = {}) {
+    const {
+      preset = "2k", width = null, height = null, samples = 96, samplesPerChunk = 4,
+      denoise = true, upscale = 1, quality = "ultra", signal = null, onProgress = null, commitHash = null,
+    } = request;
+    if (!captureContext) throw new Error("The observatory must render at least one frame before capture.");
+    const { renderer, normalized, observer, lens, reducedMotion, plasmaTime, focus } = captureContext;
+    const factor = Math.max(1, Math.min(4, Math.round(Number(upscale) || 1)));
+    const resolved = resolveCaptureDimensions({ preset, aspect: lens.aspect, width, height });
+    const renderWidth = Math.max(2, Math.round(resolved.width / factor));
+    const renderHeight = Math.max(2, Math.round(resolved.height / factor));
+    const floatBytes = renderer.extensions?.has?.("EXT_color_buffer_float") ? 16 : 8;
+    const maxDimension = renderer.capabilities?.maxTextureSize ?? 8192;
+    validateCaptureRequest({ width: renderWidth, height: renderHeight, maxDimension, floatBytesPerPixel: floatBytes });
+
+    // Capture render state. A still is offline, so it defaults to the ultra ray
+    // budget regardless of the live quality (the equations and labels never
+    // change); `quality` lowers it when the caller wants a cheaper still.
+    const budget = kerrQualityBudget(quality, { detail3d: "ultra" });
+    const state = buildKerrRenderState(normalized, { observer, budget, backend: "webgl2" });
+    const textures = tables.update(state);
+    const sky = skyFor(budget.sky);
+    const skyTextureCapture = makeSkyTexture(sky);
+    const provenance = registerKerrObservatoryProvenance();
+
+    const type = floatBytes === 16 ? FloatType : HalfFloatType;
+    const makeTarget = (count, targetType) => new WebGLRenderTarget(renderWidth, renderHeight, {
+      count, type: targetType, format: RGBAFormat, minFilter: NearestFilter, magFilter: NearestFilter,
+      depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
+    });
+    const captureTargets = [makeTarget(4, type), makeTarget(4, type)];
+    const displayTarget = makeTarget(1, type);
+    const denoiseTarget = denoise ? makeTarget(1, type) : null;
+    const outputTarget = new WebGLRenderTarget(renderWidth, renderHeight, {
+      type: UnsignedByteType, format: RGBAFormat, minFilter: NearestFilter, magFilter: NearestFilter,
+      depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
+    });
+
+    const captureShared = {
+      uRIn: { value: state.disk.rIn }, uROut: { value: state.disk.rOut },
+      uColorLogMin: { value: state.colorTable.logMin },
+      uColorLogSpan: { value: state.colorTable.logMax - state.colorTable.logMin },
+      uLutSize: { value: KERR_RENDER_CONSTANTS.diskLutSize }, uColorSize: { value: KERR_RENDER_CONSTANTS.colorLutSize },
+      uDiskLut: { value: textures.disk }, uColorLut: { value: textures.color },
+      uSeed: { value: kerrSeed(seed) },
+    };
+    const { coef } = state.observer;
+    const captureUniforms = {
+      ...captureShared,
+      uResolution: { value: new Vector2(renderWidth, renderHeight) },
+      uTanHalfFov: { value: lens.tanHalfFov }, uAspect: { value: lens.aspect },
+      uSpin: { value: state.aStar }, uRPlus: { value: state.radii.rPlus },
+      // The capture must read the *derived* observer (state.observer), which is the
+      // single source of truth the live path uses: kerrObserverFromCamera returns
+      // only { r0, theta0, phi0 }, so reading u0 off it would upload undefined and
+      // collapse the ray into the equatorial plane (a fully black still).
+      uR0: { value: state.observer.r0 }, uU0: { value: state.observer.u0 },
+      uSinT0: { value: Math.sin(state.observer.theta0) }, uPhi0: { value: state.observer.phi0 },
+      uCoef: { value: { x: coef.E0, y: coef.E1, z: coef.L0, w: coef.L1 } },
+      uMom: { value: new Vector2(coef.P1, coef.R1) },
+      uStepK: { value: budget.stepK }, uEscape: { value: KERR_RENDER_CONSTANTS.escapeRadius },
+      uMargin: { value: KERR_RENDER_CONSTANTS.captureMargin },
+      uMaxSteps: { value: Math.min(512, budget.maxSteps) }, uSamples: { value: 1 },
+      uJitter: { value: [new Vector2(), new Vector2(), new Vector2(), new Vector2()] },
+      uTransmit: { value: state.transmittance }, uSoftEdge: { value: state.softEdge ? 1 : 0 },
+      uExposure: { value: state.exposure },
+      uDiskGain: { value: KERR_RENDER_CONSTANTS.diskGain },
+      uSkyGain: { value: KERR_RENDER_CONSTANTS.skyGain }, uOrderTint: { value: 0 },
+      uSkyTexture: { value: skyTextureCapture }, uSkyVmax: { value: STARFIELD_VMAX },
+      uMaxFootprint: { value: STARFIELD_MAX_FOOTPRINT_RAD },
+      uHistoryWeight: { value: 1 },
+      uCorona: { value: state.corona ? 1 : 0 }, uJets: { value: state.jets ? 1 : 0 },
+      uCoronaRIn: { value: state.coronaRadii.rIn }, uCoronaROut: { value: state.coronaRadii.rOut },
+      uHistoryDisk: { value: null }, uHistorySky: { value: null },
+      uHistoryJet: { value: null }, uHistoryJetPos: { value: null },
+    };
+    // A uniform whose value is `undefined` uploads as garbage and silently
+    // produces a black still (the observer's u0 was read off the wrong object
+    // once). `null` is a legitimate "not bound yet" placeholder; `undefined`
+    // never is, so fail loudly instead of shipping a blank image.
+    for (const [name, uniform] of Object.entries(captureUniforms)) {
+      if (uniform.value === undefined) throw new Error(`capture uniform ${name} is undefined`);
+    }
+    const captureDisplayUniforms = {
+      ...captureShared,
+      uDisk: { value: null }, uSky: { value: null }, uJet: { value: null }, uJetPos: { value: null },
+      uTexel: { value: new Vector2(1 / renderWidth, 1 / renderHeight) }, uAspect: { value: lens.aspect },
+      uTime: { value: plasmaTime }, uPlasma: { value: state.plasma ? 1 : 0 }, uJets: { value: state.jets ? 1 : 0 },
+      uFocus: { value: { ...focus } },
+    };
+    const captureAccumulateMaterial = new ShaderMaterial({
+      name: "kerr-capture-accumulate", glslVersion: GLSL3, vertexShader: VERTEX,
+      fragmentShader: kerrAccumulateFragment({ volume: state.corona || state.jets }),
+      uniforms: captureUniforms, depthTest: false, depthWrite: false, toneMapped: false,
+    });
+    const captureDisplayMaterial = new ShaderMaterial({
+      name: "kerr-capture-display", glslVersion: GLSL3, vertexShader: VERTEX,
+      fragmentShader: DISPLAY_FRAGMENT,
+      uniforms: captureDisplayUniforms, depthTest: false, depthWrite: false, toneMapped: false,
+    });
+    const denoiseMaterial = new ShaderMaterial({
+      name: "kerr-capture-denoise", glslVersion: GLSL3, vertexShader: VERTEX,
+      fragmentShader: CAPTURE_DENOISE_FRAGMENT,
+      uniforms: {
+        tDiffuse: { value: null }, uTexel: { value: new Vector2(1 / renderWidth, 1 / renderHeight) },
+        uSigma: { value: 0.08 },
+      },
+      depthTest: false, depthWrite: false, toneMapped: false,
+    });
+    const captureScene = new Scene();
+    const captureCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const accumulateQuadCapture = new Mesh(new PlaneGeometry(2, 2), captureAccumulateMaterial);
+    const displayQuadCapture = new Mesh(new PlaneGeometry(2, 2), captureDisplayMaterial);
+    const denoiseQuad = new Mesh(new PlaneGeometry(2, 2), denoiseMaterial);
+    for (const quad of [accumulateQuadCapture, displayQuadCapture, denoiseQuad]) {
+      quad.frustumCulled = false;
+      captureScene.add(quad);
+      quad.visible = false;
+    }
+
+    let captureWriteIndex = 0;
+    const release = () => {
+      for (const target of captureTargets) target.dispose();
+      displayTarget.dispose();
+      denoiseTarget?.dispose();
+      outputTarget.dispose();
+      skyTextureCapture.dispose();
+      accumulateQuadCapture.geometry.dispose();
+      displayQuadCapture.geometry.dispose();
+      denoiseQuad.geometry.dispose();
+      captureAccumulateMaterial.dispose();
+      captureDisplayMaterial.dispose();
+      denoiseMaterial.dispose();
+    };
+
+    try {
+      const result = await runProgressiveCapture({
+        width: renderWidth, height: renderHeight, samples, samplesPerChunk, signal, onProgress,
+        prepare() {},
+        drawSample(sampleIndex) {
+          const history = captureTargets[1 - captureWriteIndex];
+          const write = captureTargets[captureWriteIndex];
+          const [jx, jy] = kerrJitter(sampleIndex);
+          captureUniforms.uJitter.value[0].set(jx, jy);
+          captureUniforms.uHistoryWeight.value = 1 / (sampleIndex + 1);
+          captureUniforms.uHistoryDisk.value = history.textures[0];
+          captureUniforms.uHistorySky.value = history.textures[1];
+          captureUniforms.uHistoryJet.value = history.textures[2];
+          captureUniforms.uHistoryJetPos.value = history.textures[3];
+          const previous = renderer.getRenderTarget();
+          accumulateQuadCapture.visible = true;
+          renderer.setRenderTarget(write);
+          renderer.render(captureScene, captureCamera);
+          accumulateQuadCapture.visible = false;
+          renderer.setRenderTarget(previous);
+          captureWriteIndex = 1 - captureWriteIndex;
+        },
+        async compose() {
+          const accumulated = captureTargets[1 - captureWriteIndex];
+          captureDisplayUniforms.uDisk.value = accumulated.textures[0];
+          captureDisplayUniforms.uSky.value = accumulated.textures[1];
+          captureDisplayUniforms.uJet.value = accumulated.textures[2];
+          captureDisplayUniforms.uJetPos.value = accumulated.textures[3];
+          const previous = renderer.getRenderTarget();
+          displayQuadCapture.visible = true;
+          renderer.setRenderTarget(displayTarget);
+          renderer.render(captureScene, captureCamera);
+          displayQuadCapture.visible = false;
+          let source = displayTarget;
+          if (denoiseTarget) {
+            denoiseMaterial.uniforms.tDiffuse.value = displayTarget.texture;
+            denoiseQuad.visible = true;
+            renderer.setRenderTarget(denoiseTarget);
+            renderer.render(captureScene, captureCamera);
+            denoiseQuad.visible = false;
+            source = denoiseTarget;
+          }
+          const { OutputPass } = await import("three/addons/postprocessing/OutputPass.js");
+          const outputPass = new OutputPass();
+          try {
+            outputPass.render(renderer, outputTarget, source);
+          } finally {
+            outputPass.dispose();
+          }
+          const rgba = new Uint8Array(renderWidth * renderHeight * 4);
+          renderer.readRenderTargetPixels(outputTarget, 0, 0, renderWidth, renderHeight, rgba);
+          renderer.setRenderTarget(previous);
+          // readRenderTargetPixels returns rows bottom-to-top; PNG and the
+          // upscaler expect top-to-bottom.
+          return flipRgbaVertically(rgba, renderWidth, renderHeight);
+        },
+      });
+      let rgba = result.rgba;
+      let finalWidth = renderWidth;
+      let finalHeight = renderHeight;
+      if (factor > 1) {
+        rgba = upscaleRgba(rgba, renderWidth, renderHeight, factor);
+        finalWidth = renderWidth * factor;
+        finalHeight = renderHeight * factor;
+      }
+      const metadata = buildCaptureMetadata({
+        state: normalized,
+        provenance: {
+          registryId: KERR_VIEW_ID,
+          model: provenance.model,
+          status: provenance.status,
+          numericalMethod: provenance.numericalMethod,
+          references: provenance.references,
+        },
+        backend: "webgl2",
+        quality: { requested: budget.requested, effective: budget.effective, budget },
+        resolution: { width: finalWidth, height: finalHeight, renderWidth, renderHeight, upscale: factor, preset: resolved.preset },
+        sampleCount: result.samplesCompleted,
+        seed,
+        commitHash,
+        volume: { corona: state.corona, jets: state.jets },
+        deterministic: { plasmaTime, clockFrozen: reducedMotion, note: "pixel-stable when the plasma clock is frozen (reduced motion or the QA harness)" },
+      });
+      const png = await encodePng({
+        width: finalWidth, height: finalHeight, rgba,
+        textChunks: {
+          Software: "HORIZON Quantum Gravity Atlas",
+          Description: "Kerr observatory ultra-quality still; see the horizon-qga-capture metadata",
+          "horizon-qga-capture": JSON.stringify(metadata),
+        },
+      });
+      return { png, metadata, width: finalWidth, height: finalHeight };
+    } finally {
+      release();
+    }
   }
 
   return {
     mesh,
     sync,
+    captureStill,
     setFocus({ x, y, radius, strength }) {
       displayUniforms.uFocus.value = { x: x * 0.5 + 0.5, y: y * 0.5 + 0.5, z: radius, w: strength };
     },
@@ -547,11 +1007,18 @@ async function webGpuAvailable(preference) {
  *
  * Both integrate the same equations. If the WebGPU path fails at runtime the
  * scene asks to be rebuilt once on the WebGL2 path (`recoverable`).
+ *
+ * The Prompt 05 volumetric layer (corona + jets), like the turbulent disk
+ * texture before it, is implemented on the WebGL2 integrator's 4-target
+ * accumulation MRT; requesting it selects that backend. The WebGPU compute
+ * path retains the smooth Page-Thorne models.
  */
-export async function createKerrRuntime({ backendPreference = "auto", seed = 42, diskModel = "page-thorne" } = {}) {
-  // The turbulence display layer needs its disk-hit MRT. The compute backend
-  // retains the smooth Page–Thorne models until it implements the same pass.
-  if (diskModel !== "page-thorne-turbulent" && await webGpuAvailable(backendPreference)) {
+export async function createKerrRuntime({ backendPreference = "auto", seed = 42, diskModel = "page-thorne", wantsVolume = false } = {}) {
+  // The turbulence display layer needs its disk-hit MRT, and the volumetric
+  // layer needs the per-step emission/absorption sampling; both retain the
+  // WebGL2 integrator until the compute backend implements the same passes.
+  const glslOnly = diskModel === "page-thorne-turbulent" || wantsVolume === true;
+  if (!glslOnly && await webGpuAvailable(backendPreference)) {
     try {
       const { createKerrTslRuntime } = await import("./kerr-material.tsl.js");
       const runtime = createKerrTslRuntime({ seed });
@@ -564,6 +1031,6 @@ export async function createKerrRuntime({ backendPreference = "auto", seed = 42,
       console.warn("Kerr WebGPU compute path unavailable; using the WebGL2 integrator.", error);
     }
   }
-  const runtime = createKerrGlslRuntime({ seed });
+  const runtime = createKerrGlslRuntime({ seed, volume: wantsVolume === true });
   return Object.assign(runtime, { kind: "webgl2", recoverable: () => false });
 }

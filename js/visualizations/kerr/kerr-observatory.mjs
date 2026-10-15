@@ -36,6 +36,8 @@ import {
 import { blackbodyToSrgb } from "../../science/spectrum.mjs";
 import { getVisualizationProvenance, registerVisualization } from "../../science/provenance.mjs";
 import { KERR_PLASMA, plasmaEdgeOpacity } from "./kerr-plasma.mjs";
+import { PLASMA_VOLUME } from "./plasma-volume.mjs";
+import { JET_FIELD, blandfordZnajekSpinFactor } from "./jet-field.mjs";
 
 /* ------------------------------------------------------------------ */
 /* Identity, provenance                                                */
@@ -55,7 +57,9 @@ export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
     "Local emission is blackbody at the Page-Thorne (or Newtonian Shakura-Sunyaev) effective temperature; the peak temperature is DISPLAY-SCALED to 5000 K and is not a measured value",
     "The default disk is optically thick (opaque), as blackbody emission assumes; per-crossing transmittance of the translucent models is a display parameter that makes image orders separable, not a measured optical depth",
     "HEURISTIC plasma texture (turbulent model only): a seeded unit-mean log-normal emissivity field, advected at the local Kerr angular velocity Omega(r) and renewed every orbital period, stands in for MRI turbulence; the azimuthally averaged flux stays Page-Thorne, the filament shapes are not an MHD solution",
-    "Disk animation runs at a display time scale of 14 GM/c^3 per second and ignores light-travel-time differences between image points (fast-light snapshot); reduced motion freezes it",
+    "HEURISTIC volumetric corona (Prompt 05): an optically thin, flaring slab (H = 0.12 r^1.1) hugging the disk between the ISCO and r_out + 5 GM/c^2, with a seeded frozen clumpy realization, corotating at the table's Omega(r) so it shares the disk's g and g^4 beaming; a physical corona emits in X-rays, so the rendered blue-white glow is a display mapping of its thermal structure, not an observation",
+    "HEURISTIC bipolar jets (Prompt 05): the Blandford-Znajek spin relationship P_BZ ~ (a*/(1 + sqrt(1-a*^2)))^2 is established and scales the jet amplitude (zero spin, no jet), but the rendering — parabolic collimation, a Gamma -> 8 spine inside a Gamma -> 2.5 sheath, optically thin power-law emissivity with spectral index alpha = 0.5, seeded knot turbulence advected at 0.55 c, and a display colour mapping of synchrotron ageing — is a phenomenological model, not a GRMHD simulation; the jet frequency shift combines the ZAMO lapse with the special-relativistic Doppler factor of the lensed photon direction, an approximation on the axis",
+    "Disk animation runs at a display time scale of 14 GM/c^3 per second and ignores light-travel-time differences between image points (fast-light snapshot); reduced motion freezes it; the volumetric corona is a frozen snapshot and the jet knots advect with the same display clock",
     "Background stars are a seeded synthetic catalogue at infinity, rasterized into a filtered sky map; not an observed sky",
   ],
   validity: [
@@ -64,13 +68,18 @@ export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
     "Photon-ring subimages beyond the resolved image order are not drawn; no ring is thickened for aesthetics",
     "Finite escape radius 160 GM/c^2: sky direction comes from the ray velocity, residual error well below one star width",
     "Disk outer radius 24 GM/c^2 is a display truncation; the turbulent disk thins smoothly to transparent beyond 0.55 r_out",
+    "The volumetric layer (corona + jets) is composited front-to-back along the geodesic with the ZAMO spatial path length (the azimuthal metric coefficient approximated by Sigma; exact for a = 0 and for the polar part), depth-ordered with the disk crossings; the jets are optically thin and the corona's peak optical depth is ~0.2, so neither hides the shadow or the photon ring",
+    "The volumetric layer renders only on the WebGL2 integrator at balanced or ultra quality (capability gate); the WebGPU compute path and the performance budget retain the smooth Prompt 04 image, and the status readout says so",
+    "No sound-in-vacuum shockwaves, fire textures, screen-space god rays or lens flare are added to the observatory: the scene has no physical fragment depth for those passes, and the raymarched emission/absorption already composites the plasma in physical order",
   ],
   numericalMethod:
     "Fixed-form RK4 in Mino time on Carter's equations; the CPU reference and WebGL2 backend use a pole-regular unit-vector representation of polar motion, while the WebGPU smooth-disk backend retains the separated u and phi representation; "
     + "first integrals re-imposed every step; geometric step law dlambda = k min(1/r, (r - r+)/(|r'| + 1)); disk crossings by sign change of the polar coordinate with linear interpolation; "
+    + "volumetric corona and jets sampled per RK4 step in BL-Cartesian coordinates with the ZAMO spatial path length, composited front-to-back (emission/absorption) and depth-ordered with the disk crossings; jet beaming from the lensed photon direction and the ZAMO lapse; "
     + "blackbody chromaticity from the committed CIE 1931 table; synthetic stars rasterized into a spherical-Gaussian sky map with a solid-angle-weighted mip chain and lensed-footprint filtering; "
-    + "WebGL2 turbulent model evaluates the plasma texture per frame from the stored disk-plane hit position and band-limits it by its screen-space footprint; "
-    + "temporal accumulation as a running mean of Halton-jittered samples, reset on any geometry, camera, resolution, backend or quality change.",
+    + "WebGL2 turbulent model evaluates the plasma texture per frame from the stored disk-plane hit position and band-limits it by its screen-space footprint; the jet knot modulation is evaluated per frame at the luminance-weighted mean jet position; "
+    + "progressive ultra-quality stills render offscreen at 2K/4K/8K under a measured GPU-memory guard, accumulate Halton-jittered samples, denoise, and embed a metadata sidecar (state, provenance, backend, sample count, commit hash) in the PNG; "
+    + "temporal accumulation as a running mean of Halton-jittered samples, reset on any geometry, camera, resolution, backend, quality or volume-flag change.",
   references: [
     "Carter (1968), Phys. Rev. 174, 1559",
     "Bardeen (1973), Timelike and null geodesics in the Kerr metric, Les Houches",
@@ -79,6 +88,9 @@ export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
     "Luminet (1979), A&A 75, 228",
     "James, von Tunzelmann, Franklin & Thorne (2015), Class. Quantum Grav. 32, 065001",
     "Gralla, Lupsasca & Marrone (2020), Phys. Rev. D 102, 124004",
+    "Blandford & Znajek (1977), MNRAS 179, 433",
+    "Tchekhovskoy, Narayan & McKinney (2010), ApJ 711, 50",
+    "McKinney & Narayan (2007a), MNRAS 375, 513",
   ],
 });
 
@@ -101,6 +113,8 @@ export const KERR_STATE_DEFAULTS = Object.freeze({
   bhRenderQuality: "balanced",
   bhExposure: 0,
   bhAnnotations: false,
+  bhCorona: true,
+  bhJets: true,
 });
 const KERR_V1_DEFAULTS = Object.freeze({ ...KERR_STATE_DEFAULTS, bhDiskModel: "page-thorne", bhAnnotations: true });
 
@@ -163,7 +177,9 @@ function finite(value, name) {
 
 /**
  * Normalize atlas state into the observatory's domain. Unknown versions and
- * missing fields fall back to the defaults, so old links keep working.
+ * missing fields fall back to the defaults, so old links keep working. The
+ * Prompt 05 volume keys (bhCorona, bhJets) are additive with safe defaults:
+ * v2 links without them render exactly as before the keys existed.
  */
 export function normalizeKerrState(state = {}) {
   const version = state.bhStateVersion;
@@ -171,6 +187,7 @@ export function normalizeKerrState(state = {}) {
   const known = version === undefined || version === null || version === 1 || version === KERR_STATE_VERSION;
   const read = (key) => (known && state[key] !== undefined ? state[key] : d[key]);
   const pick = (key) => (KERR_ENUMS[key].includes(read(key)) ? read(key) : d[key]);
+  const flag = (key) => (read(key) === false ? false : true);
   return Object.freeze({
     bhStateVersion: KERR_STATE_VERSION,
     massLog10: clamp(finite(state.bhMass ?? 1, "bhMass"), 0, 9),
@@ -181,6 +198,8 @@ export function normalizeKerrState(state = {}) {
     quality: pick("bhRenderQuality"),
     exposureEv: clamp(finite(read("bhExposure"), "bhExposure"), ...KERR_LIMITS.exposureEv),
     annotations: read("bhAnnotations") !== false,
+    corona: flag("bhCorona"),
+    jets: flag("bhJets"),
   });
 }
 
@@ -216,6 +235,11 @@ const GOVERNOR_RAY_STEPS = Object.freeze({ low: 48, medium: 96, ultra: 160 });
  * - reduced motion removes temporal accumulation and compensates with
  *   deterministic spatial supersampling (4 jittered rays) so edges stay clean
  * - the adaptive governor scales maxSteps by its current raySteps ratio
+ * - `volume` is the capability gate for the Prompt 05 volumetric layer
+ *   (corona + jets): it needs the per-step emission/absorption sampling and
+ *   the 4-target accumulation MRT, so it is off on the performance budget
+ *   and on the WebGL2 integrator only (the WebGPU compute path retains the
+ *   smooth disk models, as it already does for the turbulent texture)
  */
 export function kerrQualityBudget(quality, { detail3d = "medium", reducedMotion = false, governorRaySteps = null } = {}) {
   const requested = KERR_ENUMS.bhRenderQuality.includes(quality) ? quality : KERR_STATE_DEFAULTS.bhRenderQuality;
@@ -236,7 +260,27 @@ export function kerrQualityBudget(quality, { detail3d = "medium", reducedMotion 
     temporalSamples: reducedMotion ? 1 : base.temporalSamples,
     samplesPerFrame: reducedMotion ? Math.max(4, base.samplesPerFrame) : base.samplesPerFrame,
     sky: base.sky,
+    volume: effective !== "performance",
   });
+}
+
+/**
+ * Why the volumetric layer is (or is not) running, in the order the gates
+ * apply. The control deck prints this verbatim, so a CPU rasterizer never
+ * reads as "the user turned it off" and a WebGPU session never reads as a
+ * quality choice.
+ *
+ *   webgpu   — the compute path serves the smooth disk models only
+ *   software — a CPU rasterizer is clamped to the low tier
+ *   quality  — the effective tier is the performance budget
+ *   toggles  — both the corona and the jets are switched off
+ *   on       — the layer is rendering
+ */
+export function kerrVolumeReason({ backend = "webgl2", softwareClamped = false, budget = null, corona = false, jets = false } = {}) {
+  if (backend !== "webgl2") return "webgpu";
+  if (softwareClamped) return "software";
+  if (budget?.volume !== true) return "quality";
+  return corona || jets ? "on" : "toggles";
 }
 
 /* ------------------------------------------------------------------ */
@@ -427,6 +471,7 @@ export function buildKerrRenderState(normalized, { observer, budget, backend = "
   const colorTable = cached("color", () => buildColorTable());
   const coef = kerrObserverCoefficients(aStar, r0, theta0);
   const effectiveBudget = budget ?? kerrQualityBudget(normalized.quality);
+  const volumeCapable = backend === "webgl2" && effectiveBudget.volume === true;
   return Object.freeze({
     normalized,
     aStar,
@@ -440,6 +485,12 @@ export function buildKerrRenderState(normalized, { observer, budget, backend = "
     softEdge: model.softEdge === true,
     exposure: 2 ** normalized.exposureEv,
     annotations: normalized.annotations,
+    corona: normalized.corona === true && volumeCapable,
+    jets: normalized.jets === true && volumeCapable,
+    coronaRadii: Object.freeze({
+      rIn: Math.max(radii.rPlus + 0.5, rIsco - PLASMA_VOLUME.innerMargin),
+      rOut: rOut + PLASMA_VOLUME.outerMargin,
+    }),
     observer: Object.freeze({ r0, theta0, phi0, u0: Math.cos(theta0), coef }),
     budget: effectiveBudget,
     backend,
@@ -774,12 +825,14 @@ function q(value) {
 /** Stable key; any change invalidates the accumulated history. */
 export function kerrAccumulationKey({
   aStar, massLog10, inclinationDeg, observer, resolution, backend, quality, diskModel, budget,
+  corona = false, jets = false,
 }) {
   return [
     q(aStar), q(massLog10), q(inclinationDeg),
     q(observer.r0), q(observer.theta0), q(observer.phi0),
     resolution[0], resolution[1], backend, quality, diskModel,
     budget?.maxSteps ?? 0, budget?.samplesPerFrame ?? 1,
+    corona ? 1 : 0, jets ? 1 : 0,
   ].join("|");
 }
 
@@ -893,6 +946,19 @@ export function kerrExportMetadata(atlasState, runtime = {}) {
       plasma: renderState.plasma
         ? { status: "heuristic", seed: Math.trunc(Number(atlasState.seed ?? 42)) || 42, ...KERR_PLASMA }
         : null,
+      volume: {
+        capability: renderState.budget.volume === true ? "available" : "gated-off",
+        corona: renderState.corona
+          ? { status: PLASMA_VOLUME.status, radii: renderState.coronaRadii, ...PLASMA_VOLUME }
+          : null,
+        jets: renderState.jets
+          ? {
+            status: JET_FIELD.status,
+            blandfordZnajekSpinFactor: blandfordZnajekSpinFactor(renderState.aStar),
+            ...JET_FIELD,
+          }
+          : null,
+      },
       observerCoefficients: renderState.observer.coef,
       constants: KERR_RENDER_CONSTANTS,
     },

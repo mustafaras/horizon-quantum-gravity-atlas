@@ -23,3 +23,18 @@ export function detectSoftwareRenderer() {
   } catch { cached = null; }
   return cached;
 }
+
+/**
+ * The clamp the render session applies to CPU rasterizers: the detected
+ * rasterizer name, or `null` when the caller opted out with
+ * `QGA_RENDER_OPTIONS.softwareClamp === false`.
+ *
+ * Consumers that need the *effective* quality tier rather than the requested
+ * one must go through this, so the opt-out is honoured in exactly one place
+ * and a module can never disagree with the session about what the device can
+ * afford.
+ */
+export function softwareRendererClamp() {
+  const options = globalThis.QGA_RENDER_OPTIONS || {};
+  return options.softwareClamp === false ? null : detectSoftwareRenderer();
+}

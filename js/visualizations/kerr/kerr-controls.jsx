@@ -18,6 +18,7 @@ const KERR_FOCUS_BUTTONS = [
   ["direct-disk", "Direct disk"],
   ["higher-order", "Higher-order image"],
 ];
+const KERR_CAPTURE_PRESETS = [["2k", "2K"], ["4k", "4K"], ["8k", "8K"]];
 
 function useKerrRuntimeSnapshot(period = 400) {
   const [snapshot, setSnapshot] = useState(() => window.__qgaKerrRuntime || null);
@@ -37,6 +38,20 @@ function KerrRuntimeStatus() {
     return <div className="kerr-status small dim" role="status">Observatory renderer starting…</div>;
   }
   const b = info.budget;
+  const volume = info.volume || { corona: false, jets: false, capable: false };
+  // The runtime names the gate that stopped the layer (kerrVolumeReason), so a
+  // CPU rasterizer never reads as a quality choice the user made.
+  const volumeNote = {
+    webgpu: "off (WebGL2 integrator only)",
+    software: "off (software rasterizer)",
+    quality: "off (performance quality gate)",
+    toggles: "off (toggles)",
+    on: "on",
+  }[volume.reason] || (info.backend !== "webgl2"
+    ? "off (WebGL2 integrator only)"
+    : !volume.capable
+      ? "off (performance quality gate)"
+      : (volume.corona || volume.jets) ? "on" : "off (toggles)");
   return (
     <div className="kerr-status" role="status" aria-label="Kerr observatory render budget">
       <span className="kerr-status-item"><em>backend</em>{info.backend}</span>
@@ -44,12 +59,76 @@ function KerrRuntimeStatus() {
       <span className="kerr-status-item"><em>ray steps</em>{b.maxSteps}</span>
       <span className="kerr-status-item"><em>rays / px / frame</em>{b.samplesPerFrame}</span>
       <span className="kerr-status-item"><em>temporal</em>{info.frames} / {b.temporalSamples}</span>
+      <span className="kerr-status-item"><em>plasma &amp; jets</em>{volumeNote}</span>
       <span className="kerr-status-item"><em>accumulation resets</em>{info.resets}</span>
     </div>
   );
 }
 
-function KerrObservatoryControls({ state, setState, onCameraRequest, onFocusKind, focusKind }) {
+function KerrCapturePanel({ onCapture }) {
+  const [preset, setPreset] = useState("2k");
+  const [denoise, setDenoise] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const cancelRef = useRef(null);
+
+  const run = async () => {
+    if (busy || !onCapture) return;
+    setBusy(true);
+    setProgress(0);
+    setError(null);
+    setMessage(null);
+    const signal = { aborted: false };
+    cancelRef.current = signal;
+    try {
+      const result = await onCapture({
+        preset, denoise, samples: 96, signal,
+        onProgress: ({ fraction }) => setProgress(fraction),
+        commitHash: window.QGA_BUILD_INFO?.commitHash ?? null,
+      });
+      const href = URL.createObjectURL(new Blob([result.png], { type: "image/png" }));
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `horizon-kerr-${result.width}x${result.height}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(href), 0);
+      setMessage(`Captured ${result.width}×${result.height} · ${result.metadata.sampleCount} samples · ${result.metadata.backend}`);
+    } catch (err) {
+      setError(err && err.message ? err.message : String(err));
+    } finally {
+      cancelRef.current = null;
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="kerr-control-group kerr-capture" role="group" aria-label="Ultra-quality still capture">
+      <span className="kerr-control-label">Capture</span>
+      {KERR_CAPTURE_PRESETS.map(([key, label]) => (
+        <button key={key} type="button" className={"kerr-chip" + (preset === key ? " on" : "")}
+          aria-pressed={preset === key} disabled={busy} onClick={() => setPreset(key)}>{label}</button>
+      ))}
+      <button type="button" className={"kerr-chip" + (denoise ? " on" : "")}
+        aria-pressed={denoise} disabled={busy} onClick={() => setDenoise(!denoise)}>denoise</button>
+      <button type="button" className="btn" onClick={run} disabled={busy || !onCapture}>
+        {busy ? `Capturing… ${Math.round(progress * 100)}%` : "Capture still"}
+      </button>
+      {busy ? (
+        <React.Fragment>
+          <progress className="kerr-capture-progress" value={progress} max={1} aria-label="Capture progress"></progress>
+          <button type="button" className="btn" onClick={() => { if (cancelRef.current) cancelRef.current.aborted = true; }}>Cancel</button>
+        </React.Fragment>
+      ) : null}
+      {message ? <p className="small dim" role="status">{message}</p> : null}
+      {error ? <p className="small kerr-capture-error" role="alert">{error}</p> : null}
+      <p className="kerr-legend small dim">Progressive offscreen render with the ultra ray budget, Halton-jittered sample accumulation, edge-aware denoise and the pipeline tone map. The PNG embeds a metadata sidecar (state, provenance, backend, samples, commit).</p>
+    </div>
+  );
+}
+
+function KerrObservatoryControls({ state, setState, onCameraRequest, onFocusKind, focusKind, onCapture }) {
   const incl = state.bhInclination;
   const dist = state.bhObserverDistance;
   return (
@@ -80,6 +159,15 @@ function KerrObservatoryControls({ state, setState, onCameraRequest, onFocusKind
               aria-pressed={state.bhRenderQuality === key} onClick={() => setState({ bhRenderQuality: key })}>{label}</button>
           ))}
         </div>
+        <div className="kerr-control-group" role="group" aria-label="Volumetric plasma and jets">
+          <span className="kerr-control-label">Plasma &amp; jets</span>
+          <button type="button" className={"kerr-chip" + (state.bhCorona !== false ? " on" : "")}
+            aria-pressed={state.bhCorona !== false} onClick={() => setState({ bhCorona: state.bhCorona === false })}>corona</button>
+          <button type="button" className={"kerr-chip" + (state.bhJets !== false ? " on" : "")}
+            aria-pressed={state.bhJets !== false} onClick={() => setState({ bhJets: state.bhJets === false })}>jets</button>
+          <button type="button" className="kerr-chip" title="Look down the jet axis: the approaching jet Doppler-beams and brightens"
+            onClick={() => { setState({ bhInclination: 18 }); onCameraRequest({ inclination: 18 }); }}>view down the jet</button>
+        </div>
         <div className="kerr-control-group" role="group" aria-label="Annotations">
           <span className="kerr-control-label">Annotations</span>
           <button type="button" className={"kerr-chip" + (state.bhAnnotations ? " on" : "")}
@@ -100,12 +188,20 @@ function KerrObservatoryControls({ state, setState, onCameraRequest, onFocusKind
           </button>
         </div>
       </div>
+      <KerrCapturePanel onCapture={onCapture}></KerrCapturePanel>
       {state.bhAnnotations ? (
         <p className="kerr-legend small" aria-label="Image-order tint legend">
           <span className="kerr-swatch n0"></span> n = 0 direct image (true colour)
           <span className="kerr-swatch n1"></span> n = 1 (cyan tint)
           <span className="kerr-swatch n2"></span> n ≥ 2 (magenta tint) — the tint is an annotation aid, not a physical colour.
           Orders beyond the ray budget are not drawn and no ring is thickened.
+        </p>
+      ) : null}
+      {state.bhJets !== false ? (
+        <p className="kerr-legend small dim" aria-label="Jet model legend">
+          Jets are a heuristic Blandford–Znajek model: the spin relationship P<sub>BZ</sub> ∝ (a★/(1+√(1−a★²)))² is established and
+          scales the jet with spin (a★ = 0 → no jet), but the collimation, spine/sheath flow and knot turbulence are phenomenological,
+          not GRMHD. Relativistic beaming hides the jets near edge-on views — press “view down the jet” to see the approaching jet brighten.
         </p>
       ) : null}
       <KerrRuntimeStatus></KerrRuntimeStatus>
