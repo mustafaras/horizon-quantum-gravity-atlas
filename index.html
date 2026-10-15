@@ -471,13 +471,21 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .kerr-readout.lead { background: rgba(84,174,255,0.05); }
 .kerr-readout-value .unit { font-size: 10.5px; color: var(--text-dim); margin-left: 5px; }
 .kerr-readout-formula {
-  margin-top: 5px; font: 400 8.5px/1.3 var(--font-mono);
-  color: rgba(148,176,224,0.62); overflow-wrap: anywhere;
+  margin-top: 6px; font: 400 11px/1.35 var(--font-mono);
+  color: rgba(198,216,242,0.92); overflow-wrap: anywhere;
 }
 .kerr-readout-sub {
-  margin-top: 3px; font: 400 8.5px/1.35 var(--font-mono);
-  color: rgba(84,174,255,0.78); overflow-wrap: anywhere;
+  margin-top: 4px; font: 400 10px/1.4 var(--font-mono);
+  color: rgba(122,192,255,0.92); overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
+}
+/* KaTeX typesets the governing relation and its substituted numbers. Math never
+   wraps, so a narrow card scrolls horizontally instead of breaking the grid. */
+.kerr-readout-formula .katex, .kerr-readout-sub .katex { font-size: 1em; color: inherit; }
+.kerr-readout-formula, .kerr-readout-sub { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.kerr-readout-formula::-webkit-scrollbar, .kerr-readout-sub::-webkit-scrollbar { height: 3px; }
+.kerr-readout-formula::-webkit-scrollbar-thumb, .kerr-readout-sub::-webkit-scrollbar-thumb {
+  background: rgba(120,160,220,0.32); border-radius: 2px;
 }
 .kerr-readout-pair { margin-top: 4px; }
 .kerr-readout-pair > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -550,11 +558,17 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   text-transform: uppercase; color: rgba(148,176,224,0.8);
 }
 .kerr-formulation-sym {
-  font: 400 11px/1.4 var(--font-mono); color: var(--head); overflow-wrap: anywhere;
+  font: 400 13px/1.5 var(--font-mono); color: var(--head); overflow-wrap: anywhere;
 }
 .kerr-formulation-sub {
-  grid-column: 2; font: 400 9px/1.45 var(--font-mono);
-  color: rgba(84,174,255,0.8); overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
+  grid-column: 2; font: 400 10.5px/1.5 var(--font-mono);
+  color: rgba(122,192,255,0.9); overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
+}
+.kerr-formulation-sym .katex, .kerr-formulation-sub .katex { font-size: 1em; color: inherit; }
+.kerr-formulation-sym, .kerr-formulation-sub { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.kerr-formulation-sym::-webkit-scrollbar, .kerr-formulation-sub::-webkit-scrollbar { height: 3px; }
+.kerr-formulation-sym::-webkit-scrollbar-thumb, .kerr-formulation-sub::-webkit-scrollbar-thumb {
+  background: rgba(120,160,220,0.32); border-radius: 2px;
 }
 .kerr-formulation-val {
   grid-row: span 2; align-self: center; text-align: right;
