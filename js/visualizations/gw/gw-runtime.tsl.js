@@ -5,8 +5,8 @@
  * particle reads h+(t − r·lag) and hx(t − r·lag) from a storage buffer
  * staging of the contract signal and applies the same quadrupolar tidal map
  * as the WebGL2 backend, writing displaced positions into an instancedArray
- * consumed directly by a SpriteNodeMaterial field (positionNode/sizeNode/
- * colorNode bound to the buffers through toAttribute()).
+ * consumed directly by a SpriteNodeMaterial field (positionNode/scaleNode/
+ * colorNode/opacityNode bound to the buffers through toAttribute()).
  *
  * Requires the native WebGPU backend (renderer.compute); gw-runtime.mjs
  * reaches this file only when an adapter exists, and any failure falls back
@@ -15,7 +15,7 @@
 
 import {
   Fn, Return, cos, float, instanceIndex, instancedArray, max, min, mix,
-  uniform, vec3,
+  positionGeometry, smoothstep, uniform, vec3,
 } from "three/tsl";
 import {
   AdditiveBlending, BoxGeometry, DoubleSide, Group, Mesh, MeshBasicNodeMaterial,
@@ -82,7 +82,13 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
   // every sprite renders at scale 1, blowing the additive field out to white.
   material.scaleNode = energyBuffer.toAttribute().mul(0.16).add(0.04);
   material.colorNode = mix(vec3(0.165, 0.42, 1.0), vec3(0.616, 0.953, 1.0), energyBuffer.toAttribute());
-  material.opacityNode = energyBuffer.toAttribute().mul(0.7).add(0.18);
+  // Mirror the WebGL2 backend's fragment math: a round soft-edged dot
+  // (smoothstep over the squared quad radius, same 0.015→0.25 ramp as the
+  // GLSL FRAG). Without this the sprites are hard-edged squares and the
+  // additive field saturates to a white sheet.
+  const r2 = positionGeometry.xy.dot(positionGeometry.xy);
+  const falloff = float(1).sub(smoothstep(float(0.015), float(0.25), r2));
+  material.opacityNode = energyBuffer.toAttribute().mul(0.7).add(0.18).mul(falloff);
   material.blending = AdditiveBlending;
   material.depthWrite = false;
   material.transparent = true;
