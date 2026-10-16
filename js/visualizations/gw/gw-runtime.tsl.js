@@ -77,7 +77,10 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
 
   const material = new SpriteNodeMaterial();
   material.positionNode = posBuffer.toAttribute();
-  material.sizeNode = energyBuffer.toAttribute().mul(0.16).add(0.04);
+  // SpriteNodeMaterial has no sizeNode (r186): per-particle size is a
+  // world-space scale multiplier. A stray sizeNode is silently ignored and
+  // every sprite renders at scale 1, blowing the additive field out to white.
+  material.scaleNode = energyBuffer.toAttribute().mul(0.16).add(0.04);
   material.colorNode = mix(vec3(0.165, 0.42, 1.0), vec3(0.616, 0.953, 1.0), energyBuffer.toAttribute());
   material.opacityNode = energyBuffer.toAttribute().mul(0.7).add(0.18);
   material.blending = AdditiveBlending;
