@@ -752,6 +752,32 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .gw-time { min-width: 0; flex: 1; text-align: right; }
   .gw-state-pill { flex-wrap: wrap; }
   .gw-state-text { flex-basis: 100%; }
+  .gw-audio-bar { flex-wrap: wrap; }
+}
+
+/* ---------- Spacetime instrument + sonification (Prompt 06) ---------- */
+.gw-audio-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: nowrap;
+  padding: 10px 14px; border: 1px solid rgba(90,185,255,0.22); border-radius: 12px;
+  background: linear-gradient(180deg, rgba(12,22,40,0.72), rgba(8,14,26,0.85));
+}
+.gw-audio-enable {
+  font: 600 11px "IBM Plex Mono", monospace; letter-spacing: 0.08em;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(90,185,255,0.45); color: #a8d8ff;
+  background: rgba(90,185,255,0.08); transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+.gw-audio-enable:hover { background: rgba(90,185,255,0.16); }
+.gw-audio-enable.on {
+  color: #061019; background: linear-gradient(180deg, #8fd0ff, #4aa8ff);
+  border-color: rgba(143,208,255,0.9); box-shadow: 0 0 16px rgba(74,168,255,0.45);
+}
+.gw-audio-note { font: 10px "IBM Plex Mono", monospace; color: rgba(148,176,224,0.65); margin-left: auto; }
+.gw-audio-error { font: 10px "IBM Plex Mono", monospace; color: #ffb0b0; }
+.gw-instrument-figure canvas { border-radius: 10px; }
+.gw-instrument-fallback {
+  padding: 26px 18px; text-align: center; font: 11px "IBM Plex Mono", monospace;
+  color: rgba(148,176,224,0.7); border: 1px dashed rgba(90,185,255,0.3); border-radius: 10px;
 }
 
 /* ---------- QFT amplitude room ---------- */

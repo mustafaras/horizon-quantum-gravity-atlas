@@ -10,6 +10,7 @@
       "bhRenderQuality": "bhq", "bhExposure": "bhe", "bhAnnotations": "bha", "bhCorona": "bhc", "bhJets": "bhj",
       "gwMode": "gwm", "gwEvent": "gwe", "gwDetector": "gwd", "gwStart": "gws",
       "gwDuration": "gwt", "gwM1": "gwm1", "gwM2": "gwm2", "seed": "seed",
+      "gwAudioMode": "gwam", "gwPitch": "gwp", "gwVolume": "gwv", "gwLoop": "gwl",
       "qftProcess": "qfp", "qftSqrtS": "qfs", "qftAngle": "qfa", "qftPhotonX": "qfx",
       "grPreset": "grp", "grBeta": "grb", "grAt": "grat", "grAx": "grax", "grBt": "grbt", "grBx": "grbx",
       "rgPreset": "rgp", "rgPresetOrigin": "rgpo", "rgModel": "rgm", "rgG0": "rgg", "rgMu0": "rgmu",

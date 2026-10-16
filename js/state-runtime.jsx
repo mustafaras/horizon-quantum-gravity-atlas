@@ -88,7 +88,8 @@ function qgaExportJson(state, extra = {}) {
         references: ["Gross & Wilczek (1973)", "Politzer (1973)", "Peskin & Schroeder (1995)", "Weinberg (1979)"],
       },
     };
-  })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {}) : {};
+  })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
+    : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));
