@@ -5,6 +5,7 @@ const QGA_DEFAULT_STATE = {
   bhRenderQuality: "balanced", bhExposure: 0, bhAnnotations: false, bhCorona: true, bhJets: true,
   gwMode: "generated", gwEvent: "GW150914", gwDetector: "H1",
   gwStart: 1126259446, gwDuration: 16, gwM1: 36, gwM2: 29, seed: 42,
+  gwAudioMode: "original", gwPitch: 1, gwVolume: 0.7, gwLoop: false,
   qftProcess: "s-channel", qftSqrtS: 10, qftAngle: 0, qftPhotonX: 0.5,
   grPreset: "timelike", grBeta: 0.35, grAt: 0, grAx: -1.35, grBt: 2.6, grBx: 1.1,
   rgPreset: "qcd", rgPresetOrigin: "qcd", rgModel: "qcd", rgG0: 1.218, rgMu0: 2, rgLogMin: -1, rgLogMax: 8,
@@ -16,6 +17,7 @@ const QGA_STATE_KEYS = {
   bhRenderQuality: "bhq", bhExposure: "bhe", bhAnnotations: "bha", bhCorona: "bhc", bhJets: "bhj",
   gwMode: "gwm", gwEvent: "gwe", gwDetector: "gwd", gwStart: "gws",
   gwDuration: "gwt", gwM1: "gwm1", gwM2: "gwm2", seed: "seed",
+  gwAudioMode: "gwam", gwPitch: "gwp", gwVolume: "gwv", gwLoop: "gwl",
   qftProcess: "qfp", qftSqrtS: "qfs", qftAngle: "qfa", qftPhotonX: "qfx",
   grPreset: "grp", grBeta: "grb", grAt: "grat", grAx: "grax", grBt: "grbt", grBx: "grbx",
   rgPreset: "rgp", rgPresetOrigin: "rgpo", rgModel: "rgm", rgG0: "rgg", rgMu0: "rgmu", rgLogMin: "rglo",
@@ -25,6 +27,7 @@ const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
   view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
+  gwAudioMode: ["original", "shifted"],
   qftProcess: ["s-channel", "t-channel", "compton"], grPreset: ["timelike", "spacelike", "null", "simultaneity", "twin", "custom"],
   rgPreset: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety", "custom"],
   rgPresetOrigin: ["qed", "qcd", "gaussian", "uv-toy", "ir-toy", "asymptotic-safety"],
@@ -32,7 +35,7 @@ const QGA_ENUMS = {
   bhDiskModel: ["page-thorne-turbulent", "page-thorne", "page-thorne-opaque", "newtonian"],
   bhRenderQuality: ["performance", "balanced", "ultra"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "gwPitch", "gwVolume", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
 // Unversioned and v1 Kerr links retain the smooth disk/annotation defaults.
 // New black-hole links carry bhv=2, making the turbulent default unambiguous.
 // The Prompt 05 volume keys (bhCorona, bhJets) are additive with safe
@@ -49,7 +52,7 @@ function qgaReadState(search = window.location.search) {
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
-    else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets") {
+    else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets" || key === "gwLoop") {
       if (raw === "true" || raw === "false") state[key] = raw === "true";
     }
     else if (QGA_NUMBERS.includes(key) && Number.isFinite(Number(raw))) state[key] = Number(raw);
@@ -73,6 +76,10 @@ function qgaReadState(search = window.location.search) {
   state.gwDuration = qgaClamp(Math.round(state.gwDuration), 1, 32); state.seed = Math.trunc(state.seed) || 42;
   state.gwM1 = qgaClamp(Math.round(state.gwM1), 5, 200); state.gwM2 = qgaClamp(Math.round(state.gwM2), 5, 200);
   state.gwEvent = /^[A-Za-z0-9_-]{3,40}$/.test(state.gwEvent) ? state.gwEvent : QGA_DEFAULT_STATE.gwEvent;
+  // GW instrument (Prompt 06): playback-shaping keys, additive with safe
+  // defaults; audio is never enabled by a URL, only by an in-page gesture.
+  state.gwPitch = qgaClamp(state.gwPitch, 0.25, 4);
+  state.gwVolume = qgaClamp(state.gwVolume, 0, 1);
   state.qftSqrtS = qgaClamp(state.qftSqrtS, 1, 200);
   state.qftAngle = qgaClamp(state.qftAngle, -1, 1);
   state.qftPhotonX = qgaClamp(state.qftPhotonX, 0.05, 20);
@@ -201,7 +208,8 @@ function qgaExportJson(state, extra = {}) {
         references: ["Gross & Wilczek (1973)", "Politzer (1973)", "Peskin & Schroeder (1995)", "Weinberg (1979)"],
       },
     };
-  })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {}) : {};
+  })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
+    : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));

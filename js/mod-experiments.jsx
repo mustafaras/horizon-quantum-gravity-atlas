@@ -1192,6 +1192,63 @@ const GW_PHASE_LABEL = {
   cancelled: "Cancelled",
 };
 
+/* ---------- Spacetime instrument + sonification (Prompt 06) ---------- */
+
+/* Energy-weighted centroid of the 20 Hz–1 kHz analysis band; this is the
+   frequency the audibilization maps onto A4 = 440 Hz. Falls back to a sane
+   centre for degenerate inputs so audio setup can never crash the theatre. */
+function gwBandCenter(samples, sampleRate) {
+  const GW = window.QGA_GW;
+  try {
+    const psd = GW.estimatePsd(samples, { sampleRate, segmentSize: 128, hop: 64 });
+    const hi = Math.min(GW.GW_BAND_DEFAULTS.fHigh, sampleRate / 2);
+    let num = 0, den = 0;
+    for (let i = 0; i < psd.freqs.length; i++) {
+      const f = psd.freqs[i];
+      if (f < GW.GW_BAND_DEFAULTS.fLow || f > hi) continue;
+      num += f * psd.psd[i]; den += psd.psd[i];
+    }
+    return den > 0 && num / den > 0 ? num / den : 150;
+  } catch {
+    return 150;
+  }
+}
+
+function GWAudioConsole({ signal, audioOn, error, onEnable, onDisable, onAudioCtl }) {
+  const [atlasState, setAtlasState] = useQGAState();
+  const mode = atlasState.gwAudioMode;
+  const ctl = (patch) => { setAtlasState(patch); onAudioCtl(patch); };
+  return (
+    <div className="gw-audio-bar" aria-label="Sonification controls">
+      <button className={"gw-audio-enable" + (audioOn ? " on" : "")} aria-pressed={audioOn}
+        onClick={() => (audioOn ? onDisable() : onEnable())}>
+        {audioOn ? "■ Audio on" : "▶ Enable audio"}
+      </button>
+      <div className="kerr-control-group" aria-label="Audibilization mode">
+        <span className="kerr-control-label">Mode</span>
+        <button className={"kerr-chip" + (mode === "original" ? " on" : "")} aria-pressed={mode === "original"}
+          onClick={() => ctl({ gwAudioMode: "original" })}>Original</button>
+        <button className={"kerr-chip" + (mode === "shifted" ? " on" : "")} aria-pressed={mode === "shifted"}
+          onClick={() => ctl({ gwAudioMode: "shifted" })}>Shifted</button>
+      </div>
+      {mode === "shifted" ? (
+        <SliderRow label="pitch" min={0.25} max={4} step={0.05} value={atlasState.gwPitch}
+          onChange={(v) => ctl({ gwPitch: v })} format={(v) => "×" + Number(v).toFixed(2)}></SliderRow>
+      ) : null}
+      <SliderRow label="volume" min={0} max={1} step={0.01} value={atlasState.gwVolume}
+        onChange={(v) => ctl({ gwVolume: v })}></SliderRow>
+      <button className={"kerr-chip" + (atlasState.gwLoop ? " on" : "")} aria-pressed={atlasState.gwLoop}
+        onClick={() => ctl({ gwLoop: !atlasState.gwLoop })}>Loop</button>
+      <span className="gw-audio-note">
+        {audioOn && signal
+          ? "Mapping " + (signal.bandCenterHz || 0).toFixed(0) + " Hz → 440 Hz (A4)"
+          : "Web Audio starts only from this click; the browser clock drives the visible cursor."}
+      </span>
+      {error ? <span className="gw-audio-error" role="alert">{error}</span> : null}
+    </div>
+  );
+}
+
 function GWAnalysisTheatre() {
   const [atlasState, setAtlasState] = useQGAState();
   const mode = atlasState.gwMode;
@@ -1226,7 +1283,19 @@ function GWAnalysisTheatre() {
     let raf = 0, last = performance.now();
     const tick = (now) => {
       const dt = (now - last) / 1000; last = now;
-      setPlayT((t) => Math.min(duration, t + dt * speed));
+      const son = sonRef.current;
+      if (audioEnabledRef.current && son && son.stats().playing) {
+        const t = son.position();
+        setPlayT(t);
+        // The Scene3D publish pauses when the canvas is culled; keep the QA
+        // hook truthful from the transport clock, which always runs.
+        if (window.__qgaGwRuntime) {
+          window.__qgaGwRuntime.timelineTime = t;
+          window.__qgaGwRuntime.audioPosition = t;
+          window.__qgaGwRuntime.audioPlaying = true;
+        }
+      }
+      else setPlayT((t) => Math.min(duration, t + dt * speed));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -1298,6 +1367,211 @@ function GWAnalysisTheatre() {
   const specWindow = mode === "real" ? 64 : 128;
   const specHop = mode === "real" ? 8 : 24;
 
+  /* ----- Spacetime instrument + sonification (Prompt 06) -----
+     Bundles never mutate their raw samples; the instrument contract derives
+     both GPU representations from them. `playT` is the single timeline: when
+     audio is on it *follows* the AudioContext clock (sonifier.position()),
+     so the visible cursor and the sound are the same clock, not two clocks
+     agreeing — the spec's 50 ms bound is a frame, not a negotiation. */
+  const GW = window.QGA_GW;
+  const playTRef = useRef(0);
+  playTRef.current = playT;
+  const durationRef = useRef(duration);
+  durationRef.current = duration;
+  const instrumentRef = useRef({ signalTex: null, sigVersion: 0, duration: GW_GEN_DURATION, layout: null });
+  const sonRef = useRef(null);
+  const audioEnabledRef = useRef(false);
+  const [audioOn, setAudioOn] = useState(false);
+  const [audioError, setAudioError] = useState("");
+
+  const instrumentBundles = useMemo(() => {
+    if (!GW) return [];
+    if (mode === "real" && realData) {
+      try {
+        return [GW.buildRealBundle({
+          samples: realData.samples, sampleRate: realData.sampleRate,
+          start: realData.start, duration: realData.duration, provenance: realData.provenance,
+        })];
+      } catch {
+        return [];
+      }
+    }
+    if (mode === "generated") {
+      const prov = GW.syntheticProvenance({ seed: atlasState.seed });
+      const h1 = GW.buildGeneratedBundle({
+        samples: genH1.samples, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
+        provenance: prov, extra: { plus: genH1.samples, freqTrack: genH1.freqTrack },
+      });
+      const l1 = GW.buildGeneratedBundle({
+        samples: genL1.samples, sampleRate: GW_GEN_RATE, duration: GW_GEN_DURATION,
+        provenance: prov, extra: { plus: genL1.samples },
+      });
+      return [h1, l1];
+    }
+    return [];
+  }, [GW, mode, realData, genH1, genL1, atlasState.seed]);
+
+  const instrumentTex = useMemo(
+    () => (GW ? GW.INSTRUMENT.buildSignalTextureRows(instrumentBundles) : null),
+    [GW, instrumentBundles],
+  );
+  useEffect(() => {
+    const layout = GW.INSTRUMENT.splitLayout({ detectors: instrumentBundles.length >= 2 ? ["H1", "L1"] : ["H1"] });
+    instrumentRef.current = {
+      signalTex: instrumentTex,
+      sigVersion: instrumentRef.current.sigVersion + 1,
+      duration,
+      layout,
+    };
+  }, [GW, instrumentTex, instrumentBundles.length, duration]);
+
+  const audioSignal = useMemo(() => {
+    if (!GW) return null;
+    const isReal = mode === "real" && realData;
+    const samples = isReal ? realData.samples : genH1.samples;
+    const sampleRate = isReal ? (realData.samples.length / realData.duration) : GW_GEN_RATE;
+    return { samples, sampleRate, bandCenterHz: gwBandCenter(samples, sampleRate) };
+  }, [GW, mode, realData, genH1]);
+
+  useEffect(() => {
+    if (!GW) return undefined;
+    const son = GW.createGwSonifier({
+      // When a non-looped clip plays out, park the shared cursor at the end,
+      // matching the transport's own stop-at-duration behaviour.
+      onEnded: () => setPlayT(durationRef.current),
+    });
+    sonRef.current = son;
+    return () => {
+      sonRef.current = null;
+      audioEnabledRef.current = false;
+      setAudioOn(false);
+      son.dispose();
+    };
+  }, [GW]);
+
+  useEffect(() => {
+    const son = sonRef.current;
+    if (!son || !audioSignal) return;
+    son.loadSignal(audioSignal);
+  }, [audioSignal]);
+
+  useEffect(() => {
+    const son = sonRef.current;
+    if (!son || !audioEnabledRef.current) return;
+    // Audio failures degrade to a silent console, never a crashed theatre.
+    try {
+      if (playing) son.play(playTRef.current >= duration ? 0 : playTRef.current);
+      else son.pause();
+    } catch (error) {
+      audioEnabledRef.current = false;
+      setAudioOn(false);
+      setAudioError("Audio stopped: " + (error && error.message ? error.message : String(error)));
+    }
+  }, [playing, audioOn, duration, audioSignal]);
+
+  const enableAudio = async () => {
+    const son = sonRef.current;
+    if (!son || !audioSignal) return;
+    try {
+      await son.enable();
+      son.setVolume(atlasState.gwVolume);
+      son.setMode(atlasState.gwAudioMode, atlasState.gwPitch);
+      son.setLoop(atlasState.gwLoop === true);
+      audioEnabledRef.current = true;
+      setAudioOn(true);
+      setAudioError("");
+      if (playing) son.play(playTRef.current >= duration ? 0 : playTRef.current);
+      else son.seek(playTRef.current);
+    } catch (error) {
+      setAudioError("Audio unavailable: " + (error && error.message ? error.message : String(error)));
+    }
+  };
+  const disableAudio = () => {
+    const son = sonRef.current;
+    if (!son) return;
+    son.pause();
+    audioEnabledRef.current = false;
+    setAudioOn(false);
+  };
+  const onAudioCtl = (patch) => {
+    const son = sonRef.current;
+    if (!son || !audioEnabledRef.current) return;
+    if ("gwAudioMode" in patch) son.setMode(patch.gwAudioMode, atlasState.gwPitch);
+    else if ("gwPitch" in patch) son.setPitch(patch.gwPitch);
+    else if ("gwVolume" in patch) son.setVolume(patch.gwVolume);
+    else if ("gwLoop" in patch) son.setLoop(patch.gwLoop === true);
+  };
+
+  /* Scrubbing retargets both clocks: the visible transport and the audio. */
+  const scrubTo = (t) => {
+    setPlayT(t);
+    const son = sonRef.current;
+    if (audioEnabledRef.current && son) son.seek(t);
+  };
+
+  const buildInstrument = async (ctx) => {
+    if (!GW) throw new Error("GW instrument module unavailable");
+    const { createGwRuntime } = await GW.loadRuntime();
+    const runtime = await createGwRuntime({
+      backendPreference: window.QGA_RENDER_OPTIONS?.forceBackend ?? ctx.settings.current.renderBackend ?? "auto",
+      seed: atlasState.seed ?? 42,
+      detail3d: ctx.settings.current.detail3d ?? "balanced",
+      reducedMotion: ctx.motion() === 0,
+    });
+    ctx.scene.add(runtime.mesh);
+    runtime.mesh.position.y = -0.6;
+    let appliedSig = -1;
+    return {
+      autoRotate: false,
+      recoverable: (error) => (runtime.recoverable ? runtime.recoverable(error) : false),
+      update: () => {
+        const renderer = ctx.renderer;
+        if (!renderer) return;
+        // When audio is live, the AudioContext clock is the single source of
+        // truth: pull it straight into playTRef every frame so the lattice and
+        // the published cursor read position() within this same rAF callback.
+        // React's setPlayT (transport tick) still drives the DOM progress bar,
+        // but a render-lagged ref would drift by playbackRate × frame-time on
+        // the audibilized (fast) clock.
+        const son = sonRef.current;
+        if (audioEnabledRef.current && son && son.stats().playing) {
+          playTRef.current = son.position();
+        }
+        const snap = instrumentRef.current;
+        if (snap.sigVersion !== appliedSig) {
+          appliedSig = snap.sigVersion;
+          if (snap.signalTex) {
+            runtime.setSignal(snap.signalTex);
+            if (runtime.setRows) runtime.setRows(snap.layout ? snap.layout.rows : null);
+          }
+        }
+        runtime.sync({
+          renderer,
+          timelineTime: playTRef.current,
+          durationSeconds: snap.duration || duration,
+          gain: 0.55,
+          motion: ctx.motion() === 0 ? 0.25 : 1,
+          ratio: Math.min(2, window.devicePixelRatio || 1),
+        });
+        window.__qgaGwRuntime = {
+          kind: runtime.kind,
+          particles: runtime.particleCount,
+          rows: snap.layout ? snap.layout.rows.length : 1,
+          timelineTime: playTRef.current,
+          audioPosition: audioEnabledRef.current && son ? son.position() : null,
+          audioPlaying: audioEnabledRef.current && son ? son.stats().playing : false,
+          duration: snap.duration,
+          audioEnabled: audioEnabledRef.current,
+          sig: snap.sigVersion,
+        };
+      },
+      dispose: () => {
+        runtime.dispose();
+        delete window.__qgaGwRuntime;
+      },
+    };
+  };
+
   return (
     <div className="viz-frame gw-theatre">
       <div className="kerr-observatory-head">
@@ -1368,19 +1642,19 @@ function GWAnalysisTheatre() {
       <div className="gw-transport" aria-label="Signal playback transport">
         <button className="gw-play-btn" onClick={togglePlay}
           aria-label={playing ? "Pause playback" : "Play signal"}>{playing ? "❚❚" : "▶"}</button>
-        <button className="gw-replay-btn" onClick={() => { setPlayT(0); setPlaying(!reducedMotion); }}
+        <button className="gw-replay-btn" onClick={() => { scrubTo(0); setPlaying(!reducedMotion); }}
           aria-label="Replay from the start">↺</button>
         <div className="gw-progress" role="slider" aria-label="Playback position"
           aria-valuemin={0} aria-valuemax={duration} aria-valuenow={Number(playT.toFixed(2))}
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             const r = e.currentTarget.getBoundingClientRect();
-            setPlayT(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
+            scrubTo(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
           }}
           onPointerMove={(e) => {
             if (!(e.buttons & 1)) return;
             const r = e.currentTarget.getBoundingClientRect();
-            setPlayT(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
+            scrubTo(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
           }}>
           <div className="gw-progress-fill" style={{ width: (100 * Math.min(1, playT / duration)) + "%" }}></div>
         </div>
@@ -1402,7 +1676,7 @@ function GWAnalysisTheatre() {
       ) : null}
 
       <GWStrainPanel mode={mode} genH1={genH1} genL1={genL1} realData={realData}
-        detector={atlasState.gwDetector} playT={playT} onScrub={setPlayT}></GWStrainPanel>
+        detector={atlasState.gwDetector} playT={playT} onScrub={scrubTo}></GWStrainPanel>
       <GWSpectrogramPanel samples={specSamples} sampleRate={specRate}
         windowSize={specWindow} hopSize={specHop} playT={playT} duration={duration}
         freqTrack={mode === "generated" ? genH1.freqTrack : null}
@@ -1410,6 +1684,25 @@ function GWAnalysisTheatre() {
         note={mode === "real"
           ? "STFT of downsampled preview · Nyquist " + (specRate / 2).toFixed(0) + " Hz — full chirp band needs the 4 kHz product"
           : "Hann STFT " + specWindow + "/" + specHop + " · not a Q-transform"}></GWSpectrogramPanel>
+
+      <GWAudioConsole signal={audioSignal} audioOn={audioOn} error={audioError}
+        onEnable={enableAudio} onDisable={disableAudio} onAudioCtl={onAudioCtl}></GWAudioConsole>
+
+      <figure className="gw-panel gw-instrument-figure">
+        <figcaption>
+          <span className="gw-panel-title">SPACETIME INSTRUMENT</span>
+          {mode === "generated"
+            ? <span className="badge badge-effective">GENERATED · SEEDED</span>
+            : <span className="badge badge-established">OBSERVATION · GWOSC</span>}
+          <span className="gw-panel-note">
+            {instrumentBundles.length >= 2 ? "H1 + L1 lattices · 7 ms apart" : "single-detector lattice"}
+            {" · tidal amplification is pedagogical · WebGPU compute / WebGL2"}
+          </span>
+        </figcaption>
+        <Scene3D height={460} aria="Three-dimensional spacetime lattice deforming as the gravitational wave passes, driven by the same clock as the audio cursor"
+          build={buildInstrument} deps={[]}
+          fallback={<div className="gw-instrument-fallback">The 3-D spacetime instrument needs WebGL — the strain and time–frequency panels above carry the same signal.</div>}></Scene3D>
+      </figure>
 
       <div className="kerr-deck">
         {mode === "generated" ? (

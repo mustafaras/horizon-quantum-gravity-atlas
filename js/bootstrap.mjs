@@ -12,6 +12,21 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Gravitational-wave instrument (Prompt 06): DSP/polarization science,
+    // sonification, and the visualization contract. The 3-D runtimes (WebGPU
+    // compute / WebGL2) load lazily with the scene.
+    const gw = await import("./science/gravitational-waves.mjs");
+    const gwAudio = await import("./audio/gw-sonification.mjs");
+    const gwInstrument = await import("./visualizations/gw/spacetime-instrument.mjs");
+    gwInstrument.registerGwInstrumentProvenance();
+    Object.defineProperty(window, "QGA_GW", {
+      value: Object.freeze({
+        ...gw, ...gwAudio, INSTRUMENT: Object.freeze({ ...gwInstrument }),
+        loadRuntime: () => import("./visualizations/gw/gw-runtime.mjs"),
+      }),
+      configurable: true,
+    });
+
     const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
     const sources = await Promise.all(scripts.map(async (script) => {
       const response = await fetch(script.src);
