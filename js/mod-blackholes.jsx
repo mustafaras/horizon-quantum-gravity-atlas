@@ -997,7 +997,8 @@ function HawkingComputeLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createHawkingLabRuntime } = await LABS.loadHawkingLab();
-    const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42 });
+    ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.011);
+    const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42, camera: ctx.camera });
     ctx.scene.add(runtime.mesh);
     ctx.label("SCHEMATIC · pair-production picture — temperature and spectrum come from the shared semiclassical model",
     () => ({ x: -3.6, y: 3.5, z: 0 }), "s3d-strong");
@@ -1027,7 +1028,7 @@ function HawkingComputeLab() {
         </div>
       </div>
       <Scene3D height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
-      initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30 }}
+      initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.85, radius: 0.55, threshold: 0.15 } }}
       build={build} deps={[massSolar, spin, gain]}
       fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>
       <VizCaption status="schematic">

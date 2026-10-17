@@ -1480,6 +1480,7 @@ function QftComputeLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createQftFieldLabRuntime } = await LABS.loadQftLab();
+    ctx.scene.fog = new ctx.THREE.FogExp2(0x04060b, 0.016);
     const runtime = createQftFieldLabRuntime({ seed, mass, mode, showParticles: true });
     ctx.scene.add(runtime.mesh);
     ctx.label(mode === "flux"
@@ -1517,7 +1518,7 @@ function QftComputeLab() {
         onChange={(v) => setState({ qftLabMass: v })} format={(v) => v.toFixed(2)}></SliderRow>
       </div>
       <Scene3D height={420} aria="Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube"
-      initial={{ radius: 15.5, theta: 0.55, phi: 1.06, minR: 6, maxR: 34 }}
+      initial={{ radius: 15.5, theta: 0.55, phi: 1.06, minR: 6, maxR: 34, bloom: { strength: 0.62, radius: 0.5, threshold: 0.2 } }}
       build={build} deps={[mode, mass, seed]}
       fallback={<div className="lab-fallback">The 3-D vacuum lab needs WebGL; the module numerics remain available via the export.</div>}></Scene3D>
       <VizCaption status={mode === "flux" ? "schematic" : "effective"}>
