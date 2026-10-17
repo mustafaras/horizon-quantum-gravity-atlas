@@ -96,6 +96,12 @@ test.describe("GW spacetime instrument", () => {
     const figure = page.locator(".gw-instrument-figure");
     await expect(figure).toContainText("SPACETIME INSTRUMENT");
     await expect(figure).toContainText("GENERATED · SEEDED");
+    // Premium HUD: a live time readout, a squeeze/stretch legend, and the
+    // two-detector arm labels must all be present so the instrument stays
+    // self-explanatory (never just an abstract glow).
+    await expect(figure.locator(".gw-instr-clock .gw-instr-t")).toContainText(/t = \d+\.\d+ s/);
+    await expect(figure.locator(".gw-instr-legend")).toBeVisible();
+    await expect(figure.locator(".gw-arm-label")).toHaveCount(4); // H1/L1 x-arm + y-arm
     const runtime = await page.evaluate(() => window.__qgaGwRuntime);
     expect(["webgl2", "webgpu", "tsl"]).toContain(runtime.kind);
     expect(runtime.particles).toBeGreaterThan(1000);

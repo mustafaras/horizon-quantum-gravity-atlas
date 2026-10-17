@@ -1433,6 +1433,18 @@ function GWAnalysisTheatre() {
     return { samples, sampleRate, bandCenterHz: gwBandCenter(samples, sampleRate) };
   }, [GW, mode, realData, genH1]);
 
+  /* Instrument HUD phase + cinematic merger punch (generated mode only:
+     real GWOSC windows have no known coalescence time). The goal object is
+     memoized on the boolean so Scene3D re-triggers only on punch in/out. */
+  const gwPhase = playT < GW_GEN_MERGER - 0.15 ? "inspiral"
+    : playT <= GW_GEN_MERGER + 0.25 ? "merger" : "ringdown";
+  const mergerPunch = mode === "generated"
+    && playT >= GW_GEN_MERGER - 0.15 && playT <= GW_GEN_MERGER + 0.8;
+  const instrumentCameraGoal = useMemo(
+    () => (mergerPunch ? { radius: 9.4, theta: 0.6, phi: 1.05 } : null),
+    [mergerPunch],
+  );
+
   useEffect(() => {
     if (!GW) return undefined;
     const son = GW.createGwSonifier({
@@ -1517,9 +1529,17 @@ function GWAnalysisTheatre() {
       seed: atlasState.seed ?? 42,
       detail3d: ctx.settings.current.detail3d ?? "balanced",
       reducedMotion: ctx.motion() === 0,
+      mergerSeconds: mode === "generated" ? GW_GEN_MERGER : null,
     });
     ctx.scene.add(runtime.mesh);
     runtime.mesh.position.y = -0.6;
+    // Detector-arm labels anchor the abstract lattice to the interferometer.
+    const armEnd = 9 * 0.92;
+    const labelRows = instrumentRef.current.layout?.rows || [{ detector: "H1", offsetX: 0 }];
+    for (const row of labelRows) {
+      ctx.label(row.detector + " · x-arm", () => new THREE.Vector3(row.offsetX + armEnd, -0.35, 0), "gw-arm-label");
+      ctx.label(row.detector + " · y-arm", () => new THREE.Vector3(row.offsetX, -0.35, armEnd), "gw-arm-label");
+    }
     let appliedSig = -1;
     return {
       autoRotate: false,
@@ -1696,11 +1716,24 @@ function GWAnalysisTheatre() {
             : <span className="badge badge-established">OBSERVATION · GWOSC</span>}
           <span className="gw-panel-note">
             {instrumentBundles.length >= 2 ? "H1 + L1 lattices · 7 ms apart" : "single-detector lattice"}
-            {" · tidal amplification is pedagogical · WebGPU compute / WebGL2"}
+            {" · the wave squeezes and stretches the grid as it travels outward — colors show direction, brightness shows strength; motion is amplified for visibility"}
           </span>
         </figcaption>
         <Scene3D height={460} aria="Three-dimensional spacetime lattice deforming as the gravitational wave passes, driven by the same clock as the audio cursor"
-          build={buildInstrument} deps={[]}
+          build={buildInstrument} deps={[]} cameraGoal={instrumentCameraGoal}
+          overlay={<div className="gw-instr-hud">
+            <div className="gw-instr-clock">
+              <span className="gw-instr-t">t = {playT.toFixed(2)} s</span>
+              {mode === "generated"
+                ? <span className={"gw-instr-phase" + (gwPhase === "merger" ? " merger" : "")}>{gwPhase}</span>
+                : null}
+            </div>
+            <div className="gw-instr-legend" aria-hidden="true">
+              <span>squeeze</span>
+              <i className="gw-instr-ramp"></i>
+              <span>stretch</span>
+            </div>
+          </div>}
           fallback={<div className="gw-instrument-fallback">The 3-D spacetime instrument needs WebGL — the strain and time–frequency panels above carry the same signal.</div>}></Scene3D>
       </figure>
 
