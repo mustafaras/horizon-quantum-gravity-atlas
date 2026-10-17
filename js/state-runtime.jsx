@@ -90,8 +90,14 @@ function qgaExportJson(state, extra = {}) {
     };
   })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
     : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
+  // Prompt 07 compute labs: attach the active lab's provenance + runtime stats.
+  const labMetadata = !window.QGA_LABS ? {}
+    : state.view === "qft" ? window.QGA_LABS.qftFieldExportMetadata(state, window.__qgaQftLab || {})
+    : state.view === "bh" ? window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {})
+    : state.view === "rg" ? window.QGA_LABS.rgFlow3dExportMetadata(state, window.__qgaRgFlow3d || {})
+    : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
-    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
+    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...labMetadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));
   const a = document.createElement("a"); a.href = href; a.download = "horizon-qga-state.json"; a.click();
   setTimeout(() => URL.revokeObjectURL(href), 0); return payload;

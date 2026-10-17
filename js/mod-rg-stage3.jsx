@@ -1,4 +1,55 @@
 // Stage 3 composition for the RG flow landscape.
+/* ---------- Prompt 07: three-dimensional RG flow field ---------- */
+function RgFlowFieldLab() {
+  const [state] = useQGAState();
+  const params = {
+    nf: state.rgNf, a: state.rgA, b: state.rgB, gStar: state.rgGStar,
+  };
+
+  const build = async (ctx) => {
+    const LABS = window.QGA_LABS;
+    if (!LABS) throw new Error("Compute-lab module unavailable");
+    const { createRgFlowFieldRuntime } = await LABS.loadRgFlowField();
+    const runtime = createRgFlowFieldRuntime({ model: state.rgModel, params, seed: 42 });
+    ctx.scene.add(runtime.mesh);
+    ctx.label("EFFECTIVE · g-runs via the shared beta function; r-direction γ(g)=g²/(1+g²) is a disclosed teaching model",
+    () => ({ x: -4.6, y: 5.2, z: 0 }), "s3d-strong");
+    ctx.label("UV ↑  t = ln μ  ↓ IR", () => ({ x: 0, y: 5.6, z: 0 }), "s3d-strong");
+    ctx.label("streamlines stop at the validity wall g = √(4π)",
+    () => ({ x: 5.6, y: -1.8, z: 0 }), "s3d-quiet");
+    return {
+      update: (t) => {
+        runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
+        window.__qgaRgFlow3d = { kind: runtime.kind, ...runtime.stats() };
+      },
+      dispose: () => {
+        runtime.dispose();
+        delete window.__qgaRgFlow3d;
+      },
+      recoverable: () => false,
+    };
+  };
+
+  return (
+    <div className="viz-frame">
+      <Scene3D height={460} aria="Three-dimensional renormalization-group flow field: streamlines in the coupling-mass plane running vertically in log energy scale, with fixed points, gold separatrices and validity walls"
+      initial={{ radius: 13.5, theta: 0.7, phi: 1.15, minR: 5, maxR: 34 }}
+      build={build} deps={[state.rgModel, state.rgNf, state.rgA, state.rgB, state.rgGStar]}
+      fallback={<div className="lab-fallback">The 3-D flow field needs WebGL; the 2-D landscape above carries the same trajectories.</div>}></Scene3D>
+      <VizCaption status="effective">
+        The same beta function that drives the 2-D landscape now flows in a third dimension: vertical position
+        is the shared log scale t = ln μ (UV up, IR down), horizontal axes are the gauge coupling g and a
+        mass-like coupling r with β_r = (2 − γ(g))·r. Cyan runs integrate toward the UV, amber toward the IR,
+        gold curves are the separatrices through the fixed points (same analytic fixed points as the landscape),
+        and the red walls mark g = √(4π) (α = 1), where the perturbative model stops and every streamline
+        visibly terminates — no segment past the wall is drawn as if it were trustworthy. The anomalous
+        dimension γ(g) = g²/(1+g²) is a transparent teaching model, not a computed exponent; the g-direction
+        running is exactly the shared model selected above.
+      </VizCaption>
+    </div>);
+
+}
+
 function ModuleRGStage3({ go }) {
   return (
     <article>
@@ -24,6 +75,18 @@ function ModuleRGStage3({ go }) {
           can be read directly rather than inferred from visual motion.
         </p>
         <RGFlowLandscape></RGFlowLandscape>
+      </Section>
+
+      <Section title="The flow field in three dimensions">
+        <p>
+          A beta function is a vector field, so the landscape's curves are really projections of a flow in
+          <em>theory space</em>. This lab renders that flow in three dimensions: the coupling g and a mass-like
+          coupling r span the horizontal plane, and the vertical axis is the log energy scale t = ln μ that the
+          shared numerics already use. Streamlines are integrated with the same RK4 stepper as every other RG
+          computation on the site, seeded deterministically, and they stop — visibly — at the perturbative
+          validity wall. Change the model or its parameters above and the whole field re-integrates.
+        </p>
+        <RgFlowFieldLab></RgFlowFieldLab>
       </Section>
 
       <Section title="Mathematical formulation">
