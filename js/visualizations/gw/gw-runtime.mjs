@@ -18,7 +18,8 @@
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color,
   ClampToEdgeWrapping, DataTexture, FloatType, DoubleSide, Group, Mesh,
-  MeshBasicMaterial, NearestFilter, Points, RGBAFormat, RingGeometry, ShaderMaterial,
+  MeshBasicMaterial, NearestFilter, Points, PointsMaterial, RGBAFormat,
+  RingGeometry, ShaderMaterial,
 } from "three";
 import {
   GW_INSTRUMENT_VIEW_ID,
@@ -34,6 +35,7 @@ attribute float aR;
 attribute float aPhase;
 uniform sampler2D uSignal;
 uniform float uTime, uDuration, uLag, uGain, uRow, uRows, uOffsetX, uMotion, uSize, uPixelRatio;
+uniform float uMerger; // merger time in seconds; < 0 disables the shell flash
 varying vec3 vColor;
 varying float vAlpha;
 uniform vec3 uColorLow;
@@ -52,11 +54,21 @@ void main() {
   // Subtle vertical breathing gives the lattice depth cues (visualization aid).
   float y = env * g * 0.9 * cos(aPhase + uTime * 2.0) * (1.0 - aR * 0.6);
   vec3 pos = vec3(p.x + d.x + uOffsetX, y, p.y + d.y);
-  float energy = clamp(env * 1.45, 0.0, 1.0);
-  vColor = mix(uColorLow, uColorHigh, energy);
+  // Signed radial strain: + stretch, - squeeze, normalized by the local
+  // envelope so the hue reads the wave's direction, not just its strength.
+  float rlen = length(p);
+  float radial = rlen > 1e-4 ? dot(d, p / rlen) : 0.0;
+  float sN = clamp(radial / (0.5 * g * rlen * max(env, 0.12) + 1e-5), -1.0, 1.0);
+  // Merger shell: nodes whose delayed time crosses coalescence flash white
+  // and the flash travels outward with the visualization's wave speed.
+  float wf = uMerger >= 0.0 ? exp(-pow((t - uMerger) * 5.0, 2.0)) * step(0.05, env) : 0.0;
+  float energy = clamp(env * 1.45 + wf * 0.55, 0.0, 1.0);
+  vec3 tint = mix(mix(uColorLow, vec3(1.0, 0.60, 0.235), max(0.0, -sN)),
+    uColorHigh, max(0.0, sN));
+  vColor = mix(tint, vec3(1.0), wf * 0.65);
   vAlpha = (0.18 + 0.82 * energy) * (1.0 - 0.5 * aR);
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  gl_PointSize = uSize * uPixelRatio * (1.0 + 2.1 * energy) * (260.0 / max(1.0, -mv.z));
+  gl_PointSize = uSize * uPixelRatio * (1.0 + 2.1 * energy + 1.6 * wf) * (260.0 / max(1.0, -mv.z));
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -105,7 +117,7 @@ function detectorAssembly({ extent }) {
  * Build the WebGL2 runtime for up to two detector rows (H1, optional L1).
  * `lattice` budgets the per-row particle side length.
  */
-export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedMotion = false } = {}) {
+export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedMotion = false, mergerSeconds = null } = {}) {
   const count = particleBudget({ detail3d, reducedMotion });
   const { side } = latticeSide(count);
   const extent = 9;
@@ -141,6 +153,22 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
     geo.setAttribute("aRest", new BufferAttribute(rest, 2));
     geo.setAttribute("aR", new BufferAttribute(radii, 1));
     geo.setAttribute("aPhase", new BufferAttribute(phases, 1));
+    // Rest-position ghost: a static, dim reference lattice so the deformed
+    // field visibly reads as motion relative to "no wave".
+    const ghostGeo = new BufferGeometry();
+    const ghostPos = new Float32Array(lattice.total * 3);
+    for (let i = 0; i < lattice.total; i++) {
+      ghostPos[i * 3] = lattice.positions[i * 4];
+      ghostPos[i * 3 + 1] = 0;
+      ghostPos[i * 3 + 2] = lattice.positions[i * 4 + 1];
+    }
+    ghostGeo.setAttribute("position", new BufferAttribute(ghostPos, 3));
+    const ghostMat = new PointsMaterial({
+      color: 0x3d5f94, size: 1.5, sizeAttenuation: false,
+      transparent: true, opacity: 0.28, depthWrite: false,
+    });
+    const ghost = new Points(ghostGeo, ghostMat);
+    ghost.frustumCulled = false;
     const material = new ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,
@@ -160,6 +188,7 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
         uSize: { value: 2.1 },
         uOpacity: { value: 0.9 },
         uPixelRatio: { value: 1 },
+        uMerger: { value: mergerSeconds != null && mergerSeconds >= 0 ? mergerSeconds : -1 },
         uColorLow: { value: COLOR_LOW.clone() },
         uColorHigh: { value: COLOR_HIGH.clone() },
       },
@@ -168,9 +197,9 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
     points.frustumCulled = false;
     const detector = detectorAssembly({ extent });
     const rowGroup = new Group();
-    rowGroup.add(points, detector.group);
+    rowGroup.add(ghost, points, detector.group);
     group.add(rowGroup);
-    return { points, material, geometry: geo, detector, rowGroup };
+    return { points, material, geometry: geo, detector, rowGroup, ghost, ghostGeo, ghostMat };
   };
 
   makeRow(0);
@@ -196,6 +225,8 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
       group.remove(row.rowGroup);
       row.geometry.dispose();
       row.material.dispose();
+      row.ghostGeo.dispose();
+      row.ghostMat.dispose();
     }
     rowObjects.forEach((row, i) => {
       row.rowGroup.position.x = rows ? (rows[i]?.offsetX ?? 0) : 0;
@@ -248,6 +279,8 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
     for (const row of rowObjects) {
       row.geometry.dispose();
       row.material.dispose();
+      row.ghostGeo.dispose();
+      row.ghostMat.dispose();
       row.detector.rings.forEach((ring) => { ring.geometry.dispose(); ring.material.dispose(); });
       row.detector.armXGeo.dispose();
       row.detector.armZGeo.dispose();
@@ -302,11 +335,11 @@ async function webGpuAvailable(preference) {
  * runtime that fails at render time asks for a one-shot rebuild on WebGL2
  * (the Kerr `recoverable` contract).
  */
-export async function createGwRuntime({ backendPreference = "auto", seed = 42, detail3d = "balanced", reducedMotion = false } = {}) {
+export async function createGwRuntime({ backendPreference = "auto", seed = 42, detail3d = "balanced", reducedMotion = false, mergerSeconds = null } = {}) {
   if (await webGpuAvailable(backendPreference)) {
     try {
       const { createGwTslRuntime } = await import("./gw-runtime.tsl.js");
-      const runtime = createGwTslRuntime({ seed, detail3d, reducedMotion });
+      const runtime = createGwTslRuntime({ seed, detail3d, reducedMotion, mergerSeconds });
       return Object.assign(runtime, {
         kind: "webgpu",
         recoverable() { globalThis.__qgaGwWebGpuFailed = true; return true; },
@@ -316,6 +349,6 @@ export async function createGwRuntime({ backendPreference = "auto", seed = 42, d
       console.warn("GW instrument WebGPU compute path unavailable; using the WebGL2 lattice.", error);
     }
   }
-  const runtime = createGwGlslRuntime({ seed, detail3d, reducedMotion });
+  const runtime = createGwGlslRuntime({ seed, detail3d, reducedMotion, mergerSeconds });
   return Object.assign(runtime, { kind: "webgl2", recoverable: () => false });
 }

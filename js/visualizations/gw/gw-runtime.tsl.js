@@ -14,8 +14,8 @@
  */
 
 import {
-  Fn, Return, cos, float, instanceIndex, instancedArray, max, min, mix,
-  positionGeometry, smoothstep, uniform, vec3,
+  Fn, Return, clamp, cos, exp, float, instanceIndex, instancedArray, max, min, mix,
+  positionGeometry, smoothstep, sqrt, step, uniform, vec3,
 } from "three/tsl";
 import {
   AdditiveBlending, BoxGeometry, DoubleSide, Group, Mesh, MeshBasicNodeMaterial,
@@ -31,18 +31,21 @@ import {
 const WORKGROUP = 64;
 const TEXELS = 2048; // signal texels per detector row (GW_SIGNAL_TEXEL_MAX)
 
-export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMotion = false } = {}) {
+export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMotion = false, mergerSeconds = null } = {}) {
   const { side } = latticeSide(particleBudget({ detail3d, reducedMotion }));
   const count = side * side;
   const extent = 9;
   const lattice = buildLattice({ side, extent, seed });
 
   // Storage buffers: rest layout (static vec4 = x, z, r, phase), live
-  // positions (vec3), per-particle energy (float), and the signal staging
-  // (vec4 per texel: time, h+, hx, envelope) for up to two detector rows.
+  // positions (vec3), per-particle energy (float), signed radial strain
+  // (float, + stretch / - squeeze), merger-shell weight (float), and the
+  // signal staging (vec4 per texel: time, h+, hx, envelope) per detector row.
   const restBuffer = instancedArray(count, "vec4");
   const posBuffer = instancedArray(count, "vec3");
   const energyBuffer = instancedArray(count, "float");
+  const signBuffer = instancedArray(count, "float");
+  const shellBuffer = instancedArray(count, "float");
   const signalBuffer = instancedArray(TEXELS * 2, "vec4");
 
   const restArr = restBuffer.value.array;
@@ -55,6 +58,7 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
     lag: uniform(0.45),
     gain: uniform(0.5),
     motion: uniform(1),
+    merger: uniform(mergerSeconds != null && mergerSeconds >= 0 ? mergerSeconds : -1),
     rowBase: uniform(0), // element offset of this lattice's texel row
   };
 
@@ -71,7 +75,16 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
     const dz = hx.mul(x).add(hp.mul(z)).mul(float(-0.5).mul(g));
     const y = env.mul(g).mul(float(0.9)).mul(cos(phase.add(U.time.mul(2)))).mul(float(1).sub(r.mul(0.6)));
     posBuffer.element(instanceIndex).assign(vec3(x.add(dx), y, z.add(dz)));
-    energyBuffer.element(instanceIndex).assign(min(float(1), env.mul(float(1.45))));
+    // Signed radial strain (mirrors the GLSL vertex shader): + stretch, - squeeze.
+    const rlen = max(float(1e-4), sqrt(x.mul(x).add(z.mul(z))));
+    const radial = dx.mul(x).add(dz.mul(z)).div(rlen);
+    const sN = clamp(radial.div(float(0.5).mul(g).mul(rlen).mul(max(float(0.12), env)).add(1e-5)), -1, 1);
+    signBuffer.element(instanceIndex).assign(sN);
+    // Merger shell: delayed time crossing coalescence flashes outward.
+    const dtm = tLagged.sub(U.merger).mul(float(5.0));
+    const wf = exp(dtm.mul(dtm).negate()).mul(step(float(0.05), env)).mul(step(float(0), U.merger));
+    shellBuffer.element(instanceIndex).assign(wf);
+    energyBuffer.element(instanceIndex).assign(min(float(1), env.mul(float(1.45)).add(wf.mul(float(0.55)))));
     Return();
   })().compute(count, [WORKGROUP]);
 
@@ -80,15 +93,25 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
   // SpriteNodeMaterial has no sizeNode (r186): per-particle size is a
   // world-space scale multiplier. A stray sizeNode is silently ignored and
   // every sprite renders at scale 1, blowing the additive field out to white.
-  material.scaleNode = energyBuffer.toAttribute().mul(0.16).add(0.04);
-  material.colorNode = mix(vec3(0.165, 0.42, 1.0), vec3(0.616, 0.953, 1.0), energyBuffer.toAttribute());
+  const energy = energyBuffer.toAttribute();
+  const shell = shellBuffer.toAttribute();
+  material.scaleNode = energy.mul(0.16).add(0.04);
+  // Signed strain tint (parity with the GLSL vertex shader): squeeze amber,
+  // neutral blue, stretch cyan; the merger shell pushes toward white.
+  const sgn = signBuffer.toAttribute();
+  const tint = mix(
+    mix(vec3(0.165, 0.42, 1.0), vec3(1.0, 0.60, 0.235), max(float(0), sgn.negate())),
+    vec3(0.616, 0.953, 1.0),
+    max(float(0), sgn),
+  );
+  material.colorNode = mix(tint, vec3(1.0), shell.mul(0.65));
   // Mirror the WebGL2 backend's fragment math: a round soft-edged dot
   // (smoothstep over the squared quad radius, same 0.015→0.25 ramp as the
   // GLSL FRAG). Without this the sprites are hard-edged squares and the
   // additive field saturates to a white sheet.
   const r2 = positionGeometry.xy.dot(positionGeometry.xy);
   const falloff = float(1).sub(smoothstep(float(0.015), float(0.25), r2));
-  material.opacityNode = energyBuffer.toAttribute().mul(0.7).add(0.18).mul(falloff);
+  material.opacityNode = energy.mul(0.7).add(0.18).mul(falloff);
   material.blending = AdditiveBlending;
   material.depthWrite = false;
   material.transparent = true;
@@ -98,9 +121,33 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
   sprite.frustumCulled = false;
   sprite.name = `${GW_INSTRUMENT_VIEW_ID}-field`;
 
+  // Rest-position ghost lattice (parity with the WebGL2 backend): a static,
+  // dim reference grid so the deformation reads as motion, not absolute shape.
+  const ghostRest = instancedArray(count, "vec3");
+  const gr = ghostRest.value.array;
+  for (let i = 0; i < count; i++) {
+    gr[i * 3] = lattice.positions[i * 4];
+    gr[i * 3 + 1] = 0;
+    gr[i * 3 + 2] = lattice.positions[i * 4 + 1];
+  }
+  ghostRest.value.needsUpdate = true;
+  const ghostMat = new SpriteNodeMaterial();
+  ghostMat.positionNode = ghostRest.toAttribute();
+  ghostMat.scaleNode = float(0.022);
+  ghostMat.colorNode = vec3(0.24, 0.37, 0.58);
+  const ghostR2 = positionGeometry.xy.dot(positionGeometry.xy);
+  ghostMat.opacityNode = float(0.3).mul(float(1).sub(smoothstep(float(0.015), float(0.25), ghostR2)));
+  ghostMat.blending = AdditiveBlending;
+  ghostMat.depthWrite = false;
+  ghostMat.transparent = true;
+  const ghostSprite = new Sprite(ghostMat);
+  ghostSprite.count = count;
+  ghostSprite.frustumCulled = false;
+  ghostSprite.name = `${GW_INSTRUMENT_VIEW_ID}-ghost`;
+
   const group = new Group();
   group.name = GW_INSTRUMENT_VIEW_ID;
-  group.add(sprite);
+  group.add(ghostSprite, sprite);
 
   // Detector furniture mirrors the WebGL2 backend's look.
   const armMat = new MeshBasicNodeMaterial({ color: 0x6fd7ff, transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false });
@@ -174,6 +221,7 @@ export function createGwTslRuntime({ seed = 42, detail3d = "balanced", reducedMo
     if (disposed) return;
     disposed = true;
     material.dispose();
+    ghostMat.dispose();
     armXGeo.dispose();
     armZGeo.dispose();
     armMat.dispose();
