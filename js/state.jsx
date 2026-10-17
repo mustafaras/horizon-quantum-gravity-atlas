@@ -10,6 +10,7 @@ const QGA_DEFAULT_STATE = {
   grPreset: "timelike", grBeta: 0.35, grAt: 0, grAx: -1.35, grBt: 2.6, grBx: 1.1,
   rgPreset: "qcd", rgPresetOrigin: "qcd", rgModel: "qcd", rgG0: 1.218, rgMu0: 2, rgLogMin: -1, rgLogMax: 8,
   rgNf: 5, rgA: 1, rgB: 1, rgGStar: 1, rgCurrent: 2,
+  qftLabMode: "field", qftLabMass: 1, hawkingLabAmplify: 12,
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -22,6 +23,7 @@ const QGA_STATE_KEYS = {
   grPreset: "grp", grBeta: "grb", grAt: "grat", grAx: "grax", grBt: "grbt", grBx: "grbx",
   rgPreset: "rgp", rgPresetOrigin: "rgpo", rgModel: "rgm", rgG0: "rgg", rgMu0: "rgmu", rgLogMin: "rglo",
   rgLogMax: "rghi", rgNf: "rgnf", rgA: "rga", rgB: "rgb", rgGStar: "rggs", rgCurrent: "rgc",
+  qftLabMode: "qftm", qftLabMass: "qftms", hawkingLabAmplify: "hla",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
@@ -34,8 +36,9 @@ const QGA_ENUMS = {
   rgModel: ["qed", "qcd", "gaussian", "linear", "asymptotic-safety"],
   bhDiskModel: ["page-thorne-turbulent", "page-thorne", "page-thorne-opaque", "newtonian"],
   bhRenderQuality: ["performance", "balanced", "ultra"],
+  qftLabMode: ["field", "correlation", "flux"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "gwPitch", "gwVolume", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "gwPitch", "gwVolume", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent", "qftLabMass", "hawkingLabAmplify"];
 // Unversioned and v1 Kerr links retain the smooth disk/annotation defaults.
 // New black-hole links carry bhv=2, making the turbulent default unambiguous.
 // The Prompt 05 volume keys (bhCorona, bhJets) are additive with safe
@@ -83,6 +86,9 @@ function qgaReadState(search = window.location.search) {
   state.qftSqrtS = qgaClamp(state.qftSqrtS, 1, 200);
   state.qftAngle = qgaClamp(state.qftAngle, -1, 1);
   state.qftPhotonX = qgaClamp(state.qftPhotonX, 0.05, 20);
+  // Prompt 07 compute labs: additive keys with safe defaults.
+  state.qftLabMass = qgaClamp(state.qftLabMass, 0, 3);
+  state.hawkingLabAmplify = qgaClamp(state.hawkingLabAmplify, 1, 1000);
   state.grPreset = QGA_ENUMS.grPreset.includes(state.grPreset) ? state.grPreset : QGA_DEFAULT_STATE.grPreset;
   const causal = window.QGA_PHYSICS.sanitizeCausalState({
     beta: state.grBeta,
@@ -210,8 +216,14 @@ function qgaExportJson(state, extra = {}) {
     };
   })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
     : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
+  // Prompt 07 compute labs: attach the active lab's provenance + runtime stats.
+  const labMetadata = !window.QGA_LABS ? {}
+    : state.view === "qft" ? window.QGA_LABS.qftFieldExportMetadata(state, window.__qgaQftLab || {})
+    : state.view === "bh" ? window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {})
+    : state.view === "rg" ? window.QGA_LABS.rgFlow3dExportMetadata(state, window.__qgaRgFlow3d || {})
+    : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
-    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...extra };
+    source: qgaShareUrl(state), state: { ...state }, ...metadata, ...labMetadata, ...extra };
   const href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" }));
   const a = document.createElement("a"); a.href = href; a.download = "horizon-qga-state.json"; a.click();
   setTimeout(() => URL.revokeObjectURL(href), 0); return payload;

@@ -985,6 +985,66 @@ function HolographyViz() {
   );
 }
 
+/* ---------- Prompt 07: Hawking horizon lab (pair-emission picture) ---------- */
+function HawkingComputeLab() {
+  const [state, setState] = useQGAState();
+  const massSolar = Math.pow(10, state.bhMass);
+  const spin = state.bhSpin;
+  const gain = state.hawkingLabAmplify;
+  const lab = window.QGA_LABS && window.QGA_LABS.hawkingLabState({ massSolar, spin, amplification: gain });
+
+  const build = async (ctx) => {
+    const LABS = window.QGA_LABS;
+    if (!LABS) throw new Error("Compute-lab module unavailable");
+    const { createHawkingLabRuntime } = await LABS.loadHawkingLab();
+    const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42 });
+    ctx.scene.add(runtime.mesh);
+    ctx.label("SCHEMATIC · pair-production picture — temperature and spectrum come from the shared semiclassical model",
+    () => ({ x: -3.6, y: 3.5, z: 0 }), "s3d-strong");
+    ctx.label("floor curve: T(a★)/T(0) → 0 toward extremal spin",
+    () => ({ x: 0, y: -2.9, z: -4.2 }), "s3d-quiet");
+    return {
+      update: (t) => {
+        runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
+        window.__qgaHawkingLab = { kind: runtime.kind, ...runtime.stats() };
+      },
+      dispose: () => {
+        runtime.dispose();
+        delete window.__qgaHawkingLab;
+      },
+      recoverable: () => false,
+    };
+  };
+
+  return (
+    <div className="viz-frame">
+      <div className="viz-toolbar lab-toolbar">
+        <SliderRow label="display amplification" min={1} max={1000} step={1} value={gain}
+        onChange={(v) => setState({ hawkingLabAmplify: v })} format={(v) => "×" + Math.round(v)}></SliderRow>
+        <div className="kerr-state-line lab-readout">
+          T_H = {lab ? lab.temperatureK.toExponential(2) : "—"} K · κ/κ₀ = {lab ? lab.extremalFactor.toFixed(4) : "—"} ·
+          relative power {lab ? lab.relativePower.toExponential(2) : "—"} · display rate ×{lab ? lab.displayGain : "—"}
+        </div>
+      </div>
+      <Scene3D height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
+      initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30 }}
+      build={build} deps={[massSolar, spin, gain]}
+      fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>
+      <VizCaption status="schematic">
+        The escaping/falling sprite pairs are the textbook <strong>pair-production picture</strong> of Hawking
+        radiation — a heuristic, not the derivation (the real calculation is Bogoliubov mixing of modes on the
+        collapsing background). What <em>is</em> physical: the colour tracks the shared Hawking temperature
+        <Eq tex="T_H=\frac{\hbar c^3}{8\pi G M k_B}\,\frac{2\sqrt{1-a_\star^2}}{1+\sqrt{1-a_\star^2}}"></Eq>,
+        the visible rate tracks the Stefan–Boltzmann power <Eq tex="P\propto A\,T^4"></Eq> times the
+        <strong> display amplification</strong> (a real 10 M☉ hole radiates ~10⁻³⁰ W — nothing would be visible
+        without it, and the multiplier is always shown), and the sample energies come from the Planckian shape by
+        seeded rejection sampling. Push the observatory spin slider toward a★ = ±1: the shared surface-gravity
+        factor κ/κ₀ → 0 and the field visibly empties — an extremal hole does not radiate.
+      </VizCaption>
+    </div>);
+
+}
+
 function ModuleBH({ go }) {
   return (
     <article>
@@ -1025,6 +1085,18 @@ function ModuleBH({ go }) {
             meaning="Entropy proportional to area, not volume. Taken at face value, the information capacity of a region is bounded by its surface — the seed of the holographic principle."
             limits="The microstates being counted remain unidentified in general; candidate countings exist in string theory and LQG for special cases."></FormulaCard>
         </div>
+      </Section>
+
+      <Section title="Hawking horizon lab">
+        <p>
+          The simulator above gives the numbers; this lab makes the emission <em>visible</em>. A deterministic
+          pair-production field orbits the horizon — partners escape outward, coloured by the Hawking
+          temperature, while their partners fall in. The mass and spin sliders are the observatory's own, so
+          the geometry, temperature and emission you see here are the same shared functions the readouts use.
+          The rate you see is a disclosed display amplification of the true (absurdly tiny) power — and as the
+          observatory spin approaches extremal, the emission drains away to nothing.
+        </p>
+        <HawkingComputeLab></HawkingComputeLab>
       </Section>
 
       <Section title="The information paradox">

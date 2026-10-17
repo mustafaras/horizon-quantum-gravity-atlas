@@ -27,6 +27,25 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Prompt 07 compute labs: quantum-field vacuum, Hawking horizon, and the
+    // 3-D RG flow field. Science is eager (provenance + export metadata must
+    // exist before any scene mounts); the three.js runtimes load lazily.
+    const qftFields = await import("./science/qft-fields.mjs");
+    const hawking = await import("./science/hawking.mjs");
+    const rgFlow3d = await import("./science/rg-flow-3d.mjs");
+    qftFields.registerQftLabProvenance();
+    hawking.registerHawkingLabProvenance();
+    rgFlow3d.registerRgFlow3dProvenance();
+    Object.defineProperty(window, "QGA_LABS", {
+      value: Object.freeze({
+        ...qftFields, ...hawking, ...rgFlow3d,
+        loadQftLab: () => import("./visualizations/qft/field-lab.mjs"),
+        loadHawkingLab: () => import("./visualizations/blackhole/hawking-lab.mjs"),
+        loadRgFlowField: () => import("./visualizations/rg/flow-field.mjs"),
+      }),
+      configurable: true,
+    });
+
     const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
     const sources = await Promise.all(scripts.map(async (script) => {
       const response = await fetch(script.src);

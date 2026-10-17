@@ -15,7 +15,8 @@
       "grPreset": "grp", "grBeta": "grb", "grAt": "grat", "grAx": "grax", "grBt": "grbt", "grBx": "grbx",
       "rgPreset": "rgp", "rgPresetOrigin": "rgpo", "rgModel": "rgm", "rgG0": "rgg", "rgMu0": "rgmu",
       "rgLogMin": "rglo", "rgLogMax": "rghi", "rgNf": "rgnf", "rgA": "rga", "rgB": "rgb",
-      "rgGStar": "rggs", "rgCurrent": "rgc"
+      "rgGStar": "rggs", "rgCurrent": "rgc",
+      "qftLabMode": "qftm", "qftLabMass": "qftms", "hawkingLabAmplify": "hla"
     }
   },
   "defaults": {
@@ -350,6 +351,51 @@
       "statusNote": "Companion document describing the atlas itself; every physics claim it makes carries the app's five-status taxonomy.",
       "readme": true,
       "baseline": { "maxDiffPixelRatio": 0.001, "note": "Static document view, deterministic DOM and KaTeX typesetting; tight tolerance justified." }
+    },
+    {
+      "id": "qft-vacuum-lab",
+      "file": "docs/screenshots/22-qft-vacuum-lab.png",
+      "description": "Prompt 07 quantum-field compute lab: seeded Fourier-mode vacuum rendered as a time waterfall with in-canvas EFFECTIVE status label.",
+      "view": "qft",
+      "url": "?view=qft&seed=42&qftm=field&qftms=1",
+      "viewport": { "width": 1600, "height": 1200, "deviceScaleFactor": 1, "label": "desktop-hi" },
+      "scope": "element",
+      "target": "section:has-text(\"Vacuum fluctuations, computed\")",
+      "readiness": ["fonts", "network-idle", "view-mounted", "canvas-nonblank", "animation-settled"],
+      "scientificStatus": "effective-model",
+      "statusNote": "Free Klein–Gordon vacuum from a disclosed Fourier cutoff (k ≤ 14); labeled EFFECTIVE in-canvas, flux-tube mode labeled SCHEMATIC.",
+      "readme": false,
+      "baseline": { "maxDiffPixelRatio": 0.02, "note": "CPU-sampled point waterfall from a seeded mode set; deterministic, 2% for rasterization." }
+    },
+    {
+      "id": "bh-hawking-lab",
+      "file": "docs/screenshots/23-hawking-horizon-lab.png",
+      "description": "Prompt 07 Hawking horizon lab: deterministic pair-emission field around the horizon with temperature-coloured escaping partners and the SCHEMATIC disclosure in-canvas.",
+      "view": "bh",
+      "url": "?view=bh&bhs=0&hla=12&seed=42",
+      "viewport": { "width": 1600, "height": 1200, "deviceScaleFactor": 1, "label": "desktop-hi" },
+      "scope": "element",
+      "target": "section:has-text(\"Hawking horizon lab\")",
+      "readiness": ["fonts", "network-idle", "view-mounted", "canvas-nonblank", "animation-settled"],
+      "scientificStatus": "generated",
+      "statusNote": "Pair-production picture is schematic and labeled in-canvas; temperature and spectrum come from the shared semiclassical model; emission rate uses a disclosed display amplification.",
+      "readme": false,
+      "baseline": { "maxDiffPixelRatio": 0.02, "note": "Seeded emission schedule on a fixed display cycle; deterministic under reduced motion, 2% for rasterization." }
+    },
+    {
+      "id": "rg-flow-field-3d",
+      "file": "docs/screenshots/24-rg-flow-field-3d.png",
+      "description": "Prompt 07 three-dimensional RG flow field: deterministic streamlines in (g, ln μ, r) theory space with fixed points, gold separatrices and the perturbative validity walls.",
+      "view": "rg",
+      "url": "?view=rg&seed=42",
+      "viewport": { "width": 1600, "height": 1200, "deviceScaleFactor": 1, "label": "desktop-hi" },
+      "scope": "element",
+      "target": "section:has-text(\"The flow field in three dimensions\")",
+      "readiness": ["fonts", "network-idle", "view-mounted", "canvas-nonblank", "animation-settled"],
+      "scientificStatus": "effective-model",
+      "statusNote": "g-direction running is the shared one-loop model; the r-direction anomalous dimension is a disclosed teaching model, labeled in-canvas.",
+      "readme": false,
+      "baseline": { "maxDiffPixelRatio": 0.02, "note": "RK4 streamlines from a deterministic seed grid; static under reduced motion, 2% for rasterization." }
     }
   ]
 }
