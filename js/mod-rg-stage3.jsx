@@ -10,6 +10,7 @@ function RgFlowFieldLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createRgFlowFieldRuntime } = await LABS.loadRgFlowField();
+    ctx.scene.fog = new ctx.THREE.FogExp2(0x04060b, 0.014);
     const runtime = createRgFlowFieldRuntime({ model: state.rgModel, params, seed: 42 });
     ctx.scene.add(runtime.mesh);
     ctx.label("EFFECTIVE · g-runs via the shared beta function; r-direction γ(g)=g²/(1+g²) is a disclosed teaching model",
@@ -33,7 +34,7 @@ function RgFlowFieldLab() {
   return (
     <div className="viz-frame">
       <Scene3D height={460} aria="Three-dimensional renormalization-group flow field: streamlines in the coupling-mass plane running vertically in log energy scale, with fixed points, gold separatrices and validity walls"
-      initial={{ radius: 13.5, theta: 0.7, phi: 1.15, minR: 5, maxR: 34 }}
+      initial={{ radius: 13.5, theta: 0.7, phi: 1.15, minR: 5, maxR: 34, bloom: { strength: 0.55, radius: 0.45, threshold: 0.22 } }}
       build={build} deps={[state.rgModel, state.rgNf, state.rgA, state.rgB, state.rgGStar]}
       fallback={<div className="lab-fallback">The 3-D flow field needs WebGL; the 2-D landscape above carries the same trajectories.</div>}></Scene3D>
       <VizCaption status="effective">
