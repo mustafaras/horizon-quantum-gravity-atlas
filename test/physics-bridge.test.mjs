@@ -467,3 +467,18 @@ test("the bridge mirrors the curvature-engine scenario core", async () => {
   }
   assert.deepEqual(plain(pB), plain(pM));
 });
+
+test("the bridge mirrors the strong-field curvature core", async () => {
+  const mjs = await import("../js/physics.mjs");
+  const gm = 3.85;
+  assert.equal(bridge.grPhotonSphereRadius(gm, 27.04), mjs.grPhotonSphereRadius(gm, 27.04));
+  assert.equal(bridge.grIscoRadius(gm, 27.04), mjs.grIscoRadius(gm, 27.04));
+  assert.equal(bridge.grEffectivePotential(gm, 27.04, 3, 2.5), mjs.grEffectivePotential(gm, 27.04, 3, 2.5));
+  assert.deepEqual(plain(bridge.grPetersDerivatives(3, 0.5, 0.25)), plain(mjs.grPetersDerivatives(3, 0.5, 0.25)));
+  assert.equal(bridge.grLenseThirringDeg(1.2, 27.04, 3, 0.4), mjs.grLenseThirringDeg(1.2, 27.04, 3, 0.4));
+  const pB = { x: -10, y: 2, vx: 1, vy: 0 };
+  const pM = { ...pB };
+  for (let i = 0; i < 100; i++) { bridge.grNullStep(pB, 0.3, 0.01); mjs.grNullStep(pM, 0.3, 0.01); }
+  assert.deepEqual(plain(pB), plain(pM));
+  assert.deepEqual(plain(bridge.GR_CURVATURE_SCENARIOS), plain(mjs.GR_CURVATURE_SCENARIOS));
+});

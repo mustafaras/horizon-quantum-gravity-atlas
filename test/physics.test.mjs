@@ -14,6 +14,8 @@ import {
   grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
   GR_ENGINE_C2, grEngineGM, grCaptureRadius, grPlungeStep,
   GR_CURVATURE_SCENARIOS, grCurvatureScenario,
+  grPhotonSphereRadius, grIscoRadius, grNullStep, grEffectivePotential,
+  grPetersDerivatives, grLenseThirringDeg,
   blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
   clamp, transformPair, QFT_CONSTANTS,
 } from "../js/physics.mjs";
@@ -610,4 +612,84 @@ test("2:1 resonance preset has period ratio ≈ 2 (Kepler's third law)", () => {
 test("grCurvatureScenario falls back to classic on unknown id", () => {
   assert.equal(grCurvatureScenario("nope"), GR_CURVATURE_SCENARIOS.classic);
   assert.equal(grCurvatureScenario("cluster"), GR_CURVATURE_SCENARIOS.cluster);
+});
+
+/* ---------- curvature-engine strong-field core ---------- */
+
+test("photon sphere and ISCO sit at 3GM/c² and 6GM/c²", () => {
+  const gm = grEngineGM(8);
+  assert.ok(Math.abs(grPhotonSphereRadius(gm, GR_ENGINE_C2) - 3 * gm / GR_ENGINE_C2) < 1e-12);
+  assert.ok(Math.abs(grIscoRadius(gm, GR_ENGINE_C2) - 2 * grPhotonSphereRadius(gm, GR_ENGINE_C2)) < 1e-12);
+});
+
+test("null geodesic reproduces the full 4GM/c²b weak-field deflection", () => {
+  const gm = grEngineGM(5);
+  const rs = 2 * gm / GR_ENGINE_C2;
+  const b = 6;                       // weak field
+  const p = { x: -20, y: b, vx: 1, vy: 0 };
+  for (let i = 0; i < 60000 && p.x < 20; i++) grNullStep(p, rs, 0.002);
+  const deflect = Math.abs(Math.atan2(p.vy, p.vx));
+  const expected = 2 * rs / b;       // = 4GM/c²b
+  assert.ok(Math.abs(deflect - expected) / expected < 0.1, `deflect ${deflect} vs ${expected}`);
+});
+
+test("null geodesic captures rays inside the b_crit = 3√3·GM/c² cone", () => {
+  const gm = grEngineGM(9);
+  const rs = 2 * gm / GR_ENGINE_C2;
+  const bCrit = 3 * Math.sqrt(3) * gm / GR_ENGINE_C2;
+  const p = { x: -14, y: 0.9 * bCrit, vx: 1, vy: 0 };
+  let minR = Infinity;
+  for (let i = 0; i < 40000 && p.x < 14; i++) {
+    grNullStep(p, rs, 0.002);
+    minR = Math.min(minR, Math.hypot(p.x, p.y));
+    if (minR < 1.5 * rs) break;
+  }
+  assert.ok(minR < 1.5 * rs + 0.05, `captured: minR ${minR} < ${(1.5 * rs).toFixed(3)}`);
+  // a wide ray escapes far
+  const q = { x: -14, y: 4 * bCrit, vx: 1, vy: 0 };
+  let qMin = Infinity;
+  for (let i = 0; i < 40000 && q.x < 14; i++) { grNullStep(q, rs, 0.002); qMin = Math.min(qMin, Math.hypot(q.x, q.y)); }
+  assert.ok(qMin > 2 * rs, "wide ray escapes");
+});
+
+test("effective potential: GR well is deeper than Newtonian at small r", () => {
+  const gm = grEngineGM(6);
+  const L = 3;
+  for (const r of [1, 2, 4]) {
+    const gr = grEffectivePotential(gm, GR_ENGINE_C2, L, r);
+    const newt = -gm / r + (L * L) / (2 * r * r);
+    assert.ok(gr < newt, `r=${r}: GR ${gr} < Newton ${newt}`);
+  }
+  // converges to Newton at large r
+  const far = grEffectivePotential(gm, GR_ENGINE_C2, L, 500);
+  const farN = -gm / 500 + (L * L) / (2 * 500 * 500);
+  assert.ok(Math.abs(far - farN) < 1e-4);
+});
+
+test("Peters derivatives shrink circular and eccentric orbits", () => {
+  const k = 0.25;
+  const circ = grPetersDerivatives(3, 0, k);
+  assert.ok(circ.da < 0 && circ.de === 0);
+  const ecc = grPetersDerivatives(3, 0.5, k);
+  assert.ok(ecc.da < 0 && ecc.de < 0);
+  // circular decay steepens as a⁻³
+  const near = grPetersDerivatives(1.5, 0, k);
+  assert.ok(Math.abs(near.da / circ.da - 8) < 0.01);
+});
+
+test("Lense–Thirring scales with J and a⁻³, vanishes at J = 0", () => {
+  assert.equal(grLenseThirringDeg(0, GR_ENGINE_C2, 3, 0.3), 0);
+  const j1 = grLenseThirringDeg(1, GR_ENGINE_C2, 3, 0.3);
+  const j2 = grLenseThirringDeg(2, GR_ENGINE_C2, 3, 0.3);
+  assert.ok(Math.abs(j2 / j1 - 2) < 1e-12);
+  const a2 = grLenseThirringDeg(1, GR_ENGINE_C2, 6, 0.3);
+  assert.ok(Math.abs(j1 / a2 - 8) < 1e-9);
+  const ecc = grLenseThirringDeg(1, GR_ENGINE_C2, 3, 0.6);
+  assert.ok(ecc > j1, "eccentric orbits precess the node faster");
+});
+
+test("zoom-whirl preset is well-formed with spin and radiation reaction", () => {
+  const w = GR_CURVATURE_SCENARIOS.whirl;
+  assert.ok(w && w.spin > 0 && w.rr === true && w.mass > 8);
+  assert.ok(w.bodies.every((b) => b.a > 0 && b.e >= 0 && b.e < 1));
 });

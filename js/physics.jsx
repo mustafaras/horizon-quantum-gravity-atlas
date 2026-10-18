@@ -1602,6 +1602,13 @@ const GR_CURVATURE_SCENARIOS = {
       { free: true, x0: -6.2, y0: 1.4, vx0: 1.61, vy0: -0.12 },
     ],
   },
+  whirl: {
+    label: "Zoom-whirl", mass: 9.5, rays: true, spin: 0.8, rr: true,
+    bodies: [
+      { a: 2.6, e: 0.62, phase: 0.4, peri: 0.2, incl: 0.1 },
+      { a: 5.0, e: 0.1, phase: 2.8, peri: 1.9, incl: -0.07 },
+    ],
+  },
 };
 
 const QGA_PHYSICS = {
@@ -1903,5 +1910,34 @@ const QGA_PHYSICS = {
   },
   GR_CURVATURE_SCENARIOS: GR_CURVATURE_SCENARIOS,
   grCurvatureScenario(id) { return GR_CURVATURE_SCENARIOS[id] || GR_CURVATURE_SCENARIOS.classic; },
+  grPhotonSphereRadius(gm, c2) { return (3 * gm) / c2; },
+  grIscoRadius(gm, c2) { return (6 * gm) / c2; },
+  grNullStep(p, rs, dt) {
+    const r2 = p.x * p.x + p.y * p.y;
+    if (r2 < 1e-12) return p;
+    const L = p.x * p.vy - p.y * p.vx;
+    const r5 = r2 * r2 * Math.sqrt(r2);
+    const k = -1.5 * rs * L * L / r5;
+    p.vx += k * p.x * dt;
+    p.vy += k * p.y * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    return p;
+  },
+  grEffectivePotential(gm, c2, L, r) {
+    const r2 = r * r;
+    return -gm / r + (L * L) / (2 * r2) - (gm * L * L) / (c2 * r2 * r);
+  },
+  grPetersDerivatives(a, e, k) {
+    const e2 = e * e;
+    const om = 1 - e2;
+    const da = (-k * (1 + (7 / 8) * e2)) / (a * a * a * Math.pow(om, 3.5));
+    const de = (-k * (19 / 12) * e * (1 + (121 / 304) * e2)) / (a * a * a * a * Math.pow(om, 2.5));
+    return { da, de };
+  },
+  grLenseThirringDeg(J, c2, a, e) {
+    const om = 1 - e * e;
+    return (4 * Math.PI * J) / (c2 * Math.pow(a, 3) * Math.pow(om, 1.5)) * (180 / Math.PI);
+  },
 };
 window.QGA_PHYSICS = QGA_PHYSICS;
