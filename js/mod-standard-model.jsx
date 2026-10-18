@@ -657,6 +657,19 @@ function ModuleSM({ go }) {
         </div>
       </Section>
 
+      <Section title="Collisions, computed">
+        <p>
+          The Standard Model is tested by colliding particles and reading the debris. This lab generates a
+          synthetic proton–proton event from the shared seed — exact two-body kinematics, on-shell masses, and a
+          disclosed jet clusterer — and renders it inside a barrel detector: beams collide at the vertex, charged
+          tracks curve by charge over p<sub>T</sub>, calorimeter towers rise with transverse energy, jet cones mark
+          hadronic clusters, and the dashed arrow balances missing transverse momentum. Pick a channel, click a
+          track, and watch the invariant-mass readout recover the Higgs, Z, or top. Everything is computed by
+          <code> js/science/collider-kinematics.mjs</code>; the events are synthetic fixtures, not observations.
+        </p>
+        <ColliderLabSection></ColliderLabSection>
+      </Section>
+
       <Section title="Mathematical formulation">
         <div className="formula-grid">
           <FormulaCard title="Standard Model gauge group" status="established"

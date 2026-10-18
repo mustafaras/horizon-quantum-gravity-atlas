@@ -157,7 +157,7 @@ Black-hole screenshots are included prominently because the black-hole module is
 <td width="50%">
 <img src="docs/screenshots/02-holographic-boundary-bulk.png" alt="Holographic boundary-bulk scene" width="100%" />
 <br/>
-<sub><strong>Holography: boundary and bulk</strong> — boundary entanglement arcs as a conceptual rendering of holographic duality.</sub>
+<sub><strong>Holography: boundary and bulk</strong> — 3-D Poincaré disk with exact hyperbolic geodesics, the Ryu–Takayanagi minimal surface and its entanglement wedge; the duality reading is conjectural.</sub>
 </td>
 </tr>
 <tr>
@@ -201,6 +201,23 @@ Black-hole screenshots are included prominently because the black-hole module is
 <img src="docs/screenshots/09-mobile-black-hole-lab.png" alt="Mobile black-hole module" width="100%" />
 <br/>
 <sub><strong>Mobile black-hole laboratory</strong> — responsive module layout with the black-hole scene preserved on a narrow viewport.</sub>
+</td>
+<td width="50%">
+<img src="docs/screenshots/25-ads-bulk-boundary-lab.png" alt="AdS holography laboratory" width="100%" />
+<br/>
+<sub><strong>AdS holography laboratory</strong> — exact hyperbolic geodesics, boundary partition arcs, the Ryu–Takayanagi minimal surface and its entanglement wedge, computed from the tested geometry module.</sub>
+</td>
+<td width="50%">
+<img src="docs/screenshots/26-collider-event-lab.png" alt="Collider event laboratory" width="100%" />
+<br/>
+<sub><strong>Collider event laboratory</strong> — seeded synthetic pp collision in a barrel detector: curved tracks, calorimeter towers, jet cones and missing transverse energy; a fixture, never an observation.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/screenshots/27-spin-foam-lab.png" alt="Spin-foam laboratory" width="100%" />
+<br/>
+<sub><strong>Spin-foam laboratory</strong> — Schlegel-projected four-simplex spin network with spin-coloured edges, volume-weighted nodes and translucent face membranes; pedagogical, conjectural.</sub>
 </td>
 <td width="50%">
 <strong>Screenshot policy</strong>
@@ -1141,7 +1158,10 @@ horizon-quantum-gravity-atlas/
 │       ├── 18-rg-flow-landscape.png
 │       ├── 19-rg-flow-landscape-mobile.png
 │       ├── 20-symbol-atlas.png
-│       └── 21-whitepaper.png
+│       ├── 21-whitepaper.png
+│       ├── 25-ads-bulk-boundary-lab.png
+│       ├── 26-collider-event-lab.png
+│       └── 27-spin-foam-lab.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1339,6 +1359,9 @@ The screenshot set emphasizes visual and animated modules:
 | `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
 | `18-rg-flow-landscape.png` | `rg` | QCD preset at `?view=rg&rgp=qcd`, 1440 × 1200 |
 | `19-rg-flow-landscape-mobile.png` | `rg` | asymptotic-safety-style toy at `?view=rg&rgp=asymptotic-safety&rgm=asymptotic-safety&rgg=0.3&rgmu=0&rglo=-4&rghi=5&rgnf=0&rga=0.9&rgb=0.9&rgc=4`, 390 × 844 |
+| `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |
+| `26-collider-event-lab.png` | `sm` | synthetic collider lab at `?view=sm&clc=h2gg&seed=42`: tracks, towers, jets, missing energy |
+| `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges |
 
 Capture criteria:
 
@@ -2360,6 +2383,9 @@ Each screenshot also has a caveat.
 | `17-causal-spacetime-lab-mobile.png` | documents 44 px controls and contained diagram scrolling | mobile viewport shows only part of the horizontally scrollable diagram |
 | `18-rg-flow-landscape.png` | demonstrates one-loop QCD running, β geometry, and bounded integration | infrared continuation stops at the chosen perturbative boundary |
 | `19-rg-flow-landscape-mobile.png` | documents responsive controls and the conjectural fixed-point toy | the displayed UV fixed point is built into an illustrative polynomial |
+| `25-ads-bulk-boundary-lab.png` | computes hyperbolic geodesics, the RT minimal surface and the entanglement wedge from the tested geometry module | the AdS/CFT duality reading is conjectural and labeled in-canvas |
+| `26-collider-event-lab.png` | shows seeded synthetic collision kinematics with exact four-momentum conservation | synthetic fixture, never a CERN observation; labeled in-canvas |
+| `27-spin-foam-lab.png` | shows the spin-network area spectrum and a four-simplex foam step | pedagogical sketch with no amplitudes computed; conjectural, labeled in-canvas |
 
 ### Appendix W — Badge Manifest
 
