@@ -1161,7 +1161,8 @@ horizon-quantum-gravity-atlas/
 │       ├── 21-whitepaper.png
 │       ├── 25-ads-bulk-boundary-lab.png
 │       ├── 26-collider-event-lab.png
-│       └── 27-spin-foam-lab.png
+│       ├── 27-spin-foam-lab.png
+│       └── 28-qft-field-lab.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1362,6 +1363,7 @@ The screenshot set emphasizes visual and animated modules:
 | `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |
 | `26-collider-event-lab.png` | `sm` | synthetic collider lab at `?view=sm&clc=h2gg&seed=42`: tracks, towers, jets, missing energy |
 | `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges |
+| `28-qft-field-lab.png` | `qft` | field laboratory at `?view=qft&seed=42`: Klein–Gordon lattice membrane, seeded mode shimmer, injection markers |
 
 Capture criteria:
 
@@ -2386,6 +2388,7 @@ Each screenshot also has a caveat.
 | `25-ads-bulk-boundary-lab.png` | computes hyperbolic geodesics, the RT minimal surface and the entanglement wedge from the tested geometry module | the AdS/CFT duality reading is conjectural and labeled in-canvas |
 | `26-collider-event-lab.png` | shows seeded synthetic collision kinematics with exact four-momentum conservation | synthetic fixture, never a CERN observation; labeled in-canvas |
 | `27-spin-foam-lab.png` | shows the spin-network area spectrum and a four-simplex foam step | pedagogical sketch with no amplitudes computed; conjectural, labeled in-canvas |
+| `28-qft-field-lab.png` | shows the Klein–Gordon lattice membrane with seeded mode shimmer and injection markers | free-field effective model on a disclosed lattice; reduced motion parks it at a deterministic phase |
 
 ### Appendix W — Badge Manifest
 
