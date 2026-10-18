@@ -1555,6 +1555,55 @@ const QGA_SCIENCE = (() => {
   };
 })();
 
+// Curvature-engine scenario presets — mirrors GR_CURVATURE_SCENARIOS in js/physics.mjs.
+const GR_CURVATURE_SCENARIOS = {
+  classic: {
+    label: "Classic pair", mass: 5, rays: true,
+    bodies: [
+      { a: 2.2, e: 0.45, phase: 0, peri: 0 },
+      { a: 3.5, e: 0.22, phase: Math.PI, peri: 0.6 },
+    ],
+  },
+  mercury: {
+    label: "Mercury-like", mass: 6, rays: true,
+    bodies: [
+      { a: 2.4, e: 0.206, phase: 0.4, peri: 0 },
+      { a: 4.6, e: 0.05, phase: 2.4, peri: 1.2 },
+    ],
+  },
+  comet: {
+    label: "High-e comet", mass: 5, rays: true,
+    bodies: [
+      { a: 3.2, e: 0.82, phase: 0.3, peri: -0.4 },
+      { a: 5.4, e: 0.1, phase: 2.0, peri: 1.1 },
+    ],
+  },
+  resonance: {
+    label: "2:1 resonance", mass: 5.5, rays: false,
+    bodies: [
+      { a: 2.1, e: 0.12, phase: 0, peri: 0.2 },
+      { a: 2.1 * Math.pow(2, 2 / 3), e: 0.12, phase: Math.PI, peri: 1.4 },
+    ],
+  },
+  cluster: {
+    label: "Five-body cluster", mass: 6.5, rays: true,
+    bodies: [
+      { a: 1.8, e: 0.15, phase: 0.0, peri: 0.3 },
+      { a: 2.5, e: 0.35, phase: 1.3, peri: 2.1 },
+      { a: 3.2, e: 0.08, phase: 2.6, peri: 4.4 },
+      { a: 4.1, e: 0.5, phase: 3.9, peri: 0.9 },
+      { a: 5.2, e: 0.25, phase: 5.2, peri: 3.0 },
+    ],
+  },
+  plunge: {
+    label: "Capture plunge", mass: 7, rays: true,
+    bodies: [
+      { a: 4.2, e: 0.3, phase: 1.0, peri: 0.5 },
+      { free: true, x0: -6.2, y0: 1.4, vx0: 1.61, vy0: -0.12 },
+    ],
+  },
+};
+
 const QGA_PHYSICS = {
   ...QGA_SCIENCE,
   qcdB0, rgBeta, rgBetaDerivative, rgStability, rgFixedPoints, findRGFixedPoints,
@@ -1836,5 +1885,23 @@ const QGA_PHYSICS = {
     const a = 1 / 137.035999084;
     return ((4 * Math.PI * a * a) / (3 * s)) * 0.3893793721e6;
   },
+  /* Curvature-engine scenario core — mirrors js/physics.mjs. */
+  GR_ENGINE_C2: 27.04,
+  grEngineGM(mass) { return 0.55 * Number(mass); },
+  grCaptureRadius(gm, c2) { return Math.max(0.45, (3 * Number(gm)) / Number(c2)); },
+  grPlungeStep(p, gm, c2, dt) {
+    const r2 = p.x * p.x + p.y * p.y;
+    if (r2 < 1e-12) return p;
+    const r = Math.sqrt(r2);
+    const L = p.x * p.vy - p.y * p.vx;
+    const ar = -gm / r2 - (3 * gm * L * L) / (c2 * r2 * r2);
+    p.vx += (ar * p.x) / r * dt;
+    p.vy += (ar * p.y) / r * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    return p;
+  },
+  GR_CURVATURE_SCENARIOS: GR_CURVATURE_SCENARIOS,
+  grCurvatureScenario(id) { return GR_CURVATURE_SCENARIOS[id] || GR_CURVATURE_SCENARIOS.classic; },
 };
 window.QGA_PHYSICS = QGA_PHYSICS;

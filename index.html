@@ -241,6 +241,17 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .seg .btn { border: none; border-radius: 0; }
 .seg .btn + .btn { border-left: 1px solid var(--line); }
 .seg .btn.on { background: var(--acc-soft); color: var(--head); }
+/* curvature-engine scenario + body chips */
+.chip-row { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-dim);
+  background: rgba(148,176,224,0.06); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 11px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.chip:hover:not(:disabled) { color: var(--head); border-color: var(--line-strong); }
+.chip.on { background: var(--acc-soft); color: var(--head); border-color: var(--acc); }
+.chip:disabled { opacity: 0.4; cursor: not-allowed; }
+.body-chip { display: inline-flex; align-items: center; gap: 6px; }
+.body-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 6px currentColor; flex: 0 0 auto; }
+.chip-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); align-self: center; }
 .toggle-row { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
 .toggle-track { width: 30px; height: 16px; border-radius: 9px; border: 1px solid var(--line-strong); background: rgba(148,176,224,0.08); position: relative; transition: background 0.15s; flex: 0 0 auto; }
 .toggle-track.on { background: var(--acc-soft); border-color: var(--acc); }

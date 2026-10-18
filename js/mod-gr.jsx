@@ -614,73 +614,178 @@ function CausalSpacetimeLab() {
 /* ---------- 3D spacetime curvature engine ---------- */
 // Impact parameters for the lensing fan (symmetric — focuses behind the mass).
 const GR_RAY_B = [-3.3, -2.2, -1.25, 1.25, 2.2, 3.3];
-// inner/outer test-body orbital elements (scene units); precession uses the exact
-// GR rate Δϖ = 6π·GM/[c² a(1−e²)] per orbit, with scene c² below.
-const GR_C2 = 27.04;                 // (scene light speed c = 5.2)²
-const GR_BODIES = [
-  { a: 2.2, e: 0.45, hex: 0x7fe0ee, r: 0.19 },
-  { a: 3.5, e: 0.22, hex: 0xf3a85e, r: 0.13 },
-];
+// scene c² = (5.2)²; matches GR_ENGINE_C2 in js/physics.mjs.
+const GR_C2 = 27.04;
+const GR_BODY_PALETTE = [0x7fe0ee, 0xf3a85e, 0xb78cff, 0x6ee7a0, 0xff8fae, 0xffe07a];
+const GR_MAX_BODIES = 6;
+let grUidSeed = 0;
+
+// Scenario preset bodies → editable runtime bodies (uids keep sim state stable
+// across React re-renders; the scene loop re-syncs by uid, not index).
+function grMakeBodies(scenarioId) {
+  const s = window.QGA_PHYSICS.grCurvatureScenario(scenarioId);
+  return s.bodies.map((b, i) => ({
+    uid: "b" + (grUidSeed++),
+    free: !!b.free,
+    a: b.a, e: b.e, phase: b.phase, peri: b.peri,
+    x0: b.x0, y0: b.y0, vx0: b.vx0, vy0: b.vy0,
+    hex: GR_BODY_PALETTE[i % GR_BODY_PALETTE.length],
+    r: b.free ? 0.15 : 0.2 - i * 0.015,
+  }));
+}
+
 function grPrecDeg(M, a, e) {
   return window.QGA_PHYSICS.grPerihelionPrecession(0.55 * M, GR_C2, a, e) * 180 / Math.PI;
 }
+
 function CurvatureEngine3D() {
+  const [scenario, setScenario] = useState("classic");
   const [mass, setMass] = useState(5);
   const [view, setView] = useState("gr");
   const [showRay, setShowRay] = useState(true);
+  const [showTrails, setShowTrails] = useState(true);
+  const [speed, setSpeed] = useState(1);
+  const [bodies, setBodies] = useState(() => grMakeBodies("classic"));
+  const [selected, setSelected] = useState(0);
   const massRef = useRef(mass); massRef.current = mass;
   const viewRef = useRef(view); viewRef.current = view;
   const rayRef = useRef(showRay); rayRef.current = showRay;
-  const stRef = useRef(null);
-  // exact orbital elements (parameters, so the readout is exact by construction)
-  const innerE = GR_BODIES[0].e;
-  const precDeg = view === "gr" ? grPrecDeg(mass, GR_BODIES[0].a, GR_BODIES[0].e) : 0;
-  const relaunch = () => {
-    stRef.current = {
-      // analytic precessing ellipses: theta = true anomaly, peri = perihelion angle
-      bodies: GR_BODIES.map((b, i) => ({ ...b, theta: i * Math.PI, peri: i * 0.6, trail: [] })),
-      rays: GR_RAY_B.map((b) => ({ x: -7.6, y: b, vx: 5.2, vy: 0, trail: [] })),
-    };
+  const trailRef = useRef(showTrails); trailRef.current = showTrails;
+  const speedRef = useRef(speed); speedRef.current = speed;
+  const bodiesRef = useRef(bodies); bodiesRef.current = bodies;
+  const selRef = useRef(selected); selRef.current = selected;
+  const stRef = useRef({
+    sim: [],
+    rays: GR_RAY_B.map((b) => ({ x: -7.6, y: b, vx: 5.2, vy: 0, trail: [], near: false })),
+  });
+
+  const selIdx = Math.min(selected, bodies.length - 1);
+  const selBody = bodies[selIdx];
+  const precDeg = selBody && !selBody.free && view === "gr"
+    ? grPrecDeg(mass, selBody.a, selBody.e) : 0;
+
+  const applyScenario = (id) => {
+    const s = window.QGA_PHYSICS.grCurvatureScenario(id);
+    setScenario(id); setMass(s.mass); setShowRay(s.rays);
+    setBodies(grMakeBodies(id)); setSelected(0);
   };
-  if (!stRef.current) relaunch();
+  const addBody = () => {
+    if (bodies.length >= GR_MAX_BODIES) return;
+    const i = bodies.length;
+    setBodies(bodies.concat([{
+      uid: "b" + (grUidSeed++), free: false,
+      a: Math.min(6.2, 2.0 + i * 0.75), e: 0.15 + 0.13 * (i % 3),
+      phase: i * 1.7, peri: i * 0.9,
+      x0: undefined, y0: undefined, vx0: undefined, vy0: undefined,
+      hex: GR_BODY_PALETTE[i % GR_BODY_PALETTE.length], r: 0.14,
+    }]));
+    setSelected(i);
+  };
+  const removeSelected = () => {
+    if (bodies.length <= 1) return;
+    const next = bodies.filter((_, i) => i !== selIdx);
+    setBodies(next);
+    setSelected(Math.max(0, Math.min(selected, next.length - 1)));
+  };
+  const patchSelected = (patch) => {
+    setBodies(bodies.map((b, i) => (i === selIdx ? { ...b, ...patch } : b)));
+  };
+  const relaunch = () => {
+    stRef.current.sim = [];
+    stRef.current.rays = GR_RAY_B.map((b) => ({ x: -7.6, y: b, vx: 5.2, vy: 0, trail: [], near: false }));
+  };
 
   const build = (ctx) => {
-    const { THREE, scene } = ctx;
+    const { THREE, scene, camera } = ctx;
+    const P = window.QGA_PHYSICS;
     scene.fog = new THREE.FogExp2(0x03050a, 0.012);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.45));
-    const key = new THREE.DirectionalLight(0xbcd0ff, 0.8);
+    scene.add(new THREE.AmbientLight(0x8899bb, 0.4));
+    const key = new THREE.DirectionalLight(0xbcd0ff, 0.7);
     key.position.set(6, 10, 4);
     scene.add(key);
+    const starLight = new THREE.PointLight(0xffd9a0, 2.2, 28, 1.7);
+    scene.add(starLight);
 
     const det = ctx.settings.current.detail3d;
-    const SEG = det === "low" ? 56 : det === "ultra" ? 120 : 88;
+    const SEG = det === "low" ? 56 : det === "ultra" ? 128 : 88;
     const EXT = 17;
 
-    // ---------- starfield backdrop ----------
-    const starN = det === "low" ? 320 : 640;
+    const mkRadialTex = (stops) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 256;
+      const g = c.getContext("2d");
+      const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+      for (const [o, col] of stops) grad.addColorStop(o, col);
+      g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(c);
+    };
+
+    // ---------- twinkling starfield + nebulae ----------
+    const starN = det === "low" ? 320 : det === "ultra" ? 1100 : 640;
     const sGeo = new THREE.BufferGeometry();
     const sPos = new Float32Array(starN * 3);
+    const sPhase = new Float32Array(starN);
+    const sSize = new Float32Array(starN);
+    const sCol = new Float32Array(starN * 3);
+    const tints = [[0.78, 0.84, 1.0], [1.0, 0.93, 0.8], [0.85, 0.75, 1.0], [1.0, 0.8, 0.7]];
     for (let i = 0; i < starN; i++) {
       const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2;
       const rr = Math.sqrt(1 - u * u), R = 78 + Math.random() * 60;
       sPos[i * 3] = Math.cos(a) * rr * R;
       sPos[i * 3 + 1] = Math.abs(u) * R * 0.85 + 6;     // bias above the sheet
       sPos[i * 3 + 2] = Math.sin(a) * rr * R;
+      sPhase[i] = Math.random();
+      sSize[i] = 0.7 + Math.random() * 1.9;
+      const t = tints[(Math.random() * tints.length) | 0];
+      sCol[i * 3] = t[0]; sCol[i * 3 + 1] = t[1]; sCol[i * 3 + 2] = t[2];
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
-    const stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
-      size: 1.5, map: qgaGlowTexture(), color: 0xc6d6ff, transparent: true,
-      opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+    sGeo.setAttribute("aPhase", new THREE.BufferAttribute(sPhase, 1));
+    sGeo.setAttribute("aSize", new THREE.BufferAttribute(sSize, 1));
+    sGeo.setAttribute("aCol", new THREE.BufferAttribute(sCol, 3));
+    const starUni = { uTime: { value: 0 } };
+    const stars = new THREE.Points(sGeo, new THREE.ShaderMaterial({
+      uniforms: starUni, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: `
+        attribute float aPhase; attribute float aSize; attribute vec3 aCol;
+        uniform float uTime; varying float vTw; varying vec3 vCol;
+        void main(){
+          vCol = aCol;
+          vTw = 0.6 + 0.4 * sin(uTime * 1.3 + aPhase * 6.2831);
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = aSize * (240.0 / -mv.z) * (0.7 + 0.3 * vTw);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        precision highp float; varying float vTw; varying vec3 vCol;
+        void main(){
+          float d = length(gl_PointCoord - 0.5);
+          float a = smoothstep(0.5, 0.06, d);
+          gl_FragColor = vec4(vCol * (0.55 + 0.45 * vTw), a * 0.85);
+        }`,
     }));
     scene.add(stars);
 
-    // ---------- luminous gravity well (shaded grid funnel) ----------
+    const nebTex = mkRadialTex([
+      [0, "rgba(120,90,220,0.34)"], [0.4, "rgba(60,80,190,0.16)"], [1, "rgba(0,0,0,0)"],
+    ]);
+    for (let i = 0; i < 3; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: nebTex, transparent: true, opacity: 0.5, depthWrite: false,
+        blending: THREE.AdditiveBlending, rotation: i * 1.7,
+      }));
+      const ang = i * 2.1 + 0.6;
+      sp.position.set(Math.cos(ang) * 52, 26 + i * 9, Math.sin(ang) * 52);
+      sp.scale.setScalar(46 + i * 14);
+      scene.add(sp);
+    }
+
+    // ---------- luminous gravity well (AA grid funnel, polar near the throat) ----------
     const geo = new THREE.PlaneGeometry(EXT, EXT, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
     const wellUniforms = {
       uTime: { value: 0 },
       uMaxDepth: { value: 3.0 },
-      uGridN: { value: 17.0 },
       uFlat: { value: 0.0 },          // 1 in Newtonian view
     };
     const wellMat = new THREE.ShaderMaterial({
@@ -689,33 +794,48 @@ function CurvatureEngine3D() {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `
-        varying vec2 vUv; varying float vDepth; varying float vR;
+        varying vec2 vUv; varying float vDepth; varying float vR; varying vec3 vPos;
         uniform float uMaxDepth;
         void main(){
-          vUv = uv;
+          vUv = uv; vPos = position;
           vDepth = clamp(-position.y / max(uMaxDepth, 0.4), 0.0, 1.0);
           vR = length(position.xz);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: `
         precision highp float;
-        varying vec2 vUv; varying float vDepth; varying float vR;
-        uniform float uTime, uGridN, uFlat;
-        float gl(float c, float n){ float f = fract(c*n); float d = min(f, 1.0-f); return smoothstep(0.05, 0.0, d); }
+        varying vec2 vUv; varying float vDepth; varying float vR; varying vec3 vPos;
+        uniform float uTime, uFlat;
+        float lineAA(float c, float w){
+          float d = abs(fract(c - 0.5) - 0.5) / max(fwidth(c), 1e-5);
+          return 1.0 - min(d / w, 1.0);
+        }
         void main(){
-          float g = max(gl(vUv.x, uGridN), gl(vUv.y, uGridN));
-          // colour: cool blue at the rim, violet-white toward the throat
-          vec3 cRim = vec3(0.16, 0.32, 0.62);
-          vec3 cDeep = vec3(0.62, 0.50, 1.0);
-          vec3 col = mix(cRim, cDeep, vDepth);
-          // inward-travelling energy pulse along the funnel
-          float pulse = 0.5 + 0.5*sin((vDepth*7.0 - uTime*1.1)*6.2831);
-          float bright = (0.30 + 1.55*pow(vDepth, 1.4)) * (0.78 + 0.34*pulse);
-          bright = mix(bright, 0.34, uFlat);            // flatten + dim in Newtonian view
-          // soft radial fill so the sheet reads as a surface, brightest at the throat
-          float fill = (0.05 + 0.30*pow(vDepth, 2.0)) * (1.0 - uFlat*0.7);
-          float rimFade = smoothstep(8.6, 6.0, vR);     // fade the far edge into space
-          vec3 outc = (col*g*bright + cDeep*fill) * rimFade;
+          // Cartesian grid (world-unit spacing), screen-space anti-aliased
+          float cart = max(lineAA(vPos.x, 1.35), lineAA(vPos.z, 1.35));
+          float cartMaj = max(lineAA(vPos.x * 0.25, 1.1), lineAA(vPos.z * 0.25, 1.1));
+          // polar net near the throat: unit rings + 24 spokes, fading outward
+          float ring = lineAA(vR, 1.25);
+          float ang = atan(vPos.z, vPos.x);
+          float spoke = lineAA(ang * (12.0 / 3.14159265), 0.9);
+          float near = smoothstep(5.6, 1.6, vR);
+          float far = 1.0 - near * 0.85;
+          float g = clamp(max(cart * far + cartMaj * 0.5 * far, (ring + spoke) * near), 0.0, 1.4);
+          // iridescent depth ramp with a slow shimmer
+          vec3 cRim = vec3(0.10, 0.26, 0.58);
+          vec3 cMid = vec3(0.34, 0.42, 0.95);
+          vec3 cDeep = vec3(0.74, 0.62, 1.0);
+          vec3 col = mix(cRim, cMid, smoothstep(0.0, 0.55, vDepth));
+          col = mix(col, cDeep, smoothstep(0.5, 1.0, vDepth));
+          col *= 1.0 + 0.14 * sin(vR * 2.6 - uTime * 1.25 + vDepth * 5.0);
+          // energy pulses travelling down the funnel
+          float pulse = 0.5 + 0.5 * sin((vDepth * 7.0 - uTime * 1.1) * 6.2831);
+          float bright = (0.34 + 1.7 * pow(vDepth, 1.4)) * (0.76 + 0.36 * pulse);
+          bright = mix(bright, 0.34, uFlat);
+          float fill = (0.05 + 0.32 * pow(vDepth, 2.0)) * (1.0 - uFlat * 0.7);
+          float rimFade = smoothstep(8.8, 6.2, vR);
+          vec3 outc = (col * g * bright + cDeep * fill) * rimFade;
+          outc = mix(outc, vec3(0.30, 0.42, 0.62) * (g * 0.35 + fill * 0.5), uFlat * 0.55);
           gl_FragColor = vec4(outc, 1.0);
         }`,
     });
@@ -735,9 +855,45 @@ function CurvatureEngine3D() {
     };
     const hAt = (x, z) => depth(x, z, 0.55 * massRef.current);
 
-    // ---------- central mass: glowing star + corona ----------
-    const star = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24),
-      new THREE.MeshStandardMaterial({ color: 0xfff0cf, emissive: 0xf0c060, emissiveIntensity: 1.1, roughness: 0.45 }));
+    // ---------- central mass: fBm-granulated star, corona, Einstein ring ----------
+    const coreUni = { uTime: { value: 0 } };
+    const star = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), new THREE.ShaderMaterial({
+      uniforms: coreUni,
+      vertexShader: `
+        varying vec3 vN; varying vec3 vP; varying vec3 vV;
+        void main(){
+          vP = position;
+          vN = normalize(mat3(modelMatrix) * normal);
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vV = cameraPosition - wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }`,
+      fragmentShader: `
+        precision highp float;
+        varying vec3 vN; varying vec3 vP; varying vec3 vV;
+        uniform float uTime;
+        float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+        float noise(vec3 p){
+          vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }
+        float fbm(vec3 p){
+          float v = 0.0, a = 0.5;
+          for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.07; a *= 0.5; }
+          return v;
+        }
+        void main(){
+          float n = fbm(normalize(vP) * 3.4 + vec3(0.0, uTime * 0.10, uTime * 0.04));
+          float gran = smoothstep(0.30, 0.78, n);
+          vec3 hot = vec3(1.0, 0.94, 0.80), cool = vec3(1.0, 0.52, 0.16);
+          vec3 col = mix(cool, hot, gran);
+          float ndv = max(dot(normalize(vN), normalize(vV)), 0.0);
+          col *= 0.5 + 0.8 * pow(ndv, 0.55);
+          col += vec3(1.0, 0.72, 0.42) * pow(1.0 - ndv, 2.8) * 1.5;
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    }));
     scene.add(star);
     const starGlow = ctx.glow(0xffe6b0, 5, 0.5);
     scene.add(starGlow);
@@ -745,33 +901,131 @@ function CurvatureEngine3D() {
     scene.add(corona);
     const throat = ctx.glow(0x7a6cff, 6, 0.34);   // luminous well throat
     scene.add(throat);
+    const ringTex = mkRadialTex([
+      [0, "rgba(0,0,0,0)"], [0.34, "rgba(0,0,0,0)"], [0.42, "rgba(190,170,255,0.9)"],
+      [0.47, "rgba(255,240,220,0.35)"], [0.55, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"],
+    ]);
+    const einstein = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: ringTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    scene.add(einstein);
 
-    const mkTrail = (hex, op, width) => {
+    // ---------- gradient-fading trails with comet dust ----------
+    const TRAIL_N = det === "low" ? 220 : 360;
+    const mkTrail = (hex) => {
       const g = new THREE.BufferGeometry();
-      const buf = new THREE.BufferAttribute(new Float32Array(360 * 3), 3);
+      const buf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
+      const cbuf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
       g.setAttribute("position", buf);
+      g.setAttribute("color", cbuf);
       g.setDrawRange(0, 0);
       const l = new THREE.Line(g, new THREE.LineBasicMaterial({
-        color: hex, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false,
+        vertexColors: true, transparent: true, opacity: 0.95,
+        blending: THREE.AdditiveBlending, depthWrite: false,
       }));
       l.frustumCulled = false;
       scene.add(l);
-      return { buf, g, l };
+      let pts = null, pbuf = null, pcbuf = null, pn = 0;
+      if (det !== "low") {
+        pn = Math.floor(TRAIL_N / 6);
+        const pg = new THREE.BufferGeometry();
+        pbuf = new THREE.BufferAttribute(new Float32Array(pn * 3), 3);
+        pcbuf = new THREE.BufferAttribute(new Float32Array(pn * 3), 3);
+        pg.setAttribute("position", pbuf);
+        pg.setAttribute("color", pcbuf);
+        pg.setDrawRange(0, 0);
+        pts = new THREE.Points(pg, new THREE.PointsMaterial({
+          size: 0.16, map: qgaGlowTexture(), vertexColors: true, transparent: true,
+          opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+        }));
+        pts.frustumCulled = false;
+        scene.add(pts);
+      }
+      return { buf, cbuf, g, l, pts, pbuf, pcbuf, pn, hex: new THREE.Color(hex) };
+    };
+    const writeTrail = (tr, list) => {
+      const n = Math.min(list.length, TRAIL_N);
+      for (let i = 0; i < n; i++) {
+        const q = list[list.length - n + i];
+        tr.buf.setXYZ(i, q[0], q[1], q[2]);
+        const f = Math.pow(i / Math.max(n - 1, 1), 1.7);   // additive: black tail = fade-out
+        tr.cbuf.setXYZ(i, tr.hex.r * f, tr.hex.g * f, tr.hex.b * f);
+        if (tr.pts && i % 6 === 0) {
+          const j = i / 6;
+          if (j < tr.pn) {
+            tr.pbuf.setXYZ(j, q[0], q[1] + 0.02, q[2]);
+            tr.pcbuf.setXYZ(j, tr.hex.r * f * 0.8, tr.hex.g * f * 0.8, tr.hex.b * f * 0.8);
+          }
+        }
+      }
+      tr.buf.needsUpdate = true; tr.cbuf.needsUpdate = true;
+      tr.g.setDrawRange(0, n);
+      if (tr.pts) {
+        tr.pbuf.needsUpdate = true; tr.pcbuf.needsUpdate = true;
+        tr.pts.geometry.setDrawRange(0, Math.min(tr.pn, Math.ceil(n / 6)));
+      }
     };
 
-    // orbiting geodesic bodies
-    const st0 = stRef.current;
-    const bodyVis = st0.bodies.map((b) => {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(b.r, 20, 16),
-        new THREE.MeshBasicMaterial({ color: b.hex }));
+    // pre-built body visuals (slots toggled by count; colors/scales set per frame)
+    const bodyVis = [];
+    for (let i = 0; i < GR_MAX_BODIES; i++) {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), new THREE.MeshStandardMaterial({
+        color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.32, metalness: 0.15,
+      }));
+      mesh.userData.bodyIndex = i;
+      mesh.visible = false;
       scene.add(mesh);
-      const glow = ctx.glow(b.hex, b.r * 9, 0.6);
+      const glow = ctx.glow(0xffffff, 1, 0.6);
+      glow.visible = false;
       scene.add(glow);
-      return { mesh, glow, trail: mkTrail(b.hex, 0.62, 1) };
-    });
+      bodyVis.push({ mesh, glow, trail: mkTrail(0xffffff) });
+    }
+    const selRing = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 48), new THREE.MeshBasicMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    selRing.visible = false;
+    scene.add(selRing);
 
     // lensing fan of light rays
-    const rayVis = st0.rays.map(() => mkTrail(0xffcf72, 0.7, 1));
+    const rayVis = stRef.current.rays.map(() => mkTrail(0xffcf72));
+
+    // capture / close-approach flash pool
+    const flashes = [];
+    for (let i = 0; i < 4; i++) {
+      const sp = ctx.glow(0xffffff, 0.001, 0);
+      sp.visible = false;
+      scene.add(sp);
+      flashes.push({ sp, t: 9, dur: 0.7 });
+    }
+    const triggerFlash = (x, y, z, hex) => {
+      const f = flashes.find((fl) => fl.t >= fl.dur) || flashes[0];
+      f.t = 0;
+      f.sp.position.set(x, y, z);
+      f.sp.material.color.setHex(hex);
+      f.sp.visible = true;
+    };
+
+    // infalling dust motes spiralling down the funnel
+    let dust = null;
+    if (det !== "low") {
+      const DN = det === "ultra" ? 320 : 180;
+      const dGeo = new THREE.BufferGeometry();
+      const dPos = new Float32Array(DN * 3);
+      const dData = [];
+      for (let i = 0; i < DN; i++) {
+        const r = 2.5 + Math.random() * 6.5, a = Math.random() * Math.PI * 2;
+        dData.push({ r, a, fall: 0.12 + Math.random() * 0.25 });
+        dPos[i * 3] = Math.cos(a) * r; dPos[i * 3 + 1] = 0; dPos[i * 3 + 2] = Math.sin(a) * r;
+      }
+      dGeo.setAttribute("position", new THREE.BufferAttribute(dPos, 3));
+      dust = new THREE.Points(dGeo, new THREE.PointsMaterial({
+        size: 0.09, map: qgaGlowTexture(), color: 0x9db8ff, transparent: true, opacity: 0.42,
+        depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+      }));
+      dust.userData.data = dData;
+      scene.add(dust);
+    }
 
     const force = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.4, 0xd96a5a, 0.35, 0.2);
     force.visible = false;
@@ -779,48 +1033,92 @@ function CurvatureEngine3D() {
 
     ctx.label("M — curvature source", () => ({ x: 0, y: hAt(0.01, 0.01) + 1.9, z: 0 }), "s3d-strong");
     const pLabel = ctx.label("geodesic — free fall, no force",
-      () => { const b = stRef.current.bodies[0]; return { x: b.x, y: hAt(b.x, b.y) + 0.55, z: b.y }; }, "s3d-quiet");
+      () => {
+        const sim = stRef.current.sim;
+        const b = sim[Math.min(selRef.current, sim.length - 1)];
+        return b ? { x: b.x, y: hAt(b.x, b.y) + 0.55, z: b.y } : { x: 0, y: 1, z: 0 };
+      }, "s3d-quiet");
     const lensLabel = ctx.label("gravitational lensing — light bends toward the mass",
       () => ({ x: 4.4, y: 0.6, z: 0 }), "s3d-quiet");
     ctx.annotation("embedding-diagram intuition — the 'rubber sheet' shows spatial curvature only; time curvature dominates everyday gravity",
       () => ({ x: 0, y: 0.4, z: EXT / 2 - 1 }));
 
-    const writeTrail = (trail, list) => {
-      const n = Math.min(list.length, 360);
-      for (let i = 0; i < n; i++) {
-        const q = list[list.length - n + i];
-        trail.buf.setXYZ(i, q[0], q[1], q[2]);
-      }
-      trail.buf.needsUpdate = true;
-      trail.g.setDrawRange(0, n);
-    };
-
     return {
       autoRotate: true,
+      pickables: bodyVis.map((v) => v.mesh),
+      onPick: (obj) => {
+        if (obj && obj.userData.bodyIndex != null && obj.userData.bodyIndex < bodiesRef.current.length) {
+          setSelected(obj.userData.bodyIndex);
+        }
+      },
       update: (t, dt) => {
         const M = massRef.current, GM = 0.55 * M;
         const newton = viewRef.current === "newton";
         if (lastM !== M || lastView !== viewRef.current) { lastM = M; lastView = viewRef.current; reshape(); }
-        wellUniforms.uTime.value += dt * 60 * 0.016 * ctx.motion();
+        const mo = ctx.motion();
+        const spd = speedRef.current;
+        wellUniforms.uTime.value += dt * 60 * 0.016 * mo;
         wellUniforms.uFlat.value += ((newton ? 1 : 0) - wellUniforms.uFlat.value) * Math.min(1, dt * 6);
+        coreUni.uTime.value += dt * mo;
+        starUni.uTime.value += dt * mo;
 
+        // ---- sync sim bodies with the editable parameter list (by uid) ----
+        const st = stRef.current;
+        const params = bodiesRef.current;
+        let dirty = st.sim.length !== params.length;
+        for (let i = 0; !dirty && i < params.length; i++) {
+          if (st.sim[i].uid !== params[i].uid) { dirty = true; break; }
+          // live-editable parameters: keep the running sim in step with the sliders
+          st.sim[i].a = params[i].a; st.sim[i].e = params[i].e;
+          st.sim[i].r = params[i].r; st.sim[i].hex = params[i].hex;
+        }
+        if (dirty) {
+          st.sim = params.map((p, i) => {
+            const old = st.sim.find((s) => s.uid === p.uid);
+            if (old) { old.a = p.a; old.e = p.e; old.r = p.r; old.hex = p.hex; return old; }
+            return {
+              uid: p.uid, free: p.free, a: p.a, e: p.e, r: p.r, hex: p.hex,
+              theta: p.phase != null ? p.phase : i * 2.4, peri: p.peri || 0,
+              x: p.free ? p.x0 : 0, y: p.free ? p.y0 : 0,
+              vx: p.free ? p.vx0 : 0, vy: p.free ? p.vy0 : 0,
+              x0: p.x0, y0: p.y0, vx0: p.vx0, vy0: p.vy0,
+              trail: [],
+            };
+          });
+        }
+
+        // ---- central star ----
         const sc = 0.45 + M * 0.07;
         star.scale.setScalar(sc);
         star.position.y = hAt(0.01, 0.01) + sc * 0.4;
-        const pulse = 1 + 0.05 * Math.sin(t * 2.0) * ctx.motion();
+        starLight.position.copy(star.position);
+        starLight.intensity = 1.6 + M * 0.12;
+        const pulse = 1 + 0.05 * Math.sin(t * 2.0) * mo;
         starGlow.position.copy(star.position); starGlow.scale.setScalar(sc * 4.4 * pulse);
         corona.position.copy(star.position); corona.scale.setScalar(sc * 7 * pulse);
+        einstein.position.copy(star.position);
+        einstein.scale.setScalar(sc * (5.2 + M * 0.25) * pulse);
+        einstein.material.opacity = (newton ? 0.06 : 0.4) * (1 - wellUniforms.uFlat.value);
         throat.position.set(0, hAt(0.01, 0.01) - 0.2, 0);
         throat.scale.setScalar((1 - wellUniforms.uFlat.value) * (3 + M * 0.5));
         throat.material.opacity = 0.34 * (1 - wellUniforms.uFlat.value);
-        stars.rotation.y += dt * 0.012 * ctx.motion();
+        stars.rotation.y += dt * 0.012 * mo;
 
-        const st = stRef.current;
-        const sub = 6, sdt = Math.min(dt, 0.04) / sub;
-        const C2 = GR_C2; // (scene light speed c = 5.2)^2
+        // ---- dynamics ----
+        const sub = 6, sdt = Math.min(dt, 0.04) / sub * spd;
         const mu = GM, TS = 2.2; // gravitational parameter; TS = overall visual time-scale
+        const capR = P.grCaptureRadius(mu, GR_C2);
         for (let s = 0; s < sub; s++) {
-          for (const p of st.bodies) {
+          for (const p of st.sim) {
+            if (p.free) {
+              // numerically integrated post-Newtonian plunge; captured at r = 3GM/c²
+              P.grPlungeStep(p, mu, GR_C2, TS * sdt);
+              if (Math.hypot(p.x, p.y) < capR) {
+                triggerFlash(p.x, hAt(p.x, p.y) + 0.25, p.y, 0xbfa0ff);
+                p.x = p.x0; p.y = p.y0; p.vx = p.vx0; p.vy = p.vy0; p.trail = [];
+              }
+              continue;
+            }
             // exact precessing Kepler orbit: advance true anomaly by the area law
             //   dθ/dt = h / r²,  h = √(μ a(1−e²)),  r = a(1−e²)/(1+e cosθ)
             // and advance the perihelion by the exact GR rate Δϖ = 6πμ/[c² a(1−e²)] per orbit
@@ -830,7 +1128,7 @@ function CurvatureEngine3D() {
             const h = Math.sqrt(mu * p_);
             const dtheta = TS * h / (rr * rr) * sdt;
             p.theta += dtheta;
-            if (!newton) p.peri += (6 * Math.PI * mu / (C2 * p_)) / (2 * Math.PI) * dtheta;
+            if (!newton) p.peri += (6 * Math.PI * mu / (GR_C2 * p_)) / (2 * Math.PI) * dtheta;
             const ang = p.theta + p.peri;
             p.x = rr * Math.cos(ang);
             p.y = rr * Math.sin(ang);
@@ -846,39 +1144,95 @@ function CurvatureEngine3D() {
                 const vn = Math.hypot(q.vx, q.vy); q.vx *= 5.2 / vn; q.vy *= 5.2 / vn;
                 q.x += q.vx * sdt * 0.96; q.y += q.vy * sdt * 0.96;
               }
+              if (qr < 1.05 && !q.near) { q.near = true; triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xffd9a0); }
+              if (qr > 2.2) q.near = false;
               if (q.x > 9.0 || Math.abs(q.y) > 7.4 || qr <= 0.42) {
-                q.x = -7.6; q.y = GR_RAY_B[ri]; q.vx = 5.2; q.vy = 0; q.trail = [];
+                q.x = -7.6; q.y = GR_RAY_B[ri]; q.vx = 5.2; q.vy = 0; q.trail = []; q.near = false;
               }
             }
           }
         }
         if (dt > 0) {
-          for (const p of st.bodies) {
+          for (const p of st.sim) {
             p.trail.push([p.x, hAt(p.x, p.y) + 0.16, p.y]);
-            if (p.trail.length > 360) p.trail.shift();
+            if (p.trail.length > TRAIL_N) p.trail.shift();
           }
           if (rayRef.current) for (const q of st.rays) {
             q.trail.push([q.x, hAt(q.x, q.y) + 0.12, q.y]);
-            if (q.trail.length > 360) q.trail.shift();
+            if (q.trail.length > TRAIL_N) q.trail.shift();
           }
         }
-        st.bodies.forEach((p, i) => {
+
+        // ---- body visuals + selection ring ----
+        const showT = trailRef.current;
+        st.sim.forEach((p, i) => {
+          const v = bodyVis[i];
           const y = hAt(p.x, p.y) + 0.16;
-          bodyVis[i].mesh.position.set(p.x, y, p.y);
-          bodyVis[i].glow.position.set(p.x, y, p.y);
-          writeTrail(bodyVis[i].trail, p.trail);
+          v.mesh.visible = true; v.glow.visible = true;
+          v.mesh.material.color.setHex(p.hex);
+          v.mesh.material.emissive.setHex(p.hex);
+          v.mesh.position.set(p.x, y, p.y);
+          v.mesh.scale.setScalar(p.r);
+          v.glow.position.set(p.x, y, p.y);
+          v.glow.scale.setScalar(p.r * 9 * (1 + 0.12 * Math.sin(t * 3 + i) * mo));
+          v.trail.hex.setHex(p.hex);
+          v.trail.l.visible = showT;
+          if (v.trail.pts) v.trail.pts.visible = showT;
+          if (showT) writeTrail(v.trail, p.trail);
         });
+        for (let i = st.sim.length; i < GR_MAX_BODIES; i++) {
+          const v = bodyVis[i];
+          v.mesh.visible = false; v.glow.visible = false;
+          v.trail.l.visible = false;
+          if (v.trail.pts) v.trail.pts.visible = false;
+        }
+        const selIdx2 = Math.min(selRef.current, st.sim.length - 1);
+        if (st.sim.length) {
+          const p = st.sim[selIdx2];
+          selRing.visible = true;
+          selRing.position.set(p.x, hAt(p.x, p.y) + 0.16, p.y);
+          selRing.quaternion.copy(camera.quaternion);
+          selRing.scale.setScalar(Math.max(1, p.r * 7));
+        } else selRing.visible = false;
+
         const showRays = rayRef.current;
         rayVis.forEach((rv, i) => {
           rv.l.visible = showRays;
+          if (rv.pts) rv.pts.visible = false;
           if (showRays) writeTrail(rv, st.rays[i].trail);
         });
         lensLabel.setShow(showRays);
 
-        force.visible = newton;
-        pLabel.set(newton ? "F = −GMm r̂ / r² — force picture" : "geodesic — free fall, no force");
-        if (newton) {
-          const b = st.bodies[0];
+        // ---- flashes ----
+        for (const f of flashes) {
+          if (f.t >= f.dur) { if (f.sp.visible) f.sp.visible = false; continue; }
+          f.t += dt;
+          const k = Math.min(f.t / f.dur, 1);
+          f.sp.scale.setScalar(0.5 + 7 * k);
+          f.sp.material.opacity = 0.85 * (1 - k);
+        }
+
+        // ---- infalling dust ----
+        if (dust) {
+          const dpos = dust.geometry.attributes.position;
+          const data = dust.userData.data;
+          for (let i = 0; i < data.length; i++) {
+            const d = data[i];
+            d.a += dt * (0.25 + 2.2 / (d.r + 0.5)) * spd * (0.3 + 0.7 * mo);
+            d.r -= dt * d.fall * (0.6 + 2.5 / (d.r + 1)) * (0.3 + 0.7 * mo);
+            if (d.r < 0.7) { d.r = 7.5 + Math.random() * 1.5; d.a = Math.random() * Math.PI * 2; }
+            dpos.setXYZ(i, Math.cos(d.a) * d.r, hAt(Math.cos(d.a) * d.r, Math.sin(d.a) * d.r) + 0.06, Math.sin(d.a) * d.r);
+          }
+          dpos.needsUpdate = true;
+        }
+
+        // ---- Newtonian force overlay ----
+        force.visible = newton && st.sim.length > 0;
+        pLabel.set(newton ? "F = −GMm r̂ / r² — force picture"
+          : (st.sim[selIdx2] && st.sim[selIdx2].free ? "plunge — integrated geodesic, captured at r = 3GM/c²"
+            : "geodesic — free fall, no force"));
+        if (newton && st.sim.length) {
+          const b = st.sim[selIdx2];
           const r = Math.hypot(b.x, b.y) + 1e-6;
           force.position.set(b.x, hAt(b.x, b.y) + 0.16, b.y);
           force.setDirection(new THREE.Vector3(-b.x / r, 0, -b.y / r));
@@ -888,6 +1242,7 @@ function CurvatureEngine3D() {
     };
   };
 
+  const scenarioIds = Object.keys(window.QGA_PHYSICS.GR_CURVATURE_SCENARIOS);
   return (
     <div className="viz-frame">
       <div className="viz-toolbar">
@@ -898,15 +1253,50 @@ function CurvatureEngine3D() {
           <button className={"btn" + (view === "newton" ? " on" : "")} onClick={() => setView("newton")}>Newtonian intuition</button>
         </span>
         <Toggle label="lensing rays" checked={showRay} onChange={setShowRay}></Toggle>
+        <Toggle label="orbit trails" checked={showTrails} onChange={setShowTrails}></Toggle>
+        <SliderRow label="time ×" min={0.25} max={2.5} step={0.05} value={speed} onChange={setSpeed}
+          format={(v) => v.toFixed(2)}></SliderRow>
         <button className="btn" onClick={relaunch}>Re-launch bodies</button>
       </div>
-      <Scene3D height={480} aria="Three-dimensional luminous gravity well with precessing geodesic orbits and a fan of gravitationally lensed light rays"
-        initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 0.95, radius: 0.62, threshold: 0.12 } }}
+      <div className="viz-toolbar">
+        <span className="chip-row" role="group" aria-label="scenario presets">
+          {scenarioIds.map((id) => (
+            <button key={id} className={"chip" + (scenario === id ? " on" : "")}
+              aria-pressed={scenario === id} onClick={() => applyScenario(id)}
+            >{window.QGA_PHYSICS.grCurvatureScenario(id).label}</button>
+          ))}
+        </span>
+      </div>
+      <div className="viz-toolbar">
+        <span className="chip-row" role="group" aria-label="orbiting bodies">
+          {bodies.map((b, i) => (
+            <button key={b.uid} className={"chip body-chip" + (i === selIdx ? " on" : "")}
+              aria-pressed={i === selIdx} onClick={() => setSelected(i)}
+            ><span className="body-dot" style={{ background: "#" + b.hex.toString(16).padStart(6, "0") }}></span
+            >{b.free ? "plunge" : "body " + (i + 1)}</button>
+          ))}
+          <button className="chip" onClick={addBody} disabled={bodies.length >= GR_MAX_BODIES}>+ body</button>
+          <button className="chip" onClick={removeSelected} disabled={bodies.length <= 1}>− remove</button>
+        </span>
+        {selBody && !selBody.free && (
+          <React.Fragment>
+            <SliderRow label="semi-major a" min={1.4} max={6.5} step={0.05} value={selBody.a}
+              onChange={(v) => patchSelected({ a: v })} format={(v) => v.toFixed(2)}></SliderRow>
+            <SliderRow label="eccentricity e" min={0} max={0.9} step={0.01} value={selBody.e}
+              onChange={(v) => patchSelected({ e: v })} format={(v) => v.toFixed(2)}></SliderRow>
+          </React.Fragment>
+        )}
+        {selBody && selBody.free && (
+          <span className="chip-hint">plunge body — numerically integrated; captured at r = 3GM/c²</span>
+        )}
+      </div>
+      <Scene3D height={480} aria="Three-dimensional luminous gravity well with selectable multi-body geodesic orbits, scenario presets, and a fan of gravitationally lensed light rays"
+        initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>
       <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
-        <div className="readout"><div className="readout-label">inner orbit eccentricity e</div>
-          <div className="readout-value">{innerE.toFixed(3)}</div></div>
-        <div className="readout"><div className="readout-label">perihelion advance (this config)</div>
+        <div className="readout"><div className="readout-label">selected body eccentricity e</div>
+          <div className="readout-value">{selBody && !selBody.free ? selBody.e.toFixed(3) : "—"}</div></div>
+        <div className="readout"><div className="readout-label">perihelion advance (selected)</div>
           <div className="readout-value">{precDeg > 0.05 ? "+" + precDeg.toFixed(1) : "0.0"}<span className="unit">° / orbit</span></div></div>
         <div className="readout"><div className="readout-label">Mercury (real, GR)</div>
           <div className="readout-value">42.98<span className="unit">″ / century</span></div></div>
@@ -915,7 +1305,8 @@ function CurvatureEngine3D() {
       </div>
       <VizCaption status="schematic">
         The well is a Flamm-paraboloid embedding of a spatial slice — an intuition aid, not a literal picture of 3D
-        space — but the <em>dynamics</em> are quantitatively real: each body integrates the geodesic acceleration
+        space — but the <em>dynamics</em> are quantitatively real: each bound body rides the exact precessing solution
+        of the geodesic acceleration
         <Eq tex="a_r = -\,GM/r^2 \;-\; 3GM L^2/(c^2 r^4)"></Eq>, whose second (post-Newtonian) term advances the
         perihelion by exactly <Eq tex="\Delta\varpi = 6\pi GM/[\,c^2 a(1-e^2)\,]"></Eq> every orbit — the value in
         the readout above, which scales with mass and switches to 0 in the Newtonian view (closed ellipse). The inner,
@@ -923,7 +1314,11 @@ function CurvatureEngine3D() {
         (here amplified for visibility). The light-ray fan deflects by <Eq tex="4GM/c^2 b"></Eq> — twice the Newtonian
         value (the 1919 eclipse result) — and focuses behind the mass: gravitational lensing. Halve it in the
         Newtonian view and a force vector replaces the geometry. Same leading orbit, profoundly different ontology.
-        <span className="dim"> Real anchors: Mercury 42.98″/century (GR portion); Sun 1.75″ at the limb.</span>
+        Real anchors: Mercury 42.98″/century (GR portion); Sun 1.75″ at the limb.
+        <span className="dim"> Six presets — classic pair, Mercury-like (e = 0.206), high-e comet, 2:1 Kepler
+        resonance, five-body cluster, and a capture plunge integrated to r = 3GM/c² — plus click-to-select bodies,
+        add or remove up to six, live a/e editing, and a time-scale control. Test particles probe the central mass
+        only; body–body perturbations are deliberately omitted so every precession number stays exact.</span>
       </VizCaption>
     </div>
   );

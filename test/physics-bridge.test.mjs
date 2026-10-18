@@ -451,3 +451,19 @@ test("the bridge is deterministic across evaluations", async () => {
     bridge.traceKerrRay({ aStar: 0, r: 20, theta: 1.2, direction: [0.6, 0.3, 0.2] }).steps,
   );
 });
+
+test("the bridge mirrors the curvature-engine scenario core", async () => {
+  const mjs = await import("../js/physics.mjs");
+  assert.equal(bridge.GR_ENGINE_C2, mjs.GR_ENGINE_C2);
+  assert.deepEqual(plain(bridge.GR_CURVATURE_SCENARIOS), plain(mjs.GR_CURVATURE_SCENARIOS));
+  assert.equal(bridge.grEngineGM(5), mjs.grEngineGM(5));
+  assert.equal(bridge.grCaptureRadius(2, 27.04), mjs.grCaptureRadius(2, 27.04));
+  assert.equal(bridge.grCurvatureScenario("nope").label, mjs.grCurvatureScenario("nope").label);
+  const pB = { x: -6.2, y: 1.4, vx: 1.61, vy: -0.12 };
+  const pM = { ...pB };
+  for (let i = 0; i < 50; i++) {
+    bridge.grPlungeStep(pB, 3.85, 27.04, 0.005);
+    mjs.grPlungeStep(pM, 3.85, 27.04, 0.005);
+  }
+  assert.deepEqual(plain(pB), plain(pM));
+});

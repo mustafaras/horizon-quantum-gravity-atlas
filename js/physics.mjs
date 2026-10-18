@@ -62,6 +62,86 @@ export function grLightDeflection(gm, c2, impactParameter) {
   return (4 * gm) / (c2 * impactParameter);
 }
 
+/* Curvature-engine scenario presets (scene units: GM = 0.55·M, c² = 27.04,
+   c = 5.2). Bound bodies are test particles on analytic precessing ellipses
+   (a = semi-major axis, e = eccentricity, phase = initial true anomaly,
+   peri = perihelion angle). A `free` body is numerically integrated with the
+   same post-Newtonian radial acceleration — used for the capture-plunge demo. */
+export const GR_ENGINE_C2 = 27.04;
+export const grEngineGM = (mass) => 0.55 * mass;
+
+// Photon-sphere capture radius r = 3GM/c² (1.5 r_s), floored for visibility.
+export function grCaptureRadius(gm, c2) {
+  return Math.max(0.45, (3 * gm) / c2);
+}
+
+// One semi-implicit substep of a_r = −GM/r² − 3GM L²/(c² r⁴) along −r̂.
+// Mutates and returns p = {x, y, vx, vy}.
+export function grPlungeStep(p, gm, c2, dt) {
+  const r2 = p.x * p.x + p.y * p.y;
+  if (r2 < 1e-12) return p;
+  const r = Math.sqrt(r2);
+  const L = p.x * p.vy - p.y * p.vx;
+  const ar = -gm / r2 - (3 * gm * L * L) / (c2 * r2 * r2);
+  p.vx += (ar * p.x) / r * dt;
+  p.vy += (ar * p.y) / r * dt;
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+  return p;
+}
+
+export const GR_CURVATURE_SCENARIOS = {
+  classic: {
+    label: "Classic pair", mass: 5, rays: true,
+    bodies: [
+      { a: 2.2, e: 0.45, phase: 0, peri: 0 },
+      { a: 3.5, e: 0.22, phase: Math.PI, peri: 0.6 },
+    ],
+  },
+  mercury: {
+    label: "Mercury-like", mass: 6, rays: true,
+    bodies: [
+      { a: 2.4, e: 0.206, phase: 0.4, peri: 0 },
+      { a: 4.6, e: 0.05, phase: 2.4, peri: 1.2 },
+    ],
+  },
+  comet: {
+    label: "High-e comet", mass: 5, rays: true,
+    bodies: [
+      { a: 3.2, e: 0.82, phase: 0.3, peri: -0.4 },
+      { a: 5.4, e: 0.1, phase: 2.0, peri: 1.1 },
+    ],
+  },
+  resonance: {
+    label: "2:1 resonance", mass: 5.5, rays: false,
+    bodies: [
+      { a: 2.1, e: 0.12, phase: 0, peri: 0.2 },
+      { a: 2.1 * Math.pow(2, 2 / 3), e: 0.12, phase: Math.PI, peri: 1.4 },
+    ],
+  },
+  cluster: {
+    label: "Five-body cluster", mass: 6.5, rays: true,
+    bodies: [
+      { a: 1.8, e: 0.15, phase: 0.0, peri: 0.3 },
+      { a: 2.5, e: 0.35, phase: 1.3, peri: 2.1 },
+      { a: 3.2, e: 0.08, phase: 2.6, peri: 4.4 },
+      { a: 4.1, e: 0.5, phase: 3.9, peri: 0.9 },
+      { a: 5.2, e: 0.25, phase: 5.2, peri: 3.0 },
+    ],
+  },
+  plunge: {
+    label: "Capture plunge", mass: 7, rays: true,
+    bodies: [
+      { a: 4.2, e: 0.3, phase: 1.0, peri: 0.5 },
+      { free: true, x0: -6.2, y0: 1.4, vx0: 1.61, vy0: -0.12 },
+    ],
+  },
+};
+
+export function grCurvatureScenario(id) {
+  return GR_CURVATURE_SCENARIOS[id] || GR_CURVATURE_SCENARIOS.classic;
+}
+
 /* ---------- Planck units: the unique scale built from ħ, G, c alone ---------- */
 export function planckUnits() {
   const lengthMeters = Math.sqrt((HBAR * G) / C ** 3);

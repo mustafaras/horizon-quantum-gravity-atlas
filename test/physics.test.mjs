@@ -12,6 +12,8 @@ import {
   qcdB0, rgBeta, rgBetaDerivative, rgStability, rgFixedPoints,
   findRGFixedPoints, rgOneLoopRunning, integrateRGFlow,
   grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
+  GR_ENGINE_C2, grEngineGM, grCaptureRadius, grPlungeStep,
+  GR_CURVATURE_SCENARIOS, grCurvatureScenario,
   blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
   clamp, transformPair, QFT_CONSTANTS,
 } from "../js/physics.mjs";
@@ -553,4 +555,59 @@ test("QFT constants match PDG values", () => {
   assert.equal(QFT_CONSTANTS.GAMMA_Z, 2.4952);
   assert.ok(Math.abs(QFT_CONSTANTS.GEV2_TO_NB - 0.3893793721e6) < 1e-3);
   assert.ok(Math.abs(QFT_CONSTANTS.M_ELECTRON - 0.51099895e-3) < 1e-12);
+});
+
+/* ---------- curvature-engine scenario core ---------- */
+
+test("capture radius is 3GM/c² (1.5 r_s) with a visibility floor", () => {
+  const gm = grEngineGM(10); // 3GM/c² ≈ 0.61 > floor
+  assert.ok(Math.abs(grCaptureRadius(gm, GR_ENGINE_C2) - 3 * gm / GR_ENGINE_C2) < 1e-12);
+  // small mass → floored at 0.45
+  assert.equal(grCaptureRadius(grEngineGM(5), GR_ENGINE_C2), 0.45);
+});
+
+test("plunge step conserves angular momentum and falls inward", () => {
+  const gm = grEngineGM(7);
+  const p = { x: -6.2, y: 1.4, vx: 1.61, vy: -0.12 };
+  const L0 = p.x * p.vy - p.y * p.vx;
+  let r0 = Math.hypot(p.x, p.y);
+  let fell = false;
+  for (let i = 0; i < 4000; i++) {
+    grPlungeStep(p, gm, GR_ENGINE_C2, 0.005);
+    const r = Math.hypot(p.x, p.y);
+    if (r < r0 - 1e-9) fell = true;
+    r0 = r;
+    if (r < grCaptureRadius(gm, GR_ENGINE_C2)) break;
+  }
+  const L1 = p.x * p.vy - p.y * p.vx;
+  assert.ok(Math.abs(L1 - L0) / Math.abs(L0) < 1e-3, "L conserved to <0.1%");
+  assert.ok(fell, "radius decreases under attraction");
+  assert.ok(Math.hypot(p.x, p.y) < grCaptureRadius(gm, GR_ENGINE_C2), "body reaches the capture zone");
+});
+
+test("all curvature scenarios are well-formed", () => {
+  const ids = Object.keys(GR_CURVATURE_SCENARIOS);
+  assert.ok(ids.length >= 5, "at least five scenario presets");
+  for (const id of ids) {
+    const s = GR_CURVATURE_SCENARIOS[id];
+    assert.ok(s.label && s.mass > 0 && Array.isArray(s.bodies) && s.bodies.length >= 1, id);
+    for (const b of s.bodies) {
+      if (b.free) {
+        for (const k of ["x0", "y0", "vx0", "vy0"]) assert.ok(Number.isFinite(b[k]), `${id}.${k}`);
+      } else {
+        assert.ok(b.a > 0 && b.e >= 0 && b.e < 1, `${id} orbit a/e valid`);
+      }
+    }
+  }
+});
+
+test("2:1 resonance preset has period ratio ≈ 2 (Kepler's third law)", () => {
+  const [inner, outer] = GR_CURVATURE_SCENARIOS.resonance.bodies;
+  const ratio = Math.pow(outer.a / inner.a, 1.5);
+  assert.ok(Math.abs(ratio - 2) < 0.02, `ratio ${ratio}`);
+});
+
+test("grCurvatureScenario falls back to classic on unknown id", () => {
+  assert.equal(grCurvatureScenario("nope"), GR_CURVATURE_SCENARIOS.classic);
+  assert.equal(grCurvatureScenario("cluster"), GR_CURVATURE_SCENARIOS.cluster);
 });
