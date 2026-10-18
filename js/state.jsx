@@ -11,6 +11,7 @@ const QGA_DEFAULT_STATE = {
   rgPreset: "qcd", rgPresetOrigin: "qcd", rgModel: "qcd", rgG0: 1.218, rgMu0: 2, rgLogMin: -1, rgLogMax: 8,
   rgNf: 5, rgA: 1, rgB: 1, rgGStar: 1, rgCurrent: 2,
   qftLabMode: "field", qftLabMass: 1, hawkingLabAmplify: 12,
+  adsLabLinks: 5, adsLabRegion: 0.5, colliderChannel: "h2gg", spinFoamJMax: 2, spinFoamMode: "network",
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -24,6 +25,7 @@ const QGA_STATE_KEYS = {
   rgPreset: "rgp", rgPresetOrigin: "rgpo", rgModel: "rgm", rgG0: "rgg", rgMu0: "rgmu", rgLogMin: "rglo",
   rgLogMax: "rghi", rgNf: "rgnf", rgA: "rga", rgB: "rgb", rgGStar: "rggs", rgCurrent: "rgc",
   qftLabMode: "qftm", qftLabMass: "qftms", hawkingLabAmplify: "hla",
+  adsLabLinks: "aln", adsLabRegion: "alr", colliderChannel: "clc", spinFoamJMax: "sfj", spinFoamMode: "sfm",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const QGA_ENUMS = {
@@ -37,8 +39,9 @@ const QGA_ENUMS = {
   bhDiskModel: ["page-thorne-turbulent", "page-thorne", "page-thorne-opaque", "newtonian"],
   bhRenderQuality: ["performance", "balanced", "ultra"],
   qftLabMode: ["field", "correlation", "flux"],
+  colliderChannel: ["h2gg", "z2mm", "z2ee", "ttbar", "qcd"], spinFoamMode: ["network", "foam"],
 };
-const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "gwPitch", "gwVolume", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent", "qftLabMass", "hawkingLabAmplify"];
+const QGA_NUMBERS = ["bhMass", "bhSpin", "bhStateVersion", "bhInclination", "bhObserverDistance", "bhExposure", "gwStart", "gwDuration", "gwM1", "gwM2", "seed", "gwPitch", "gwVolume", "qftSqrtS", "qftAngle", "qftPhotonX", "grBeta", "grAt", "grAx", "grBt", "grBx", "rgG0", "rgMu0", "rgLogMin", "rgLogMax", "rgNf", "rgA", "rgB", "rgGStar", "rgCurrent", "qftLabMass", "hawkingLabAmplify", "adsLabLinks", "adsLabRegion", "spinFoamJMax"];
 // Unversioned and v1 Kerr links retain the smooth disk/annotation defaults.
 // New black-hole links carry bhv=2, making the turbulent default unambiguous.
 // The Prompt 05 volume keys (bhCorona, bhJets) are additive with safe
@@ -89,6 +92,10 @@ function qgaReadState(search = window.location.search) {
   // Prompt 07 compute labs: additive keys with safe defaults.
   state.qftLabMass = qgaClamp(state.qftLabMass, 0, 3);
   state.hawkingLabAmplify = qgaClamp(state.hawkingLabAmplify, 1, 1000);
+  // Prompt 08 labs: additive keys with safe defaults.
+  state.adsLabLinks = qgaClamp(Math.round(state.adsLabLinks), 0, 12);
+  state.adsLabRegion = qgaClamp(state.adsLabRegion, 0.1, 0.9);
+  state.spinFoamJMax = qgaClamp(Math.round(state.spinFoamJMax), 1, 4);
   state.grPreset = QGA_ENUMS.grPreset.includes(state.grPreset) ? state.grPreset : QGA_DEFAULT_STATE.grPreset;
   const causal = window.QGA_PHYSICS.sanitizeCausalState({
     beta: state.grBeta,
@@ -217,10 +224,19 @@ function qgaExportJson(state, extra = {}) {
   })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
     : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
   // Prompt 07 compute labs: attach the active lab's provenance + runtime stats.
+  // Prompt 08: the black-hole view hosts both the Hawking and AdS labs; the
+  // AdS branch is additive and only fires when its scene is actually mounted.
   const labMetadata = !window.QGA_LABS ? {}
     : state.view === "qft" ? window.QGA_LABS.qftFieldExportMetadata(state, window.__qgaQftLab || {})
-    : state.view === "bh" ? window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {})
+    : state.view === "bh" ? {
+      ...window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {}),
+      ...(window.__qgaAdsLab
+        ? window.QGA_LABS.adsExportMetadata(state, window.__qgaAdsLab) : {}),
+    }
     : state.view === "rg" ? window.QGA_LABS.rgFlow3dExportMetadata(state, window.__qgaRgFlow3d || {})
+    : state.view === "approaches" ? window.QGA_LABS.adsExportMetadata(state, window.__qgaAdsLab || {})
+    : state.view === "sm" || state.view === "exp" ? window.QGA_LABS.colliderExportMetadata(state, window.__qgaColliderLab || {})
+    : state.view === "planck" ? window.QGA_LABS.spinFoamExportMetadata(state, window.__qgaSpinFoamLab || {})
     : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...labMetadata, ...extra };

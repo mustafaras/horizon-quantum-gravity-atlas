@@ -914,75 +914,7 @@ function BlackHoleSim() {
 }
 
 function HolographyViz() {
-  const [links, setLinks] = useState(5);
-  const linksRef = useRef(links); linksRef.current = links;
-  const prm = usePRM();
-  const sim = useSimLoop((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.4;
-    const tt = prm ? 0 : t;
-    // bulk: concentric hyperbolic-style grid (radial + circles crowding to boundary)
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 6; i++) {
-      const rr = R * Math.tanh(i * 0.42);
-      ctx.strokeStyle = "rgba(110,140,200," + (0.08 + i * 0.012).toFixed(3) + ")";
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
-    }
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2;
-      ctx.strokeStyle = "rgba(110,140,200,0.08)";
-      ctx.beginPath(); ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke();
-    }
-    // boundary circle
-    ctx.strokeStyle = "oklch(0.78 0.1 200)"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
-    // boundary nodes
-    const nB = 18;
-    for (let i = 0; i < nB; i++) {
-      const a = (i / nB) * Math.PI * 2;
-      const pulse = prm ? 0.8 : 0.65 + 0.35 * Math.sin(tt * 1.6 + i * 1.3);
-      ctx.fillStyle = "rgba(140,210,230," + pulse.toFixed(3) + ")";
-      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * R, cy + Math.sin(a) * R, 3, 0, Math.PI * 2); ctx.fill();
-    }
-    // entanglement geodesics: arcs between boundary node pairs, bulging through the bulk
-    const L = linksRef.current;
-    for (let i = 0; i < L; i++) {
-      const a1 = ((i * 3.1) % nB) / nB * Math.PI * 2 + 0.1;
-      const span = 0.8 + (i % 3) * 0.85;
-      const a2 = a1 + span;
-      const p1 = [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R];
-      const p2 = [cx + Math.cos(a2) * R, cy + Math.sin(a2) * R];
-      const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
-      // pull control point toward center — deeper for wider spans (RT-surface intuition)
-      const depth = Math.min(1, span / Math.PI);
-      const c = [mid[0] + (cx - mid[0]) * depth * 0.9, mid[1] + (cy - mid[1]) * depth * 0.9];
-      const glow = prm ? 0.5 : 0.4 + 0.2 * Math.sin(tt * 1.2 + i * 2);
-      ctx.strokeStyle = "oklch(0.72 0.13 300 / " + glow.toFixed(3) + ")";
-      ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.quadraticCurveTo(c[0], c[1], p2[0], p2[1]); ctx.stroke();
-    }
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(170,195,230,0.75)";
-    ctx.fillText("boundary: quantum theory without gravity", 12, 20);
-    ctx.fillText("bulk: emergent curved spacetime", 12, h - 14);
-    ctx.fillStyle = "oklch(0.72 0.13 300 / 0.8)";
-    ctx.fillText("arcs ~ entanglement (RT surfaces)", w - 230, 20);
-  }, [prm]);
-  return (
-    <div className="viz-frame">
-      <div className="viz-toolbar">
-        <SliderRow label="boundary entanglement links" min={0} max={12} step={1} value={links} onChange={setLinks}
-          format={(v) => String(v)}></SliderRow>
-      </div>
-      <canvas ref={sim.canvasRef} className="viz-canvas" style={{ height: 340 }}></canvas>
-      <VizCaption status="conjectural">
-        Conceptual rendering of holographic duality: a gravity-free quantum theory on the boundary circle encodes
-        geometry in the interior. Per the Ryu–Takayanagi proposal, the entanglement entropy of a boundary region
-        equals the area of the minimal bulk surface anchored to it — increase the links and more of the bulk is
-        'woven'. AdS/CFT is precise in specific theoretical settings; it is not a proven description of our universe.
-      </VizCaption>
-    </div>
-  );
+  return <AdsLabSection compact></AdsLabSection>;
 }
 
 /* ---------- Prompt 07: Hawking horizon lab (pair-emission picture) ---------- */

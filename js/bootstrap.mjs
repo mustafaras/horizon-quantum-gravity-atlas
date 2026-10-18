@@ -36,12 +36,25 @@ async function bootstrap() {
     qftFields.registerQftLabProvenance();
     hawking.registerHawkingLabProvenance();
     rgFlow3d.registerRgFlow3dProvenance();
+
+    // Prompt 08 labs: AdS holography, collider kinematics, spin networks.
+    const adsGeometry = await import("./science/ads-geometry.mjs");
+    const collider = await import("./science/collider-kinematics.mjs");
+    const spinNetworks = await import("./science/spin-networks.mjs");
+    adsGeometry.registerAdsLabProvenance();
+    collider.registerColliderLabProvenance();
+    spinNetworks.registerSpinFoamLabProvenance();
+
     Object.defineProperty(window, "QGA_LABS", {
       value: Object.freeze({
         ...qftFields, ...hawking, ...rgFlow3d,
+        ...adsGeometry, ...collider, ...spinNetworks,
         loadQftLab: () => import("./visualizations/qft/field-lab.mjs"),
         loadHawkingLab: () => import("./visualizations/blackhole/hawking-lab.mjs"),
         loadRgFlowField: () => import("./visualizations/rg/flow-field.mjs"),
+        loadAdsLab: () => import("./visualizations/holography/ads-lab.mjs"),
+        loadColliderDisplay: () => import("./visualizations/collider/event-display.mjs"),
+        loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
       }),
       configurable: true,
     });

@@ -414,6 +414,19 @@ function ModuleApproaches({ go }) {
         </div>
       </Section>
 
+      <Section title="Holography, computed">
+        <p>
+          The holographic principle claims that the physics of a volume is encoded on its boundary. In AdS/CFT this
+          becomes a precise (if conjectural) dictionary, and the Ryu–Takayanagi proposal turns entanglement entropy
+          into geometry: the entropy of a boundary region equals the length of the minimal surface anchoring it.
+          This lab makes that statement visible — a true Poincaré disk with exact hyperbolic geodesics, a featured
+          boundary region, its gold minimal surface, and the magenta entanglement wedge it encloses. The entropy
+          readout is the tested formula <code>S = (c/6)·L_reg</code>, computed by
+          <code> js/science/ads-geometry.mjs</code>; the duality itself remains conjecture.
+        </p>
+        <AdsLabSection></AdsLabSection>
+      </Section>
+
       <Misconception title="No quantum gravity theory is experimentally confirmed.">
         Every entry in the comparator is constrained by internal consistency and by recovering known physics —
         not by Planck-scale data. Statements like 'string theory predicts X was confirmed' or 'LQG proved space is

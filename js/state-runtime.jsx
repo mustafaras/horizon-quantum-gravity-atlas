@@ -91,10 +91,19 @@ function qgaExportJson(state, extra = {}) {
   })() : state.view === "bh" && window.QGA_KERR ? window.QGA_KERR.kerrExportMetadata(state, window.__qgaKerrRuntime || {})
     : state.view === "exp" && window.QGA_GW ? window.QGA_GW.INSTRUMENT.gwInstrumentExportMetadata(state, window.__qgaGwRuntime || {}) : {};
   // Prompt 07 compute labs: attach the active lab's provenance + runtime stats.
+  // Prompt 08: the black-hole view hosts both the Hawking and AdS labs; the
+  // AdS branch is additive and only fires when its scene is actually mounted.
   const labMetadata = !window.QGA_LABS ? {}
     : state.view === "qft" ? window.QGA_LABS.qftFieldExportMetadata(state, window.__qgaQftLab || {})
-    : state.view === "bh" ? window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {})
+    : state.view === "bh" ? {
+      ...window.QGA_LABS.hawkingExportMetadata(state, window.__qgaHawkingLab || {}),
+      ...(window.__qgaAdsLab
+        ? window.QGA_LABS.adsExportMetadata(state, window.__qgaAdsLab) : {}),
+    }
     : state.view === "rg" ? window.QGA_LABS.rgFlow3dExportMetadata(state, window.__qgaRgFlow3d || {})
+    : state.view === "approaches" ? window.QGA_LABS.adsExportMetadata(state, window.__qgaAdsLab || {})
+    : state.view === "sm" || state.view === "exp" ? window.QGA_LABS.colliderExportMetadata(state, window.__qgaColliderLab || {})
+    : state.view === "planck" ? window.QGA_LABS.spinFoamExportMetadata(state, window.__qgaSpinFoamLab || {})
     : {};
   const payload = { schema: "horizon-qga-state/v1", exportedAt: new Date().toISOString(),
     source: qgaShareUrl(state), state: { ...state }, ...metadata, ...labMetadata, ...extra };

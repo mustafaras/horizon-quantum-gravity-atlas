@@ -272,6 +272,83 @@ function ScaleLadder() {
   );
 }
 
+/* ---------- Prompt 08: spin-network / spin-foam lab ---------- */
+function SpinFoamLab() {
+  const [state, setState] = useQGAState();
+  const [step, setStep] = useState(0);
+  const topology = "four-simplex";
+  const jMax = state.spinFoamJMax;
+  const mode = state.spinFoamMode;
+  const seed = state.seed;
+  const lab = window.QGA_LABS && window.QGA_LABS.spinFoamLabState
+    ? window.QGA_LABS.spinFoamLabState({ topology, jMaxHalf: jMax, seed, step: 0 }) : null;
+  const steps = lab ? lab.steps : 1;
+  const stepIndex = Math.min(step, steps - 1);
+
+  const build = async (ctx) => {
+    const LABS = window.QGA_LABS;
+    if (!LABS) throw new Error("Compute-lab module unavailable");
+    const { createSpinFoamRuntime } = await LABS.loadSpinFoam();
+    ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.013);
+    const runtime = createSpinFoamRuntime({ topology, jMaxHalf: jMax, seed, step: stepIndex, mode, camera: ctx.camera });
+    ctx.scene.add(runtime.mesh);
+    ctx.label("CONJECTURAL · pedagogical spin network — geometry from area ∝ √(j(j+1)), no amplitudes computed",
+      () => ({ x: -4.2, y: 3.3, z: -3.2 }), "s3d-strong");
+    ctx.label(mode === "foam"
+      ? "each slice is one step of the deterministic foam history · y = evolution"
+      : "tube color = spin (cyan → gold) · node size = quantum volume",
+      () => ({ x: -4.2, y: -3.0, z: 3.2 }), "s3d-quiet");
+    return {
+      update: (t) => {
+        runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
+        window.__qgaSpinFoamLab = { kind: runtime.kind, ...runtime.stats() };
+      },
+      dispose: () => {
+        runtime.dispose();
+        delete window.__qgaSpinFoamLab;
+      },
+      recoverable: () => false,
+    };
+  };
+
+  return (
+    <div className="viz-frame">
+      <div className="viz-toolbar lab-toolbar">
+        <div className="kerr-control-group" aria-label="Spin-foam view">
+          <span className="kerr-control-label">View</span>
+          {[["network", "Spin network"], ["foam", "Foam history"]].map(([key, label]) => (
+            <button key={key} className={"kerr-chip" + (mode === key ? " on" : "")}
+              aria-pressed={mode === key} onClick={() => setState({ spinFoamMode: key })}>{label}</button>
+          ))}
+        </div>
+        <SliderRow label="max spin j" min={1} max={4} step={1} value={jMax}
+          onChange={(v) => setState({ spinFoamJMax: v })} format={(v) => String(v)}></SliderRow>
+        {mode === "foam" ? (
+          <SliderRow label="foam step" min={0} max={steps - 1} step={1} value={stepIndex}
+            onChange={(v) => setStep(v)} format={(v) => `${v + 1} / ${steps}`}></SliderRow>
+        ) : null}
+        <div className="kerr-state-line lab-readout">
+          {lab ? <>{lab.projection.points.length} nodes · {lab.projection.edges.length} edges ·
+            Σ area = {lab.config.totalArea.toFixed(2)} · Σ volume = {lab.config.totalVolume.toFixed(2)}</> : "—"}
+        </div>
+      </div>
+      <Scene3D height={440}
+        aria="Three-dimensional spin network: a Schlegel-projected four-simplex with colored edge tubes, volume-weighted node spheres and translucent face membranes; foam mode ghosts the deterministic step history along an evolution axis"
+        initial={{ radius: 9.5, theta: 0.7, phi: 1.25, minR: 4, maxR: 28, bloom: { strength: 0.75, radius: 0.55, threshold: 0.16 } }}
+        build={build} deps={[jMax, mode, seed, stepIndex]}
+        fallback={<div className="lab-fallback">The 3-D spin-foam lab needs WebGL; the area spectrum above is computed without it.</div>}></Scene3D>
+      <VizCaption status="conjectural">
+        The graph is a real combinatorial object: edges carry half-integer spins j, and the area of each surface is
+        <Eq tex="A = 8\pi\gamma\,\ell_P^2\,\sqrt{j(j+1)}"></Eq> — the LQG area spectrum, computed here in Planck
+        units by <code>js/science/spin-networks.mjs</code>. Node volumes come from the Cayley–Menger determinant of
+        the four edge spins (4-valent nodes only). Foam mode walks a deterministic sequence of re-labellings — a
+        <strong>pedagogical sketch</strong> of a spin-foam history, not a path integral: no spin-foam amplitudes are
+        computed, and the model is conjectural. What is established is the spectrum arithmetic; what is open is
+        whether spacetime really is made of this.
+      </VizCaption>
+    </div>);
+}
+
 function ModulePlanck({ go }) {
   return (
     <article>
@@ -337,6 +414,19 @@ function ModulePlanck({ go }) {
           say something new.
         </p>
         <ScaleLadder></ScaleLadder>
+      </Section>
+
+      <Section title="Spin networks and spin foam, computed">
+        <p>
+          Loop quantum gravity proposes that area and volume come in discrete quanta carried by a graph: edges
+          labelled by spins, nodes by intertwiners. This lab builds a real one — a Schlegel-projected four-simplex
+          with admissible spin labels drawn from the shared seed — and renders it in three dimensions: edge tubes
+          colored by the area they carry, node spheres sized by quantum volume, and a foam mode that ghosts the
+          deterministic step history along an evolution axis. Every number on screen (area spectrum, total area,
+          node volumes) is computed by <code>js/science/spin-networks.mjs</code>; the foam dynamics are a disclosed
+          pedagogical sketch, not a computed path integral.
+        </p>
+        <SpinFoamLab></SpinFoamLab>
       </Section>
 
       <Misconception title="Spacetime discreteness is not established.">
