@@ -64,12 +64,21 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     const start = async () => {
     const detail0 = detailRef.current;
     const scene = new THREE.Scene();
-    let resourcesReleased = false;
+    let resourcesReleased = false, initPromise = null;
     stop = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
-      s3dDispose(scene);
-      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+      // Scene GPU resources must outlive every submit that references them:
+      // dispose the session first (it stops the loop and drains the queue),
+      // then destroy the scene. The reverse order raises "used in submit
+      // while destroyed" on the shared WebGPU device.
+      const releaseScene = () => s3dDispose(scene);
+      const teardown = session ? session.dispose()
+        : initPromise ? initPromise.then((early) => early.dispose(), () => undefined)
+        : Promise.resolve();
+      void Promise.resolve(teardown)
+        .catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message))
+        .finally(releaseScene);
     };
     scene.fog = new THREE.FogExp2(0x04060b, 0.018);
     const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
@@ -196,11 +205,12 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     fabricAttr.needsUpdate = true;
 
     camera.lookAt(0, 0, -10);
-    session = await QGA_RENDER.initializeRenderSession({
+    initPromise = QGA_RENDER.initializeRenderSession({
       scene, camera, mount, settings: { ...settings, motion: prmRef.current ? "reduced" : motionRef.current },
       view: "atlas-backdrop", signal: abort.signal, diagnosticId, onError: fail,
       onPhase: (value) => { if (alive) setPhase(value); },
     });
+    session = await initPromise;
     if (!alive) { await session.dispose(); return; }
     if (session.backend === "static") {
       fail(new Error(session.capabilities.diagnostics.join(" ")));

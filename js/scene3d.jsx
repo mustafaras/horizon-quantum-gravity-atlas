@@ -205,17 +205,28 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const labelLayer = document.createElement("div");
     labelLayer.className = "s3d-labels";
     mount.appendChild(labelLayer);
-    let resourcesReleased = false;
+    let resourcesReleased = false, initPromise = null;
     stop = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
-      if (built.dispose) {
-        try { built.dispose(); }
-        catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
-      }
-      s3dDispose(scene);
-      labelLayer.remove();
-      if (session) void session.dispose().catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message));
+      const releaseScene = () => {
+        if (built.dispose) {
+          try { built.dispose(); }
+          catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
+        }
+        s3dDispose(scene);
+        labelLayer.remove();
+      };
+      // GPU buffers must outlive every submit that references them: stop the
+      // render loop and dispose the renderer (which drains the queue) first,
+      // and only then destroy scene-owned resources. Disposing earlier raises
+      // "used in submit while destroyed" on the shared WebGPU device.
+      const teardown = session ? session.dispose()
+        : initPromise ? initPromise.then((early) => early.dispose(), () => undefined)
+        : Promise.resolve();
+      void Promise.resolve(teardown)
+        .catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message))
+        .finally(releaseScene);
     };
     const labels = [];
     const makeLabel = (annotationOnly) => (text, posFn, cls) => {
@@ -251,12 +262,13 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     camera.lookAt(target);
     if (built.update) built.update(0, 0);
     setPhase("prewarming");
-    session = await QGA_RENDER.initializeRenderSession({
+    initPromise = QGA_RENDER.initializeRenderSession({
       scene, camera, mount, settings: settingsRef.current, view: aria || "scene",
       signal: abort.signal, diagnosticId, onError: fail, onPhase: (value) => { if (alive) setPhase(value); },
       source: built.lightSource || null, applyQuality: built.applyRenderQuality || null,
       depthValid: built.renderCapabilities?.depth !== false,
     });
+    session = await initPromise;
     if (!alive) { await session.dispose(); return; }
     if (session.backend === "static") {
       fail(new Error(session.capabilities.diagnostics.join(" ")));

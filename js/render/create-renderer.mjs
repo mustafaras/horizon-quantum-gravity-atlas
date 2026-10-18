@@ -38,6 +38,24 @@ async function quiesceGPUDevice(device) {
   } catch { /* teardown must not throw */ }
 }
 
+/**
+ * Wait (bounded) for the renderer's GPU queue to drain. three r186 destroys
+ * buffers synchronously on dispose events and never waits for submitted
+ * work, so callers must drain the queue before releasing any resources an
+ * in-flight frame may still reference ("used in submit while destroyed").
+ */
+export async function quiesceRendererQueue(renderer, timeoutMs = 2000) {
+  const flush = renderer?.isWebGPURenderer ? renderer.backend?.device?.queue?.onSubmittedWorkDone?.() : null;
+  if (!flush) return;
+  let timer;
+  try {
+    await Promise.race([
+      flush.then(() => undefined, () => undefined),
+      new Promise((resolve) => { timer = setTimeout(resolve, timeoutMs); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 function initializeGPU(operation) {
   const result = gpuInitializationQueue.then(operation);
   gpuInitializationQueue = result.then(() => undefined, () => undefined);
@@ -53,7 +71,7 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
       signal, label: "WebGPU device request",
       onLateResult: (lateDevice) => { void quiesceGPUDevice(lateDevice).then(() => lateDevice.destroy()); },
     });
-    const record = { device, leases: new Set() };
+    const record = { device, leases: new Set(), quietUntil: 0 };
     sharedGPU = record;
     void device.lost.then(() => { if (sharedGPU === record) sharedGPU = null; });
   }
@@ -65,12 +83,18 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
     device: record.device,
     routeErrors() {
       record.device.onuncapturederror = (event) => {
+        // Transient validation/internal errors raised while some scene is
+        // mid-teardown are that scene's teardown noise; broadcasting them
+        // would blank the always-mounted backdrop for unrelated scenes.
+        if (/Validation|Internal/.test(event.error.constructor.name) && Date.now() < record.quietUntil) return;
         for (const listener of record.leases) listener.onError(new Error(`GPU ${event.error.constructor.name}: ${event.error.message}`));
       };
     },
+    beginQuiet() { record.quietUntil = Math.max(record.quietUntil, Date.now() + 2500); },
     async release() {
       if (released) return;
       released = true;
+      record.quietUntil = Math.max(record.quietUntil, Date.now() + 2500);
       record.leases.delete(lease);
       if (record.leases.size === 0) {
         if (sharedGPU === record) sharedGPU = null;
@@ -184,6 +208,7 @@ export async function createRenderer({
           if (disposed) return;
           disposed = true;
           invalidatePrewarm(renderer);
+          deviceLease?.beginQuiet();
           try { await renderer.dispose(); }
           finally {
             renderer.onDeviceLost = () => {};
