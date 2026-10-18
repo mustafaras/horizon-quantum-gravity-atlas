@@ -743,7 +743,7 @@
   {
    "id": "bh-hawking-lab",
    "file": "docs/screenshots/23-hawking-horizon-lab.png",
-   "description": "Prompt 07 Hawking horizon lab: deterministic pair-emission field around the horizon with temperature-coloured escaping partners and the SCHEMATIC disclosure in-canvas.",
+   "description": "Prompt 07 Hawking horizon lab (ultra-premium): crisp horizon with photon-ring halo, reference radii disk (horizon / photon sphere / ISCO), the T(a*)/T(0) temperature rail with a sliding spin marker, and the deterministic pair-emission field with the SCHEMATIC disclosure in-canvas.",
    "view": "bh",
    "url": "?view=bh&bhs=0&hla=12&seed=42",
    "viewport": {

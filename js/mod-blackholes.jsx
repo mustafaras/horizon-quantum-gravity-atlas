@@ -932,10 +932,18 @@ function HawkingComputeLab() {
     ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.011);
     const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42, camera: ctx.camera });
     ctx.scene.add(runtime.mesh);
+    const mA = Math.min(1, Math.abs(spin));
+    const mKappa = lab ? lab.temperatureFactor : 1;
     ctx.label("SCHEMATIC · pair-production picture — temperature and spectrum come from the shared semiclassical model",
-    () => ({ x: -3.6, y: 3.5, z: 0 }), "s3d-strong");
-    ctx.label("floor curve: T(a★)/T(0) → 0 toward extremal spin",
-    () => ({ x: 0, y: -2.9, z: -4.2 }), "s3d-quiet");
+    () => ({ x: -5.4, y: 3.95, z: 0 }), "s3d-strong");
+    ctx.label("T(a★)/T(0) — surface gravity × temperature",
+    () => ({ x: -5.0, y: 3.35, z: -3.4 }), "s3d-quiet");
+    ctx.label("a★ = 0", () => ({ x: -5.0, y: -0.28, z: -3.4 }), "s3d-quiet");
+    ctx.label("a★ = 1", () => ({ x: 5.0, y: -0.28, z: -3.4 }), "s3d-quiet");
+    ctx.label("current a★",
+    () => ({ x: -5.0 + mA * 10, y: 0.35 + mKappa * 2.55 + 0.42, z: -3.4 }), "s3d-quiet");
+    ctx.label("horizon · photon sphere · ISCO",
+    () => ({ x: 4.9, y: 0.14, z: 0.9 }), "s3d-quiet");
     return {
       update: (t) => {
         runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
@@ -960,7 +968,7 @@ function HawkingComputeLab() {
         </div>
       </div>
       <Scene3D height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
-      initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.85, radius: 0.55, threshold: 0.15 } }}
+      initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.9, radius: 0.5, threshold: 0.12 } }}
       build={build} deps={[massSolar, spin, gain]}
       fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>
       <VizCaption status="schematic">
@@ -971,7 +979,10 @@ function HawkingComputeLab() {
         the visible rate tracks the Stefan–Boltzmann power <Eq tex="P\propto A\,T^4"></Eq> times the
         <strong> display amplification</strong> (a real 10 M☉ hole radiates ~10⁻³⁰ W — nothing would be visible
         without it, and the multiplier is always shown), and the sample energies come from the Planckian shape by
-        seeded rejection sampling. Push the observatory spin slider toward a★ = ±1: the shared surface-gravity
+        seeded rejection sampling. The glowing rail arcing over the scene traces
+        <Eq tex="T(a_\star)/T(0)"></Eq> with a marker that slides to the current spin; the faint equatorial
+        rings mark the horizon, the photon sphere (1.5 r₊) and the ISCO (3 r₊). Push the observatory spin
+        slider toward a★ = ±1: the marker slides down the rail, the shared surface-gravity
         factor κ/κ₀ → 0 and the field visibly empties — an extremal hole does not radiate.
       </VizCaption>
     </div>);
