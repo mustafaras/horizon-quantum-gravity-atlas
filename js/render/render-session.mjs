@@ -1,4 +1,4 @@
-import { createRenderer } from "./create-renderer.mjs";
+import { createRenderer, quiesceRendererQueue } from "./create-renderer.mjs";
 import { createRenderPipeline } from "./render-pipeline.mjs";
 import { normalizeRenderQuality } from "./capabilities.mjs";
 import { createQualityGovernor } from "./quality-governor.mjs";
@@ -78,10 +78,22 @@ export async function initializeRenderSession({
     disposal = (async () => {
       try { await pendingChange; }
       finally {
-        try { await Promise.all([pipeline?.dispose(), retiringPipeline?.dispose()]); }
-        finally {
-          try { await handle?.dispose(); }
-          finally { handle?.renderer?.domElement.remove(); }
+        // Stop submitting frames and drain the GPU queue before anything is
+        // destroyed: three r186 frees buffers synchronously on dispose and
+        // never waits for submitted work, so a buffer still referenced by
+        // an in-flight submit raises "used in submit while destroyed".
+        try {
+          const renderer = handle?.renderer;
+          if (renderer?.isWebGPURenderer && renderer.initialized) {
+            try { await renderer.setAnimationLoop(null); } catch { /* loop already stopped */ }
+          }
+          await quiesceRendererQueue(renderer);
+        } finally {
+          try { await Promise.all([pipeline?.dispose(), retiringPipeline?.dispose()]); }
+          finally {
+            try { await handle?.dispose(); }
+            finally { handle?.renderer?.domElement.remove(); }
+          }
         }
       }
     })();
