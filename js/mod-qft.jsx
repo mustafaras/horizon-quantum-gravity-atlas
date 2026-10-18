@@ -146,19 +146,23 @@ function FieldLab3D() {
   };
 
   const build = (ctx) => {
-    const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.018);
+    const { THREE, scene, camera } = ctx;
+    const parked = ctx.motion() === 0; // reduced motion: frozen shimmer, no stepping
+    scene.fog = new THREE.FogExp2(0x04060b, 0.016);
     scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
     const key = new THREE.DirectionalLight(0xbcd0ff, 0.9);
     key.position.set(5, 9, 4);
     scene.add(key);
-    const floor = ctx.grid(18, 18, 0x2a3a58, 0.16);
-    floor.position.y = -2.2;
+    const rim = new THREE.DirectionalLight(0x4a7dff, 0.45);
+    rim.position.set(-6, 3, -8);
+    scene.add(rim);
+    const floor = ctx.grid(18, 18, 0x2a3a58, 0.12);
+    floor.position.y = -2.5;
     scene.add(floor);
 
     const det = ctx.settings.current.detail3d;
     const N = det === "low" ? 48 : det === "ultra" ? 88 : 64;
-    const SIZE = 12;
+    const SIZE = 11.5;
     fieldRef.current = { phi: new Float64Array(N * N), pi: new Float64Array(N * N) };
 
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, N - 1, N - 1);
@@ -166,43 +170,79 @@ function FieldLab3D() {
     const colAttr = new THREE.BufferAttribute(new Float32Array(N * N * 3), 3);
     geo.setAttribute("color", colAttr);
     const surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      vertexColors: true, metalness: 0.36, roughness: 0.34,
-      emissive: 0x0c1830, emissiveIntensity: 0.7, side: THREE.DoubleSide,
+      vertexColors: true, metalness: 0.4, roughness: 0.3,
+      emissive: 0x0b1830, emissiveIntensity: 0.75, side: THREE.DoubleSide,
       flatShading: false,
     }));
     scene.add(surf);
 
-    // luminous crest overlay: shares the membrane's position buffer, own glow colours
-    // (near-black in the vacuum, hot at the crests) so only excitations catch the bloom —
-    // kept faint so the surface reads as a fluid field, not a dense wire grid.
-    const gcolAttr = new THREE.BufferAttribute(new Float32Array(N * N * 3), 3);
+    // luminous lattice overlay with its OWN colours: a visible oscillator grid at
+    // rest (the field is a value at every point), brightening to the crest colour
+    // where the field is excited. Edges dissolve into the fog.
+    const wColAttr = new THREE.BufferAttribute(new Float32Array(N * N * 3), 3);
     const geoGlow = new THREE.BufferGeometry();
     geoGlow.setIndex(geo.index);
     geoGlow.setAttribute("position", geo.attributes.position);
-    geoGlow.setAttribute("color", gcolAttr);
+    geoGlow.setAttribute("color", wColAttr);
     const wire = new THREE.Mesh(geoGlow, new THREE.MeshBasicMaterial({
-      vertexColors: true, wireframe: true, transparent: true, opacity: 0.4,
+      vertexColors: true, wireframe: true, transparent: true, opacity: 0.34,
       blending: THREE.AdditiveBlending, depthWrite: false
     }));
     wire.renderOrder = 2;
     scene.add(wire);
 
-    const base = new THREE.Color(0x2c4368);
+    const base = new THREE.Color(0x101c36);
     const up = new THREE.Color(0x7fe0ee);
-    const dn = new THREE.Color(0xc09cf6);
-    const hotUp = new THREE.Color(0xeafcff);
-    const hotDn = new THREE.Color(0xf2e6ff);
+    const dn = new THREE.Color(0xb48af0);
     const white = new THREE.Color(0xffffff);
+    const cWire = new THREE.Color(0x2c4a7c);
     const tmp = new THREE.Color();
-    const tmpG = new THREE.Color();
 
-    ctx.label("φ(x, y, t) — field amplitude", () => ({ x: -SIZE / 2, y: 2.3, z: -SIZE / 2 }), "s3d-strong");
-    ctx.label("vacuum ⟨φ⟩ = 0", () => ({ x: SIZE / 2 - 1.5, y: 0.35, z: SIZE / 2 - 2 }), "s3d-quiet");
-    ctx.annotation("click the surface to inject a localized excitation — a particle-like quantum",
-    () => ({ x: 0, y: 1.7, z: SIZE * 0.34 }));
+    // deterministic vacuum shimmer: the vacuum is never still — a fixed spectrum
+    // of seeded modes oscillates at ω = √(c²k² + m²c⁴)/ħ, so raising the mass
+    // visibly quickens even the zero-point shimmer (the mass gap, made visible).
+    const vRandom = QGA_SEEDED((qgaReadState().seed ^ 0x51ce) >>> 0);
+    const vModes = [];
+    for (let i = 0; i < 6; i++) {
+      const kx = (vRandom() * 2 - 1) * 1.9, kz = (vRandom() * 2 - 1) * 1.9;
+      vModes.push({ kx, kz, k2: kx * kx + kz * kz, amp: 0.03 + vRandom() * 0.036, ph: vRandom() * Math.PI * 2 });
+    }
+    let simClock = parked ? 2.4 : 0;
 
     const pos = geo.attributes.position;
     const dx = SIZE / N;
+    const half = SIZE / 2;
+    const vfade = new Float32Array(N * N);
+    for (let k = 0; k < N * N; k++) {
+      const e = Math.max(Math.abs(pos.getX(k)), Math.abs(pos.getZ(k))) / half;
+      const t0 = Math.min(1, Math.max(0, (e - 0.76) / 0.24));
+      vfade[k] = 1 - t0 * t0 * (3 - 2 * t0);
+    }
+
+    // injection markers: a brief luminous bloom where energy entered the field
+    const markerGeo = new THREE.PlaneGeometry(1, 1);
+    const markers = [];
+    const injectMarker = (wx, wy, wz) => {
+      if (markers.length >= 6) {
+        const old = markers.shift();
+        scene.remove(old.s); old.s.material.dispose();
+      }
+      const s = new THREE.Mesh(markerGeo, new THREE.MeshBasicMaterial({
+        map: qgaGlowTexture(), color: 0xbfefff, transparent: true, opacity: 0.85,
+        blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+      }));
+      s.renderOrder = 5;
+      s.position.set(wx, wy, wz);
+      s.scale.setScalar(0.9);
+      s.quaternion.copy(camera.quaternion);
+      scene.add(s);
+      markers.push({ s, age: 0 });
+    };
+
+    ctx.label("φ(x, y, t) — field amplitude", () => ({ x: -half, y: 2.3, z: -half }), "s3d-strong");
+    ctx.label("vacuum ⟨φ⟩ = 0 — irreducible fluctuations", () => ({ x: half - 1.1, y: 0.62, z: half - 1.1 }), "s3d-quiet");
+    ctx.annotation("click the surface to inject a localized excitation — a particle-like quantum",
+    () => ({ x: 0, y: 2.1, z: 2.1 }));
 
     return {
       pickables: [surf],
@@ -215,27 +255,30 @@ function FieldLab3D() {
           const d2 = (i - i0) * (i - i0) + (j - j0) * (j - j0);
           if (d2 < 90) F.phi[j * N + i] += Math.exp(-d2 / 18);
         }
+        if (hit.point) injectMarker(hit.point.x, hit.point.y + 0.3, hit.point.z);
       },
       update: (t, dt) => {
         const F = fieldRef.current;
-        // living vacuum: faint zero-point shimmer so the membrane is never quite still
-        if (dt > 0) {
+        const m = massRef.current;
+        const run = !parked && dt > 0;
+        if (run) simClock += Math.min(dt, 0.05);
+        // living vacuum: faint zero-point kicks keep the membrane restless
+        if (run) {
           for (let n = 0; n < 5; n++) {
             const rk = Math.random() * N * N | 0;
             F.pi[rk] += (Math.random() - 0.5) * 0.5;
           }
         }
-        const m = massRef.current;
-        const steps = 3,sdt = Math.min(dt, 0.034) / steps;
-        if (sdt > 0) {
+        const steps = 3, sdt = Math.min(dt, 0.034) / steps;
+        if (run && sdt > 0) {
           const { phi, pi } = F;
-          const c2 = 30,gam = 0.35;
+          const c2 = 30, gam = 0.35;
           for (let s = 0; s < steps; s++) {
             for (let j = 0; j < N; j++) {
               for (let i = 0; i < N; i++) {
                 const k = j * N + i;
-                const l = i > 0 ? phi[k - 1] : 0,r = i < N - 1 ? phi[k + 1] : 0;
-                const u = j > 0 ? phi[k - N] : 0,d = j < N - 1 ? phi[k + N] : 0;
+                const l = i > 0 ? phi[k - 1] : 0, r = i < N - 1 ? phi[k + 1] : 0;
+                const u = j > 0 ? phi[k - N] : 0, d = j < N - 1 ? phi[k + N] : 0;
                 const lap = (l + r + u + d - 4 * phi[k]) / (dx * dx);
                 pi[k] += sdt * (c2 * lap - m * m * 9 * phi[k] - gam * pi[k]);
               }
@@ -244,22 +287,44 @@ function FieldLab3D() {
           }
         }
         const { phi } = F;
+        const ts = simClock;
         for (let k = 0; k < N * N; k++) {
-          const a = phi[k];
+          const x = pos.getX(k), z = pos.getZ(k);
+          let sh = 0;
+          for (let i = 0; i < 6; i++) {
+            const md = vModes[i];
+            sh += md.amp * Math.sin(md.kx * x + md.kz * z - Math.sqrt(30 * md.k2 + 9 * m * m) * ts + md.ph);
+          }
+          const a = phi[k] + sh;
           pos.setY(k, a * 1.9);
-          const mag = Math.min(1, Math.abs(a) * 1.4);
+          const aa = Math.abs(a);
+          const mag = Math.min(1, aa * 1.4);
           tmp.copy(base).lerp(a >= 0 ? up : dn, mag);
-          tmp.lerp(white, Math.max(0, Math.min(0.55, (Math.abs(a) - 0.55) * 0.6)));
+          tmp.lerp(white, Math.max(0, Math.min(0.55, (aa - 0.55) * 0.6)));
+          tmp.multiplyScalar(vfade[k]);
           colAttr.setXYZ(k, tmp.r, tmp.g, tmp.b);
-          // glow overlay: black in vacuum, hot at the crest
-          const gi = Math.min(1.4, Math.abs(a) * 1.25);
-          tmpG.copy(a >= 0 ? hotUp : hotDn).multiplyScalar(gi * gi);
-          gcolAttr.setXYZ(k, tmpG.r, tmpG.g, tmpG.b);
+          tmp.copy(cWire).lerp(a >= 0 ? up : dn, mag * 0.85);
+          if (aa > 0.6) tmp.lerp(white, Math.min(1, (aa - 0.6) * 1.4));
+          tmp.multiplyScalar(vfade[k]);
+          wColAttr.setXYZ(k, tmp.r, tmp.g, tmp.b);
         }
         pos.needsUpdate = true;
         colAttr.needsUpdate = true;
-        gcolAttr.needsUpdate = true;
+        wColAttr.needsUpdate = true;
         geo.computeVertexNormals();
+        for (let i = markers.length - 1; i >= 0; i--) {
+          const mk = markers[i];
+          mk.s.quaternion.copy(camera.quaternion);
+          if (run) {
+            mk.age += dt;
+            const f = Math.min(1, mk.age / 1.1);
+            mk.s.scale.setScalar(0.9 + f * 1.5);
+            mk.s.material.opacity = 0.85 * (1 - f) * (1 - f);
+            if (mk.age > 1.1) { scene.remove(mk.s); mk.s.material.dispose(); markers.splice(i, 1); }
+          } else {
+            mk.s.material.opacity = 0.6; // reduced motion: static marker
+          }
+        }
       }
     };
   };
@@ -272,7 +337,7 @@ function FieldLab3D() {
         <button className="btn" onClick={clearField}>Clear field</button>
       </div>
       <Scene3D height={430} aria="Interactive three-dimensional scalar field membrane; click to excite the field"
-      initial={{ radius: 14.5, theta: 0.55, phi: 1.02, minR: 7, maxR: 32, bloom: { strength: 0.78, radius: 0.55, threshold: 0.2 } }}
+      initial={{ radius: 13.2, theta: 0.52, phi: 1.06, minR: 7, maxR: 32, bloom: { strength: 0.85, radius: 0.5, threshold: 0.16 } }}
       build={build} fallback={<FieldLab></FieldLab>}></Scene3D>
       <DispersionPlot mass={mass}></DispersionPlot>
       <VizCaption status="schematic">
