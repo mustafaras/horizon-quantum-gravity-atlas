@@ -14,7 +14,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
-  DoubleSide, Group, Line, LineBasicMaterial, LineLoop, LineSegments, Mesh,
+  DoubleSide, Group, Line, LineBasicMaterial, LineSegments, Mesh,
   MeshBasicMaterial, Points, PointsMaterial, PlaneGeometry, SphereGeometry,
   Sprite, SpriteMaterial, TorusGeometry, TubeGeometry, Vector3,
 } from "three";
@@ -90,10 +90,16 @@ export function createAdsLabRuntime({
   }));
   for (const poly of lab.grid.ringPolys) {
     const g = track(new BufferGeometry());
-    const arr = new Float32Array(poly.length * 3);
-    poly.forEach((p, i) => { const v = to3(p); arr[i * 3] = v.x; arr[i * 3 + 1] = v.y; arr[i * 3 + 2] = v.z; });
+    // LineSegments pairs, not LineLoop: the WebGPU renderer does not draw LineLoop.
+    const arr = new Float32Array(poly.length * 6);
+    poly.forEach((p, i) => {
+      const v = to3(p);
+      const w = to3(poly[(i + 1) % poly.length]);
+      arr[i * 6] = v.x; arr[i * 6 + 1] = v.y; arr[i * 6 + 2] = v.z;
+      arr[i * 6 + 3] = w.x; arr[i * 6 + 4] = w.y; arr[i * 6 + 5] = w.z;
+    });
     g.setAttribute("position", new BufferAttribute(arr, 3));
-    group.add(new LineLoop(g, gridLineMat));
+    group.add(new LineSegments(g, gridLineMat));
   }
   {
     const segs = new Float32Array(lab.grid.spokeLines.length * 6);

@@ -642,13 +642,13 @@ function GWInspiral3D() {
   };
 
   return (
-    <div className="viz-frame">
+    <div className="viz-frame" id="shot-section-exp">
       <div className="viz-toolbar">
         <SliderRow label="mass ratio m₁/m₂" min={1} max={6} step={0.1} value={q} onChange={setQ}
           format={(v) => v.toFixed(1)}></SliderRow>
         <button className="btn" onClick={restart}>Restart inspiral</button>
       </div>
-      <Scene3D height={430} aria="Three-dimensional binary inspiral radiating gravitational waves across a spacetime sheet"
+      <Scene3D height={430} shotSpace="exp-gw" aria="Three-dimensional binary inspiral radiating gravitational waves across a spacetime sheet"
         initial={{ radius: 12.5, theta: 0.5, phi: 1.02, minR: 7, maxR: 30, bloom: { strength: 0.9, radius: 0.55, threshold: 0.14 } }}
         build={build} fallback={<GWInspiral></GWInspiral>}></Scene3D>
       <div style={{ marginTop: 8 }}>

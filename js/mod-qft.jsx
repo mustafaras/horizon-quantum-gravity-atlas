@@ -330,13 +330,13 @@ function FieldLab3D() {
   };
 
   return (
-    <div className="viz-frame">
+    <div className="viz-frame" id="shot-section-qft">
       <div className="viz-toolbar">
         <SliderRow label="mass m" min={0} max={3} step={0.05} value={mass} onChange={setMass}
         format={(v) => v.toFixed(2)}></SliderRow>
         <button className="btn" onClick={clearField}>Clear field</button>
       </div>
-      <Scene3D height={430} aria="Interactive three-dimensional scalar field membrane; click to excite the field"
+      <Scene3D height={430} shotSpace="qft-field" aria="Interactive three-dimensional scalar field membrane; click to excite the field"
       initial={{ radius: 13.2, theta: 0.52, phi: 1.06, minR: 7, maxR: 32, bloom: { strength: 0.85, radius: 0.5, threshold: 0.16 } }}
       build={build} fallback={<FieldLab></FieldLab>}></Scene3D>
       <DispersionPlot mass={mass}></DispersionPlot>

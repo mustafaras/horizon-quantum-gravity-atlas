@@ -158,8 +158,55 @@ function RenderSetting({ label, value, options, onChange }) {
   </label>;
 }
 
-function App() {
-  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
+/* ---------- cinematic tour bar (Prompt 09) ----------
+   Visible transport for the camera director: play/pause, shot progress,
+   chapter title, and an explicit take-control switch. User orbit/pan/zoom
+   on any flagship scene pauses automation immediately (Scene3D notifies
+   the director), and this bar reflects it. Under reduced motion the tour
+   does not interpolate the camera: play is disabled and only explicit
+   deep links / scroll place the camera instantly. */
+function CinemaBar({ reducedMotion }) {
+  const C = window.QGA_CINEMATIC;
+  const [st, setSt] = useState(() => (C ? C.state : null));
+  const [progress, setProgress] = useState(0);
+  useEffect(() => (C ? C.subscribe(setSt) : undefined), []); // eslint-disable-line
+  const playing = !!(st && st.playing);
+  useEffect(() => {
+    if (!C || !st || !st.hasBar) return undefined;
+    const id = setInterval(() => setProgress(C.progress()), 200);
+    return () => clearInterval(id);
+  }, [C, st && st.hasBar, playing]); // eslint-disable-line
+  if (!C || !st || !st.hasBar || !st.shot) return null;
+  const shot = st.shot;
+  const p = playing ? progress : st.progress;
+  const pct = Math.round(Math.min(1, Math.max(0, p)) * 100);
+  const userInControl = st.control === "user";
+  return (
+    <div className="cinema-bar" role="group" aria-label="Cinematic tour">
+      <button className="btn cinema-play" aria-pressed={playing}
+        disabled={reducedMotion}
+        title={reducedMotion ? "Camera interpolation is disabled under reduced motion" : (playing ? "Pause the tour" : "Play the tour")}
+        onClick={() => C.toggle()}>{playing ? "❚❚" : "▶"}</button>
+      <div className="cinema-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100}
+        aria-valuenow={pct} aria-label="Shot progress">
+        <div className="cinema-progress-fill" style={{ transform: "scaleX(" + (pct / 100) + ")" }}></div>
+      </div>
+      <div className="cinema-title" aria-live="polite">
+        <span className="cinema-chapter">{shot.chapter}</span>
+        <span className="cinema-shot-title">{shot.title}</span>
+        {shot.annotations && shot.annotations.length
+          ? <span className="cinema-annot">{shot.annotations.join(" · ")}</span> : null}
+      </div>
+      <button className="btn cinema-control" aria-pressed={userInControl}
+        title={userInControl ? "Hand the camera back to the tour" : "Pause automation; the camera is yours"}
+        onClick={() => (userInControl ? C.releaseControl() : C.takeControl())}>
+        {userInControl ? "Resume tour" : "Take control"}
+      </button>
+    </div>
+  );
+}
+
+function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
   const [atlasState, setAtlasState] = useQGAState();
   // Prompt 10 compare embeds: #embed-A / #embed-B renders the minimal shell
@@ -187,9 +234,39 @@ function App() {
     return () => { if (window.QGA_OPEN_SNAPSHOTS) delete window.QGA_OPEN_SNAPSHOTS; };
   }, []);
 
+  // ---- cinematic direction (Prompt 09) ----
+  const shotRef = useRef(atlasState.shot); shotRef.current = atlasState.shot;
+  useEffect(() => {
+    const C = window.QGA_CINEMATIC;
+    if (!C) return undefined;
+    C.configure({ reducedMotion: prm, vizMode: t.vizMode });
+    // Deep-linked shots place the camera at the shot start; nothing autoplays
+    // (and this system never touches audio).
+    C.setView(view, { shot: shotRef.current });
+    C.refreshScroll();
+    return undefined;
+  }, [view, prm, t.vizMode]); // eslint-disable-line
+  // Mirror the active shot into the URL (replaceState: no history spam), so
+  // back navigation restores the exact view + shot pair. The guard compares
+  // against the last requested id, not the URL: React batches the writes, so
+  // the URL lags behind rapid shot transitions.
+  useEffect(() => {
+    const C = window.QGA_CINEMATIC;
+    if (!C) return undefined;
+    let pendingShot = null;
+    return C.subscribe((s) => {
+      const id = s.shot ? s.shot.id : "";
+      if (id !== pendingShot) {
+        pendingShot = id;
+        setAtlasState({ shot: id }, { replace: true });
+      }
+    });
+  }, []); // eslint-disable-line
+
   const go = (id) => {
+    if (id !== view && window.QGA_CINEMATIC) window.QGA_CINEMATIC.runTransition();
     setView(id);
-    setAtlasState({ view: id }, { replace: false });
+    setAtlasState({ view: id, shot: "" }, { replace: false });
     try { localStorage.setItem("qga-view", id); } catch (e) {}
     setMenuOpen(false);
     if (contentRef.current) contentRef.current.scrollTop = 0;
@@ -297,6 +374,7 @@ function App() {
           </div>
         </main>
       </div>
+      <CinemaBar reducedMotion={prm}></CinemaBar>
       {menuOpen ? (
         <div className="mobile-menu" role="dialog" aria-label="Navigation menu">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
