@@ -335,21 +335,23 @@ function GWInspiral3D() {
   const qRef = useRef(q); qRef.current = q;
   const stRef = useRef(null);
   const strainRef = useRef([]); // rolling [{t, h, f}] for the synchronized oscilloscope
-  const restart = () => { stRef.current = { x: 1, phi: 0, merged: 0 }; strainRef.current = []; };
+  const restart = () => { stRef.current = { x: 1, phi: 0, merged: 0, tau: 0 }; strainRef.current = []; };
   if (!stRef.current) restart();
 
   const build = (ctx) => {
-    const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.014);
+    const { THREE, scene, camera } = ctx;
+    const parked = ctx.motion() === 0; // reduced motion: park at a deterministic showcase state
+    scene.fog = new THREE.FogExp2(0x04060b, 0.011);
     scene.add(new THREE.AmbientLight(0x8899bb, 0.5));
 
-    // starfield backdrop
+    // seeded starfield backdrop (deterministic across loads, not just captures)
+    const starRandom = QGA_SEEDED((qgaReadState().seed ^ 0x9e37) >>> 0);
     const det1 = ctx.settings.current.detail3d;
-    const starN = det1 === "low" ? 220 : 460;
+    const starN = det1 === "low" ? 260 : 520;
     const sGeo = new THREE.BufferGeometry();
     const sPos = new Float32Array(starN * 3);
     for (let i = 0; i < starN; i++) {
-      const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R0 = 40 + Math.random() * 40;
+      const u = starRandom() * 2 - 1, a = starRandom() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R0 = 40 + starRandom() * 40;
       sPos[i * 3] = Math.cos(a) * rr * R0; sPos[i * 3 + 1] = Math.abs(u) * R0 * 0.7 + 4; sPos[i * 3 + 2] = Math.sin(a) * rr * R0;
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
@@ -359,125 +361,232 @@ function GWInspiral3D() {
     })));
 
     const det = ctx.settings.current.detail3d;
-    const SEG = det === "low" ? 52 : det === "ultra" ? 92 : 70;
-    const EXT = 15;
+    const SEG = det === "low" ? 52 : det === "ultra" ? 96 : 72;
+    const EXT = 13;
     const dKey = new THREE.DirectionalLight(0xcfe0ff, 0.85); dKey.position.set(3, 8, 5); scene.add(dKey);
     const geo = new THREE.PlaneGeometry(EXT, EXT, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
     const colAttr = new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3);
     geo.setAttribute("color", colAttr);
-    // luminous warped spacetime sheet: a solid lit surface (reads as a real curved
-    // membrane) with a very faint additive wireframe that only kisses the crests —
-    // not a dense wire grid. Both meshes share one geometry.
+    // luminous warped spacetime sheet: a lit membrane whose square edges dissolve
+    // into the fog (vertex colours fall to black), plus an additive wire lattice
+    // with its own colours so the "grid of spacetime points" stays readable even
+    // in the flat far field.
     const surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      vertexColors: true, metalness: 0.34, roughness: 0.4,
-      emissive: 0x0a1428, emissiveIntensity: 0.32, transparent: true, opacity: 0.85,
+      vertexColors: true, metalness: 0.38, roughness: 0.36,
+      emissive: 0x0a1428, emissiveIntensity: 0.45, transparent: true, opacity: 0.92,
       side: THREE.DoubleSide,
     }));
     scene.add(surf);
-    const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-      vertexColors: true, wireframe: true, transparent: true, opacity: 0.16,
+    const wColAttr = new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3);
+    const wireGeo = new THREE.BufferGeometry();
+    wireGeo.setIndex(geo.index);
+    wireGeo.setAttribute("position", geo.attributes.position);
+    wireGeo.setAttribute("color", wColAttr);
+    const wire = new THREE.Mesh(wireGeo, new THREE.MeshBasicMaterial({
+      vertexColors: true, wireframe: true, transparent: true, opacity: 0.3,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     wire.renderOrder = 2;
     scene.add(wire);
-    const cCrest = new THREE.Color(0x9fd0ff);
-    const cTrough = new THREE.Color(0xb98af0);
-    const cFlat = new THREE.Color(0x16263f);
+    const cCrest = new THREE.Color(0x8fd8ff);
+    const cTrough = new THREE.Color(0xb48af0);
+    const cFlat = new THREE.Color(0x101d36);
+    const cHot = new THREE.Color(0xeaf6ff);
+    const cWire = new THREE.Color(0x2c4a7c);
     const tmpC = new THREE.Color();
     const pos = geo.attributes.position;
     const nV = pos.count;
-    const vr = new Float64Array(nV), vth = new Float64Array(nV);
+    const vr = new Float64Array(nV), vth = new Float64Array(nV), vfade = new Float64Array(nV);
     for (let k = 0; k < nV; k++) {
       const x = pos.getX(k), z = pos.getZ(k);
       vr[k] = Math.hypot(x, z);
       vth[k] = Math.atan2(z, x);
+      const e = Math.max(Math.abs(x), Math.abs(z)) / (EXT / 2);
+      const t0 = Math.min(1, Math.max(0, (e - 0.74) / 0.26));
+      vfade[k] = 1 - t0 * t0 * (3 - 2 * t0);
     }
 
-    const mkBody = () => {
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.32, 22, 16),
-        new THREE.MeshBasicMaterial({ color: 0x05070d }));
-      const g = ctx.glow(0xcfe4ff, 2.2, 0.85);
-      scene.add(m); scene.add(g);
-      return { m, g, trail: [] };
+    // per-build ring texture (crisp halo ring); s3dDispose reclaims it at teardown
+    const ringTex = (() => {
+      const c = document.createElement("canvas"); c.width = c.height = 256;
+      const g = c.getContext("2d");
+      const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.4, "rgba(255,255,255,0)");
+      grad.addColorStop(0.55, "rgba(255,255,255,0.9)");
+      grad.addColorStop(0.72, "rgba(255,255,255,0.2)");
+      grad.addColorStop(0.9, "rgba(255,255,255,0)");
+      g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(c);
+    })();
+
+    // crisp black holes: opaque silhouette + billboarded photon-ring halo
+    const mkHole = (tint) => {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.34, 48, 32),
+        new THREE.MeshBasicMaterial({ color: 0x020409 }));
+      const halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+        map: ringTex, color: tint, transparent: true, opacity: 0.9,
+        blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+      }));
+      halo.renderOrder = 6;
+      const warmth = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: qgaGlowTexture(), color: 0x9fb8e8, transparent: true, opacity: 0.26,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      scene.add(m); scene.add(halo); scene.add(warmth);
+      return { m, halo, warmth, trail: [] };
     };
-    const b1 = mkBody(), b2 = mkBody();
+    const b1 = mkHole(0x9fc8ff), b2 = mkHole(0xc9a2ff);
     const orbR = 3.1;
-    // orbital trails
+
+    // orbital trails: additive lines whose colour fades head → tail to black
+    const TRAIL_N = 220;
     const mkTrail = (hex) => {
       const g = new THREE.BufferGeometry();
-      const buf = new THREE.BufferAttribute(new Float32Array(140 * 3), 3);
-      g.setAttribute("position", buf); g.setDrawRange(0, 0);
-      const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: hex, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const buf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
+      const col = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
+      g.setAttribute("position", buf); g.setAttribute("color", col); g.setDrawRange(0, 0);
+      const l = new THREE.Line(g, new THREE.LineBasicMaterial({
+        vertexColors: true, transparent: true, opacity: 0.9,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
       l.frustumCulled = false; scene.add(l);
-      return { buf, g, l };
+      return { buf, col, g, l, base: new THREE.Color(hex) };
     };
-    const t1 = mkTrail(0x7fc0ff), t2 = mkTrail(0xc79cff);
-    const mergerFlash = ctx.glow(0xffffff, 1, 0);
-    scene.add(mergerFlash);
+    const t1 = mkTrail(0x8fd0ff), t2 = mkTrail(0xc9a2ff);
     const writeTrail = (tr, list) => {
-      const n = Math.min(list.length, 140);
-      for (let i = 0; i < n; i++) { const q = list[list.length - n + i]; tr.buf.setXYZ(i, q[0], q[1], q[2]); }
-      tr.buf.needsUpdate = true; tr.g.setDrawRange(0, n);
+      const n = Math.min(list.length, TRAIL_N);
+      for (let i = 0; i < n; i++) {
+        const p = list[list.length - n + i];
+        tr.buf.setXYZ(i, p[0], p[1], p[2]);
+        const f = Math.pow(i / Math.max(1, n - 1), 2); // head bright, tail fades out
+        tr.col.setXYZ(i, tr.base.r * f, tr.base.g * f, tr.base.b * f);
+      }
+      tr.buf.needsUpdate = true; tr.col.needsUpdate = true; tr.g.setDrawRange(0, n);
     };
 
+    // merger read-out: an expanding crisp ring + a brief compact core flash
+    const burst = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+      map: ringTex, color: 0xeaf2ff, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+    }));
+    burst.renderOrder = 7;
+    scene.add(burst);
+    const coreFlash = ctx.glow(0xffffff, 1, 0);
+    scene.add(coreFlash);
+
+    // expanding wavefront rings: the radiation visibly leaves the binary
+    const wavefronts = [];
+    for (let i = 0; i < 3; i++) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.972, 1, 128), new THREE.MeshBasicMaterial({
+        color: 0x7fb8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+        depthWrite: false, side: THREE.DoubleSide,
+      }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.04;
+      scene.add(ring); wavefronts.push(ring);
+    }
+
     const bLabel = ctx.label("binary — orbital decay by gravitational radiation",
-      () => ({ x: 0, y: 1.6, z: 0 }), "s3d-quiet");
+      () => ({ x: 0, y: 2.35, z: 0 }), "s3d-quiet");
     ctx.annotation("LIGO observes CLASSICAL gravitational waves — a triumph of general relativity, not a quantum gravity detection",
-      () => ({ x: 0, y: 0.6, z: EXT / 2 - 0.8 }));
+      () => ({ x: 0, y: 1.05, z: 1.4 }));
+    ctx.label("two-arm quadrupole wavefront", () => ({ x: 4.3, y: 0.4, z: 3.2 }), "s3d-quiet");
+
+    // deterministic showcase state for reduced motion: mid-inspiral, clearly
+    // visible ripple, prefilled trails and strain history (exact integrals)
+    const parkState = () => {
+      stRef.current = { x: 0.48, phi: 0.9, merged: 0, tau: 0, park: true, q: qRef.current };
+      const Q0 = qRef.current, m10 = Q0 / (1 + Q0), m20 = 1 / (1 + Q0);
+      const r10 = 0.48 * orbR * m20, r20 = 0.48 * orbR * m10;
+      b1.trail.length = 0; b2.trail.length = 0;
+      for (let i = 0; i < TRAIL_N; i++) {
+        const back = (i / (TRAIL_N - 1)) * 1.9; // ~110° arc behind each body
+        b1.trail.push([Math.cos(0.9 - back) * r10, 0.35, Math.sin(0.9 - back) * r10]);
+        b2.trail.push([Math.cos(0.9 - back + Math.PI) * r20, 0.35, Math.sin(0.9 - back + Math.PI) * r20]);
+      }
+      const k0s = 0.036, w0s = 1.4, A0s = 0.2, chirp0 = 4 * m10 * m20;
+      const x0 = 1.0, x1 = 0.48;
+      const phiOfX = (x) => 2 * w0s * (Math.pow(x0, 2.5) - Math.pow(x, 2.5)) / (2.5 * k0s * chirp0);
+      const Phi0 = 2 * 0.9 - phiOfX(x1);
+      const tEnd = (Math.pow(x0, 4) - Math.pow(x1, 4)) / (4 * k0s * chirp0);
+      strainRef.current = [];
+      for (let i = 0; i <= 260; i++) {
+        const tt = (i / 260) * tEnd;
+        const x = Math.pow(Math.max(0.05, Math.pow(x0, 4) - 4 * k0s * chirp0 * tt), 0.25);
+        strainRef.current.push({ t: tt, h: Math.min(3, A0s / x) * Math.cos(Phi0 + phiOfX(x)), f: w0s * Math.pow(x, -1.5) / Math.PI, merged: false });
+      }
+    };
+    if (parked) parkState();
 
     return {
       update: (t, dt) => {
         const st = stRef.current;
         const Q = qRef.current;
+        if (parked && (!st.park || st.q !== Q)) parkState(); // covers a Restart click while parked
         const m1 = Q / (1 + Q), m2 = 1 / (1 + Q);
         // chirp factor ∝ reduced mass: 4µ/M = 4 m₁m₂/(m₁+m₂)²  (maximal at equal mass)
         const chirp = 4 * m1 * m2;
         const w0 = 1.4, k0 = 0.036, A0 = 0.2;
+        const run = !parked && dt > 0;
         let amp = 0, phase = 0, fgw = 0;
         const merged = st.x <= 0.12;
         if (!merged) {
           // Leading-order quadrupole inspiral, exact scaling:
           //   da/dt ∝ -1/a³  ⇒  a ∝ (t_c-t)^{1/4},  f_gw ∝ (t_c-t)^{-3/8},  h ∝ f^{2/3}
           const wOrb = w0 * Math.pow(st.x, -1.5);          // Kepler: ω ∝ a^{-3/2}
-          st.phi += wOrb * dt;
-          st.x -= (k0 * chirp / Math.pow(st.x, 3)) * dt;   // gravitational-radiation reaction
-          st.x = Math.max(0.001, st.x);
-          fgw = wOrb / Math.PI;
+          if (run) {
+            st.phi += wOrb * dt;
+            st.x = Math.max(0.001, st.x - (k0 * chirp / Math.pow(st.x, 3)) * dt);
+          }
+          fgw = w0 * Math.pow(st.x, -1.5) / Math.PI;
           amp = Math.min(3, A0 / st.x);
           phase = 2 * st.phi;                               // GW phase = twice orbital phase
         } else if (st.merged === 0) {
-          st.merged = t;
+          if (run) st.merged = t;
+          fgw = w0 * Math.pow(0.12, -1.5) / Math.PI;
+          amp = 3; phase = 2 * st.phi;
         } else {
           // ringdown: damped sinusoid at the final black hole's quasinormal frequency
-          const tau = t - st.merged;
+          if (run) st.tau = (st.tau || 0) + dt;
+          const tau = st.tau || 0;
           fgw = w0 * Math.pow(0.12, -1.5) / Math.PI;
           amp = 3 * Math.exp(-tau * 2.2);
           phase = 2 * st.phi + 14 * tau;
-          if (tau > 2.6 && dt > 0) { restart(); }
+          if (tau > 2.6 && run) { restart(); }
         }
         // record the strain waveform (same amp & phase that drive the 3D scene)
-        if (dt > 0) {
-          const h = amp * Math.cos(phase);
-          strainRef.current.push({ t, h, f: fgw, merged });
+        if (run) {
+          strainRef.current.push({ t, h: amp * Math.cos(phase), f: fgw, merged });
           if (strainRef.current.length > 900) strainRef.current.shift();
         }
         // quadrupole ripple on the sheet — radial wavenumber compresses as it chirps
         const kr = 1.6 + 1.6 * Math.min(2.5, (1 / Math.max(st.x, 0.12) - 1));
+        const yMax = 1.15;
         for (let k = 0; k < nV; k++) {
-          const r = Math.max(vr[k], 1.3);
-          const y = 0.5 * (amp / r) * Math.cos(2 * vth[k] - phase + r * kr);
+          const r = Math.max(vr[k], 1.0);
+          const yRaw = 1.5 * (amp / r) * Math.cos(2 * vth[k] - phase + r * kr);
+          const y = yMax * Math.tanh(yRaw / yMax);
           pos.setY(k, y);
-          const mag = Math.min(1, Math.abs(y) * 1.5);
+          const ay = Math.abs(y);
+          const mag = Math.min(1, ay * 1.35);
           tmpC.copy(cFlat).lerp(y >= 0 ? cCrest : cTrough, mag);
+          if (ay > 0.72) tmpC.lerp(cHot, Math.min(1, (ay - 0.72) * 2.2));
+          tmpC.multiplyScalar(vfade[k]);
           colAttr.setXYZ(k, tmpC.r, tmpC.g, tmpC.b);
+          tmpC.copy(cWire).lerp(y >= 0 ? cCrest : cTrough, mag * 0.85);
+          if (ay > 0.6) tmpC.lerp(cHot, Math.min(1, (ay - 0.6) * 1.4));
+          tmpC.multiplyScalar(vfade[k]);
+          wColAttr.setXYZ(k, tmpC.r, tmpC.g, tmpC.b);
         }
         pos.needsUpdate = true;
         colAttr.needsUpdate = true;
+        wColAttr.needsUpdate = true;
         geo.computeVertexNormals();
         // bodies
         const merged2 = st.x <= 0.12;
-        b2.m.visible = b2.g.visible = !merged2;
+        b2.m.visible = b2.halo.visible = b2.warmth.visible = !merged2;
         bLabel.set(merged2 ? "merger → ringdown" : "binary — orbital decay by gravitational radiation");
         if (!merged2) {
           const r1 = st.x * orbR * m2, r2 = st.x * orbR * m1;
@@ -485,29 +594,49 @@ function GWInspiral3D() {
           b2.m.position.set(-Math.cos(st.phi) * r2, 0.35, -Math.sin(st.phi) * r2);
           b1.m.scale.setScalar(0.7 + m1 * 0.9);
           b2.m.scale.setScalar(0.7 + m2 * 0.9);
-          if (dt > 0) {
+          if (run) {
             b1.trail.push([b1.m.position.x, b1.m.position.y, b1.m.position.z]);
             b2.trail.push([b2.m.position.x, b2.m.position.y, b2.m.position.z]);
-            if (b1.trail.length > 140) b1.trail.shift();
-            if (b2.trail.length > 140) b2.trail.shift();
+            if (b1.trail.length > TRAIL_N) b1.trail.shift();
+            if (b2.trail.length > TRAIL_N) b2.trail.shift();
           }
-          mergerFlash.material.opacity = 0;
+          burst.material.opacity = 0; coreFlash.material.opacity = 0;
         } else {
           b1.m.position.set(0, 0.35, 0);
           b1.m.scale.setScalar(1.5);
-          const tau = st.merged ? t - st.merged : 0;
-          mergerFlash.position.set(0, 0.35, 0);
-          mergerFlash.scale.setScalar(2 + 8 * Math.exp(-tau * 1.8));
-          mergerFlash.material.opacity = 0.9 * Math.exp(-tau * 1.6);
-          if (b1.trail.length) b1.trail.length = 0;
-          if (b2.trail.length) b2.trail.length = 0;
+          const tau = st.tau || 0;
+          burst.position.set(0, 0.38, 0);
+          burst.scale.setScalar(1.6 + 9 * (1 - Math.exp(-tau * 2.2)));
+          burst.material.opacity = 0.85 * Math.exp(-tau * 1.9);
+          burst.quaternion.copy(camera.quaternion);
+          coreFlash.position.set(0, 0.38, 0);
+          coreFlash.scale.setScalar(2 + 3 * Math.exp(-tau * 3));
+          coreFlash.material.opacity = 0.7 * Math.exp(-tau * 2.8);
+          b1.trail.length = 0; b2.trail.length = 0;
         }
         t1.l.visible = !merged2; t2.l.visible = !merged2;
         writeTrail(t1, b1.trail); writeTrail(t2, b2.trail);
-        b1.g.position.copy(b1.m.position);
-        b1.g.scale.setScalar(b1.m.scale.x * 2.6);
-        b2.g.position.copy(b2.m.position);
-        b2.g.scale.setScalar(b2.m.scale.x * 2.6);
+        // halos hug each silhouette (billboard) and track the body scale
+        b1.halo.position.copy(b1.m.position);
+        b1.halo.scale.setScalar(b1.m.scale.x * 2.4);
+        b1.halo.quaternion.copy(camera.quaternion);
+        b1.warmth.position.copy(b1.m.position);
+        b1.warmth.scale.setScalar(b1.m.scale.x * 1.7);
+        if (!merged2) {
+          b2.halo.position.copy(b2.m.position);
+          b2.halo.scale.setScalar(b2.m.scale.x * 2.4);
+          b2.halo.quaternion.copy(camera.quaternion);
+          b2.warmth.position.copy(b2.m.position);
+          b2.warmth.scale.setScalar(b2.m.scale.x * 1.7);
+        }
+        // wavefront rings ride outward; opacity tracks the wave amplitude
+        const ampNorm = Math.min(1, amp / 0.5);
+        for (let i = 0; i < 3; i++) {
+          const ph = parked ? 0.25 + i * 0.33 : (t * 0.42 + i / 3) % 1;
+          const rr = 1.0 + ph * EXT * 0.55;
+          wavefronts[i].scale.set(rr, rr, 1);
+          wavefronts[i].material.opacity = ampNorm * 0.7 * (1 - ph) * (1 - ph);
+        }
       },
     };
   };
@@ -520,7 +649,7 @@ function GWInspiral3D() {
         <button className="btn" onClick={restart}>Restart inspiral</button>
       </div>
       <Scene3D height={430} aria="Three-dimensional binary inspiral radiating gravitational waves across a spacetime sheet"
-        initial={{ radius: 13.5, theta: 0.5, phi: 0.95, minR: 7, maxR: 30, bloom: { strength: 0.85, radius: 0.6, threshold: 0.16 } }}
+        initial={{ radius: 12.5, theta: 0.5, phi: 1.02, minR: 7, maxR: 30, bloom: { strength: 0.9, radius: 0.55, threshold: 0.14 } }}
         build={build} fallback={<GWInspiral></GWInspiral>}></Scene3D>
       <div style={{ marginTop: 8 }}>
         <GWStrainScope strainRef={strainRef}></GWStrainScope>

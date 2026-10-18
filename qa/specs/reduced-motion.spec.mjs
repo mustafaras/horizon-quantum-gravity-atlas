@@ -56,5 +56,13 @@ test("runtime system reduced-motion change rebuilds safely and leaves interactiv
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("r");
   await expect(stage).toBeFocused();
-  expect(await page.locator(".s3d-canvas").count()).toBe(1);
+  // The view may mount several scenes (e.g. the collider display on the
+  // Standard Model view); assert no orphan canvas is left by the rebuild.
+  // The retiring canvas is removed only after the GPU queue drains (async),
+  // so allow the swap window to settle before asserting.
+  await expect.poll(async () => {
+    const canvases = await page.locator(".s3d-canvas").count();
+    const stages = await page.locator(".s3d-stage").count();
+    return canvases === stages;
+  }, { timeout: 15_000 }).toBe(true);
 });
