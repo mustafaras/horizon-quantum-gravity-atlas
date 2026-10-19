@@ -425,7 +425,7 @@ function KerrFormulation({ geometry, massSolar, temperature, entropy }) {
     },
   ];
   return (
-    <section className="kerr-formulation" aria-label="Live Kerr formulation with current parameter values">
+    <section className="kerr-formulation" aria-label="Live Kerr formulation with current parameter values" data-qga-anchor="kerr-formulation">
       <header className="kerr-formulation-head">
         <span className="kerr-formulation-ident">LIVE FORMULATION</span>
         <span className="kerr-formulation-state">

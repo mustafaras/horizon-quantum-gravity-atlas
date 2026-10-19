@@ -119,10 +119,51 @@ function Badge({ kind }) {
 }
 
 /* ---------- formula card with built-in Formula Lens ---------- */
+// Prompt 10 formula linking: every symbol row is a ConceptBus publisher.
+// Hover, keyboard focus and click all highlight the matching scene object
+// (when the mounted scene registered one) and surface its live numerical
+// value + unit. Unknown mappings do nothing visible — by design.
 function FormulaCard({ title, tex, status, symbols = [], meaning, limits }) {
   const [open, setOpen] = useState(false);
+  const [readout, setReadout] = useState(null);
+  const rootRef = useRef(null);
+  const reveal = useCallback(() => {
+    setOpen(true);
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(() => rootRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" }));
+  }, []);
+  useEffect(() => {
+    // Palette "jump to formula": open this card when asked by title (live
+    // event for same-view jumps, pending focus for cross-view navigation).
+    const onOpen = (event) => { if (event.detail?.title === title) reveal(); };
+    window.addEventListener("qga-open-formula", onOpen);
+    if (window.__qgaPendingFormulaFocus === title) {
+      window.__qgaPendingFormulaFocus = null;
+      reveal();
+    }
+    return () => window.removeEventListener("qga-open-formula", onOpen);
+  }, [title, reveal]);
+  const publishHighlight = (symbol, interaction) => {
+    window.QGA_CONCEPT_BUS?.publish("formula-highlight", {
+      symbol, title, view: window.__qgaCurrentView || "unknown", interaction,
+    });
+  };
+  const clearHighlight = () => {
+    window.QGA_CONCEPT_BUS?.publish("formula-clear", { reason: "blur" });
+  };
+  // Live readout subscription: the scene reports the highlighted symbol's
+  // current numerical value and unit.
+  useEffect(() => {
+    const bus = window.QGA_CONCEPT_BUS;
+    if (!bus) return undefined;
+    const onReadout = (payload) => setReadout(payload);
+    const onClear = () => setReadout(null);
+    const offReadout = bus.on("formula-readout", onReadout);
+    const offClear = bus.on("formula-clear", onClear);
+    return () => { offReadout(); offClear(); };
+  }, []); // eslint-disable-line
   return (
-    <div className={"formula-card" + (open ? " open" : "")}>
+    <div className={"formula-card" + (open ? " open" : "")} data-qga-formula={title} ref={rootRef}>
       <button className="fc-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <div className="fc-title-row">
           <span className="fc-title">{title}</span>
@@ -137,9 +178,24 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits }) {
             <table className="fc-symbols">
               <tbody>
                 {symbols.map((s, i) => (
-                  <tr key={i}>
+                  <tr key={i} className="fc-symbol-row" tabIndex={0}
+                    aria-label={"Symbol " + s.s + ": " + s.d + (readout && readout.symbol === s.s ? ". Live scene value: " + readout.value + " " + readout.unit : "")}
+                    onMouseEnter={() => publishHighlight(s.s, "hover")}
+                    onMouseLeave={clearHighlight}
+                    onFocus={() => publishHighlight(s.s, "focus")}
+                    onBlur={clearHighlight}
+                    onClick={() => publishHighlight(s.s, "click")}>
                     <td><Eq tex={s.s}></Eq></td>
-                    <td>{s.d}</td>
+                    <td>
+                      {s.d}
+                      {readout && readout.symbol === s.s ? (
+                        <span className="fc-readout" role="status">
+                          <span className="fc-readout-label">{readout.label}</span>
+                          <strong className="fc-readout-value">{readout.value}</strong>
+                          <span className="fc-readout-unit">{readout.unit}</span>
+                        </span>
+                      ) : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>

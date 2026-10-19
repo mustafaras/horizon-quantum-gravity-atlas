@@ -244,12 +244,84 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       return h;
     };
 
+    // Prompt 10 formula linking: scenes register concept targets mapping a
+    // formula symbol (tex id) to a scene object plus a live readout. Unknown
+    // symbols stay invisible (dev diagnostic only) — never an exception.
+    const conceptTargets = new Map();
+    const conceptPulse = { active: null, focusTween: null, focusBase: null, symbol: null };
+    const startConceptPulse = (symbol, target, { intensity = 1 } = {}) => {
+      const object = target.object;
+      if (!object) return;
+      conceptPulse.lastInteraction = intensity < 1 ? "preview" : "highlight";
+      let overlay;
+      if (object.isMesh && object.geometry) {
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x6fb3ff, transparent: true, opacity: 0,
+          blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+        });
+        overlay = new THREE.Mesh(object.geometry, material);
+        overlay.scale.copy(object.scale).multiplyScalar(1.03);
+        overlay.position.copy(object.position);
+        overlay.rotation.copy(object.rotation);
+        overlay.renderOrder = 6;
+      } else {
+        overlay = s3dGlow(0x6fb3ff, (target.glowScale ?? 4.5) * intensity, 0);
+        overlay.position.copy(object.position);
+      }
+      (object.parent ?? scene).add(overlay);
+      if (conceptPulse.active) conceptPulse.active.overlay.removeFromParent();
+      conceptPulse.active = { overlay, object, target, startTime: clockT, duration: 0.8, intensity, hold: true };
+      conceptPulse.symbol = symbol;
+      // Dev/QA diagnostic: the active concept highlight (also lets the QA
+      // suite assert the scene reacted without touching scene internals).
+      window.__qgaConceptHighlight = { symbol, interaction: conceptPulse.lastInteraction ?? "hover", at: performance.now() };
+      // Live numerical readout for the highlighted symbol.
+      try {
+        const readout = target.readout?.();
+        if (readout) window.QGA_CONCEPT_BUS?.publish("formula-readout", {
+          symbol, label: String(readout.label ?? ""),
+          value: String(readout.value ?? ""), unit: String(readout.unit ?? ""),
+        });
+      } catch (error) { /* readouts are best-effort; never break the scene */ }
+      // Cinematic mode only: pull the depth-of-field focus to the object's
+      // view-space depth (≤450ms, easeInOutQuint). Scientific mode keeps DOF
+      // untouched — highlight stays emissive + outline only.
+      const pipeline = session?.pipeline;
+      if (settingsRef.current.vizMode === "cinematic" && pipeline?.focusDistanceSupported && !prmRef.current) {
+        const depth = object.getWorldPosition(new THREE.Vector3())
+          .applyMatrix4(camera.matrixWorldInverse).z;
+        const focusDistance = Math.max(camera.near, -depth);
+        const from = conceptPulse.focusBase ?? Math.max(camera.near * 2, 8);
+        conceptPulse.focusBase = focusDistance;
+        conceptPulse.focusTween?.();
+        conceptPulse.focusTween = window.QGA_MOTION?.runtime
+          ? window.QGA_MOTION.runtime.tween({
+              from, to: focusDistance, duration: 450, easing: "easeInOutQuint",
+              reducedMotion: window.QGA_MOTION.systemReducedMotion(),
+              onUpdate: (value) => { try { pipeline.setFocusDistance(value); } catch (error) { /* pipeline may swap */ } },
+            })
+          : null;
+      }
+    };
+    const stopConceptPulse = () => {
+      if (conceptPulse.active) conceptPulse.active.hold = false;
+      conceptPulse.focusTween?.();
+      conceptPulse.focusTween = null;
+    };
+
     const ctx = {
       THREE, scene, camera, get renderer() { return renderer; },
       settings: settingsRef, motion,
       label: makeLabel(false),
       annotation: makeLabel(true),
       glow: s3dGlow, line: s3dLine, grid: s3dGrid,
+      conceptTarget: (id, target) => {
+        if (typeof id !== "string" || !id || !target || !target.object) {
+          throw new TypeError("conceptTarget(id, { object, readout? }) requires an id and an object");
+        }
+        conceptTargets.set(id, target);
+        return target;
+      },
     };
 
     built = (await build(ctx)) || {};
@@ -283,7 +355,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const el = renderer.domElement;
     const ptr = { down: false, id: null, x: 0, y: 0, moved: 0, pinch: 0 };
     const touches = new Map();
-    const markInteract = () => { orbit.lastInteract = clockT; orbit.introT = 0; };
+    const markInteract = () => { orbit.lastInteract = clockT; orbit.introT = 0; broadcastPose(); };
 
     const onPointerDown = (e) => {
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -324,7 +396,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       touches.delete(e.pointerId);
       if (e.pointerId === ptr.id) {
         ptr.down = false;
-        if (ptr.moved < 6 && built.onPick && built.pickables) pickAt(e);
+        if (ptr.moved < 6 && maybePlaceAnnotation(e)) { /* consumed as an annotation anchor */ }
+        else if (ptr.moved < 6 && built.onPick && built.pickables) pickAt(e);
         else if (ptr.moved < 6 && built.onScreenPick) built.onScreenPick(ndc(e), e);
       }
       ptr.pinch = 0;
@@ -378,6 +451,125 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       orbit.vTheta = 0; orbit.vPhi = 0;
     };
     hudStateRef.current.reset = resetCam;
+    // Prompt 10 snapshot/compare camera bridge: read the live orbit pose and
+    // fly to a stored one (easeInOutQuint ≤900ms; snaps under reduced motion
+    // via the goal glide's motion===0 branch).
+    hudStateRef.current.getPose = () => ({ radius: orbit.radius, theta: orbit.theta, phi: orbit.phi });
+    hudStateRef.current.flyTo = (pose, opts = {}) => {
+      if (!pose || !Number.isFinite(pose.radius)) return;
+      goalRef.current = {
+        radius: Math.max(orbit.minR, Math.min(orbit.maxR, pose.radius)),
+        theta: Number.isFinite(pose.theta) ? pose.theta : orbit.theta,
+        phi: Math.max(0.08, Math.min(Math.PI - 0.08, Number.isFinite(pose.phi) ? pose.phi : orbit.phi)),
+        fromR: null, fromT: 0, fromP: 0, t: 0, active: true,
+        easing: opts.easing === "quint" ? "quint" : "cubic",
+        duration: Number.isFinite(opts.duration) ? Math.min(0.9, Math.max(0.1, opts.duration)) : 0.9,
+      };
+    };
+
+    // ---------- Prompt 10 interaction bridges ----------
+    // ConceptBus: formula symbols → scene highlight. Unknown mappings are a
+    // benign dev diagnostic; nothing visible happens (spec requirement).
+    const offFormulaHighlight = window.QGA_CONCEPT_BUS?.on("formula-highlight", (payload) => {
+      const target = conceptTargets.get(payload.symbol);
+      if (!target) {
+        try { console.debug(`[Scene3D] no concept target for symbol "${payload.symbol}"`); } catch (e) {}
+        return;
+      }
+      startConceptPulse(payload.symbol, target, { intensity: payload.interaction === "preview" ? 0.45 : 1 });
+    });
+    const offFormulaClear = window.QGA_CONCEPT_BUS?.on("formula-clear", () => stopConceptPulse());
+    // Bidirectional annotation linking: hovering a pin that was dropped on a
+    // registered concept object re-highlights that object.
+    const offAnnotationHover = window.QGA_CONCEPT_BUS?.on("annotation-hover", (payload) => {
+      const target = conceptTargets.get(payload.concept);
+      if (!target) return; // unknown mapping: silent, dev diagnostic only
+      startConceptPulse(payload.concept, target, { intensity: 0.8 });
+    });
+    // Palette open: the active scene keeps rendering but idle auto-drift
+    // pauses while the command palette is open (cinematic discipline).
+    let paletteOpen = false;
+    const offPalette = window.QGA_CONCEPT_BUS?.on("palette-visibility", (payload) => { paletteOpen = payload.open; });
+
+    // Compare embed bridge: broadcast the orbit pose on interaction and
+    // apply synchronized poses from the twin scene (single blended pose).
+    const compareRole = window.__qgaCompareRole;
+    let lastPoseBroadcast = 0;
+    const broadcastPose = () => {
+      if (!compareRole || window.parent === window) return;
+      const now = performance.now();
+      if (now - lastPoseBroadcast < 80) return;
+      lastPoseBroadcast = now;
+      window.parent.postMessage({ type: "qga-camera", side: compareRole, pose: hudStateRef.current.getPose() }, "*");
+    };
+    const onCompareMessage = (event) => {
+      const data = event.data;
+      if (!data || data.type !== "qga-camera-sync" || !data.pose) return;
+      orbit.radius = Math.max(orbit.minR, Math.min(orbit.maxR, Number(data.pose.radius) || orbit.radius));
+      orbit.theta = Number.isFinite(data.pose.theta) ? data.pose.theta : orbit.theta;
+      orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, Number.isFinite(data.pose.phi) ? data.pose.phi : orbit.phi));
+      orbit.vTheta = 0; orbit.vPhi = 0; orbit.introT = 0;
+    };
+    if (compareRole) {
+      window.addEventListener("message", onCompareMessage);
+      window.parent?.postMessage({ type: "qga-scene-mounted", side: compareRole, cameraSpace: "orbit" }, "*");
+    }
+
+    // Annotation placement: while the annotation layer arms placement, a
+    // click on this scene raycasts the geometry and offers a world anchor.
+    const maybePlaceAnnotation = (e) => {
+      if (!window.__qgaAnnotationPlacing) return false;
+      raycaster.setFromCamera(ndc(e), camera);
+      const hits = raycaster.intersectObjects(scene.children, true);
+      if (!hits.length) return false; // sky click → the layer falls back to a screen pin
+      window.__qgaAnnotationPlacing = false;
+      const point = hits[0].point;
+      // Bidirectional linking: a pin dropped on a registered concept object
+      // remembers the symbol so hovering the pin re-highlights the object.
+      let concept = null;
+      for (const [symbol, target] of conceptTargets) {
+        let node = hits[0].object;
+        while (node && concept == null) {
+          if (node === target.object) concept = symbol;
+          node = node.parent;
+        }
+        if (concept) break;
+      }
+      document.dispatchEvent(new CustomEvent("qga-annotation-place", {
+        detail: { kind: "world", point: { x: point.x, y: point.y, z: point.z }, concept },
+      }));
+      return true;
+    };
+
+    // Global scene registry: the annotation layer projects world pins through
+    // the active scene (per-frame NDC projection + depth-aware occlusion).
+    const registryVector = new THREE.Vector3();
+    const registryRay = new THREE.Raycaster();
+    const sceneHandle = Object.freeze({
+      element: mount,
+      cameraSpace: "orbit",
+      getPose: hudStateRef.current.getPose,
+      flyTo: hudStateRef.current.flyTo,
+      projectPoint(point) {
+        registryVector.set(point.x, point.y, point.z);
+        const worldPosition = registryVector.clone();
+        registryVector.project(camera);
+        const rect = renderer.domElement.getBoundingClientRect();
+        const result = {
+          x: (registryVector.x * 0.5 + 0.5) * rect.width,
+          y: (-registryVector.y * 0.5 + 0.5) * rect.height,
+          inFront: registryVector.z < 1,
+          occluded: false, rect,
+        };
+        const direction = worldPosition.clone().sub(camera.position);
+        const distance = direction.length();
+        registryRay.set(camera.position, direction.normalize());
+        registryRay.far = Math.max(0, distance - 0.05);
+        result.occluded = registryRay.intersectObjects(scene.children, true).length > 0;
+        return result;
+      },
+    });
+    (window.__qgaActiveScenes ??= new Set()).add(sceneHandle);
 
     el.style.cursor = "grab";
     el.style.touchAction = "none";
@@ -438,8 +630,12 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
             orbit.introT = 0; orbit.vTheta = 0; orbit.vPhi = 0;
             orbit.lastInteract = clockT;
           }
-          goal.t = Math.min(1, goal.t + rawDt / 0.9);
-          const e = 1 - Math.pow(1 - goal.t, 3);
+          goal.t = Math.min(1, goal.t + rawDt / (goal.duration ?? 0.9));
+          // Prompt 10: snapshot/compare fly-to uses easeInOutQuint; module
+          // camera goals keep the original easeOutCubic glide.
+          const e = goal.easing === "quint"
+            ? (window.QGA_MOTION?.EASINGS?.easeInOutQuint ?? ((t) => 1 - Math.pow(1 - t, 3)))(goal.t)
+            : 1 - Math.pow(1 - goal.t, 3);
           orbit.radius = goal.fromR + (goal.radius - goal.fromR) * e;
           orbit.theta = goal.fromT + (goal.theta - goal.fromT) * e;
           orbit.phi = goal.fromP + (goal.phi - goal.fromP) * e;
@@ -462,10 +658,42 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         if (Math.abs(orbit.vTheta) < 1e-5) orbit.vTheta = 0;
         if (Math.abs(orbit.vPhi) < 1e-5) orbit.vPhi = 0;
       }
-      // gentle auto-drift in cinematic mode after idle
+      // gentle auto-drift in cinematic mode after idle (paused while the
+      // command palette is open — the scene renders but does not wander)
       if (mo > 0 && !easing && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic"
-          && clockT - orbit.lastInteract > 4 && !ptr.down) {
+          && clockT - orbit.lastInteract > 4 && !ptr.down && !paletteOpen) {
         orbit.theta += 0.03 * mo * rawDt;
+      }
+
+      // Prompt 10 concept-highlight pulse: uniform-driven emissive overlay,
+      // 600–900ms easeOutCubic attack/decay, looping while held. The target
+      // object's own materials are never mutated.
+      if (conceptPulse.active) {
+        const pulse = conceptPulse.active;
+        const elapsed = clockT - pulse.startTime;
+        const t = elapsed / pulse.duration;
+        if (!pulse.overlay.parent || (!pulse.hold && t >= 1)) {
+          pulse.overlay.removeFromParent();
+          pulse.overlay.material.dispose();
+          if (pulse.overlay.geometry && !pulse.object.isMesh) pulse.overlay.geometry.dispose();
+          conceptPulse.active = null;
+        } else {
+          if (t >= 1) { pulse.startTime = clockT; }
+          const cycle = Math.min(1, (clockT - pulse.startTime) / pulse.duration);
+          const easeOutCubic = window.QGA_MOTION?.EASINGS?.easeOutCubic ?? ((x) => 1 - Math.pow(1 - x, 3));
+          const envelope = cycle < 0.25
+            ? easeOutCubic(cycle / 0.25)
+            : 1 - easeOutCubic((cycle - 0.25) / 0.75);
+          const strength = envelope * pulse.intensity;
+          if (pulse.overlay.isMesh) {
+            pulse.overlay.material.opacity = 0.5 * strength;
+            const base = pulse.object.scale.x * 1.03;
+            pulse.overlay.scale.setScalar(base * (1 + 0.035 * strength));
+          } else {
+            pulse.overlay.material.opacity = 0.85 * strength;
+          }
+          pulse.overlay.position.copy(pulse.object.position);
+        }
       }
 
       camera.position.set(
@@ -511,6 +739,17 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       el.removeEventListener("pointercancel", onPointerUp);
       el.removeEventListener("wheel", onWheel);
       mount.removeEventListener("keydown", onKeyDown);
+      // Prompt 10 bridges: bus subscriptions, compare channel, scene registry
+      // and any live highlight overlay/focus tween all die with the scene.
+      offFormulaHighlight?.(); offFormulaClear?.(); offPalette?.(); offAnnotationHover?.();
+      if (compareRole) window.removeEventListener("message", onCompareMessage);
+      window.__qgaActiveScenes?.delete(sceneHandle);
+      conceptPulse.focusTween?.();
+      if (conceptPulse.active) {
+        conceptPulse.active.overlay.removeFromParent();
+        conceptPulse.active.overlay.material.dispose();
+        conceptPulse.active = null;
+      }
       releaseResources();
     };
     try { renderFrame(); }
@@ -554,6 +793,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   }
   return (
     <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application" aria-busy={phase !== "ready"}
+      data-qga-anchor="primary-scene"
       aria-label={(aria || "Interactive 3D scientific visualization") + ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen."}>
       {/* adaptive material prewarms no longer republish "prewarming" (they keep
           the last frame on screen), so this overlay only appears for the first

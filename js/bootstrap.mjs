@@ -45,6 +45,71 @@ async function bootstrap() {
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
 
+    // Prompt 10 premium interaction layer: shared motion clock, deterministic
+    // search, the typed ConceptBus, annotation/snapshot stores and compare
+    // state. Pure ESM; exposed as frozen globals for the classic-script
+    // runtime (freeze the api object itself — never a spread copy, which
+    // would evaluate getters).
+    const motion = await import("./motion/atlas-motion.mjs");
+    const search = await import("./search/search-index.mjs");
+    const linking = await import("./linking/concept-bus.mjs");
+    const annotationStore = await import("./annotations/annotation-store.mjs");
+    const snapshotStore = await import("./snapshots/snapshot-store.mjs");
+    const compareState = await import("./compare/compare-state.mjs");
+    const dividerShader = await import("./compare/divider-shader.mjs");
+    const conceptBus = linking.createConceptBus();
+    const motionRuntime = motion.createMotionRuntime();
+    Object.defineProperty(window, "QGA_MOTION", {
+      value: Object.freeze({
+        EASINGS: motion.EASINGS, resolveEasing: motion.resolveEasing,
+        createTweenRunner: motion.createTweenRunner,
+        createCriticallyDampedSpring: motion.createCriticallyDampedSpring,
+        createMotionRuntime: motion.createMotionRuntime,
+        systemReducedMotion: motion.systemReducedMotion,
+        runtime: motionRuntime,
+      }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_SEARCH", {
+      value: Object.freeze({
+        buildSearchIndex: search.buildSearchIndex, rankResults: search.rankResults,
+        highlightSegments: search.highlightSegments, formatResultCount: search.formatResultCount,
+        normalizeSearchText: search.normalizeSearchText,
+      }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_CONCEPT_BUS", { value: conceptBus, configurable: true });
+    Object.defineProperty(window, "QGA_LINKING", {
+      value: Object.freeze({ createConceptBus: linking.createConceptBus, CONCEPT_EVENT_TYPES: linking.CONCEPT_EVENT_TYPES }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_ANNOTATIONS", {
+      value: Object.freeze({
+        ANNOTATION_SCHEMA: annotationStore.ANNOTATION_SCHEMA, ANNOTATION_LIMITS: annotationStore.ANNOTATION_LIMITS,
+        validateAnnotation: annotationStore.validateAnnotation, validateAnnotationList: annotationStore.validateAnnotationList,
+        serializeAnnotationsParam: annotationStore.serializeAnnotationsParam, parseAnnotationsParam: annotationStore.parseAnnotationsParam,
+        createAnnotationStore: annotationStore.createAnnotationStore, newAnnotationId: annotationStore.newAnnotationId,
+      }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_SNAPSHOTS", {
+      value: Object.freeze({
+        SNAPSHOT_SCHEMA: snapshotStore.SNAPSHOT_SCHEMA, SNAPSHOT_LIMITS: snapshotStore.SNAPSHOT_LIMITS,
+        validateSnapshotPayload: snapshotStore.validateSnapshotPayload, createSnapshotRecord: snapshotStore.createSnapshotRecord,
+        createSnapshotStore: snapshotStore.createSnapshotStore,
+      }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_COMPARE", {
+      value: Object.freeze({
+        COMPARE_PRESETS: compareState.COMPARE_PRESETS, COMPARE_RENDER_MODES: compareState.COMPARE_RENDER_MODES,
+        validateCompareSide: compareState.validateCompareSide, cameraSpacesCompatible: compareState.cameraSpacesCompatible,
+        diffStates: compareState.diffStates, sampleTweenState: compareState.sampleTweenState,
+        createDividerOverlay: dividerShader.createDividerOverlay,
+      }),
+      configurable: true,
+    });
+
     Object.defineProperty(window, "QGA_LABS", {
       value: Object.freeze({
         ...qftFields, ...hawking, ...rgFlow3d,

@@ -12,6 +12,7 @@ const QGA_DEFAULT_STATE = {
   rgNf: 5, rgA: 1, rgB: 1, rgGStar: 1, rgCurrent: 2,
   qftLabMode: "field", qftLabMass: 1, hawkingLabAmplify: 12,
   adsLabLinks: 5, adsLabRegion: 0.5, colliderChannel: "h2gg", spinFoamJMax: 2, spinFoamMode: "network",
+  annotations: [],
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -26,10 +27,18 @@ const QGA_STATE_KEYS = {
   rgLogMax: "rghi", rgNf: "rgnf", rgA: "rga", rgB: "rgb", rgGStar: "rggs", rgCurrent: "rgc",
   qftLabMode: "qftm", qftLabMass: "qftms", hawkingLabAmplify: "hla",
   adsLabLinks: "aln", adsLabRegion: "alr", colliderChannel: "clc", spinFoamJMax: "sfj", spinFoamMode: "sfm",
+  annotations: "ann",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
+// Closure-tracked pending state: the last state written (or silently applied)
+// this session. React 18 batches synchronous setState loops, so using the
+// URL as the merge base can skip a second write; this overlay is the guard.
+let qgaPendingOverlay = null;
+// Last annotation-parameter rejection (invalid/oversized `ann`), recorded so
+// the app shell can reject it VISIBLY while loading everything else.
+let qgaLastAnnotationRejection = null;
 const QGA_ENUMS = {
-  view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper"],
+  view: ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper", "compare"],
   pathway: ["beginner", "student", "advanced"], gwMode: ["generated", "real"], gwDetector: ["H1", "L1", "V1"],
   gwAudioMode: ["original", "shifted"],
   qftProcess: ["s-channel", "t-channel", "compton"], grPreset: ["timelike", "spacelike", "null", "simultaneity", "twin", "custom"],
@@ -55,6 +64,7 @@ function qgaReadState(search = window.location.search) {
     : params.get(QGA_STATE_KEYS.view) === "bh" ? 1 : QGA_DEFAULT_STATE.bhStateVersion;
   if (version === 1) Object.assign(state, QGA_KERR_V1_DEFAULTS);
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
+    if (key === "annotations") continue; // parsed + validated below
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
@@ -73,6 +83,19 @@ function qgaReadState(search = window.location.search) {
       const legacyView = localStorage.getItem("qga-view");
       if (QGA_ENUMS.view.includes(legacyView)) state.view = legacyView;
     } catch (e) {}
+  }
+  // Prompt 10 annotations: the `ann` parameter is parsed and validated before
+  // it may enter state. Invalid or oversized state is rejected VISIBLY (the
+  // shell reads qgaLastAnnotationRejection) and loads zero pins — old URLs
+  // without the parameter are unaffected.
+  const annRaw = params.get(QGA_STATE_KEYS.annotations);
+  if (annRaw != null && annRaw !== "") {
+    const parser = window.QGA_ANNOTATIONS?.parseAnnotationsParam;
+    if (parser) {
+      const decision = parser(annRaw);
+      if (decision.ok) state.annotations = decision.annotations;
+      else qgaLastAnnotationRejection = { reason: decision.reason, at: Date.now() };
+    }
   }
   state.bhMass = qgaClamp(state.bhMass, 0, 9); state.bhSpin = qgaClamp(state.bhSpin, -0.998, 0.998);
   state.bhInclination = qgaClamp(state.bhInclination, 3, 89);
@@ -144,8 +167,16 @@ function qgaStateSearch(state) {
     ? { ...QGA_DEFAULT_STATE, ...QGA_KERR_V1_DEFAULTS }
     : QGA_DEFAULT_STATE;
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
-    if (key === "bhStateVersion") continue;
+    if (key === "bhStateVersion" || key === "annotations") continue;
     if (state[key] !== defaults[key]) params.set(param, String(state[key]));
+  }
+  // Annotations enter shared state only after schema, text and size limits
+  // pass; a failed serialization is refused (the panel surfaces the reason)
+  // rather than writing a truncated or invalid parameter.
+  if (Array.isArray(state.annotations) && state.annotations.length > 0) {
+    const serializer = window.QGA_ANNOTATIONS?.serializeAnnotationsParam;
+    const decision = serializer ? serializer(state.annotations) : { ok: false, reason: "Annotation tooling is unavailable." };
+    if (decision.ok) params.set(QGA_STATE_KEYS.annotations, decision.value);
   }
   if (state.view === "bh" || QGA_KERR_KEYS.some((key) => params.has(QGA_STATE_KEYS[key]))) {
     params.set(QGA_STATE_KEYS.bhStateVersion, String(state.bhStateVersion === 1 ? 1 : QGA_DEFAULT_STATE.bhStateVersion));
@@ -154,6 +185,7 @@ function qgaStateSearch(state) {
   return query ? "?" + query : "";
 }
 function qgaWriteState(state, { replace = true } = {}) {
+  qgaPendingOverlay = { ...state };
   window.history[replace ? "replaceState" : "pushState"](
     { qga: { ...state } }, "", window.location.pathname + qgaStateSearch(state) + window.location.hash
   );

@@ -425,6 +425,16 @@ Prompt 00's renderer/science ownership map, lifecycle contract, fallback policy,
 
 The Kerr ray-tracing science core — null geodesics, spin-dependent characteristic radii, thin-disk thermodynamics, relativistic frequency shifts, and spectral colour conversion — is specified in **[docs/science/kerr-rendering.md](docs/science/kerr-rendering.md)**, which separates exact equations from numerical, display, and conjectural approximations and documents the measured drift and convergence bounds. Run `npm run benchmark:kerr` to reproduce the ray count, median integration time, convergence error, and conserved-quantity drift on your own machine. The renderer built on that core — quality budgets, temporal accumulation, image-order tinting, distortion-aware star filtering, focus picking and the documented operation order — is specified in **[docs/science/kerr-observatory.md](docs/science/kerr-observatory.md)**.
 
+### Premium Interaction Layer (Prompt 10)
+
+- **Command palette & search** — `⌘K`/`Ctrl+K` (plus sidebar and mobile buttons) opens a deterministic local search over modules, reference views, glossary, symbols, formula titles, references, open problems and atlas actions. Ranking is strictly ordered (exact → prefix → token prefix → substring → metadata) with stable tie-breaks; results are keyboard-navigable with escaped highlighting and focus restoration.
+- **A/B comparison** — `?view=compare` renders two independently validated atlas states side by side or behind a draggable swipe seam (WebGL2 divider overlay with lens distortion and chromatic fringe, CSS fallback). Built-in presets: Schwarzschild vs Kerr a★ = 0.9 and scientific vs cinematic render pipelines. Cameras synchronize only when both sides declare a compatible orbit space; otherwise a visible badge reports "camera not synced". Parameter changes tween over 700 ms with every physical quantity recomputed each frame.
+- **Snapshots** — named local states (schema `horizon-qga-snapshot/v1`) with timestamp, provenance and an optional ≤320 px thumbnail. Restoring flies the camera back (easeInOutQuint, ≤900 ms) and tweens parameters; import validates the full payload and resolves id conflicts explicitly as copies.
+- **Formula linking** — hovering, focusing or clicking a symbol row in any formula lens highlights the corresponding scene object (uniform-driven emissive pulse, no material mutation), exposes its live numerical value and units, and — in cinematic mode only — pulls the depth-of-field focus to the object. Unknown mappings stay silent (development diagnostic only).
+- **Annotations** — shareable pins with explicit anchor types (semantic, world, screen). World pins project per frame with depth-aware occlusion fading; text renders as text; pins enter the URL (`ann=`) only after schema, text and size limits pass, and invalid state is rejected visibly while everything else loads. Annotations never alter scientific simulation results.
+
+All new animation routes through one shared motion clock (`js/motion/atlas-motion.mjs`) with deterministic easings; `prefers-reduced-motion` snaps every tween and disables pulses, focus pulls and divider distortion while keeping the full interaction surface functional.
+
 ---
 
 ## Module Matrix
