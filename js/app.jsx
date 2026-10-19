@@ -206,6 +206,23 @@ function CinemaBar({ reducedMotion }) {
   );
 }
 
+function TransitionNotice() {
+  const C = window.QGA_CINEMATIC;
+  const [error, setError] = useState(null);
+  const [dismissedFor, setDismissedFor] = useState(null);
+  useEffect(() => (C ? C.subscribe((s) => setError(s.transitionError)) : undefined), []); // eslint-disable-line
+  if (!C || !error || dismissedFor === error) return null;
+  return (
+    <div className="cinema-notice" role="alert">
+      <span>
+        Cinematic transitions are running in crossfade mode: {error}
+      </span>
+      <button className="btn cinema-notice-close" aria-label="Dismiss transition notice"
+        onClick={() => setDismissedFor(error)}>Dismiss</button>
+    </div>
+  );
+}
+
 function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
   const [atlasState, setAtlasState] = useQGAState();
@@ -375,6 +392,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         </main>
       </div>
       <CinemaBar reducedMotion={prm}></CinemaBar>
+      <TransitionNotice></TransitionNotice>
       {menuOpen ? (
         <div className="mobile-menu" role="dialog" aria-label="Navigation menu">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>

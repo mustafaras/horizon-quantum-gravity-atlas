@@ -2169,9 +2169,20 @@ html[data-motion="reduced"] .fc-readout { animation: none !important; }
 .cinema-shot-title { font-size: 12px; color: var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cinema-annot { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cinema-control { flex: 0 0 auto; white-space: nowrap; }
+.cinema-notice {
+  position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%);
+  z-index: 60; display: flex; align-items: center; gap: 12px;
+  max-width: min(620px, calc(100vw - 24px));
+  padding: 8px 12px; border-radius: 10px;
+  font-size: 12px; color: var(--head);
+  background: rgba(30, 16, 22, 0.88); border: 1px solid rgba(255, 138, 168, 0.42);
+  backdrop-filter: blur(8px);
+}
+.cinema-notice-close { flex: 0 0 auto; }
 @media (max-width: 640px) {
   .cinema-annot { display: none; }
   .cinema-bar { gap: 8px; padding: 6px 10px; }
+  .cinema-notice { bottom: 66px; }
 }
 
 /* scene transition overlay: lens mode draws into the canvas; crossfade mode

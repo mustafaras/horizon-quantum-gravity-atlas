@@ -31,11 +31,18 @@ export function createCinematicRuntime() {
   let state = {
     view: null, shots: [], shot: null, index: -1,
     playing: false, control: "idle", progress: 0, hasBar: false,
+    transitionError: null,
   };
 
   const transition = createSceneTransition({
     reducedMotion: settings.reducedMotion, vizMode: settings.vizMode,
-    onError: (message) => { lastError = message; },
+    onError: (message) => {
+      lastError = message;
+      // reveal the initialization failure instead of trapping the app:
+      // transitions continue in crossfade mode and the UI names the cause
+      if (typeof console !== "undefined" && console.warn) console.warn("[cinematic] transition degraded:", message);
+      emit({ transitionError: message });
+    },
   });
 
   const emit = (patch) => {

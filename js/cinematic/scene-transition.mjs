@@ -63,6 +63,7 @@ export function createSceneTransition(options = {}) {
   let overlay = null, canvas = null, cssTimer = null;
   let loopId = null, loopStart = 0;
   let prewarmed = false, prewarming = null;
+  let degraded = false;   // prewarm failed once: shader compile failure is deterministic, stay on crossfade
   let disposed = false;
 
   const DURATION_MS = 460;
@@ -128,6 +129,7 @@ export function createSceneTransition(options = {}) {
         })
         .catch((error) => {
           mode = "crossfade";
+          degraded = true;
           onError(error.message);
           return { ok: false, mode, error: error.message };
         });
@@ -223,7 +225,7 @@ export function createSceneTransition(options = {}) {
     prewarm, run, activeLoops, dispose,
     /** Re-evaluate the mode when settings change (vizMode/motion). */
     configure({ reducedMotion: rm = reducedMotion, vizMode: vm = vizMode } = {}) {
-      const next = !rm && vm === "cinematic" && webgl2Available() ? "lens" : "crossfade";
+      const next = !degraded && !rm && vm === "cinematic" && webgl2Available() ? "lens" : "crossfade";
       if (next !== mode) { mode = next; prewarmed = false; prewarming = null; }
       return mode;
     },
