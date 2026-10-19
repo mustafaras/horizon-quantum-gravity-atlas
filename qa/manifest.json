@@ -59,7 +59,8 @@
       "adsLabRegion": "alr",
       "colliderChannel": "clc",
       "spinFoamJMax": "sfj",
-      "spinFoamMode": "sfm"
+      "spinFoamMode": "sfm",
+      "annotations": "ann"
     }
   },
   "defaults": {

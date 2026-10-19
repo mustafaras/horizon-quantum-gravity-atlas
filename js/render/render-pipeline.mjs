@@ -237,7 +237,7 @@ function seedNoiseTexture(texture, SimplexNoise, seed) {
   texture.needsUpdate = true;
 }
 
-function lifecycle({ renderer, scene, camera, effects, draw, resize, release, prepare }) {
+function lifecycle({ renderer, scene, camera, effects, focusSetter = null, draw, resize, release, prepare }) {
   let disposed = false;
   let warmed = false;
   let warming = null;
@@ -256,6 +256,16 @@ function lifecycle({ renderer, scene, camera, effects, draw, resize, release, pr
   };
   return {
     effects,
+    /**
+     * Prompt 10 concept linking: tween the depth-of-field focus distance
+     * (cinematic highlight focus pull). No-op when DOF is disabled or the
+     * active pipeline has no focus handle — never throws, never rebuilds.
+     */
+    setFocusDistance(value) {
+      check();
+      if (focusSetter && Number.isFinite(value)) focusSetter(value);
+    },
+    get focusDistanceSupported() { return focusSetter != null; },
     render(delta = 0) {
       check();
       if (!warmed) throw new Error("Await render pipeline prewarm() before rendering");
@@ -379,6 +389,7 @@ async function buildClassicPipeline({ renderer, scene, camera, effects, enabled,
   const composer = new EffectComposer(renderer);
   const passes = [];
   const extraResources = new Set();
+  let focusSetter = null; // wired when depth-of-field is enabled
   const add = (pass) => { passes.push(pass); composer.addPass(pass); return pass; };
   const release = () => {
     for (const pass of passes) pass.dispose();
@@ -402,7 +413,12 @@ async function buildClassicPipeline({ renderer, scene, camera, effects, enabled,
       extraResources.add(bloom.materialHighPassFilter);
     }
     if (enabled("depth-of-field")) {
-      add(new BokehPass(scene, camera, { focus: Math.max(camera.near * 2, 8), aperture: 0.00001, maxblur: 0.002 }));
+      const bokeh = add(new BokehPass(scene, camera, { focus: Math.max(camera.near * 2, 8), aperture: 0.00001, maxblur: 0.002 }));
+      // Prompt 10 concept linking: cinematic focus pulls tween this uniform.
+      // The pinned default stays exactly as before; the setter only clamps.
+      focusSetter = (value) => {
+        if (Number.isFinite(value)) bokeh.uniforms.focus.value = Math.max(camera.near, value);
+      };
     }
     if (enabled("chromatic-aberration")) {
       const chromatic = add(new ShaderPass(RGBShiftShader));
@@ -420,7 +436,7 @@ async function buildClassicPipeline({ renderer, scene, camera, effects, enabled,
     throw error;
   }
   return lifecycle({
-    renderer, scene, camera, effects,
+    renderer, scene, camera, effects, focusSetter,
     draw: (delta) => composer.render(delta),
     resize: (width, height) => {
       composer.setPixelRatio(renderer.getPixelRatio());
@@ -464,6 +480,7 @@ async function buildNodePipeline({ renderer, scene, camera, quality, effects, en
   const beauty = scenePass.getTextureNode("output");
   const depth = scenePass.getTextureNode("depth");
   let color = beauty;
+  let focusSetter = null; // wired when depth-of-field is enabled
   const pipeline = new RenderPipeline(renderer);
   const release = () => {
     pipeline.dispose();
@@ -509,7 +526,13 @@ async function buildNodePipeline({ renderer, scene, camera, quality, effects, en
       color = vec4(color.rgb.add(rays.rgb.mul(vec3(source.color))), color.a);
     }
     if (enabled("depth-of-field")) {
-      color = own(dof(asTexture(color), scenePass.getViewZNode(), Math.max(camera.near * 2, 8), 4, 0.15));
+      // Prompt 10 concept linking: the focus distance is a uniform node so a
+      // cinematic highlight can pull focus without rebuilding the graph.
+      const focusUniform = own(tsl.uniform(Math.max(camera.near * 2, 8)));
+      focusSetter = (value) => {
+        if (Number.isFinite(value)) focusUniform.value = Math.max(camera.near, value);
+      };
+      color = own(dof(asTexture(color), scenePass.getViewZNode(), focusUniform, 4, 0.15));
     }
     if (enabled("temporal-aa")) {
       color = own(traa(asTexture(color), depth, scenePass.getTextureNode("velocity"), camera));
@@ -541,7 +564,7 @@ async function buildNodePipeline({ renderer, scene, camera, quality, effects, en
     throw error;
   }
   return lifecycle({
-    renderer, scene, camera, effects,
+    renderer, scene, camera, effects, focusSetter,
     draw: () => pipeline.render(),
     // PassNode and display nodes derive their actual sizes from the drawing
     // buffer each frame. The host resizes its renderer before calling this.

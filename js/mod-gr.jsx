@@ -773,6 +773,38 @@ function CurvatureEngine3D() {
     // lensing fan of light rays
     const rayVis = st0.rays.map(() => mkTrail(0xffcf72, 0.7, 1));
 
+    // Prompt 10 formula linking: map the module's formula symbols onto the
+    // scene objects they describe, with live numerical readouts. Hovering
+    // T_μν in the Einstein field equations highlights the curvature source.
+    ctx.conceptTarget("T_{\\mu\\nu}", {
+      object: star,
+      readout: () => ({ label: "Curvature source mass", value: massRef.current.toFixed(1), unit: "M☉ (scene scale)" }),
+    });
+    ctx.conceptTarget("g_{\\mu\\nu}", {
+      object: surf,
+      readout: () => ({
+        label: "Embedding depth at throat",
+        value: (0.92 * 0.55 * massRef.current / Math.sqrt(0.62)).toFixed(2),
+        unit: "scene units",
+      }),
+    });
+    ctx.conceptTarget("x^\\mu(\\tau)", {
+      object: bodyVis[0]?.mesh,
+      readout: () => ({
+        label: "Inner-body perihelion precession",
+        value: (viewRef.current === "gr" ? grPrecDeg(massRef.current, GR_BODIES[0].a, GR_BODIES[0].e) : 0).toFixed(2),
+        unit: "°/orbit",
+      }),
+    });
+    ctx.conceptTarget("\\Gamma^{\\mu}_{\\alpha\\beta}", {
+      object: bodyVis[1]?.mesh ?? bodyVis[0]?.mesh,
+      readout: () => ({
+        label: "Outer-body perihelion precession",
+        value: (viewRef.current === "gr" ? grPrecDeg(massRef.current, GR_BODIES[1].a, GR_BODIES[1].e) : 0).toFixed(2),
+        unit: "°/orbit",
+      }),
+    });
+
     const force = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.4, 0xd96a5a, 0.35, 0.2);
     force.visible = false;
     scene.add(force);

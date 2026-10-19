@@ -7,7 +7,7 @@ function qgaSeeded(seed) {
 function useQGAState() {
   const [state, setState] = useState(() => qgaReadState());
   useEffect(() => {
-    const onPop = () => setState(qgaReadState());
+    const onPop = () => { qgaPendingOverlay = null; setState(qgaReadState()); };
     const onStateChange = (event) => setState(event.detail);
     window.addEventListener("popstate", onPop);
     window.addEventListener("qga-statechange", onStateChange);
@@ -17,14 +17,30 @@ function useQGAState() {
     };
   }, []);
   const update = useCallback((patch, options = {}) => setState(() => {
-    const current = qgaReadState();
+    // Merge over the closure-tracked pending state, not the URL: React 18
+    // batches synchronous update loops and a URL-read base would skip the
+    // second write of a same-tick pair.
+    const current = qgaPendingOverlay ?? qgaReadState();
     const next = { ...current, ...(typeof patch === "function" ? patch(current) : patch) };
     qgaWriteState(next, options); return next;
   }), []);
   return [state, update];
 }
+// Compare-view tween path: apply a state patch WITHOUT touching the URL or
+// history (the compare controller owns the address bar; the embed only needs
+// live values). Still dispatches qga-statechange so every consumer — physics
+// readouts included — recomputes from the merged state each frame.
+function qgaApplySilent(patch) {
+  const base = qgaPendingOverlay ?? qgaReadState();
+  const next = { ...base, ...(typeof patch === "function" ? patch(base) : patch) };
+  qgaPendingOverlay = next;
+  window.dispatchEvent(new CustomEvent("qga-statechange", { detail: { ...next } }));
+  return next;
+}
 window.QGA_DEFAULT_STATE = QGA_DEFAULT_STATE;
 window.QGA_READ_STATE = qgaReadState; window.QGA_WRITE_STATE = qgaWriteState;
+window.QGA_APPLY_SILENT = qgaApplySilent;
+window.QGA_LAST_ANNOTATION_REJECTION = () => qgaLastAnnotationRejection;
 window.QGA_SEEDED = qgaSeeded; window.useQGAState = useQGAState;
 function qgaShareUrl(state) { return new URL(qgaStateSearch(state), window.location.href).href; }
 async function qgaCopyLink(state) {

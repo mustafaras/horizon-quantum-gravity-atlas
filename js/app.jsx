@@ -76,13 +76,14 @@ const QGA_VIEWS = {
   refs: { label: "References", comp: () => window.ViewReferences },
   open: { label: "Open Problems", comp: () => window.ViewOpenProblems },
   paper: { label: "Whitepaper", comp: () => window.ViewWhitepaper },
+  compare: { label: "Compare", comp: () => window.CompareView },
 };
 
 // per-module background tint (hsl hue) — drives the cinematic scene change
 const QGA_VIEW_HUE = {
   overview: 226, sm: 268, qft: 196, rg: 226, gr: 44,
   planck: 226, approaches: 282, bh: 36, exp: 196,
-  glossary: 226, symbols: 226, refs: 226, open: 226, paper: 226,
+  glossary: 226, symbols: 226, refs: 226, open: 226, paper: 226, compare: 210,
 };
 
 const QGA_STATE_DEFAULTS = window.QGA_DEFAULT_STATE || {
@@ -161,6 +162,11 @@ function App() {
   const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
   const [atlasState, setAtlasState] = useQGAState();
+  // Prompt 10 compare embeds: #embed-A / #embed-B renders the minimal shell
+  // (no sidebar/topbar/intro/tweaks) and answers the compare controller.
+  const embedRole = window.location.hash === "#embed-A" ? "A"
+    : window.location.hash === "#embed-B" ? "B" : null;
+  const embed = embedRole != null;
   const [view, setView] = useState(() => {
     try {
       const v = qgaReadState().view;
@@ -170,8 +176,16 @@ function App() {
   const stateView = atlasState.view;
   useEffect(() => { if (stateView !== view) setView(stateView); }, [stateView]); // eslint-disable-line
   const [menuOpen, setMenuOpen] = useState(false);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const contentRef = useRef(null);
   const openRenderingSettings = () => window.postMessage({ type: "__activate_edit_mode" }, location.origin);
+  // Formula linking + palette navigation read the live view id.
+  useEffect(() => { window.__qgaCurrentView = view; }, [view]);
+  // Palette action hook: "Save snapshot" opens this panel from ⌘K.
+  useEffect(() => {
+    window.QGA_OPEN_SNAPSHOTS = () => setSnapshotsOpen(true);
+    return () => { if (window.QGA_OPEN_SNAPSHOTS) delete window.QGA_OPEN_SNAPSHOTS; };
+  }, []);
 
   const go = (id) => {
     setView(id);
@@ -181,6 +195,24 @@ function App() {
     if (contentRef.current) contentRef.current.scrollTop = 0;
     window.scrollTo(0, 0);
   };
+
+  // Compare embed protocol: render-mode settings + silent state patches
+  // (parameter tweens) + readiness announcement. The role itself is set at
+  // script evaluation (child effects run before parent effects).
+  useEffect(() => {
+    if (!embed) return undefined;
+    window.parent?.postMessage({ type: "qga-embed-ready", side: embedRole, view }, "*");
+    const onMessage = (event) => {
+      const data = event.data;
+      if (!data || typeof data.type !== "string") return;
+      if (data.type === "qga-embed-settings" && data.vizMode) setTweak("vizMode", data.vizMode);
+      else if (data.type === "qga-state-patch" && data.patch) window.QGA_APPLY_SILENT?.(data.patch);
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+    };
+  }, [embed, embedRole, view, setTweak]);
 
   // settings derived from tweaks (system reduced-motion always wins)
   const effMotion = prm ? "reduced" : t.motion;
@@ -205,6 +237,20 @@ function App() {
   const motionScale = effMotion === "reduced" ? 0 : effMotion === "balanced" ? 0.55 : 1;
 
   const Comp = QGA_VIEWS[view].comp();
+
+  // Compare embeds render the minimal shell: the view component only.
+  if (embed) {
+    return (
+      <AtlasSettingsContext.Provider value={settings}>
+        <main className="content embed-content">
+          <div className="content-inner embed-inner" key={view}>
+            {Comp ? <Comp go={go}></Comp> : <p className="dim">Loading module…</p>}
+          </div>
+        </main>
+      </AtlasSettingsContext.Provider>
+    );
+  }
+
   return (
     <AtlasSettingsContext.Provider value={settings}>
       <HorizonIntro></HorizonIntro>
@@ -222,6 +268,14 @@ function App() {
           </div>
           <NavList view={view} go={go}></NavList>
           <PathwaySelector value={atlasState.pathway} onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></PathwaySelector>
+          <div className="sidebar-tools" aria-label="Atlas tools">
+            <button className="sidebar-tool-btn" onClick={() => window.QGA_OPEN_PALETTE?.()}>
+              <span aria-hidden="true">⌘</span> Search <kbd>⌘K</kbd>
+            </button>
+            <button className="sidebar-tool-btn" onClick={() => go("compare")} aria-label="Open the A/B compare view">⇄ Compare</button>
+            <button className="sidebar-tool-btn" onClick={() => setSnapshotsOpen(true)} aria-label="Open the snapshots panel">◆ Snapshots</button>
+            <button className="sidebar-tool-btn" onClick={() => window.QGA_ARM_ANNOTATION?.()} aria-label="Place an annotation pin on the current view">✎ Annotate</button>
+          </div>
           <div className="sidebar-foot">
             Scientific status labels mark every claim.<br></br>
             No quantum gravity theory is experimentally confirmed.
@@ -230,6 +284,7 @@ function App() {
         </nav>
         <div className="topbar">
           <span className="topbar-title">HORIZON</span>
+          <button className="btn" onClick={() => window.QGA_OPEN_PALETTE?.()} aria-label="Open search and command palette">Search ⌘K</button>
           <button className="btn render-settings-btn" onClick={openRenderingSettings}>Rendering settings</button>
           <button className="btn" onClick={async () => { try { await QGA_COPY_LINK(qgaReadState()); } catch (e) {} }}>Copy link</button>
           <button className="btn" onClick={() => QGA_EXPORT_JSON(qgaReadState())}>Export JSON</button>
@@ -238,6 +293,7 @@ function App() {
         <main className="content" ref={contentRef}>
           <div className="content-inner" key={view}>
             {Comp ? <Comp go={go}></Comp> : <p className="dim">Loading module…</p>}
+            <AnnotationLayer view={view}></AnnotationLayer>
           </div>
         </main>
       </div>
@@ -251,6 +307,8 @@ function App() {
           <PathwaySelector value={atlasState.pathway} onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></PathwaySelector>
         </div>
       ) : null}
+      <CommandPalette go={go}></CommandPalette>
+      <SnapshotPanel open={snapshotsOpen} onClose={() => setSnapshotsOpen(false)}></SnapshotPanel>
       <TweaksPanel>
         <TweakSection label="Visualization"></TweakSection>
         <RenderSetting label="Mode" value={t.vizMode}
@@ -296,4 +354,8 @@ function App() {
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+// Compare embeds: the role must exist before any child effect runs (React
+// runs child effects before parent effects), so set it at script evaluation.
+window.__qgaCompareRole = window.location.hash === "#embed-A" ? "A"
+  : window.location.hash === "#embed-B" ? "B" : null;
 root.render(<App></App>);

@@ -591,9 +591,41 @@ const QGA_MODULES = [
   { id: "exp", num: "08", title: "Experimental Frontiers", short: "Experiment" },
 ];
 
+/* ---------- formula index (Prompt 10 command-palette search) ----------
+   Titles mirror the FormulaCard props in each module; the palette navigates
+   to the view and opens the matching card (data-qga-formula). */
+const QGA_FORMULA_INDEX = [
+  { view: "sm", viewLabel: "Standard Model", title: "Standard Model gauge group" },
+  { view: "sm", viewLabel: "Standard Model", title: "Higgs potential" },
+  { view: "sm", viewLabel: "Standard Model", title: "Lagrangian structure (schematic)" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Path integral amplitude" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Klein–Gordon equation" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Dirac equation" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Feynman propagator" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Mandelstam variables" },
+  { view: "qft", viewLabel: "Quantum Fields", title: "Fermi's golden rule" },
+  { view: "rg", viewLabel: "Gauge & RG Flow", title: "Covariant derivative" },
+  { view: "rg", viewLabel: "Gauge & RG Flow", title: "QCD beta function · one loop" },
+  { view: "rg", viewLabel: "Gauge & RG Flow", title: "QED convention · one loop" },
+  { view: "rg", viewLabel: "Gauge & RG Flow", title: "Fixed-point linearization" },
+  { view: "gr", viewLabel: "General Relativity", title: "Einstein field equations" },
+  { view: "gr", viewLabel: "General Relativity", title: "Geodesic equation" },
+  { view: "gr", viewLabel: "General Relativity", title: "Einstein–Hilbert action" },
+  { view: "planck", viewLabel: "The Planck Frontier", title: "Planck units" },
+  { view: "planck", viewLabel: "The Planck Frontier", title: "Perturbative expansion of the metric" },
+  { view: "planck", viewLabel: "The Planck Frontier", title: "Growth of the effective coupling" },
+  { view: "approaches", viewLabel: "Theory Comparator", title: "Polyakov action (string theory)" },
+  { view: "approaches", viewLabel: "Theory Comparator", title: "Wheeler–DeWitt equation (canonical QG)" },
+  { view: "approaches", viewLabel: "Theory Comparator", title: "Bekenstein–Hawking entropy" },
+  { view: "approaches", viewLabel: "Theory Comparator", title: "AdS/CFT dictionary (schematic)" },
+  { view: "bh", viewLabel: "Black Holes", title: "Schwarzschild radius" },
+  { view: "bh", viewLabel: "Black Holes", title: "Hawking temperature" },
+  { view: "bh", viewLabel: "Black Holes", title: "Bekenstein–Hawking entropy" },
+];
+
 Object.assign(window, {
   QGA_PARTICLES, QGA_CLASS_COLORS, QGA_couplings, QGA_SECTORS,
   QGA_THEORIES, QGA_ROWS, QGA_GLOSSARY, QGA_REFERENCES, QGA_OPEN_PROBLEMS, QGA_MODULES,
   QGA_PARTICLE_EXTRA, QGA_THEORY_META, QGA_GLOSS_LINKS, QGA_PATHWAYS, QGA_BRIDGES,
-  QGA_SYMBOLS, QGA_CONVENTIONS,
+  QGA_SYMBOLS, QGA_CONVENTIONS, QGA_FORMULA_INDEX,
 });
