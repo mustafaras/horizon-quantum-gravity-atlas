@@ -655,223 +655,463 @@ function grPrecDeg(M, a, e) {
    selected body, GR vs Newtonian, with photon-sphere / ISCO markers, the
    energy line, turning points, and a live radius marker driven by the scene
    loop through stRef (no per-frame React renders). */
+// Unique SVG clipPath ids: two panels of the same type must not share one.
+let ngClipSeed = 0;
+
+/* ── Effective-potential panel ───────────────────────────────────────────────
+   V_eff(r) = −GM/r + L²/2r² − GM·L²/c²r³ for the selected body, GR against
+   Newtonian. The y-window is derived from the well itself instead of a fixed
+   clamp: a fixed range made the curve a flat line whenever the 1/r² term
+   dominated the left edge. Turning points are found by root-finding V = E, not
+   from the Newtonian a(1±e), which is wrong once the r⁻³ term matters. */
 function VEffPanel({ mass, body, view, stRef }) {
   const dotRef = useRef(null);
   const mapRef = useRef(null);
+  const veffClipId = useMemo(() => "veff-clip-" + (ngClipSeed++), []);
   const P = window.QGA_PHYSICS;
   const gm = 0.55 * mass;
   const rPh = P.grPhotonSphereRadius(gm, GR_C2);
   const rIsco = P.grIscoRadius(gm, GR_C2);
+  const rs = 2 * gm / GR_C2;
   const bound = body && !body.free;
   const a = bound ? body.a : 3;
   const e = bound ? body.e : 0;
   const L2 = gm * a * (1 - e * e);
   const L = Math.sqrt(L2);
   const E = -gm / (2 * a);
-  const rMin = Math.max(0.42, 0.55 * rPh);
-  const rMax = Math.min(9.5, Math.max(a * (1 + e) * 1.35, 5));
-  const W = 320, H = 118, PL = 30, PR = 8, PT = 10, PB = 18;
-  const xs = (r) => PL + (r - rMin) / (rMax - rMin) * (W - PL - PR);
-  const clampV = (v) => Math.max(-7.5, Math.min(3.2, v));
-  const ys = (v) => PT + (3.2 - clampV(v)) / (3.2 + 7.5) * (H - PT - PB);
-  mapRef.current = { xs, rMin, rMax };
+
+  const W = 480, H = 252, PL = 56, PR = 20, PT = 22, PB = 44;
+  const iw = W - PL - PR, ih = H - PT - PB;
+
+  const V = (r) => P.grEffectivePotential(gm, GR_C2, L, r);
+  const VN = (r) => -gm / r + L2 / (2 * r * r);
+
+  // Scan only outside the photon sphere: the r⁻³ term diverges at the origin,
+  // so a scan that reaches r → 0 reports a "minimum" of −10³ and flattens the
+  // real well into a straight line.
+  const rScanLo = 1.02 * rPh;
+  const rScanHi = Math.max(a * (1 + e) * 2.2, 7);
+  const NS = 400;
+  const scan = [];
+  for (let i = 0; i <= NS; i++) {
+    const r = rScanLo + (rScanHi - rScanLo) * i / NS;
+    scan.push([r, V(r)]);
+  }
+  let rAtMin = rScanLo, vAtMin = Infinity;
+  for (const s of scan) if (s[1] < vAtMin) { vAtMin = s[1]; rAtMin = s[0]; }
+
+  const roots = [];
+  for (let i = 1; i < scan.length; i++) {
+    const f0 = scan[i - 1][1] - E, f1 = scan[i][1] - E;
+    if (f0 === 0) { roots.push(scan[i - 1][0]); continue; }
+    if (f0 * f1 >= 0) continue;
+    let lo = scan[i - 1][0], hi = scan[i][0];
+    for (let k = 0; k < 48; k++) {
+      const mid = 0.5 * (lo + hi);
+      if ((V(lo) - E) * (V(mid) - E) <= 0) hi = mid; else lo = mid;
+    }
+    roots.push(0.5 * (lo + hi));
+  }
+  const rPeri = roots.length ? roots[0] : a * (1 - e);
+  const rApo = roots.length > 1 ? roots[roots.length - 1] : a * (1 + e);
+
+  const rMin = Math.max(0.60 * rPh, Math.min(0.80 * rPeri, 0.92 * rAtMin, 0.98 * rIsco));
+  const rMax = Math.min(rScanHi, Math.max(1.55 * rApo, 1.9 * rAtMin, rMin * 2.4));
+
+  // Frame the window that is actually drawn, not the scan range.
+  let vMin = Infinity, vTop = -Infinity;
+  for (let i = 0; i <= 200; i++) {
+    const v = V(rMin + (rMax - rMin) * i / 200);
+    if (v < vMin) vMin = v;
+    if (v > vTop) vTop = v;
+  }
+  if (bound) vTop = Math.max(vTop, E);
+  const span = Math.max(1e-6, vTop - vMin);
+  // The Newtonian branch has no r^-3 term, so near the star it sits far above
+  // the GR well. Give it headroom, but cap it so the well keeps its shape.
+  const vNTop = VN(rMin);
+  const yLo = vMin - 0.22 * span;
+  const yHi = vTop + Math.min(0.90 * span, Math.max(0.30 * span, vNTop - vTop));
+
+  const xs = (r) => PL + (r - rMin) / (rMax - rMin) * iw;
+  const ys = (v) => PT + (yHi - v) / (yHi - yLo) * ih;
+  mapRef.current = { xs, ys, V, rMin, rMax };
+
   useEffect(() => {
     const id = setInterval(() => {
       const el = dotRef.current, m = mapRef.current;
       if (!el || !m) return;
       const r = Math.min(Math.max(stRef.current.selR || 0, m.rMin), m.rMax);
       el.setAttribute("cx", m.xs(r).toFixed(1));
+      el.setAttribute("cy", m.ys(m.V(r)).toFixed(1));
     }, 160);
     return () => clearInterval(id);
   }, [stRef]);
-  const samples = [];
-  for (let i = 0; i <= 120; i++) {
-    const r = rMin + (rMax - rMin) * i / 120;
-    samples.push([r, P.grEffectivePotential(gm, GR_C2, L, r), -gm / r + L2 / (2 * r * r)]);
+
+  const NPT = 200;
+  const pts = [];
+  for (let i = 0; i <= NPT; i++) {
+    const r = rMin + (rMax - rMin) * i / NPT;
+    pts.push([r, V(r), VN(r)]);
   }
-  const path = (idx) => samples.map((sm, i) => (i ? "L" : "M") + xs(sm[0]).toFixed(1) + " " + ys(sm[idx]).toFixed(1)).join(" ");
-  const rPeri = a * (1 - e), rApo = a * (1 + e);
+  const path = (idx) => pts.map((s, i) =>
+    (i ? "L" : "M") + xs(s[0]).toFixed(1) + " " + ys(s[idx]).toFixed(1)).join(" ");
+
+  const niceStep = (raw) => {
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+  };
+  const yTicks = [];
+  {
+    const step = niceStep((yHi - yLo) / 5);
+    for (let v = Math.ceil(yLo / step) * step; v <= yHi + 1e-9; v += step) yTicks.push(v);
+  }
+  const xTicks = [];
+  {
+    const step = niceStep((rMax - rMin) / 5);
+    for (let r = Math.ceil(rMin / step) * step; r <= rMax + 1e-9; r += step) xTicks.push(r);
+  }
+  const fmt = (v) => {
+    const av = Math.abs(v);
+    if (av >= 100) return v.toFixed(0);
+    if (av >= 10) return v.toFixed(1);
+    if (av >= 1) return v.toFixed(2);
+    return v.toFixed(3);
+  };
+
   const hex = body ? "#" + body.hex.toString(16).padStart(6, "0") : "#7fe0ee";
+  const inRange = (r) => r > rMin && r < rMax;
+  const marks = [
+    { r: rs, c: "#ff8f6b", label: "r_s" },
+    { r: rPh, c: "#8f7ae8", label: "r_ph" },
+    { r: rIsco, c: "#4ec9d9", label: "r_ISCO" },
+  ].filter((m) => inRange(m.r));
+  const liveR = Math.min(Math.max(rPeri, rMin), rMax);
+
   return (
     <div className="veff-wrap">
       <svg viewBox={"0 0 " + W + " " + H} className="veff-svg" role="img"
-        aria-label="Effective potential curve for the selected body, general relativity versus Newtonian, with photon sphere and ISCO markers">
-        <line x1={PL} y1={ys(0)} x2={W - PR} y2={ys(0)} stroke="#2a3a58" strokeWidth="0.7"></line>
-        <line x1={xs(rPh)} y1={PT} x2={xs(rPh)} y2={H - PB} stroke="#8f7ae8" strokeWidth="0.8" strokeDasharray="3 2"></line>
-        <text x={xs(rPh) + 2} y={PT + 7} fill="#8f7ae8" fontSize="7" fontFamily="var(--font-mono)">3GM/c&#178;</text>
-        <line x1={xs(rIsco)} y1={PT} x2={xs(rIsco)} y2={H - PB} stroke="#4ec9d9" strokeWidth="0.8" strokeDasharray="3 2"></line>
-        <text x={xs(rIsco) + 2} y={PT + 15} fill="#4ec9d9" fontSize="7" fontFamily="var(--font-mono)">ISCO</text>
-        <path d={path(2)} fill="none" stroke="#4a6a9a" strokeWidth="1" strokeDasharray="4 3" opacity={view === "newton" ? 1 : 0.55}></path>
-        <path d={path(1)} fill="none" stroke="#9d8cff" strokeWidth="1.4" opacity={view === "newton" ? 0.25 : 1}></path>
+        aria-label="Effective potential of the selected body: general relativity against Newtonian, with the energy level, turning points and live radius">
+        <defs>
+          <linearGradient id="veff-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#c3b2ff"></stop>
+            <stop offset="100%" stopColor="#6f5bd6"></stop>
+          </linearGradient>
+          <clipPath id={veffClipId}>
+            <rect x={PL} y={PT} width={iw} height={ih}></rect>
+          </clipPath>
+        </defs>
+        {yTicks.map((v) => (
+          <g key={"y" + v}>
+            <line x1={PL} y1={ys(v)} x2={W - PR} y2={ys(v)} stroke="#1b2740" strokeWidth="0.7"></line>
+            <text x={PL - 7} y={ys(v) + 2.8} fill="#6f86a8" fontSize="8.5"
+              fontFamily="var(--font-mono)" textAnchor="end">{fmt(v)}</text>
+          </g>
+        ))}
+        {xTicks.map((r) => (
+          <g key={"x" + r}>
+            <line x1={xs(r)} y1={PT} x2={xs(r)} y2={H - PB} stroke="#1b2740" strokeWidth="0.7"></line>
+            <text x={xs(r)} y={H - PB + 13} fill="#6f86a8" fontSize="8.5"
+              fontFamily="var(--font-mono)" textAnchor="middle">{fmt(r)}</text>
+          </g>
+        ))}
+        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke="#2c3d5c" strokeWidth="1"></line>
+        <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke="#2c3d5c" strokeWidth="1"></line>
+        <text x={PL + iw / 2} y={H - 9} fill="#8fa6c6" fontSize="9"
+          fontFamily="var(--font-mono)" textAnchor="middle">r  (scene units)</text>
+        <text x={15} y={PT + ih / 2} fill="#8fa6c6" fontSize="9"
+          fontFamily="var(--font-mono)" textAnchor="middle"
+          transform={"rotate(-90 15 " + (PT + ih / 2) + ")"}>V_eff</text>
+
+        {marks.map((m) => (
+          <g key={m.label}>
+            <line x1={xs(m.r)} y1={PT} x2={xs(m.r)} y2={H - PB}
+              stroke={m.c} strokeWidth="0.9" strokeDasharray="3 3" opacity="0.75"></line>
+            <text x={xs(m.r) + 3} y={PT + 9} fill={m.c} fontSize="8"
+              fontFamily="var(--font-mono)">{m.label}</text>
+          </g>
+        ))}
+
+        <g clipPath={"url(#" + veffClipId + ")"}>
+          <path d={path(2)} fill="none" stroke="#4a6a9a" strokeWidth="1.2"
+            strokeDasharray="5 4" opacity={view === "newton" ? 1 : 0.5}></path>
+          <path d={path(1)} fill="none" stroke="url(#veff-grad)" strokeWidth="2.1"
+            strokeLinecap="round" opacity={view === "newton" ? 0.3 : 1}></path>
+        </g>
+
         {bound && (
           <g>
-            <line x1={PL} y1={ys(E)} x2={W - PR} y2={ys(E)} stroke={hex} strokeWidth="0.9" opacity="0.8"></line>
-            <text x={W - PR - 2} y={ys(E) - 2} fill={hex} fontSize="7" fontFamily="var(--font-mono)" textAnchor="end">E</text>
-            <circle cx={xs(Math.max(rPeri, rMin))} cy={ys(E)} r="2.2" fill={hex}></circle>
-            <circle cx={xs(Math.min(rApo, rMax))} cy={ys(E)} r="2.2" fill={hex}></circle>
-            <circle ref={dotRef} cx={xs(Math.min(Math.max(rPeri, rMin), rMax))} cy={ys(E) - 6} r="2.6" fill="none" stroke="#ffffff" strokeWidth="1"></circle>
+            <line x1={PL} y1={ys(E)} x2={W - PR} y2={ys(E)}
+              stroke={hex} strokeWidth="1.1" strokeDasharray="6 3" opacity="0.9"></line>
+            <text x={W - PR - 3} y={ys(E) - 4} fill={hex} fontSize="8.5"
+              fontFamily="var(--font-mono)" textAnchor="end">E</text>
+            {inRange(rPeri) && (
+              <g>
+                <circle cx={xs(rPeri)} cy={ys(E)} r="3" fill={hex}></circle>
+                <text x={xs(rPeri)} y={ys(E) + 15} fill={hex} fontSize="8"
+                  fontFamily="var(--font-mono)" textAnchor="middle">r_peri</text>
+              </g>
+            )}
+            {inRange(rApo) && (
+              <g>
+                <circle cx={xs(rApo)} cy={ys(E)} r="3" fill={hex}></circle>
+                <text x={xs(rApo)} y={ys(E) + 15} fill={hex} fontSize="8"
+                  fontFamily="var(--font-mono)" textAnchor="middle">r_apo</text>
+              </g>
+            )}
+            <circle ref={dotRef} cx={xs(liveR)} cy={ys(V(liveR))} r="3.4"
+              fill="#ffffff" stroke="#0a1020" strokeWidth="1.2"></circle>
           </g>
         )}
-        <text x={PL} y={H - 6} fill="var(--text-dim)" fontSize="7.5" fontFamily="var(--font-mono)">V_eff(r)</text>
-        <text x={W - PR} y={H - 6} fill="var(--text-dim)" fontSize="7.5" fontFamily="var(--font-mono)" textAnchor="end">r &#8594;</text>
       </svg>
       <div className="veff-legend">
-        <span><i style={{ background: "#9d8cff" }}></i>GR: <Eq tex="-\frac{GM}{r} + \frac{L^2}{2r^2} - \frac{GM\,L^2}{c^2 r^3}"></Eq></span>
-        <span><i className="dash" style={{ background: "#4a6a9a" }}></i>Newtonian</span>
-        <span>turning points &#9679;, live r &#9675;</span>
+        <span className="veff-key"><i style={{ background: "#9d8cff" }}></i>GR</span>
+        <span className="veff-key"><i className="dash" style={{ background: "#4a6a9a" }}></i>Newtonian</span>
+        <span className="veff-key"><i className="dot" style={{ background: hex }}></i>E, turning points</span>
+        <span className="veff-key"><i className="ring"></i>live r</span>
+        <span className="veff-formula"><Eq tex="V_{\mathrm{eff}}=-\frac{GM}{r}+\frac{L^{2}}{2r^{2}}-\frac{GM\,L^{2}}{c^{2}r^{3}}"></Eq></span>
       </div>
     </div>
   );
 }
 
-/* Null-geodesic panel: the exact Schwarzschild photon paths in the orbital
-   plane, integrated with the same stepper the 3D fan uses. Rays launched below
-   the critical impact parameter spiral in and are captured (red); rays above it
-   escape (amber), and the near-critical pair winds around the photon sphere
-   before leaving. The 3D fan cannot show that winding — the star's visual
-   radius is larger than the photon sphere, so the loop would be hidden inside
-   it — so the winding is shown here, where nothing occludes it. */
-const NG_FRACTIONS = [0.6, 0.9, 0.99, 1.01, 1.1, 1.6, 2.6];
+/* ── Null-geodesic panel ─────────────────────────────────────────────────────
+   Exact Schwarzschild photon paths in the orbital plane, integrated with the
+   same stepper the 3D fan uses. Rays below the critical impact parameter
+   plunge through the horizon (red); rays above it escape (amber); the
+   near-critical pair winds around the photon sphere before leaving. A comet
+   pulse runs along each path so the direction of travel is legible without
+   motion blur. The 3D fan cannot show the winding — the star's visual radius
+   is larger than the photon sphere, so the loop hides inside it. */
+const NG_FRACTIONS = [0.55, 0.8, 0.95, 0.995, 1.005, 1.05, 1.25, 1.7, 2.4];
 const NG_ESCAPE = "#ffcf72";
 const NG_CAPTURE = "#ff6b6b";
-let ngClipSeed = 0;
 function NullGeodesicPanel({ mass }) {
   const clipId = useMemo(() => "ng-clip-" + (ngClipSeed++), []);
   const P = window.QGA_PHYSICS;
   const gm = 0.55 * mass;
   const rPh = P.grPhotonSphereRadius(gm, GR_C2);
   const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
-  const W = 340, H = 210, PAD = 14;
-  const half = 3.2 * bCrit;
+  const rs = 2 * gm / GR_C2;
+  const W = 360, H = 360, PAD = 20;
+  const half = 2.5 * bCrit;
   const scale = (Math.min(W, H) - 2 * PAD) / 2 / half;
   const sx = (x) => W / 2 + x * scale;
   const sy = (y) => H / 2 - y * scale;
-  const paths = useMemo(() => NG_FRACTIONS.map((f) => {
-    const t = P.grNullTrajectory(bCrit * f, gm, GR_C2, { maxSteps: 40000 });
-    // keep vertices at least 1.6 px apart: dense enough that the near-critical
-    // winding stays smooth, sparse enough to keep the DOM small
+  const paths = useMemo(() => NG_FRACTIONS.map((f, idx) => {
+    // rCap just outside the horizon so a captured ray is drawn plunging in
+    // rather than stopping in mid-air at the photon sphere; the finer step
+    // keeps the stiff near-horizon integration smooth.
+    const t = P.grNullTrajectory(bCrit * f, gm, GR_C2, { maxSteps: 60000, dt: 0.0005, rCap: 1.02 * rs });
+    // The integration starts far outside the frame; trim to the visible span so
+    // the travelling pulse spends its cycle on screen instead of in the void.
+    const pts = t.points.map((q) => [sx(q[0]), sy(q[1])]);
+    let i0 = 0, i1 = pts.length - 1;
+    while (i0 < i1 && (pts[i0][0] < -2 || pts[i0][0] > W + 2 || pts[i0][1] < -2 || pts[i0][1] > H + 2)) i0++;
+    while (i1 > i0 && (pts[i1][0] < -2 || pts[i1][0] > W + 2 || pts[i1][1] < -2 || pts[i1][1] > H + 2)) i1--;
+    i0 = Math.max(0, i0 - 1); i1 = Math.min(pts.length - 1, i1 + 1);
     const out = [];
     let lx = null, ly = null;
-    for (let i = 0; i < t.points.length; i++) {
-      const px = sx(t.points[i][0]), py = sy(t.points[i][1]);
-      if (lx === null || Math.hypot(px - lx, py - ly) >= 1.6 || i === t.points.length - 1) {
+    for (let i = i0; i <= i1; i++) {
+      const px = pts[i][0], py = pts[i][1];
+      if (lx === null || Math.hypot(px - lx, py - ly) >= 1.4 || i === i1) {
         out.push(px.toFixed(1) + " " + py.toFixed(1));
         lx = px; ly = py;
       }
     }
-    return { f, captured: t.captured, windings: t.windings, d: "M" + out.join(" L") };
+    return { f, idx, captured: t.captured, windings: t.windings, d: "M" + out.join(" L") };
   }), [mass]);
-  const near = paths.find((p) => p.f === 1.01);
+  const near = paths.find((p) => p.f === 1.005);
   return (
     <div className="ng-wrap">
       <svg viewBox={"0 0 " + W + " " + H} className="ng-svg" role="img"
-        aria-label="Null geodesics in the orbital plane: photon paths below the critical impact parameter are captured, paths above it escape, and the near-critical path winds around the photon sphere">
+        aria-label="Null geodesics in the orbital plane: photon paths below the critical impact parameter plunge through the horizon, paths above it escape, and the near-critical path winds around the photon sphere">
         <defs>
-          <clipPath id={clipId}><rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="6"></rect></clipPath>
+          <clipPath id={clipId}><rect x="0" y="0" width={W} height={H} rx="10"></rect></clipPath>
+          <radialGradient id="ng-hole">
+            <stop offset="0%" stopColor="#000000"></stop>
+            <stop offset="72%" stopColor="#04060c"></stop>
+            <stop offset="100%" stopColor="#0b1220"></stop>
+          </radialGradient>
         </defs>
         <g clipPath={"url(#" + clipId + ")"}>
           {paths.map((p) => (
-            <path key={p.f} d={p.d} fill="none"
+            <path key={"b" + p.f} d={p.d} fill="none"
               stroke={p.captured ? NG_CAPTURE : NG_ESCAPE}
-              strokeWidth={p.f === 1.01 || p.f === 0.99 ? 1.5 : 1}
-              opacity={p.f === 1.01 || p.f === 0.99 ? 1 : 0.5}></path>
+              strokeWidth="1.25" opacity="0.40"></path>
           ))}
-          <circle cx={W / 2} cy={H / 2} r={rPh * scale} fill="none"
-            stroke="#8fe8ff" strokeWidth="0.9" strokeDasharray="3 2"></circle>
+          {paths.map((p) => (
+            <path key={"p" + p.f} d={p.d} fill="none" pathLength="100"
+              stroke={p.captured ? NG_CAPTURE : NG_ESCAPE}
+              strokeWidth={p.f === 1.005 || p.f === 0.995 ? 2.4 : 1.9}
+              strokeLinecap="round" strokeDasharray="11 89" className="ng-pulse"
+              style={{ animationDelay: (p.idx * 0.34).toFixed(2) + "s" }}></path>
+          ))}
           <circle cx={W / 2} cy={H / 2} r={bCrit * scale} fill="none"
-            stroke="#ffb066" strokeWidth="0.9" strokeDasharray="3 2"></circle>
+            stroke="#ffb066" strokeWidth="1" strokeDasharray="4 3" opacity="0.8"></circle>
+          <circle cx={W / 2} cy={H / 2} r={rPh * scale} fill="none"
+            stroke="#8fe8ff" strokeWidth="1" strokeDasharray="2 3" opacity="0.85"></circle>
+          <circle cx={W / 2} cy={H / 2} r={rs * scale} fill="url(#ng-hole)"
+            stroke="#ff8f6b" strokeWidth="1.1"></circle>
+          {[1, 2, -1, -2].map((k) => {
+            const label = k === 1 ? "b_c" : k === -1 ? "\u2212b_c" : k === 2 ? "2b_c" : "\u22122b_c";
+            return (
+              <g key={"t" + k}>
+                <line x1={PAD - 6} y1={sy(k * bCrit)} x2={PAD} y2={sy(k * bCrit)}
+                  stroke="#ffb066" strokeWidth="1" opacity="0.8"></line>
+                <rect x={PAD + 2} y={sy(k * bCrit) - 5} width={label.length * 4.6 + 4} height="10"
+                  rx="2" fill="#05070d" opacity="0.82"></rect>
+                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill="#ffb066" fontSize="7.5"
+                  fontFamily="var(--font-mono)" opacity="0.95">{label}</text>
+              </g>
+            );
+          })}
         </g>
-        <circle cx={W / 2} cy={H / 2} r="2.4" fill="#ffe9b0"></circle>
-        <text x={W / 2 + bCrit * scale + 3} y={H / 2 - 3} fill="#ffb066"
-          fontSize="7" fontFamily="var(--font-mono)">b_crit</text>
-        <text x={W / 2 + rPh * scale + 3} y={H / 2 + 9} fill="#8fe8ff"
-          fontSize="7" fontFamily="var(--font-mono)">r_ph</text>
-        <text x={PAD} y={H - 5} fill="var(--text-dim)" fontSize="7.5"
-          fontFamily="var(--font-mono)">orbital plane</text>
-        <text x={W - PAD} y={H - 5} fill="var(--text-dim)" fontSize="7.5"
-          fontFamily="var(--font-mono)" textAnchor="end">b / b_crit = 0.6 … 2.6</text>
+        <circle cx={W / 2} cy={H / 2} r="2.2" fill="#ffe9b0"></circle>
+        <rect x={W - PAD - 58} y={H - 17} width="58" height="12" rx="2"
+          fill="#05070d" opacity="0.82"></rect>
+        <text x={W - PAD} y={H - 8} fill="var(--text-dim)" fontSize="8"
+          fontFamily="var(--font-mono)" textAnchor="end">orbital plane</text>
       </svg>
       <div className="ng-legend">
-        <span><i style={{ background: NG_ESCAPE }}></i>escapes (b &gt; b_crit)</span>
-        <span><i style={{ background: NG_CAPTURE }}></i>captured (b &lt; b_crit)</span>
-        <span>near-critical b = 1.01 b_crit winds {near ? near.windings.toFixed(2) : "—"} turns</span>
+        <span><i style={{ background: NG_ESCAPE }}></i>escapes b &gt; b_crit</span>
+        <span><i style={{ background: NG_CAPTURE }}></i>captured b &lt; b_crit</span>
+        <span><i style={{ background: "#8fe8ff" }}></i>r_ph = {rPh.toFixed(3)}</span>
+        <span><i style={{ background: "#ffb066" }}></i>b_crit = {bCrit.toFixed(3)}</span>
+        <span className="ng-note">near-critical b = 1.005 b_crit winds {near ? near.windings.toFixed(2) : "\u2014"} turns</span>
       </div>
     </div>
   );
 }
 
-/* Lensed-sky panel: a real gravitational-lensing render, not a painted ring.
-   For every pixel we take the observer's ray, convert its angular offset from
-   the mass into an impact parameter b = D·sin θ, look up the exact
-   Schwarzschild deflection α(b) from the same integrator the 3D fan uses, and
-   sample a procedural celestial sphere at the deflected direction β = θ − α.
-   Rays with b < b_crit are captured and render black. The shadow, the photon
-   ring, the Einstein ring and the secondary image all fall out of the
-   geometry — nothing is drawn by hand. */
-const NG_TEX_W = 2048, NG_TEX_H = 1024;
-function ngStarTexture() {
+/* ── Lensed-sky panel ────────────────────────────────────────────────────────
+   A real gravitational-lensing render, not a painted ring. For every pixel we
+   take the observer's ray, convert its angular offset from the mass into an
+   impact parameter b = D·sin θ, look up the exact Schwarzschild deflection
+   α(b) from the same integrator the 3D fan uses, and sample a procedural
+   celestial sphere at the deflected direction β = θ − α. Rays with b < b_crit
+   are captured and render black.
+
+   The source sky is an azimuthal-equidistant map with the lens axis at its
+   centre, so the pole is a point rather than a seam and the Einstein ring is a
+   clean circle. The two background sources are evaluated analytically in
+   (β, φ) instead of being baked into the texture: a texture cannot resolve a
+   source small enough to produce a ring thinner than the panel. */
+const NG_TEX = 1024;
+let ngTexCache = null;
+function ngSkyTexture(mode) {
+  const N = NG_TEX, R = N / 2;
   const cv = document.createElement("canvas");
-  cv.width = NG_TEX_W; cv.height = NG_TEX_H;
+  cv.width = cv.height = N;
   const g = cv.getContext("2d");
-  g.fillStyle = "#02040a"; g.fillRect(0, 0, NG_TEX_W, NG_TEX_H);
-  let s = 0x9e3779b9;
-  const rnd = () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
-  // Large-scale structure: without it a sparse point-star sky shows the lensing
-  // only as a thin ring of stretched dots. Soft nebulae make the tangential
-  // stretching and the Einstein fold legible.
-  const neb = [[70, 110, 220], [150, 80, 200], [60, 170, 190], [200, 120, 90], [110, 140, 255]];
-  for (let i = 0; i < 260; i++) {
-    const x = rnd() * NG_TEX_W, y = rnd() * NG_TEX_H;
-    const r = 40 + rnd() * 220;
-    const c = neb[(rnd() * neb.length) | 0];
-    const a = 0.05 + rnd() * 0.16;
-    const gr = g.createRadialGradient(x, y, 0, x, y, r);
-    gr.addColorStop(0, "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")");
-    gr.addColorStop(1, "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",0)");
-    g.fillStyle = gr;
-    g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+  const img = g.createImageData(N, N), d = img.data;
+  let nx = 0.40, ny = 0.80, nz = 0.45;
+  const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+  const grid = mode === "grid";
+  for (let j = 0; j < N; j++) {
+    const dy = (j + 0.5 - R) / R;
+    for (let i = 0; i < N; i++) {
+      const dx = (i + 0.5 - R) / R;
+      const o = (j * N + i) * 4;
+      const rr = Math.hypot(dx, dy);
+      if (rr > 1) { d[o + 3] = 0; continue; }
+      const beta = rr * Math.PI, phi = Math.atan2(dy, dx);
+      const sb = Math.sin(beta), cb = Math.cos(beta);
+      const ux = sb * Math.cos(phi), uy = sb * Math.sin(phi), uz = cb;
+      const gl = ux * nx + uy * ny + uz * nz;
+      let r = 1, gg = 2, b = 6;
+      if (!grid) {
+        const band = Math.exp(-(gl / 0.19) * (gl / 0.19));
+        const core = Math.exp(-(gl / 0.055) * (gl / 0.055));
+        const m = 0.5 + 0.5 * Math.sin(ux * 7.1 + uy * 4.3 + uz * 5.7);
+        r += band * (13 + m * 8) + core * 40;
+        gg += band * (16 + m * 6) + core * 31;
+        b += band * (44 + m * 15) + core * 80;
+      }
+      d[o] = Math.min(255, r); d[o + 1] = Math.min(255, gg); d[o + 2] = Math.min(255, b); d[o + 3] = 255;
+    }
   }
-  const tints = ["#c8d4ff", "#fff0d8", "#d8c8ff", "#ffd0c0", "#ffffff"];
-  for (let i = 0; i < 26000; i++) {
-    const x = rnd() * NG_TEX_W, y = rnd() * NG_TEX_H;
-    g.globalAlpha = 0.2 + rnd() * 0.8;
-    g.fillStyle = tints[(rnd() * tints.length) | 0];
-    g.beginPath(); g.arc(x, y, 0.35 + rnd() * 1.4, 0, 6.2832); g.fill();
+  g.putImageData(img, 0, 0);
+  if (grid) {
+    g.lineWidth = 1.4;
+    for (let k = 1; k <= 12; k++) {
+      g.strokeStyle = k % 3 === 0 ? "rgba(130,205,255,0.62)" : "rgba(90,150,220,0.30)";
+      g.beginPath(); g.arc(R, R, (k / 12) * R, 0, 6.2832); g.stroke();
+    }
+    for (let k = 0; k < 24; k++) {
+      const a = k / 24 * 6.2832;
+      g.strokeStyle = k % 6 === 0 ? "rgba(130,205,255,0.62)" : "rgba(90,150,220,0.30)";
+      g.beginPath(); g.moveTo(R, R); g.lineTo(R + Math.cos(a) * R, R + Math.sin(a) * R); g.stroke();
+    }
+  } else {
+    let s = 0x9e3779b9;
+    const rnd = () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+    for (let k = 0; k < 13000; k++) {
+      const u = rnd() * 2 - 1, beta = Math.acos(u), phi = rnd() * 6.2832;
+      const rad = beta / Math.PI * R;
+      const x = R + Math.cos(phi) * rad, y = R + Math.sin(phi) * rad;
+      const mag = Math.pow(rnd(), 3.1);
+      const tint = rnd();
+      const col = tint < 0.62 ? "255,255,255" : tint < 0.82 ? "200,220,255" : tint < 0.94 ? "255,232,200" : "255,205,190";
+      g.fillStyle = "rgba(" + col + "," + (0.25 + mag * 0.75) + ")";
+      g.beginPath(); g.arc(x, y, 0.35 + mag * 1.9, 0, 6.2832); g.fill();
+    }
+    for (let k = 0; k < 26; k++) {
+      const u = rnd() * 2 - 1, beta = Math.acos(u), phi = rnd() * 6.2832;
+      const rad = beta / Math.PI * R;
+      const x = R + Math.cos(phi) * rad, y = R + Math.sin(phi) * rad;
+      const gr = g.createRadialGradient(x, y, 0, x, y, 7);
+      gr.addColorStop(0, "rgba(255,255,255,0.95)");
+      gr.addColorStop(0.25, "rgba(200,225,255,0.5)");
+      gr.addColorStop(1, "rgba(120,170,255,0)");
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, 7, 0, 6.2832); g.fill();
+    }
   }
-  g.globalAlpha = 1;
-  return g.getImageData(0, 0, NG_TEX_W, NG_TEX_H);
+  return g.getImageData(0, 0, N, N);
 }
-function renderLensedSky(cv, mass, tex) {
+function ngTextures() {
+  if (!ngTexCache) ngTexCache = { sky: ngSkyTexture("sky"), grid: ngSkyTexture("grid") };
+  return ngTexCache;
+}
+const NG_SRC = [
+  { b: 0.0, p: 0.0, s: 0.0135, i: 1.10, c: [255, 246, 220] },
+  { b: 0.0, p: 0.0, s: 0.030, i: 0.16, c: [255, 196, 120] },
+  { b: 0.30, p: 0.62, s: 0.009, i: 0.60, c: [190, 222, 255] },
+];
+function ngLensModel(mass) {
   const P = window.QGA_PHYSICS;
   const gm = 0.55 * mass;
   const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
-  const D = 12;          // observer distance, scene units
-  const FOV = 0.45;      // half-angle of the field, radians
-  const N = cv.width;
-  const ctx = cv.getContext("2d");
-  const img = ctx.createImageData(N, N);
-  const out = img.data;
-  const tw = tex.width, th = tex.height, td = tex.data;
-
-  // Exact deflection table over [b_crit, 4 b_crit], log-spaced so the
-  // near-critical divergence is resolved; weak field beyond it is analytic.
-  const TN = 96;
-  const bLo = bCrit * 1.0002, bHi = bCrit * 4;
-  const logLo = Math.log(bLo), logHi = Math.log(bHi);
+  const D = 12;
+  const TN = 200, bLo = bCrit * 1.00002, bHi = bCrit * 9;
+  const lo = Math.log(bLo), hi = Math.log(bHi);
   const tab = new Float64Array(TN);
   for (let i = 0; i < TN; i++) {
-    const b = Math.exp(logLo + (logHi - logLo) * i / (TN - 1));
-    tab[i] = P.grNullDeflection(b, gm, GR_C2, { maxSteps: 20000 }).deflection;
+    const b = Math.exp(lo + (hi - lo) * i / (TN - 1));
+    tab[i] = P.grNullDeflection(b, gm, GR_C2, { maxSteps: 200000 }).deflection;
   }
   const alphaAt = (b) => {
     if (b >= bHi) return (4 * gm) / (GR_C2 * b);
-    const t = ((Math.log(b) - logLo) / (logHi - logLo)) * (TN - 1);
+    const t = (Math.log(b) - lo) / (hi - lo) * (TN - 1);
     const i = Math.min(TN - 2, Math.max(0, Math.floor(t)));
     const f = Math.min(1, Math.max(0, t - i));
     return tab[i] * (1 - f) + tab[i + 1] * f;
   };
-
-  const half = N / 2;
+  const thetaShadow = Math.asin(Math.min(1, bCrit / D));
+  let a0 = thetaShadow * 1.0001, a1 = 1.2;
+  for (let k = 0; k < 80; k++) {
+    const mid = 0.5 * (a0 + a1);
+    if (mid - alphaAt(D * Math.sin(mid)) > 0) a1 = mid; else a0 = mid;
+  }
+  const thetaE = 0.5 * (a0 + a1);
+  const FOV = Math.min(1.05, Math.max(0.22, 2.5 * thetaE));
+  return { gm, bCrit, D, alphaAt, thetaShadow, thetaE, FOV };
+}
+function renderLensedSky(cv, L, tex, lensed) {
+  const N = cv.width, ctx = cv.getContext("2d");
+  const img = ctx.createImageData(N, N), out = img.data;
+  const sw = tex.width, sh = tex.height, sd = tex.data;
+  const half = N / 2, FOV = L.FOV, D = L.D;
   for (let j = 0; j < N; j++) {
     const y = (j + 0.5) / half - 1;
     for (let i = 0; i < N; i++) {
@@ -881,35 +1121,96 @@ function renderLensedSky(cv, mass, tex) {
       if (rho > 1) { out[o + 3] = 0; continue; }
       const theta = FOV * rho;
       const b = D * Math.sin(theta);
-      if (b <= bCrit) { out[o] = 2; out[o + 1] = 4; out[o + 2] = 10; out[o + 3] = 255; continue; }
-      let beta = theta - alphaAt(b);
       let phi = Math.atan2(y, x);
-      if (beta < 0) { beta = -beta; phi += Math.PI; }   // secondary image
-      const u = ((phi / (2 * Math.PI) + 0.5) % 1 + 1) % 1;
-      const v = Math.min(0.999, beta / Math.PI);
-      const t = ((Math.floor(v * th) * tw) + Math.floor(u * tw)) * 4;
-      out[o] = td[t]; out[o + 1] = td[t + 1]; out[o + 2] = td[t + 2]; out[o + 3] = 255;
+      if (lensed && b <= L.bCrit) {
+        const rim = Math.exp(-Math.pow((L.bCrit - b) / (L.bCrit * 0.035), 2));
+        out[o] = 1 + rim * 6; out[o + 1] = 2 + rim * 9; out[o + 2] = 6 + rim * 20; out[o + 3] = 255;
+        continue;
+      }
+      let a = theta;
+      if (lensed) {
+        const beta = theta - L.alphaAt(b);
+        a = Math.abs(beta) % (2 * Math.PI);
+        if (beta < 0) phi += Math.PI;
+        if (a > Math.PI) { a = 2 * Math.PI - a; phi += Math.PI; }
+      }
+      const rr = a / Math.PI;
+      const tx = 0.5 + 0.5 * rr * Math.cos(phi);
+      const ty = 0.5 + 0.5 * rr * Math.sin(phi);
+      const fx = tx * sw - 0.5, fy = ty * sh - 0.5;
+      const x0 = Math.floor(fx), y0 = Math.floor(fy);
+      const ax = fx - x0, ay = fy - y0;
+      const xx0 = Math.max(0, Math.min(sw - 1, x0)), yy0 = Math.max(0, Math.min(sh - 1, y0));
+      const xx1 = Math.max(0, Math.min(sw - 1, x0 + 1)), yy1 = Math.max(0, Math.min(sh - 1, y0 + 1));
+      const i00 = (yy0 * sw + xx0) * 4, i10 = (yy0 * sw + xx1) * 4;
+      const i01 = (yy1 * sw + xx0) * 4, i11 = (yy1 * sw + xx1) * 4;
+      const w00 = (1 - ax) * (1 - ay), w10 = ax * (1 - ay);
+      const w01 = (1 - ax) * ay, w11 = ax * ay;
+      let r = sd[i00] * w00 + sd[i10] * w10 + sd[i01] * w01 + sd[i11] * w11;
+      let g = sd[i00 + 1] * w00 + sd[i10 + 1] * w10 + sd[i01 + 1] * w01 + sd[i11 + 1] * w11;
+      let bl = sd[i00 + 2] * w00 + sd[i10 + 2] * w10 + sd[i01 + 2] * w01 + sd[i11 + 2] * w11;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      for (let k = 0; k < NG_SRC.length; k++) {
+        const S = NG_SRC[k];
+        const cosg = ca * Math.cos(S.b) + sa * Math.sin(S.b) * Math.cos(phi - S.p);
+        const gam = Math.acos(Math.max(-1, Math.min(1, cosg)));
+        const t = gam / S.s;
+        if (t < 3.2) {
+          const I = Math.exp(-t * t) * S.i;
+          r += S.c[0] * I; g += S.c[1] * I; bl += S.c[2] * I;
+        }
+      }
+      if (lensed) {
+        const pr = Math.exp(-Math.pow((b - L.bCrit * 1.03) / (L.bCrit * 0.055), 2));
+        r += pr * 70; g += pr * 58; bl += pr * 40;
+      }
+      out[o] = r > 255 ? 255 : r;
+      out[o + 1] = g > 255 ? 255 : g;
+      out[o + 2] = bl > 255 ? 255 : bl;
+      out[o + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
 }
+const NG_MODES = [["sky", "Sky"], ["grid", "Grid"], ["flat", "Unlensed"]];
 function LensedSkyPanel({ mass }) {
   const cvRef = useRef(null);
-  const tex = useMemo(() => ngStarTexture(), []);
+  const [mode, setMode] = useState("sky");
+  const tex = useMemo(() => ngTextures(), []);
+  const L = useMemo(() => ngLensModel(mass), [mass]);
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
-    const raf = requestAnimationFrame(() => renderLensedSky(cv, mass, tex));
+    const raf = requestAnimationFrame(() =>
+      renderLensedSky(cv, L, mode === "grid" ? tex.grid : tex.sky, mode !== "flat"));
     return () => cancelAnimationFrame(raf);
-  }, [mass, tex]);
+  }, [L, tex, mode]);
+  const rad = (t) => t / L.FOV * 180;
   return (
     <div className="lens-wrap">
-      <canvas ref={cvRef} width="340" height="340" className="lens-canvas" role="img"
-        aria-label="Gravitational lensing of a background starfield: a black shadow at the critical impact parameter, a bright photon ring at its edge, and an Einstein ring where the deflection maps the sky back onto itself"></canvas>
+      <div className="lens-stage">
+        <canvas ref={cvRef} width="720" height="720" className="lens-canvas" role="img"
+          aria-label="Gravitational lensing of a background sky: a black shadow at the critical impact parameter, a bright photon ring at its edge, and an Einstein ring where the deflection maps the sky back onto itself"></canvas>
+        {mode !== "flat" && (
+          <svg viewBox="0 0 360 360" className="lens-overlay" aria-hidden="true">
+            <circle cx="180" cy="180" r={rad(L.thetaShadow)} fill="none"
+              stroke="#ff8f6b" strokeWidth="1" strokeDasharray="4 3" opacity="0.85"></circle>
+            <circle cx="180" cy="180" r={rad(L.thetaE)} fill="none"
+              stroke="#ffe9b0" strokeWidth="1.2" opacity="0.9"></circle>
+          </svg>
+        )}
+      </div>
+      <div className="lens-modes" role="group" aria-label="Lensed sky view">
+        {NG_MODES.map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={mode === k}
+            className={"lens-mode" + (mode === k ? " is-on" : "")}
+            onClick={() => setMode(k)}>{label}</button>
+        ))}
+      </div>
       <div className="lens-legend">
-        <span>shadow b &lt; b_crit</span>
-        <span>photon ring at b_crit</span>
-        <span>Einstein ring where β = θ − α = 0</span>
+        <span><i style={{ background: "#ff8f6b" }}></i>shadow b &lt; b_crit</span>
+        <span><i style={{ background: "#8fe8ff" }}></i>photon ring</span>
+        <span><i style={{ background: "#ffe9b0" }}></i>Einstein ring θ_E = {L.thetaE.toFixed(3)}</span>
       </div>
     </div>
   );
@@ -1505,6 +1806,12 @@ function CurvatureEngine3D() {
         const mu = GM, TS = 2.2; // gravitational parameter; TS = overall visual time-scale
         const capR = P.grCaptureRadius(mu, GR_C2);
         const rs = 2 * mu / GR_C2;
+        // Newtonian rays are stopped by the opaque star's visual radius; GR rays
+        // are stopped by the horizon. Using the visual radius for GR made the
+        // capture test disagree with the b_crit colouring at every mass except
+        // M = 5, 8 and 12. For b > b_crit the turning point sits above r_ph =
+        // 1.5 rs, so a 1.1 rs test can only be crossed by a plunging ray.
+        const capRay = Math.max(1.5 * rs, sc * 0.9);
         const showRings = rayRef.current && !newton;
         ringPhoton.visible = showRings;
         ringCrit.visible = showRings;
@@ -1567,8 +1874,7 @@ function CurvatureEngine3D() {
                 // under-reported strong-field deflection by up to 2×.
                 P.grNullStep(q, rs, sdt * lightRef.current);
               }
-              const capRay = Math.max(1.5 * rs, sc * 0.9);
-              if (qr < capRay) {
+              if (qr < (newton ? capRay : 1.1 * rs)) {
                 triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xff6b6b);
                 q.x = -7.6; q.y = q.b; q.vx = newton ? 5.2 : 4; q.vy = 0; q.trail = []; q.near = false;
                 continue;

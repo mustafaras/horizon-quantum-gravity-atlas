@@ -1933,19 +1933,23 @@ const QGA_PHYSICS = {
     const maxSteps = opts.maxSteps ?? 200000;
     const rCap = 1.5 * rs;
     const q = { x: -x0, y: b, vx: v0, vy: 0 };
-    const a0 = Math.atan2(q.vy, q.vx);
+    let prevA = Math.atan2(q.vy, q.vx);
+    let sweptA = 0;
     let steps = 0;
     while (steps < maxSteps) {
       QGA_PHYSICS.grNullStep(q, rs, dt);
       steps++;
       const r = Math.hypot(q.x, q.y);
       if (r < rCap) return { captured: true, deflection: 0, steps };
+      const a = Math.atan2(q.vy, q.vx);
+      let da = a - prevA;
+      while (da > Math.PI) da -= 2 * Math.PI;
+      while (da < -Math.PI) da += 2 * Math.PI;
+      sweptA += da;
+      prevA = a;
       if (q.x > x0 || r > 2 * x0) break;
     }
-    let d = Math.atan2(q.vy, q.vx) - a0;
-    while (d > Math.PI) d -= 2 * Math.PI;
-    while (d < -Math.PI) d += 2 * Math.PI;
-    return { captured: false, deflection: Math.abs(d), steps };
+    return { captured: false, deflection: Math.abs(sweptA), steps };
   },
   grNullTrajectory(b, gm, c2, opts = {}) {
     const rs = (2 * gm) / c2;
@@ -1953,7 +1957,10 @@ const QGA_PHYSICS = {
     const x0 = opts.x0 ?? 7.6;
     const dt = opts.dt ?? 0.002;
     const maxSteps = opts.maxSteps ?? 200000;
-    const rCap = 1.5 * rs;
+    // Default stop is the photon sphere: that is where capture is decided. A
+    // caller that wants the plunge drawn all the way in can lower it toward the
+    // horizon, at the cost of a stiffer integration near r = rs.
+    const rCap = opts.rCap ?? 1.5 * rs;
     const q = { x: -x0, y: b, vx: v0, vy: 0 };
     const points = [[q.x, q.y]];
     let swept = 0;
