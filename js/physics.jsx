@@ -1924,6 +1924,28 @@ const QGA_PHYSICS = {
     p.y += p.vy * dt;
     return p;
   },
+  grNullDeflection(b, gm, c2, opts = {}) {
+    const rs = (2 * gm) / c2;
+    const v0 = opts.v0 ?? 4;
+    const x0 = opts.x0 ?? 7.6;
+    const dt = opts.dt ?? 0.002;
+    const maxSteps = opts.maxSteps ?? 200000;
+    const rCap = 1.5 * rs;
+    const q = { x: -x0, y: b, vx: v0, vy: 0 };
+    const a0 = Math.atan2(q.vy, q.vx);
+    let steps = 0;
+    while (steps < maxSteps) {
+      QGA_PHYSICS.grNullStep(q, rs, dt);
+      steps++;
+      const r = Math.hypot(q.x, q.y);
+      if (r < rCap) return { captured: true, deflection: 0, steps };
+      if (q.x > x0 || r > 2 * x0) break;
+    }
+    let d = Math.atan2(q.vy, q.vx) - a0;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    return { captured: false, deflection: Math.abs(d), steps };
+  },
   grEffectivePotential(gm, c2, L, r) {
     const r2 = r * r;
     return -gm / r + (L * L) / (2 * r2) - (gm * L * L) / (c2 * r2 * r);
