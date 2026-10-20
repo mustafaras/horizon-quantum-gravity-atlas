@@ -453,22 +453,22 @@ const FEY_TEMPLATES = [
 function feyPhysics(result) {
   if (!result || !result.ok) return null;
   if (result.topo === "s") return {
-    order: "O(e²) · leading order — one virtual boson",
+    order: "$O(e^2)$ · leading order — one virtual boson",
     amp: "\\mathcal{M} \\sim \\dfrac{e^2}{s}\\,[\\bar v\\,\\gamma^\\mu u]\\,[\\bar u'\\,\\gamma_\\mu v']",
     sigma: "\\sigma = \\dfrac{4\\pi\\alpha^2}{3s}",
-    sigmaNote: "Cross-section falls as 1/s — numerically σ ≈ 86.8 nb / (√s/GeV)², so σ(e⁺e⁻→μ⁺μ⁻) ≈ 0.87 nb at √s = 10 GeV. Near √s ≈ 91 GeV the Z⁰ propagator pole produces a sharp resonance on top of the photon term."
+    sigmaNote: "Cross-section falls as $1/s$ — numerically $\\sigma \\approx 86.8\\ \\mathrm{nb}/(\\sqrt{s}/\\mathrm{GeV})^2$, so $\\sigma(e^+e^-\\to\\mu^+\\mu^-) \\approx 0.87$ nb at $\\sqrt{s} = 10$ GeV. Near $\\sqrt{s} \\approx 91$ GeV the $Z^0$ propagator pole produces a sharp resonance on top of the photon term."
   };
   if (result.topo === "t") return {
-    order: "O(e²) · one exchanged photon",
+    order: "$O(e^2)$ · one exchanged photon",
     amp: "\\mathcal{M} \\sim \\dfrac{e^2}{t}",
     sigma: "\\dfrac{d\\sigma}{d\\Omega} \\sim \\dfrac{\\alpha^2}{4E^2\\sin^4(\\theta/2)}",
     sigmaNote: "The Mott/Rutherford form: the t-channel pole at small scattering angle drives the forward Coulomb divergence."
   };
   if (result.topo === "compton") return {
-    order: "O(e²) · two vertices, one fermion propagator",
+    order: "$O(e^2)$ · two vertices, one fermion propagator",
     amp: "\\mathcal{M} \\sim e^2\\,\\bar u'\\,\\Big[\\tfrac{\\gamma\\cdot(p+k)+m}{(p+k)^2-m^2} + \\ldots\\Big]\\,u",
     sigma: "\\sigma_{\\mathrm{KN}} = \\sigma_T\\,f\\!\\left(\\dfrac{E_\\gamma}{m_e c^2}\\right)",
-    sigmaNote: "The Klein–Nishina cross-section; it reduces to the classical Thomson value σ_T as E_γ → 0 and falls at high energy."
+    sigmaNote: "The Klein–Nishina cross-section; it reduces to the classical Thomson value $\\sigma_T$ as $E_\\gamma \\to 0$ and falls at high energy."
   };
   return null;
 }
@@ -814,17 +814,17 @@ function FeynmanBuilder() {
                 <div className="fey-phys-card">
                   <div className="fey-phys-label">Leading-order amplitude</div>
                   <Eq tex={phys.amp} display={true}></Eq>
-                  <div className="fey-phys-note">{phys.order}</div>
+                  <div className="fey-phys-note"><RichText text={phys.order}></RichText></div>
                 </div>
                 <div className="fey-phys-card">
                   <div className="fey-phys-label">Cross-section scaling</div>
                   <Eq tex={phys.sigma} display={true}></Eq>
-                  <div className="fey-phys-note">{phys.sigmaNote}</div>
+                  <div className="fey-phys-note"><RichText text={phys.sigmaNote}></RichText></div>
                 </div>
                 <div className="fey-phys-card">
                   <div className="fey-phys-label">Coupling</div>
                   <Eq tex="\alpha = \dfrac{e^2}{4\pi\varepsilon_0 \hbar c} \approx \dfrac{1}{137}" display={true}></Eq>
-                  <div className="fey-phys-note">Each vertex contributes one power of e (√α). Every extra photon loop suppresses the amplitude by α — why QED perturbation theory converges so well.</div>
+                  <div className="fey-phys-note">Each vertex contributes one power of <Eq tex="e"></Eq> (<Eq tex="\sqrt{\alpha}"></Eq>). Every extra photon loop suppresses the amplitude by <Eq tex="\alpha"></Eq> — why QED perturbation theory converges so well.</div>
                 </div>
               </div> :
           null}
@@ -861,7 +861,7 @@ const QFT_PROCESSES = [
   in: ["e-", "e+"], out: ["mu-", "mu+"],
   masses: [0, 0, 0, 0],
   angleLabel: "cos θ (μ⁻)",
-  shapeLabel: "1 + cos²θ",
+  shapeLabel: "$1 + \\cos^2\\theta$",
   shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\propto 1 + \\cos^2\\theta",
   ref: "Peskin & Schroeder, An Introduction to QFT, §5.1",
   note: "Massless-fermion limit. The 1 + cos²θ shape and the total cross-section σ = 4πα²/3s are the textbook leading-order results."
@@ -873,7 +873,7 @@ const QFT_PROCESSES = [
   in: ["e-", "mu-"], out: ["e-", "mu-"],
   masses: [0, 0, 0, 0],
   angleLabel: "cos θ (e⁻)",
-  shapeLabel: "1 / sin⁴(θ/2)",
+  shapeLabel: "$1/\\sin^4(\\theta/2)$",
   shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\sim \\dfrac{\\alpha^2}{4E^2\\sin^4(\\theta/2)}",
   ref: "Mott (1929); Rutherford (1911) — leading t-channel pole",
   note: "Only the leading t-channel pole is plotted. The complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are deliberately not drawn."
@@ -1324,10 +1324,10 @@ function AmplitudeRoom() {
         <div className="kerr-head-state">
           <span className="badge badge-established">Leading-order QED</span>
           <div className="kerr-state-line">
-            {process.name} · √s = {sqrtS.toFixed(1)} GeV · cos θ = {cosTheta.toFixed(2)}
+            {process.name} · <Eq tex="\sqrt{s}"></Eq> = {sqrtS.toFixed(1)} GeV · <Eq tex="\cos\theta"></Eq> = {cosTheta.toFixed(2)}
           </div>
           <div className="kerr-state-line">
-            σ = {sigma.toFixed(4)} nb · {verdict.ok ? verdict.topo + "-channel" : "forbidden"} · {phase}
+            <Eq tex="\sigma"></Eq> = {sigma.toFixed(4)} nb · {verdict.ok ? verdict.topo + "-channel" : "forbidden"} · {phase}
           </div>
         </div>
       </div>
@@ -1389,7 +1389,7 @@ function AmplitudeRoom() {
         <figure className="qft-panel">
           <header className="qft-panel-head">
             <span className="qft-panel-title">Scattering plane</span>
-            <span className="qft-panel-note">dσ/dΩ envelope · {process.shapeLabel}</span>
+            <span className="qft-panel-note">dσ/dΩ envelope · <RichText text={process.shapeLabel}></RichText></span>
           </header>
           <div className="qft-panel-body">
             <QFTScatterCanvas process={process} cosTheta={cosTheta} photonX={photonX} tau={tau}
@@ -1487,14 +1487,14 @@ function AmplitudeRoom() {
           <dl>
             <dt>What is exact</dt>
             <dd>
-              The Mandelstam identity s + t + u = Σmᵢ², the massless s-channel shape 1 + cos²θ, the total
-              cross-section σ = 4πα²/3s, the Klein–Nishina shape and the Breit–Wigner form are closed-form
-              leading-order results. They are evaluated live by <code>js/physics.mjs</code> and covered by
+              The Mandelstam identity <Eq tex="s + t + u = \sum_i m_i^2"></Eq>, the massless s-channel shape
+              <Eq tex="1 + \cos^2\theta"></Eq>, the total cross-section <Eq tex="\sigma = 4\pi\alpha^2/3s"></Eq>,
+              the Klein–Nishina shape and the Breit–Wigner form are closed-form leading-order results. They are evaluated live by <code>js/physics.mjs</code> and covered by
               <code> node:test</code> cases in <code>test/physics.test.mjs</code>.
             </dd>
             <dt>What is approximate</dt>
             <dd>
-              The t-channel curve plots only the leading pole 1/sin⁴(θ/2). The complete Møller and Bhabha
+              The t-channel curve plots only the leading pole <Eq tex="1/\sin^4(\theta/2)"></Eq>. The complete Møller and Bhabha
               amplitudes also contain s- and u-channel terms and their interference, which are deliberately not
               drawn — guessing their coefficients would be worse than omitting them. The Z⁰ panel shows the
               Breit–Wigner shape alone, not the γ–Z⁰ interference term, and the fermion masses are set to zero
@@ -1511,14 +1511,15 @@ function AmplitudeRoom() {
             <dt>References</dt>
             <dd>
               {process.ref}. Mandelstam variables: Mandelstam (1958). Klein–Nishina: Klein &amp; Nishina (1929).
-              Z⁰ mass and width: PDG values m_Z = 91.1876 GeV, Γ_Z = 2.4952 GeV. Fine-structure constant: CODATA
-              α = 1/137.035999084.
+              Z⁰ mass and width: PDG values <Eq tex="m_Z = 91.1876\ \mathrm{GeV}"></Eq>,
+              <Eq tex="\Gamma_Z = 2.4952\ \mathrm{GeV}"></Eq>. Fine-structure constant: CODATA
+              <Eq tex="\alpha = 1/137.035999084"></Eq>.
             </dd>
             <dt>Units</dt>
             <dd>
-              Natural units ħ = c = 1. Energies in GeV, cross-sections in nanobarns
-              (1 GeV⁻² = 3.8938 × 10⁵ nb). The Compton slider x is a lab-frame ratio and is deliberately
-              decoupled from √s.
+              Natural units <Eq tex="\hbar = c = 1"></Eq>. Energies in GeV, cross-sections in nanobarns
+              (<Eq tex="1\ \mathrm{GeV}^{-2} = 3.8938\times10^{5}\ \mathrm{nb}"></Eq>). The Compton slider
+              <Eq tex="x"></Eq> is a lab-frame ratio and is deliberately decoupled from <Eq tex="\sqrt{s}"></Eq>.
             </dd>
           </dl>
         </div>

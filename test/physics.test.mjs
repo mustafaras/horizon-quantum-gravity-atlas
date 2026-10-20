@@ -14,7 +14,7 @@ import {
   grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
   GR_ENGINE_C2, grEngineGM, grCaptureRadius, grPlungeStep,
   GR_CURVATURE_SCENARIOS, grCurvatureScenario,
-  grPhotonSphereRadius, grIscoRadius, grCriticalImpactParameter, grNullStep, grNullDeflection, grEffectivePotential,
+  grPhotonSphereRadius, grIscoRadius, grCriticalImpactParameter, grNullStep, grNullDeflection, grNullTrajectory, grEffectivePotential,
   grPetersDerivatives, grLenseThirringDeg,
   blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
   clamp, transformPair, QFT_CONSTANTS,
@@ -662,6 +662,38 @@ test("grCriticalImpactParameter is √3·r_ph and matches the capture split", ()
     // The readout must agree with the integrator's own escape/capture boundary.
     assert.equal(grNullDeflection(0.9 * bCrit, gm, GR_ENGINE_C2).captured, true, `M=${M} inside`);
     assert.equal(grNullDeflection(1.1 * bCrit, gm, GR_ENGINE_C2).captured, false, `M=${M} outside`);
+  }
+});
+
+test("grNullTrajectory returns the full path and winds near the critical curve", () => {
+  const gm = grEngineGM(5);
+  const bCrit = grCriticalImpactParameter(gm, GR_ENGINE_C2);
+
+  // A weak-field ray is a near-straight line: half a turn of polar angle.
+  const far = grNullTrajectory(4 * bCrit, gm, GR_ENGINE_C2);
+  assert.equal(far.captured, false);
+  assert.ok(Math.abs(far.windings - 0.5) < 0.12, `far windings ${far.windings}`);
+  assert.deepEqual(far.points[0], [-7.6, 4 * bCrit]);
+
+  // The capture boundary is the critical impact parameter, as in grNullDeflection.
+  assert.equal(grNullTrajectory(0.9 * bCrit, gm, GR_ENGINE_C2).captured, true);
+  assert.equal(grNullTrajectory(1.1 * bCrit, gm, GR_ENGINE_C2).captured, false);
+
+  // Just outside b_crit the ray loops the photon sphere before escaping — the
+  // photon-ring effect. This is the whole point of the trajectory helper.
+  const near = grNullTrajectory(1.01 * bCrit, gm, GR_ENGINE_C2);
+  assert.equal(near.captured, false);
+  assert.ok(near.windings > 1, `near-critical windings ${near.windings}`);
+
+  // Winding falls monotonically as the ray is moved away from the critical curve.
+  const winds = [1.01, 1.1, 1.6, 2.6].map((f) => grNullTrajectory(f * bCrit, gm, GR_ENGINE_C2).windings);
+  for (let i = 1; i < winds.length; i++) assert.ok(winds[i] < winds[i - 1], `winds ${winds}`);
+
+  // The path is finite and continuous: no NaN, no teleporting between samples.
+  for (const p of near.points) assert.ok(Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  for (let i = 1; i < near.points.length; i++) {
+    const step = Math.hypot(near.points[i][0] - near.points[i - 1][0], near.points[i][1] - near.points[i - 1][1]);
+    assert.ok(step < 0.05, `step ${step} at ${i}`);
   }
 });
 

@@ -716,9 +716,200 @@ function VEffPanel({ mass, body, view, stRef }) {
         <text x={W - PR} y={H - 6} fill="var(--text-dim)" fontSize="7.5" fontFamily="var(--font-mono)" textAnchor="end">r &#8594;</text>
       </svg>
       <div className="veff-legend">
-        <span><i style={{ background: "#9d8cff" }}></i>GR: &#8722;GM/r + L&#178;/2r&#178; &#8722; GM&#183;L&#178;/c&#178;r&#179;</span>
+        <span><i style={{ background: "#9d8cff" }}></i>GR: <Eq tex="-\frac{GM}{r} + \frac{L^2}{2r^2} - \frac{GM\,L^2}{c^2 r^3}"></Eq></span>
         <span><i className="dash" style={{ background: "#4a6a9a" }}></i>Newtonian</span>
         <span>turning points &#9679;, live r &#9675;</span>
+      </div>
+    </div>
+  );
+}
+
+/* Null-geodesic panel: the exact Schwarzschild photon paths in the orbital
+   plane, integrated with the same stepper the 3D fan uses. Rays launched below
+   the critical impact parameter spiral in and are captured (red); rays above it
+   escape (amber), and the near-critical pair winds around the photon sphere
+   before leaving. The 3D fan cannot show that winding — the star's visual
+   radius is larger than the photon sphere, so the loop would be hidden inside
+   it — so the winding is shown here, where nothing occludes it. */
+const NG_FRACTIONS = [0.6, 0.9, 0.99, 1.01, 1.1, 1.6, 2.6];
+const NG_ESCAPE = "#ffcf72";
+const NG_CAPTURE = "#ff6b6b";
+let ngClipSeed = 0;
+function NullGeodesicPanel({ mass }) {
+  const clipId = useMemo(() => "ng-clip-" + (ngClipSeed++), []);
+  const P = window.QGA_PHYSICS;
+  const gm = 0.55 * mass;
+  const rPh = P.grPhotonSphereRadius(gm, GR_C2);
+  const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
+  const W = 340, H = 210, PAD = 14;
+  const half = 3.2 * bCrit;
+  const scale = (Math.min(W, H) - 2 * PAD) / 2 / half;
+  const sx = (x) => W / 2 + x * scale;
+  const sy = (y) => H / 2 - y * scale;
+  const paths = useMemo(() => NG_FRACTIONS.map((f) => {
+    const t = P.grNullTrajectory(bCrit * f, gm, GR_C2, { maxSteps: 40000 });
+    // keep vertices at least 1.6 px apart: dense enough that the near-critical
+    // winding stays smooth, sparse enough to keep the DOM small
+    const out = [];
+    let lx = null, ly = null;
+    for (let i = 0; i < t.points.length; i++) {
+      const px = sx(t.points[i][0]), py = sy(t.points[i][1]);
+      if (lx === null || Math.hypot(px - lx, py - ly) >= 1.6 || i === t.points.length - 1) {
+        out.push(px.toFixed(1) + " " + py.toFixed(1));
+        lx = px; ly = py;
+      }
+    }
+    return { f, captured: t.captured, windings: t.windings, d: "M" + out.join(" L") };
+  }), [mass]);
+  const near = paths.find((p) => p.f === 1.01);
+  return (
+    <div className="ng-wrap">
+      <svg viewBox={"0 0 " + W + " " + H} className="ng-svg" role="img"
+        aria-label="Null geodesics in the orbital plane: photon paths below the critical impact parameter are captured, paths above it escape, and the near-critical path winds around the photon sphere">
+        <defs>
+          <clipPath id={clipId}><rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="6"></rect></clipPath>
+        </defs>
+        <g clipPath={"url(#" + clipId + ")"}>
+          {paths.map((p) => (
+            <path key={p.f} d={p.d} fill="none"
+              stroke={p.captured ? NG_CAPTURE : NG_ESCAPE}
+              strokeWidth={p.f === 1.01 || p.f === 0.99 ? 1.5 : 1}
+              opacity={p.f === 1.01 || p.f === 0.99 ? 1 : 0.5}></path>
+          ))}
+          <circle cx={W / 2} cy={H / 2} r={rPh * scale} fill="none"
+            stroke="#8fe8ff" strokeWidth="0.9" strokeDasharray="3 2"></circle>
+          <circle cx={W / 2} cy={H / 2} r={bCrit * scale} fill="none"
+            stroke="#ffb066" strokeWidth="0.9" strokeDasharray="3 2"></circle>
+        </g>
+        <circle cx={W / 2} cy={H / 2} r="2.4" fill="#ffe9b0"></circle>
+        <text x={W / 2 + bCrit * scale + 3} y={H / 2 - 3} fill="#ffb066"
+          fontSize="7" fontFamily="var(--font-mono)">b_crit</text>
+        <text x={W / 2 + rPh * scale + 3} y={H / 2 + 9} fill="#8fe8ff"
+          fontSize="7" fontFamily="var(--font-mono)">r_ph</text>
+        <text x={PAD} y={H - 5} fill="var(--text-dim)" fontSize="7.5"
+          fontFamily="var(--font-mono)">orbital plane</text>
+        <text x={W - PAD} y={H - 5} fill="var(--text-dim)" fontSize="7.5"
+          fontFamily="var(--font-mono)" textAnchor="end">b / b_crit = 0.6 … 2.6</text>
+      </svg>
+      <div className="ng-legend">
+        <span><i style={{ background: NG_ESCAPE }}></i>escapes (b &gt; b_crit)</span>
+        <span><i style={{ background: NG_CAPTURE }}></i>captured (b &lt; b_crit)</span>
+        <span>near-critical b = 1.01 b_crit winds {near ? near.windings.toFixed(2) : "—"} turns</span>
+      </div>
+    </div>
+  );
+}
+
+/* Lensed-sky panel: a real gravitational-lensing render, not a painted ring.
+   For every pixel we take the observer's ray, convert its angular offset from
+   the mass into an impact parameter b = D·sin θ, look up the exact
+   Schwarzschild deflection α(b) from the same integrator the 3D fan uses, and
+   sample a procedural celestial sphere at the deflected direction β = θ − α.
+   Rays with b < b_crit are captured and render black. The shadow, the photon
+   ring, the Einstein ring and the secondary image all fall out of the
+   geometry — nothing is drawn by hand. */
+const NG_TEX_W = 2048, NG_TEX_H = 1024;
+function ngStarTexture() {
+  const cv = document.createElement("canvas");
+  cv.width = NG_TEX_W; cv.height = NG_TEX_H;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#02040a"; g.fillRect(0, 0, NG_TEX_W, NG_TEX_H);
+  let s = 0x9e3779b9;
+  const rnd = () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+  // Large-scale structure: without it a sparse point-star sky shows the lensing
+  // only as a thin ring of stretched dots. Soft nebulae make the tangential
+  // stretching and the Einstein fold legible.
+  const neb = [[70, 110, 220], [150, 80, 200], [60, 170, 190], [200, 120, 90], [110, 140, 255]];
+  for (let i = 0; i < 260; i++) {
+    const x = rnd() * NG_TEX_W, y = rnd() * NG_TEX_H;
+    const r = 40 + rnd() * 220;
+    const c = neb[(rnd() * neb.length) | 0];
+    const a = 0.05 + rnd() * 0.16;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")");
+    gr.addColorStop(1, "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",0)");
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+  }
+  const tints = ["#c8d4ff", "#fff0d8", "#d8c8ff", "#ffd0c0", "#ffffff"];
+  for (let i = 0; i < 26000; i++) {
+    const x = rnd() * NG_TEX_W, y = rnd() * NG_TEX_H;
+    g.globalAlpha = 0.2 + rnd() * 0.8;
+    g.fillStyle = tints[(rnd() * tints.length) | 0];
+    g.beginPath(); g.arc(x, y, 0.35 + rnd() * 1.4, 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1;
+  return g.getImageData(0, 0, NG_TEX_W, NG_TEX_H);
+}
+function renderLensedSky(cv, mass, tex) {
+  const P = window.QGA_PHYSICS;
+  const gm = 0.55 * mass;
+  const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
+  const D = 12;          // observer distance, scene units
+  const FOV = 0.45;      // half-angle of the field, radians
+  const N = cv.width;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(N, N);
+  const out = img.data;
+  const tw = tex.width, th = tex.height, td = tex.data;
+
+  // Exact deflection table over [b_crit, 4 b_crit], log-spaced so the
+  // near-critical divergence is resolved; weak field beyond it is analytic.
+  const TN = 96;
+  const bLo = bCrit * 1.0002, bHi = bCrit * 4;
+  const logLo = Math.log(bLo), logHi = Math.log(bHi);
+  const tab = new Float64Array(TN);
+  for (let i = 0; i < TN; i++) {
+    const b = Math.exp(logLo + (logHi - logLo) * i / (TN - 1));
+    tab[i] = P.grNullDeflection(b, gm, GR_C2, { maxSteps: 20000 }).deflection;
+  }
+  const alphaAt = (b) => {
+    if (b >= bHi) return (4 * gm) / (GR_C2 * b);
+    const t = ((Math.log(b) - logLo) / (logHi - logLo)) * (TN - 1);
+    const i = Math.min(TN - 2, Math.max(0, Math.floor(t)));
+    const f = Math.min(1, Math.max(0, t - i));
+    return tab[i] * (1 - f) + tab[i + 1] * f;
+  };
+
+  const half = N / 2;
+  for (let j = 0; j < N; j++) {
+    const y = (j + 0.5) / half - 1;
+    for (let i = 0; i < N; i++) {
+      const x = (i + 0.5) / half - 1;
+      const o = (j * N + i) * 4;
+      const rho = Math.hypot(x, y);
+      if (rho > 1) { out[o + 3] = 0; continue; }
+      const theta = FOV * rho;
+      const b = D * Math.sin(theta);
+      if (b <= bCrit) { out[o] = 2; out[o + 1] = 4; out[o + 2] = 10; out[o + 3] = 255; continue; }
+      let beta = theta - alphaAt(b);
+      let phi = Math.atan2(y, x);
+      if (beta < 0) { beta = -beta; phi += Math.PI; }   // secondary image
+      const u = ((phi / (2 * Math.PI) + 0.5) % 1 + 1) % 1;
+      const v = Math.min(0.999, beta / Math.PI);
+      const t = ((Math.floor(v * th) * tw) + Math.floor(u * tw)) * 4;
+      out[o] = td[t]; out[o + 1] = td[t + 1]; out[o + 2] = td[t + 2]; out[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+function LensedSkyPanel({ mass }) {
+  const cvRef = useRef(null);
+  const tex = useMemo(() => ngStarTexture(), []);
+  useEffect(() => {
+    const cv = cvRef.current;
+    if (!cv) return;
+    const raf = requestAnimationFrame(() => renderLensedSky(cv, mass, tex));
+    return () => cancelAnimationFrame(raf);
+  }, [mass, tex]);
+  return (
+    <div className="lens-wrap">
+      <canvas ref={cvRef} width="340" height="340" className="lens-canvas" role="img"
+        aria-label="Gravitational lensing of a background starfield: a black shadow at the critical impact parameter, a bright photon ring at its edge, and an Einstein ring where the deflection maps the sky back onto itself"></canvas>
+      <div className="lens-legend">
+        <span>shadow b &lt; b_crit</span>
+        <span>photon ring at b_crit</span>
+        <span>Einstein ring where β = θ − α = 0</span>
       </div>
     </div>
   );
@@ -1378,7 +1569,7 @@ function CurvatureEngine3D() {
               }
               const capRay = Math.max(1.5 * rs, sc * 0.9);
               if (qr < capRay) {
-                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xffd9a0);
+                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xff6b6b);
                 q.x = -7.6; q.y = q.b; q.vx = newton ? 5.2 : 4; q.vy = 0; q.trail = []; q.near = false;
                 continue;
               }
@@ -1470,10 +1661,18 @@ function CurvatureEngine3D() {
         } else selRing.visible = false;
 
         const showRays = rayRef.current;
+        // Fate is exact, not decorative: b_crit is the boundary between capture
+        // and escape, so the fan reads itself — red rays are doomed, amber rays
+        // leave. In the Newtonian view there is no capture cone, so the only
+        // fate is hitting the opaque star.
+        const bCritNow = window.QGA_PHYSICS.grCriticalImpactParameter(mu, GR_C2);
         rayVis.forEach((rv, i) => {
+          const q = st.rays[i];
+          const doomed = newton ? Math.abs(q.b) < capRay : Math.abs(q.b) < bCritNow;
+          rv.hex.setHex(doomed ? 0xff6b6b : 0xffcf72);
           rv.l.visible = showRays;
           if (rv.pts) rv.pts.visible = false;
-          if (showRays) writeTrail(rv, st.rays[i].trail);
+          if (showRays) writeTrail(rv, q.trail);
         });
         lensLabel.setShow(showRays);
 
@@ -1575,6 +1774,8 @@ function CurvatureEngine3D() {
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>
       <div className="viz-toolbar viz-veff-row">
         <VEffPanel mass={mass} body={selBody} view={view} stRef={stRef}></VEffPanel>
+        <NullGeodesicPanel mass={mass}></NullGeodesicPanel>
+        <LensedSkyPanel mass={mass}></LensedSkyPanel>
       </div>
       <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
         <div className="readout"><div className="readout-label">selected body eccentricity e</div>
@@ -1613,15 +1814,23 @@ function CurvatureEngine3D() {
         integrator's convergence radius (deflection error &lt; 0.1° against a 30× finer reference), so the eight rays
         are quantitatively right, not merely suggestive. The inner pair is launched inside the capture cone
         <Eq tex="b < b_{\mathrm{crit}} = 3\sqrt{3}\,GM/c^2"></Eq> and is swallowed; the outer pairs escape with the
-        weak-field deflection <Eq tex="4GM/c^2 b"></Eq>. The cyan ring marks the photon sphere
-        (r = 3GM/c²) and the amber ring the critical curve — cross the amber ring inward and the ray cannot return.
+        weak-field deflection <Eq tex="4GM/c^2 b"></Eq>. Rays are coloured by their exact fate — amber escapes,
+        red is captured — so the fan reads itself. The cyan ring marks the photon sphere
+        (<Eq tex="r = 3GM/c^2"></Eq>) and the amber ring the critical curve — cross the amber ring inward and the ray cannot return.
+        The <em>orbital-plane</em> panel beside the potential plot integrates the same geodesics and shows what the
+        3D fan cannot: a ray launched just outside the critical curve winds around the photon sphere before it
+        escapes, the photon-ring effect. (The star's drawn radius exceeds the photon sphere, so that loop would sit
+        inside the star in 3D; the panel is where it is legible.)
         The <em>light ×</em> control sets the affine rate independently of the bodies, so the bending can be slowed
         down and read. With spin on, inclined orbits drift their node at the Lense–Thirring rate
         <Eq tex="\Delta\Omega = 4\pi J/[\,c^2 a^3(1-e^2)^{3/2}\,]"></Eq> (×10 visual amplification); with
-        radiation reaction on, orbits decay by the Peters (1964) orbit-averaged equations (amplified) until r_peri
-        crosses the ISCO at 6GM/c², where the body hands off to the numerical plunge integrator. The V_eff panel
+        radiation reaction on, orbits decay by the Peters (1964) orbit-averaged equations (amplified) until
+        <Eq tex="r_{\mathrm{peri}}"></Eq> crosses the ISCO at <Eq tex="6GM/c^2"></Eq>, where the body hands off to the numerical plunge integrator. The V_eff panel
         plots −GM/r + L²/2r² − GM·L²/c²r³ against its Newtonian twin for the selected body, with energy line,
-        turning points, and live radius.
+        turning points, and live radius. The <em>lensed-sky</em> panel is a real render, not a painted ring: every
+        pixel is traced through the same deflection law, so the black shadow at <Eq tex="b_{\mathrm{crit}}"></Eq>,
+        the photon ring at its edge, and the Einstein ring where <Eq tex="\beta = \theta - \alpha(\theta) = 0"></Eq>
+        all follow from the geometry rather than from decoration.
         <span className="dim"> Seven presets — classic pair, Mercury-like, high-e comet, 2:1 Kepler resonance,
         five-body cluster, capture plunge, and zoom-whirl — plus click-to-select bodies, add/remove up to six, live
         a/e editing, spin, and a time-scale control. Test particles probe the central mass only; body–body

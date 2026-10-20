@@ -105,6 +105,25 @@ function Eq({ tex, display = false }) {
   return <span ref={ref} className={display ? "eq-display" : "eq-inline"}></span>;
 }
 
+/* Renders a string with inline math delimited by $…$ through KaTeX. Data
+   modules stay plain, searchable strings while any formula in them is
+   typeset; text without a $ is returned untouched. */
+function RichText({ text }) {
+  if (typeof text !== "string") return text;
+  if (text.indexOf("$") < 0) return text;
+  const parts = text.split(/\$([^$]+)\$/g);
+  return (
+    <React.Fragment>
+      {parts.map((p, i) => (i % 2 ? <Eq key={i} tex={p}></Eq> : p))}
+    </React.Fragment>
+  );
+}
+
+/* Plain-text projection of a RichText string, for search and aria labels. */
+function richPlain(text) {
+  return typeof text === "string" ? text.replace(/\$[^$]*\$/g, " ") : "";
+}
+
 /* ---------- badges ---------- */
 const BADGE_LABELS = {
   established: "Established physics",
@@ -320,7 +339,7 @@ function ConceptBridge({ id, go }) {
     <aside className="bridge" aria-label="Concept bridge to next module">
       <div className="bridge-text">
         <div className="bridge-kicker">Concept bridge · {b.from} → {b.to}</div>
-        <p>{text}</p>
+        <p><RichText text={text}></RichText></p>
       </div>
       {go ? <button className="bridge-go" onClick={() => go(b.next)}>Continue → {b.to}</button> : null}
     </aside>

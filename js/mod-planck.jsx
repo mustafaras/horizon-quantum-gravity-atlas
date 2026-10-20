@@ -244,10 +244,11 @@ function ScaleLadder() {
           </div>
         </div>
         <VizCaption status="schematic">
-          Resolving a length l requires energy E ≈ ħc/l. Each tick is one power of ten, so the gulf you descend is
-          honest: sixteen empty decades — <strong>the desert</strong> — separate the collider frontier from the
-          Planck scale. Near l_P the energy needed to probe a region would itself curve spacetime into a black hole
-          of that size, and measurement and geometry become entangled.
+          Resolving a length <Eq tex="l"></Eq> requires energy <Eq tex="E \approx \hbar c/l"></Eq>. Each tick is
+          one power of ten, so the gulf you descend is honest: sixteen empty decades — <strong>the desert</strong> —
+          separate the collider frontier from the Planck scale. Near <Eq tex="\ell_P"></Eq> the energy needed to
+          probe a region would itself curve spacetime into a black hole of that size, and measurement and geometry
+          become entangled.
         </VizCaption>
       </div>
       <div className="panel" style={{ marginTop: 16 }}>
@@ -329,7 +330,7 @@ function SpinFoamLab() {
         ) : null}
         <div className="kerr-state-line lab-readout">
           {lab ? <>{lab.projection.points.length} nodes · {lab.projection.edges.length} edges ·
-            Σ area = {lab.config.totalArea.toFixed(2)} · Σ volume = {lab.config.totalVolume.toFixed(2)}</> : "—"}
+            <Eq tex="\sum"></Eq> area = {lab.config.totalArea.toFixed(2)} · <Eq tex="\sum"></Eq> volume = {lab.config.totalVolume.toFixed(2)}</> : "—"}
         </div>
       </div>
       <Scene3D height={440}

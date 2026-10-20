@@ -1732,9 +1732,9 @@ function GWAnalysisTheatre() {
             <header><h4>Signal</h4><span>leading-order quadrupole · teaching model</span></header>
             <div className="kerr-rgrid">
               <KerrReadout lead label="chirp mass ℳ" value={mc.toFixed(1)} unit="M☉"
-                formula={"(m₁m₂)^⅗ / (m₁+m₂)^⅕ · " + atlasState.gwM1 + "+" + atlasState.gwM2 + " M☉"}></KerrReadout>
+                formulaTex={"\\mathcal{M} = \\frac{(m_1 m_2)^{3/5}}{(m_1+m_2)^{1/5}} = " + mc.toFixed(1) + "\\,M_\\odot"}></KerrReadout>
               <KerrReadout label="t_c from 20 Hz" value={tC20.toFixed(2)} unit="s"
-                formula="(5/256)(πf)^−⁸ᐟ³ (Gℳ/c³)^−⁵ᐟ³"></KerrReadout>
+                formulaTex="t_c = \\frac{5}{256}\\,\\frac{(\\pi f)^{-8/3}}{(G\\mathcal{M}/c^3)^{-5/3}}"></KerrReadout>
               <KerrReadout label="H1→L1 offset" value="7" unit="ms"
                 formula="illustrative · ~3000 km baseline"></KerrReadout>
               <KerrReadout label="noise" value="seeded Gaussian"
