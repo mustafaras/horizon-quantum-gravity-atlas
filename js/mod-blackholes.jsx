@@ -963,7 +963,7 @@ function HawkingComputeLab() {
         <SliderRow label="display amplification" min={1} max={1000} step={1} value={gain}
         onChange={(v) => setState({ hawkingLabAmplify: v })} format={(v) => "×" + Math.round(v)}></SliderRow>
         <div className="kerr-state-line lab-readout">
-          T_H = {lab ? lab.temperatureK.toExponential(2) : "—"} K · κ/κ₀ = {lab ? lab.extremalFactor.toFixed(4) : "—"} ·
+          <Eq tex="T_H"></Eq> = {lab ? lab.temperatureK.toExponential(2) : "—"} K · <Eq tex="\kappa/\kappa_0"></Eq> = {lab ? lab.extremalFactor.toFixed(4) : "—"} ·
           relative power {lab ? lab.relativePower.toExponential(2) : "—"} · display rate ×{lab ? lab.displayGain : "—"}
         </div>
       </div>
@@ -981,9 +981,9 @@ function HawkingComputeLab() {
         without it, and the multiplier is always shown), and the sample energies come from the Planckian shape by
         seeded rejection sampling. The glowing rail arcing over the scene traces
         <Eq tex="T(a_\star)/T(0)"></Eq> with a marker that slides to the current spin; the faint equatorial
-        rings mark the horizon, the photon sphere (1.5 r₊) and the ISCO (3 r₊). Push the observatory spin
+        rings mark the horizon, the photon sphere (<Eq tex="1.5\,r_+"></Eq>) and the ISCO (<Eq tex="3\,r_+"></Eq>). Push the observatory spin
         slider toward a★ = ±1: the marker slides down the rail, the shared surface-gravity
-        factor κ/κ₀ → 0 and the field visibly empties — an extremal hole does not radiate.
+        factor <Eq tex="\kappa/\kappa_0 \to 0"></Eq> and the field visibly empties — an extremal hole does not radiate.
       </VizCaption>
     </div>);
 

@@ -126,12 +126,12 @@ function TheoryConstellation3D() {
             <Badge kind={t.status}></Badge>
             <span className="mono dim small">{meta.since} · {meta.founders}</span>
           </div>
-          <span className="small">{t.rows.idea.short} {t.rows.spacetime.short}</span>
+          <span className="small"><RichText text={t.rows.idea.short}></RichText> <RichText text={t.rows.spacetime.short}></RichText></span>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
             <span className="mono dim" style={{ fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase" }}>{meta.eqName}</span>
             <Eq tex={meta.eq}></Eq>
           </div>
-          <span className="small dim">Open: {t.rows.problems.short} · Experiment: {t.rows.experiment.short}</span>
+          <span className="small dim">Open: <RichText text={t.rows.problems.short}></RichText> · Experiment: <RichText text={t.rows.experiment.short}></RichText></span>
         </div>
       ) : null}
       <VizCaption status="conjectural">
@@ -292,7 +292,7 @@ function TheoryComparator() {
                     <td key={t.id}
                       className={"cmp-cell" + (sel.th === t.id && sel.row === r.id ? " sel" : "")}
                       onClick={() => setSel({ th: t.id, row: r.id })}>
-                      {t.rows[r.id].short}
+                      <RichText text={t.rows[r.id].short}></RichText>
                     </td>
                   ))}
                 </tr>

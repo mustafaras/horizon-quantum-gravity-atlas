@@ -199,9 +199,10 @@ function KerrObservatoryControls({ state, setState, onCameraRequest, onFocusKind
       ) : null}
       {state.bhJets !== false ? (
         <p className="kerr-legend small dim" aria-label="Jet model legend">
-          Jets are a heuristic Blandford–Znajek model: the spin relationship P<sub>BZ</sub> ∝ (a★/(1+√(1−a★²)))² is established and
-          scales the jet with spin (a★ = 0 → no jet), but the collimation, spine/sheath flow and knot turbulence are phenomenological,
-          not GRMHD. Relativistic beaming hides the jets near edge-on views — press “view down the jet” to see the approaching jet brighten.
+          Jets are a heuristic Blandford–Znajek model: the spin relationship
+          <Eq tex="P_{\mathrm{BZ}} \propto \left(\frac{a_\star}{1+\sqrt{1-a_\star^2}}\right)^{2}"></Eq> is established and
+          scales the jet with spin (<Eq tex="a_\star = 0"></Eq> → no jet), but the collimation, spine/sheath flow and knot
+          turbulence are phenomenological, not GRMHD. Relativistic beaming hides the jets near edge-on views — press “view down the jet” to see the approaching jet brighten.
         </p>
       ) : null}
       <KerrRuntimeStatus></KerrRuntimeStatus>

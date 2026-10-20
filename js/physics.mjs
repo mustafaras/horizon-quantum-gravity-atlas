@@ -209,6 +209,41 @@ export function grNullDeflection(b, gm, c2, opts = {}) {
   return { captured: false, deflection: Math.abs(d), steps };
 }
 
+// Full null-geodesic path in the orbital plane, for plotting. Same integrator
+// and step as grNullDeflection, but the whole trajectory is retained so the
+// winding near b_crit is visible. `points` are [x, y] pairs in scene units;
+// `windings` is the total swept polar angle in turns (≈0.5 for a straight
+// weak-field ray, >1 for a near-critical ray that loops the photon sphere).
+export function grNullTrajectory(b, gm, c2, opts = {}) {
+  const rs = (2 * gm) / c2;
+  const v0 = opts.v0 ?? 4;
+  const x0 = opts.x0 ?? 7.6;
+  const dt = opts.dt ?? 0.002;
+  const maxSteps = opts.maxSteps ?? 200000;
+  const rCap = 1.5 * rs;
+  const q = { x: -x0, y: b, vx: v0, vy: 0 };
+  const points = [[q.x, q.y]];
+  let swept = 0;
+  let prev = Math.atan2(q.y, q.x);
+  let steps = 0;
+  let captured = false;
+  while (steps < maxSteps) {
+    grNullStep(q, rs, dt);
+    steps++;
+    const r = Math.hypot(q.x, q.y);
+    points.push([q.x, q.y]);
+    const ang = Math.atan2(q.y, q.x);
+    let d = ang - prev;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    swept += d;
+    prev = ang;
+    if (r < rCap) { captured = true; break; }
+    if (q.x > x0 || r > 2 * x0) break;
+  }
+  return { captured, points, steps, windings: Math.abs(swept) / (2 * Math.PI) };
+}
+
 // Post-Newtonian effective potential V_eff(r) = −GM/r + L²/2r² − GM·L²/c²r³.
 // The last term is the GR correction that removes the stable-orbit barrier
 // below the ISCO and creates the photon sphere.

@@ -306,9 +306,10 @@ function RGLiveFormulation({ state, currentPoint, fixedPoints, numericFixed, int
         </div>
       </div>
       <p className="rg-equation-note">
-        With t = ln μ increasing toward the UV, β′(g*) &lt; 0 is UV-attractive and β′(g*) &gt; 0 is
-        IR-attractive. β′ = 0 is marginal at linear order. Analytic roots are compared with a deterministic
-        bisection scan at tolerance 10⁻⁹{numeric && primary ? `; current |g*analytic − g*numeric| = ${Math.abs(primary.g - numeric.g).toExponential(2)}.` : "."}
+        With <Eq tex="t = \ln\mu"></Eq> increasing toward the UV, <Eq tex="\beta'(g_*) < 0"></Eq> is
+        UV-attractive and <Eq tex="\beta'(g_*) > 0"></Eq> is IR-attractive. <Eq tex="\beta' = 0"></Eq> is
+        marginal at linear order. Analytic roots are compared with a deterministic bisection scan at tolerance
+        <Eq tex="10^{-9}"></Eq>{numeric && primary ? `; current |g*analytic − g*numeric| = ${Math.abs(primary.g - numeric.g).toExponential(2)}.` : "."}
       </p>
       <div className="rg-method-strip">
         <span><strong>Integrator</strong> fixed-step RK4</span>
@@ -461,7 +462,7 @@ function RGFlowLandscape() {
           <p>{state.rgModel === "qed"
             ? "The positive one-loop β and analytic running are established perturbative QED. The formal Landau pole is an extrapolation far beyond the trustworthy domain, not an observed phenomenon."
             : state.rgModel === "qcd"
-              ? `For SU(3), b₀ = 11 − 2n_f/3 = ${window.QGA_PHYSICS.qcdB0(state.rgNf).toFixed(3)}. The UV trend is perturbative; the α_s = 1 stop marks entry into strong coupling, not a prediction of a physical divergence.`
+              ? <React.Fragment>For SU(3), <Eq tex="b_0 = 11 - 2n_f/3"></Eq> = {window.QGA_PHYSICS.qcdB0(state.rgNf).toFixed(3)}. The UV trend is perturbative; the <Eq tex="\alpha_s = 1"></Eq> stop marks entry into strong coupling, not a prediction of a physical divergence.</React.Fragment>
               : "The linear and polynomial β functions are transparent teaching systems. Their trajectories are numerical illustrations, not measured running couplings."}</p>
         </section>
         <section><Badge kind={isAsymptoticSafety ? "conjectural" : "schematic"}></Badge>
@@ -472,7 +473,7 @@ function RGFlowLandscape() {
         </section>
         <section><Badge kind="established"></Badge>
           <h4>Numerical and display contract</h4>
-          <p>Deterministic fixed-step RK4 integrates both directions from μ₀. Non-finite values, iteration limits, and α = 1 boundaries terminate visibly; no missing segment is reported as success. Reduced motion snaps directly to exact final geometry.</p>
+          <p>Deterministic fixed-step RK4 integrates both directions from <Eq tex="\mu_0"></Eq>. Non-finite values, iteration limits, and <Eq tex="\alpha = 1"></Eq> boundaries terminate visibly; no missing segment is reported as success. Reduced motion snaps directly to exact final geometry.</p>
         </section>
       </div>
       <VizCaption status={layer}>

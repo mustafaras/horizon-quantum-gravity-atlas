@@ -434,9 +434,11 @@ const MODULE_BLURBS = {
 function ViewGlossary() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(null);
+  const q = query.toLowerCase();
   const items = QGA_GLOSSARY.filter((g) =>
-    g.term.toLowerCase().includes(query.toLowerCase()) ||
-    g.def.toLowerCase().includes(query.toLowerCase()));
+    g.term.toLowerCase().includes(q) ||
+    richPlain(g.def).toLowerCase().includes(q) ||
+    richPlain(g.adv).toLowerCase().includes(q));
   return (
     <article data-screen-label="Glossary">
       <header>
@@ -456,13 +458,13 @@ function ViewGlossary() {
               </button>
               <div className="gloss-body" style={{ display: open === g.term ? "block" : "none" }}>
                 <div className="gloss-sub">Definition</div>
-                <p style={{ marginBottom: 0 }}>{g.def}</p>
+                <p style={{ marginBottom: 0 }}><RichText text={g.def}></RichText></p>
                 <div className="gloss-sub">Advanced</div>
-                <p style={{ marginBottom: 0 }}>{g.adv}</p>
+                <p style={{ marginBottom: 0 }}><RichText text={g.adv}></RichText></p>
                 <div className="gloss-sub" style={{ color: "var(--gold)" }}>Common misconception</div>
-                <p style={{ marginBottom: 0 }}>{g.misc}</p>
+                <p style={{ marginBottom: 0 }}><RichText text={g.misc}></RichText></p>
               </div>
-              {open !== g.term ? <div className="gloss-body"><p className="dim small" style={{ marginBottom: 0 }}>{g.def}</p></div> : null}
+              {open !== g.term ? <div className="gloss-body"><p className="dim small" style={{ marginBottom: 0 }}><RichText text={g.def}></RichText></p></div> : null}
             </div>
           ))}
           {items.length === 0 ? <p className="dim">No terms match “{query}”.</p> : null}
@@ -529,7 +531,7 @@ function ViewOpenProblems() {
                 <h3>{p.title}</h3>
                 <Badge kind="open"></Badge>
               </div>
-              <p className="small" style={{ marginBottom: 0 }}>{p.body}</p>
+              <p className="small" style={{ marginBottom: 0 }}><RichText text={p.body}></RichText></p>
             </div>
           ))}
         </div>
@@ -560,7 +562,7 @@ function ViewSymbols({ go }) {
       s.cat.toLowerCase().includes(q) ||
       s.contexts.some((c) =>
         c.ctx.toLowerCase().includes(q) ||
-        c.meaning.toLowerCase().includes(q) ||
+        richPlain(c.meaning).toLowerCase().includes(q) ||
         c.unit.toLowerCase().includes(q))));
   const ctxCount = items.reduce((n, s) => n + s.contexts.length, 0);
   const moduleShort = (id) => (QGA_MODULES.find((m) => m.id === id) || {}).short || id;
@@ -614,7 +616,7 @@ function ViewSymbols({ go }) {
                       <Eq tex={c.eq} display={true}></Eq>
                     </div>
                   ) : null}
-                  <p className="sym-ctx-meaning">{c.meaning}</p>
+                  <p className="sym-ctx-meaning"><RichText text={c.meaning}></RichText></p>
                   <div className="sym-ctx-meta">
                     <span className="sym-unit">{"[ " + c.unit + " ]"}</span>
                     {c.module ? (
@@ -641,7 +643,7 @@ function ViewSymbols({ go }) {
                     <Eq tex={c.tex} display={true}></Eq>
                   </div>
                 ) : null}
-                <p>{c.body}</p>
+                <p><RichText text={c.body}></RichText></p>
               </div>
             ))}
           </div>
@@ -1064,11 +1066,11 @@ function ViewWhitepaper() {
               ["Mercury perihelion advance", "42.98″ per century"],
               ["Solar-limb light deflection", "1.75″"],
               ["Planck units", "CODATA values"],
-              ["Solar-mass evaporation timescale", "≈ 2.1 × 10⁶⁷ yr"],
-              ["Hawking spectrum Wien peak", "u ≈ 2.8214"],
-              ["RG: QED UV growth, QCD asymptotic freedom, b₀ = 0 at n_f = 16.5", "standard one-loop results"],
+              ["Solar-mass evaporation timescale", "$\\approx 2.1\\times10^{67}$ yr"],
+              ["Hawking spectrum Wien peak", "$u \\approx 2.8214$"],
+              ["RG: QED UV growth, QCD asymptotic freedom, $b_0 = 0$ at $n_f = 16.5$", "standard one-loop results"],
             ].map(([obs, anchor]) => (
-              <div key={obs} className="paper-anchor-row"><span>{obs}</span><span className="mono">{anchor}</span></div>
+              <div key={obs} className="paper-anchor-row"><span><RichText text={obs}></RichText></span><span className="mono"><RichText text={anchor}></RichText></span></div>
             ))}
           </div>
           <p>

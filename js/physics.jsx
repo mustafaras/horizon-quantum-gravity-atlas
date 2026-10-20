@@ -1947,6 +1947,35 @@ const QGA_PHYSICS = {
     while (d < -Math.PI) d += 2 * Math.PI;
     return { captured: false, deflection: Math.abs(d), steps };
   },
+  grNullTrajectory(b, gm, c2, opts = {}) {
+    const rs = (2 * gm) / c2;
+    const v0 = opts.v0 ?? 4;
+    const x0 = opts.x0 ?? 7.6;
+    const dt = opts.dt ?? 0.002;
+    const maxSteps = opts.maxSteps ?? 200000;
+    const rCap = 1.5 * rs;
+    const q = { x: -x0, y: b, vx: v0, vy: 0 };
+    const points = [[q.x, q.y]];
+    let swept = 0;
+    let prev = Math.atan2(q.y, q.x);
+    let steps = 0;
+    let captured = false;
+    while (steps < maxSteps) {
+      QGA_PHYSICS.grNullStep(q, rs, dt);
+      steps++;
+      const r = Math.hypot(q.x, q.y);
+      points.push([q.x, q.y]);
+      const ang = Math.atan2(q.y, q.x);
+      let d = ang - prev;
+      while (d > Math.PI) d -= 2 * Math.PI;
+      while (d < -Math.PI) d += 2 * Math.PI;
+      swept += d;
+      prev = ang;
+      if (r < rCap) { captured = true; break; }
+      if (q.x > x0 || r > 2 * x0) break;
+    }
+    return { captured, points, steps, windings: Math.abs(swept) / (2 * Math.PI) };
+  },
   grEffectivePotential(gm, c2, L, r) {
     const r2 = r * r;
     return -gm / r + (L * L) / (2 * r2) - (gm * L * L) / (c2 * r2 * r);
