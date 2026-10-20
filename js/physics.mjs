@@ -158,6 +158,11 @@ export function grPhotonSphereRadius(gm, c2) {
 export function grIscoRadius(gm, c2) {
   return (6 * gm) / c2;
 }
+// Critical impact parameter b_crit = 3√3·GM/c² = √3·r_ph. Rays launched below
+// it fall through the photon sphere; rays above it escape.
+export function grCriticalImpactParameter(gm, c2) {
+  return (3 * Math.sqrt(3) * gm) / c2;
+}
 
 // Exact equatorial null geodesic in Cartesian form:
 //   d²x⃗/dλ² = −(3/2)·rs·L²·x⃗ / r⁵,  rs = 2GM/c², L = |x⃗×v⃗| conserved.

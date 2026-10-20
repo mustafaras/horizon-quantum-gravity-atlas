@@ -1912,6 +1912,7 @@ const QGA_PHYSICS = {
   grCurvatureScenario(id) { return GR_CURVATURE_SCENARIOS[id] || GR_CURVATURE_SCENARIOS.classic; },
   grPhotonSphereRadius(gm, c2) { return (3 * gm) / c2; },
   grIscoRadius(gm, c2) { return (6 * gm) / c2; },
+  grCriticalImpactParameter(gm, c2) { return (3 * Math.sqrt(3) * gm) / c2; },
   grNullStep(p, rs, dt) {
     const r2 = p.x * p.x + p.y * p.y;
     if (r2 < 1e-12) return p;

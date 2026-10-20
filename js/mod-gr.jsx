@@ -765,7 +765,7 @@ function CurvatureEngine3D() {
   // parameter, and the integrated deflection of the outermost ray.
   const gmScene = 0.55 * mass;
   const rPhoton = window.QGA_PHYSICS.grPhotonSphereRadius(gmScene, GR_C2);
-  const bCrit = 1.5 * Math.sqrt(3) * rPhoton;
+  const bCrit = window.QGA_PHYSICS.grCriticalImpactParameter(gmScene, GR_C2);
   const deflDeg = useMemo(() => {
     const d = window.QGA_PHYSICS.grNullDeflection(3.3, 0.55 * mass, GR_C2);
     return d.captured ? 0 : (d.deflection * 180) / Math.PI;
@@ -1319,7 +1319,7 @@ function CurvatureEngine3D() {
         ringCrit.visible = showRings;
         if (showRings) {
           placeRing(ringPhoton, 1.5 * rs);
-          placeRing(ringCrit, 1.5 * Math.sqrt(3) * rs);
+          placeRing(ringCrit, window.QGA_PHYSICS.grCriticalImpactParameter(mu, GR_C2));
         }
         const isco = P.grIscoRadius(mu, GR_C2);
         const J = spinRef.current * mu * mu / GR_C2 * 10;   // ×10 visual amplification (disclosed)
