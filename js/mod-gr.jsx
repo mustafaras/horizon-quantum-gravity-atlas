@@ -680,7 +680,7 @@ function VEffPanel({ mass, body, view, stRef }) {
   const L = Math.sqrt(L2);
   const E = -gm / (2 * a);
 
-  const W = 480, H = 252, PL = 56, PR = 20, PT = 22, PB = 44;
+  const W = 620, H = 326, PL = 56, PR = 20, PT = 22, PB = 44;
   const iw = W - PL - PR, ih = H - PT - PB;
 
   const V = (r) => P.grEffectivePotential(gm, GR_C2, L, r);
@@ -790,6 +790,10 @@ function VEffPanel({ mass, body, view, stRef }) {
 
   return (
     <div className="veff-wrap">
+      <div className="panel-head">
+        <span>Effective potential</span>
+        <em>V_eff(r) · selected orbit</em>
+      </div>
       <svg viewBox={"0 0 " + W + " " + H} className="veff-svg" role="img"
         aria-label="Effective potential of the selected body: general relativity against Newtonian, with the energy level, turning points and live radius">
         <defs>
@@ -924,6 +928,10 @@ function NullGeodesicPanel({ mass }) {
   const near = paths.find((p) => p.f === 1.005);
   return (
     <div className="ng-wrap">
+      <div className="panel-head">
+        <span>Null geodesics</span>
+        <em>orbital plane · b in GM/c²</em>
+      </div>
       <svg viewBox={"0 0 " + W + " " + H} className="ng-svg" role="img"
         aria-label="Null geodesics in the orbital plane: photon paths below the critical impact parameter plunge through the horizon, paths above it escape, and the near-critical path winds around the photon sphere">
         <defs>
@@ -1188,6 +1196,16 @@ function LensedSkyPanel({ mass }) {
   const rad = (t) => t / L.FOV * 180;
   return (
     <div className="lens-wrap">
+      <div className="panel-head">
+        <span>Lensed sky</span>
+        <div className="lens-modes" role="group" aria-label="Lensed sky view">
+          {NG_MODES.map(([k, label]) => (
+            <button key={k} type="button" aria-pressed={mode === k}
+              className={"lens-mode" + (mode === k ? " is-on" : "")}
+              onClick={() => setMode(k)}>{label}</button>
+          ))}
+        </div>
+      </div>
       <div className="lens-stage">
         <canvas ref={cvRef} width="720" height="720" className="lens-canvas" role="img"
           aria-label="Gravitational lensing of a background sky: a black shadow at the critical impact parameter, a bright photon ring at its edge, and an Einstein ring where the deflection maps the sky back onto itself"></canvas>
@@ -1200,17 +1218,11 @@ function LensedSkyPanel({ mass }) {
           </svg>
         )}
       </div>
-      <div className="lens-modes" role="group" aria-label="Lensed sky view">
-        {NG_MODES.map(([k, label]) => (
-          <button key={k} type="button" aria-pressed={mode === k}
-            className={"lens-mode" + (mode === k ? " is-on" : "")}
-            onClick={() => setMode(k)}>{label}</button>
-        ))}
-      </div>
       <div className="lens-legend">
         <span><i style={{ background: "#ff8f6b" }}></i>shadow b &lt; b_crit</span>
         <span><i style={{ background: "#8fe8ff" }}></i>photon ring</span>
         <span><i style={{ background: "#ffe9b0" }}></i>Einstein ring θ_E = {L.thetaE.toFixed(3)}</span>
+        <span className="lens-note">α(b) integrated per pixel · FOV = 2.5 θ_E</span>
       </div>
     </div>
   );
@@ -2078,7 +2090,7 @@ function CurvatureEngine3D() {
         initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         cameraGoal={cameraGoal}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>
-      <div className="viz-toolbar viz-veff-row">
+      <div className="panel-deck">
         <VEffPanel mass={mass} body={selBody} view={view} stRef={stRef}></VEffPanel>
         <NullGeodesicPanel mass={mass}></NullGeodesicPanel>
         <LensedSkyPanel mass={mass}></LensedSkyPanel>
