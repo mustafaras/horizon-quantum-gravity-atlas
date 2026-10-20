@@ -14,7 +14,7 @@ import {
   grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
   GR_ENGINE_C2, grEngineGM, grCaptureRadius, grPlungeStep,
   GR_CURVATURE_SCENARIOS, grCurvatureScenario,
-  grPhotonSphereRadius, grIscoRadius, grNullStep, grNullDeflection, grEffectivePotential,
+  grPhotonSphereRadius, grIscoRadius, grCriticalImpactParameter, grNullStep, grNullDeflection, grEffectivePotential,
   grPetersDerivatives, grLenseThirringDeg,
   blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
   clamp, transformPair, QFT_CONSTANTS,
@@ -650,6 +650,19 @@ test("null geodesic captures rays inside the b_crit = 3√3·GM/c² cone", () =>
   let qMin = Infinity;
   for (let i = 0; i < 40000 && q.x < 14; i++) { grNullStep(q, rs, 0.002); qMin = Math.min(qMin, Math.hypot(q.x, q.y)); }
   assert.ok(qMin > 2 * rs, "wide ray escapes");
+});
+
+test("grCriticalImpactParameter is √3·r_ph and matches the capture split", () => {
+  for (const M of [1, 5, 7, 10]) {
+    const gm = grEngineGM(M);
+    const rPh = grPhotonSphereRadius(gm, GR_ENGINE_C2);
+    const bCrit = grCriticalImpactParameter(gm, GR_ENGINE_C2);
+    // b_crit = 3√3·GM/c² and r_ph = 3GM/c², so the ratio is exactly √3.
+    assert.ok(Math.abs(bCrit / rPh - Math.sqrt(3)) < 1e-12, `M=${M} ratio ${bCrit / rPh}`);
+    // The readout must agree with the integrator's own escape/capture boundary.
+    assert.equal(grNullDeflection(0.9 * bCrit, gm, GR_ENGINE_C2).captured, true, `M=${M} inside`);
+    assert.equal(grNullDeflection(1.1 * bCrit, gm, GR_ENGINE_C2).captured, false, `M=${M} outside`);
+  }
 });
 
 test("grNullDeflection reproduces the weak-field 4GM/c²b limit", () => {
