@@ -62,6 +62,147 @@ export function grLightDeflection(gm, c2, impactParameter) {
   return (4 * gm) / (c2 * impactParameter);
 }
 
+/* Curvature-engine scenario presets (scene units: GM = 0.55·M, c² = 27.04,
+   c = 5.2). Bound bodies are test particles on analytic precessing ellipses
+   (a = semi-major axis, e = eccentricity, phase = initial true anomaly,
+   peri = perihelion angle). A `free` body is numerically integrated with the
+   same post-Newtonian radial acceleration — used for the capture-plunge demo. */
+export const GR_ENGINE_C2 = 27.04;
+export const grEngineGM = (mass) => 0.55 * mass;
+
+// Photon-sphere capture radius r = 3GM/c² (1.5 r_s), floored for visibility.
+export function grCaptureRadius(gm, c2) {
+  return Math.max(0.45, (3 * gm) / c2);
+}
+
+// One semi-implicit substep of a_r = −GM/r² − 3GM L²/(c² r⁴) along −r̂.
+// Mutates and returns p = {x, y, vx, vy}.
+export function grPlungeStep(p, gm, c2, dt) {
+  const r2 = p.x * p.x + p.y * p.y;
+  if (r2 < 1e-12) return p;
+  const r = Math.sqrt(r2);
+  const L = p.x * p.vy - p.y * p.vx;
+  const ar = -gm / r2 - (3 * gm * L * L) / (c2 * r2 * r2);
+  p.vx += (ar * p.x) / r * dt;
+  p.vy += (ar * p.y) / r * dt;
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+  return p;
+}
+
+export const GR_CURVATURE_SCENARIOS = {
+  classic: {
+    label: "Classic pair", mass: 5, rays: true,
+    bodies: [
+      { a: 2.2, e: 0.45, phase: 0, peri: 0 },
+      { a: 3.5, e: 0.22, phase: Math.PI, peri: 0.6 },
+    ],
+  },
+  mercury: {
+    label: "Mercury-like", mass: 6, rays: true,
+    bodies: [
+      { a: 2.4, e: 0.206, phase: 0.4, peri: 0 },
+      { a: 4.6, e: 0.05, phase: 2.4, peri: 1.2 },
+    ],
+  },
+  comet: {
+    label: "High-e comet", mass: 5, rays: true,
+    bodies: [
+      { a: 3.2, e: 0.82, phase: 0.3, peri: -0.4 },
+      { a: 5.4, e: 0.1, phase: 2.0, peri: 1.1 },
+    ],
+  },
+  resonance: {
+    label: "2:1 resonance", mass: 5.5, rays: false,
+    bodies: [
+      { a: 2.1, e: 0.12, phase: 0, peri: 0.2 },
+      { a: 2.1 * Math.pow(2, 2 / 3), e: 0.12, phase: Math.PI, peri: 1.4 },
+    ],
+  },
+  cluster: {
+    label: "Five-body cluster", mass: 6.5, rays: true,
+    bodies: [
+      { a: 1.8, e: 0.15, phase: 0.0, peri: 0.3 },
+      { a: 2.5, e: 0.35, phase: 1.3, peri: 2.1 },
+      { a: 3.2, e: 0.08, phase: 2.6, peri: 4.4 },
+      { a: 4.1, e: 0.5, phase: 3.9, peri: 0.9 },
+      { a: 5.2, e: 0.25, phase: 5.2, peri: 3.0 },
+    ],
+  },
+  plunge: {
+    label: "Capture plunge", mass: 7, rays: true,
+    bodies: [
+      { a: 4.2, e: 0.3, phase: 1.0, peri: 0.5 },
+      { free: true, x0: -6.2, y0: 1.4, vx0: 1.61, vy0: -0.12 },
+    ],
+  },
+  whirl: {
+    label: "Zoom-whirl", mass: 9.5, rays: true, spin: 0.8, rr: true,
+    bodies: [
+      { a: 2.6, e: 0.62, phase: 0.4, peri: 0.2, incl: 0.1 },
+      { a: 5.0, e: 0.1, phase: 2.8, peri: 1.9, incl: -0.07 },
+    ],
+  },
+};
+
+export function grCurvatureScenario(id) {
+  return GR_CURVATURE_SCENARIOS[id] || GR_CURVATURE_SCENARIOS.classic;
+}
+
+/* Strong-field upgrades for the curvature engine (scene units). */
+
+// Photon sphere r = 3GM/c² and ISCO r = 6GM/c² (Schwarzschild).
+export function grPhotonSphereRadius(gm, c2) {
+  return (3 * gm) / c2;
+}
+export function grIscoRadius(gm, c2) {
+  return (6 * gm) / c2;
+}
+
+// Exact equatorial null geodesic in Cartesian form:
+//   d²x⃗/dλ² = −(3/2)·rs·L²·x⃗ / r⁵,  rs = 2GM/c², L = |x⃗×v⃗| conserved.
+// Reproduces the full 4GM/c²b deflection, the photon-sphere capture cone at
+// b_crit = 3√3·GM/c², and zoom-whirl paths near it. Mutates p = {x, y, vx, vy}.
+export function grNullStep(p, rs, dt) {
+  const r2 = p.x * p.x + p.y * p.y;
+  if (r2 < 1e-12) return p;
+  const L = p.x * p.vy - p.y * p.vx;
+  const r5 = r2 * r2 * Math.sqrt(r2);
+  const k = -1.5 * rs * L * L / r5;
+  p.vx += k * p.x * dt;
+  p.vy += k * p.y * dt;
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+  return p;
+}
+
+// Post-Newtonian effective potential V_eff(r) = −GM/r + L²/2r² − GM·L²/c²r³.
+// The last term is the GR correction that removes the stable-orbit barrier
+// below the ISCO and creates the photon sphere.
+export function grEffectivePotential(gm, c2, L, r) {
+  const r2 = r * r;
+  return -gm / r + (L * L) / (2 * r2) - (gm * L * L) / (c2 * r2 * r);
+}
+
+// Peters (1964) orbit-averaged radiation-reaction shape factors (test-particle
+// limit, sign folded into the caller's rate constant k > 0):
+//   ⟨da/dt⟩ ∝ −(1 + 7e²/8) / [a³(1−e²)^{7/2}]
+//   ⟨de/dt⟩ ∝ −(19/12)·e·(1 + 121e²/304) / [a⁴(1−e²)^{5/2}]
+export function grPetersDerivatives(a, e, k) {
+  const e2 = e * e;
+  const om = 1 - e2;
+  const da = (-k * (1 + (7 / 8) * e2)) / (a * a * a * Math.pow(om, 3.5));
+  const de = (-k * (19 / 12) * e * (1 + (121 / 304) * e2)) / (a * a * a * a * Math.pow(om, 2.5));
+  return { da, de };
+}
+
+// Lense–Thirring nodal precession per orbit, degrees:
+//   ΔΩ = 4π·J / [c² a³ (1−e²)^{3/2}]  (orbit-averaged, leading order).
+export function grLenseThirringDeg(J, c2, a, e) {
+  const om = 1 - e * e;
+  return (4 * Math.PI * J) / (c2 * Math.pow(a, 3) * Math.pow(om, 1.5)) * (180 / Math.PI);
+}
+
 /* ---------- Planck units: the unique scale built from ħ, G, c alone ---------- */
 export function planckUnits() {
   const lengthMeters = Math.sqrt((HBAR * G) / C ** 3);
