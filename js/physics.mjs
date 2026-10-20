@@ -186,6 +186,12 @@ export function grNullStep(p, rs, dt) {
 // followed until it escapes past r = 2·x0 or falls inside the photon sphere.
 // Returns { captured, deflection, steps }; `deflection` is the magnitude of the
 // asymptotic direction change in radians (0 when captured).
+//
+// The direction change is accumulated step by step rather than taken as the
+// difference of the first and last velocity angles. The single difference wraps
+// to [−π, π], which silently truncates the multi-turn winding that a ray just
+// outside b_crit performs — exactly the regime the photon ring lives in. The
+// accumulated value is identical for |α| < π and correct beyond it.
 export function grNullDeflection(b, gm, c2, opts = {}) {
   const rs = (2 * gm) / c2;
   const v0 = opts.v0 ?? 4;
@@ -194,19 +200,23 @@ export function grNullDeflection(b, gm, c2, opts = {}) {
   const maxSteps = opts.maxSteps ?? 200000;
   const rCap = 1.5 * rs;
   const q = { x: -x0, y: b, vx: v0, vy: 0 };
-  const a0 = Math.atan2(q.vy, q.vx);
+  let prevA = Math.atan2(q.vy, q.vx);
+  let sweptA = 0;
   let steps = 0;
   while (steps < maxSteps) {
     grNullStep(q, rs, dt);
     steps++;
     const r = Math.hypot(q.x, q.y);
     if (r < rCap) return { captured: true, deflection: 0, steps };
+    const a = Math.atan2(q.vy, q.vx);
+    let da = a - prevA;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    while (da < -Math.PI) da += 2 * Math.PI;
+    sweptA += da;
+    prevA = a;
     if (q.x > x0 || r > 2 * x0) break;
   }
-  let d = Math.atan2(q.vy, q.vx) - a0;
-  while (d > Math.PI) d -= 2 * Math.PI;
-  while (d < -Math.PI) d += 2 * Math.PI;
-  return { captured: false, deflection: Math.abs(d), steps };
+  return { captured: false, deflection: Math.abs(sweptA), steps };
 }
 
 // Full null-geodesic path in the orbital plane, for plotting. Same integrator
@@ -220,7 +230,10 @@ export function grNullTrajectory(b, gm, c2, opts = {}) {
   const x0 = opts.x0 ?? 7.6;
   const dt = opts.dt ?? 0.002;
   const maxSteps = opts.maxSteps ?? 200000;
-  const rCap = 1.5 * rs;
+  // Default stop is the photon sphere: that is where capture is decided. A
+  // caller that wants the plunge drawn all the way in can lower it toward the
+  // horizon, at the cost of a stiffer integration near r = rs.
+  const rCap = opts.rCap ?? 1.5 * rs;
   const q = { x: -x0, y: b, vx: v0, vy: 0 };
   const points = [[q.x, q.y]];
   let swept = 0;

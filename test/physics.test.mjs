@@ -697,6 +697,34 @@ test("grNullTrajectory returns the full path and winds near the critical curve",
   }
 });
 
+test("the 1.1·rs capture test agrees with b_crit at every mass", () => {
+  // The ray-fan panel decides a ray is captured when it crosses 1.1·rs but
+  // colours it by |b| < b_crit. Those two rules must never disagree: an
+  // escaping ray turns at r_t > r_ph = 1.5·rs, so it can never reach 1.1·rs.
+  for (const M of [1, 2, 3, 5, 8, 12, 20]) {
+    const gm = grEngineGM(M);
+    const rs = 2 * gm / GR_ENGINE_C2;
+    const bCrit = grCriticalImpactParameter(gm, GR_ENGINE_C2);
+    const capRay = 1.1 * rs;
+    for (const f of [1.02, 1.1, 1.4, 2.0, 3.0]) {
+      const t = grNullTrajectory(f * bCrit, gm, GR_ENGINE_C2, { maxSteps: 200000 });
+      assert.equal(t.captured, false, `M=${M} f=${f} should escape`);
+      let rMin = Infinity;
+      for (const p of t.points) rMin = Math.min(rMin, Math.hypot(p[0], p[1]));
+      assert.ok(rMin > capRay, `M=${M} f=${f}: turning point ${rMin} must clear 1.1·rs=${capRay}`);
+    }
+    // A plunging ray penetrates inside the photon sphere; the helper stops it
+    // there, which is still well outside 1.1·rs, so the two rules stay disjoint.
+    for (const f of [0.5, 0.9, 0.99]) {
+      const t = grNullTrajectory(f * bCrit, gm, GR_ENGINE_C2, { maxSteps: 200000 });
+      assert.equal(t.captured, true, `M=${M} f=${f} should be captured`);
+      let rMin = Infinity;
+      for (const p of t.points) rMin = Math.min(rMin, Math.hypot(p[0], p[1]));
+      assert.ok(rMin < 1.5 * rs, `M=${M} f=${f}: plunging ray must enter the photon sphere, got ${rMin}`);
+    }
+  }
+});
+
 test("grNullDeflection reproduces the weak-field 4GM/c²b limit", () => {
   const gm = grEngineGM(5);
   const rs = 2 * gm / GR_ENGINE_C2;
@@ -718,6 +746,21 @@ test("grNullDeflection splits escape from capture exactly at b_crit", () => {
     // just outside the cone the ray still wraps far past 90° before escaping
     assert.ok(out.deflection > Math.PI / 2, `M=${M} strong-field wrap ${out.deflection}`);
   }
+});
+
+test("grNullDeflection reports unwrapped angles past a full half-turn", () => {
+  // The lensed-sky renderer maps beta = theta - alpha(theta) back onto the
+  // sphere, so a deflection that wraps to [-pi, pi] would fold the sky the
+  // wrong way. Just outside the critical curve the true sweep exceeds pi.
+  const gm = grEngineGM(5);
+  const bCrit = 3 * Math.sqrt(3) * gm / GR_ENGINE_C2;
+  const near = grNullDeflection(bCrit * 1.0002, gm, GR_ENGINE_C2, { maxSteps: 400000 });
+  assert.equal(near.captured, false);
+  assert.ok(near.deflection > Math.PI, `near-critical sweep ${near.deflection} should exceed pi`);
+  assert.ok(near.deflection < 4 * Math.PI, `near-critical sweep ${near.deflection} should stay finite`);
+  // Far outside the cone the sweep is small and must be unchanged by the fix.
+  const far = grNullDeflection(bCrit * 6, gm, GR_ENGINE_C2);
+  assert.ok(far.deflection > 0 && far.deflection < Math.PI / 2, `far sweep ${far.deflection}`);
 });
 
 test("grNullDeflection is step-converged at the shipped dt", () => {
