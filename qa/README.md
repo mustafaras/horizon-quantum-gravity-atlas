@@ -49,8 +49,9 @@ qa/
 | `a11y.spec.mjs` | Keyboard focus (`:focus-visible`), arrow-key sliders, mobile overflow, 44px touch targets, horizontal chart scroll. |
 | `rg.spec.mjs` | Conjectural badge on asymptotic safety, Custom transition, Reset preset. |
 | `gwosc.spec.mjs` | Deterministic fixture: ok / http-error / abort / oversized / cancel phases, parser contract (≤1200 samples, provenance). |
-| `visual.spec.mjs` | Per-capture screenshot vs committed baseline, each with its justified `maxDiffPixelRatio`. |
+| `visual.spec.mjs` | Per-capture screenshot vs committed baseline, each with its justified `maxDiffPixelRatio`. Viewport-fixed cinematic chrome is excluded from captures. |
 | `premium-interactions.spec.mjs` | Prompt 10 layer: keyboard-only command palette, compare swipe + presets, snapshot save/restore tween (frame-sampled; instant under reduced motion), formula hover → scene highlight → readout, annotation add/edit/remove + share-URL round-trip, visible rejection of invalid/oversized annotation state, old-URL compatibility. |
+| `cinematic-navigation.spec.mjs` | Camera director contract: user input cancels automation, deep link + back navigation restore view+shot, focus retention, reduced-motion (no interpolation, crossfade), single transition loop under rapid navigation. |
 | `kerr-observatory.spec.mjs` | Kerr observatory: geodesic integration, backend selection, focus picking, URL/export state. |
 | `kerr-ultra-capture.spec.mjs` | Ultra-quality still capture: 2K PNG + metadata sidecar, pixel stability, memory guard, cancellation, volumetric layer and Blandford–Znajek spin scaling, Doppler beaming, volume URL keys. |
 | `live.spec.mjs` | Real GWOSC fetch. Skipped unless `QGA_QA_LIVE=1`. |

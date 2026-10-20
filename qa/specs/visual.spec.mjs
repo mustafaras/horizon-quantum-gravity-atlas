@@ -28,6 +28,16 @@ for (const capture of captures) {
       colorScheme: capture.colorScheme ?? "dark",
     });
     await installDeterministicRandom(context, capture.seed);
+    // The cinematic tour bar is viewport-fixed chrome, not section content:
+    // it would otherwise bleed into element captures. Its behavior is covered
+    // by cinematic-navigation.spec.mjs.
+    await context.addInitScript(() => {
+      document.addEventListener("DOMContentLoaded", () => {
+        const style = document.createElement("style");
+        style.textContent = ".cinema-bar{display:none!important}";
+        document.head.appendChild(style);
+      });
+    });
     const page = await context.newPage();
     const pageErrors = [];
     page.on("pageerror", (error) => pageErrors.push(String(error)));

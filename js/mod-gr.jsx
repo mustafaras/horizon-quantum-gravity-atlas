@@ -1470,7 +1470,7 @@ function CurvatureEngine3D() {
 
   const scenarioIds = Object.keys(window.QGA_PHYSICS.GR_CURVATURE_SCENARIOS);
   return (
-    <div className="viz-frame">
+    <div className="viz-frame" id="shot-section-gr">
       <div className="viz-toolbar">
         <SliderRow label="mass M" min={1} max={10} step={0.1} value={mass} onChange={setMass}
           format={(v) => v.toFixed(1)}></SliderRow>
@@ -1519,7 +1519,7 @@ function CurvatureEngine3D() {
           <span className="chip-hint">plunge body — numerically integrated; captured at r = 3GM/c²</span>
         )}
       </div>
-      <Scene3D height={480} aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
+      <Scene3D height={480} shotSpace="gr-curvature" aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
         initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         cameraGoal={cameraGoal}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>

@@ -60,7 +60,8 @@
       "colliderChannel": "clc",
       "spinFoamJMax": "sfj",
       "spinFoamMode": "sfm",
-      "annotations": "ann"
+      "annotations": "ann",
+      "shot": "shot"
     }
   },
   "defaults": {

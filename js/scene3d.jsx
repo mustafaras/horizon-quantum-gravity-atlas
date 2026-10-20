@@ -121,7 +121,7 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
      fallback      node rendered if WebGL/THREE unavailable or context lost
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -205,10 +205,11 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const labelLayer = document.createElement("div");
     labelLayer.className = "s3d-labels";
     mount.appendChild(labelLayer);
-    let resourcesReleased = false, initPromise = null;
+    let resourcesReleased = false, initPromise = null, spaceBridge = null;
     stop = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
+      if (spaceBridge) { window.QGA_CINEMATIC.unregisterSpace(shotSpace, spaceBridge); spaceBridge = null; }
       const releaseScene = () => {
         if (built.dispose) {
           try { built.dispose(); }
@@ -351,11 +352,36 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     setPhase("ready");
     const releaseResources = stop;
 
+    // ---------- cinematic shot-space bridge (Prompt 09) ----------
+    // The camera director places this scene's orbit rig through this bridge;
+    // radii/angles are clamped to the rig's own limits so a shot can never
+    // push the camera through invalid geometry.
+    if (shotSpace && window.QGA_CINEMATIC) {
+      spaceBridge = {
+        getPose: () => ({ radius: orbit.radius, theta: orbit.theta, phi: orbit.phi, target: [target.x, target.y, target.z] }),
+        setPose: (pose) => {
+          if (!pose) return;
+          orbit.radius = Math.max(orbit.minR, Math.min(orbit.maxR, pose.radius));
+          orbit.theta = pose.theta;
+          orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, pose.phi));
+          orbit.vTheta = 0; orbit.vPhi = 0; orbit.introT = 0;
+          orbit.lastInteract = clockT;
+          if (Array.isArray(pose.target)) target.set(pose.target[0], pose.target[1], pose.target[2]);
+        },
+      };
+      window.QGA_CINEMATIC.registerSpace(shotSpace, spaceBridge);
+    }
+
     // ---------- interaction ----------
     const el = renderer.domElement;
     const ptr = { down: false, id: null, x: 0, y: 0, moved: 0, pinch: 0 };
     const touches = new Map();
-    const markInteract = () => { orbit.lastInteract = clockT; orbit.introT = 0; broadcastPose(); };
+    const markInteract = () => {
+      orbit.lastInteract = clockT; orbit.introT = 0;
+      broadcastPose();
+      // user orbit/pan/zoom immediately pauses automated cinematic direction
+      if (shotSpace && window.QGA_CINEMATIC) window.QGA_CINEMATIC.notifySceneInput(shotSpace);
+    };
 
     const onPointerDown = (e) => {
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });

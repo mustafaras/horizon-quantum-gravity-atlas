@@ -652,7 +652,7 @@ function BlackHoleLab3D() {
   const t_ev = window.QGA_PHYSICS.blackHoleEvaporationTimeYears(M);
 
   return (
-    <div className="viz-frame">
+    <div className="viz-frame" id="shot-section-bh">
       <div className="kerr-observatory-head">
         <div className="kerr-head-plate">
           <div className="kerr-head-ident">KERR<span>OBS</span></div>
@@ -701,7 +701,7 @@ function BlackHoleLab3D() {
           ))}
         </div>
       </div>
-      <Scene3D height={460} aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
+      <Scene3D height={460} shotSpace="bh-kerr" aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
         initial={{ ...kerrCameraGoal(atlasState.bhInclination, atlasState.bhObserverDistance, 0.35), fov: 40, minR: 12, maxR: 120 }}
         cameraGoal={cameraGoal}
         overlay={<KerrGeometryMap geometry={eased} exact={exactGeometry} layers={layers} open={mapOpen}

@@ -13,6 +13,7 @@ const QGA_DEFAULT_STATE = {
   qftLabMode: "field", qftLabMass: 1, hawkingLabAmplify: 12,
   adsLabLinks: 5, adsLabRegion: 0.5, colliderChannel: "h2gg", spinFoamJMax: 2, spinFoamMode: "network",
   annotations: [],
+  shot: "",
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -28,6 +29,7 @@ const QGA_STATE_KEYS = {
   qftLabMode: "qftm", qftLabMass: "qftms", hawkingLabAmplify: "hla",
   adsLabLinks: "aln", adsLabRegion: "alr", colliderChannel: "clc", spinFoamJMax: "sfj", spinFoamMode: "sfm",
   annotations: "ann",
+  shot: "shot",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 // Closure-tracked pending state: the last state written (or silently applied)
@@ -68,6 +70,7 @@ function qgaReadState(search = window.location.search) {
     const raw = params.get(param); if (raw == null) continue;
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
+    else if (key === "shot") state[key] = raw;
     else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets" || key === "gwLoop") {
       if (raw === "true" || raw === "false") state[key] = raw === "true";
     }
@@ -105,6 +108,9 @@ function qgaReadState(search = window.location.search) {
   state.gwDuration = qgaClamp(Math.round(state.gwDuration), 1, 32); state.seed = Math.trunc(state.seed) || 42;
   state.gwM1 = qgaClamp(Math.round(state.gwM1), 5, 200); state.gwM2 = qgaClamp(Math.round(state.gwM2), 5, 200);
   state.gwEvent = /^[A-Za-z0-9_-]{3,40}$/.test(state.gwEvent) ? state.gwEvent : QGA_DEFAULT_STATE.gwEvent;
+  // Cinematic deep link (Prompt 09): format-validated shot id. Unknown ids are
+  // ignored by the runtime, so old URLs and typos render exactly as before.
+  state.shot = /^[a-z0-9][a-z0-9-]{0,62}$/.test(state.shot) ? state.shot : "";
   // GW instrument (Prompt 06): playback-shaping keys, additive with safe
   // defaults; audio is never enabled by a URL, only by an in-page gesture.
   state.gwPitch = qgaClamp(state.gwPitch, 0.25, 4);

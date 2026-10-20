@@ -124,6 +124,18 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Prompt 09: cinematic direction system. The runtime assembles the
+    // camera director, scroll driver, shot-space registry, and the
+    // capability-gated scene transition; the transition shader is prewarmed
+    // in the background so the first view change never blocks.
+    const cinematic = await import("./cinematic/runtime.mjs");
+    const cinematicRuntime = cinematic.createCinematicRuntime();
+    Object.defineProperty(window, "QGA_CINEMATIC", {
+      value: Object.freeze(cinematicRuntime),
+      configurable: true,
+    });
+    void cinematicRuntime.prewarmTransition();
+
     const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
     const sources = await Promise.all(scripts.map(async (script) => {
       const response = await fetch(script.src);

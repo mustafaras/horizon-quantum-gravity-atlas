@@ -17,7 +17,7 @@
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
   ConeGeometry, GridHelper, Group, IcosahedronGeometry, Line, LineBasicMaterial,
-  LineLoop, Mesh, MeshBasicMaterial, PlaneGeometry, Points, PointsMaterial,
+  Mesh, MeshBasicMaterial, PlaneGeometry, Points, PointsMaterial,
   Sprite, SpriteMaterial, TubeGeometry, Vector3,
 } from "three";
 import {
@@ -199,11 +199,13 @@ export function createRgFlowFieldRuntime({
         new Vector3(sign * RG_VALIDITY_G * SCALE.x, plane.position.y + h / 2, zSpan / 2),
         new Vector3(sign * RG_VALIDITY_G * SCALE.x, plane.position.y - h / 2, zSpan / 2),
       ];
-      const edgeGeo = track(new BufferGeometry().setFromPoints(edgePts));
+      // explicit segment pairs: the WebGPU renderer does not draw LineLoop
+      const loopPts = [...edgePts, edgePts[0]];
+      const edgeGeo = track(new BufferGeometry().setFromPoints(loopPts));
       const edgeMat = track(new LineBasicMaterial({
         color: 0xff6a5a, transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false,
       }));
-      group.add(new LineLoop(edgeGeo, edgeMat));
+      group.add(new Line(edgeGeo, edgeMat));
     }
   }
 
