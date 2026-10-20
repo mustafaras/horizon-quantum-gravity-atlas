@@ -727,11 +727,26 @@ function VEffPanel({ mass, body, view, stRef }) {
   }
   if (bound) vTop = Math.max(vTop, E);
   const span = Math.max(1e-6, vTop - vMin);
-  // The Newtonian branch has no r^-3 term, so near the star it sits far above
-  // the GR well. Give it headroom, but cap it so the well keeps its shape.
-  const vNTop = VN(rMin);
-  const yLo = vMin - 0.22 * span;
-  const yHi = vTop + Math.min(0.90 * span, Math.max(0.30 * span, vNTop - vTop));
+  // A finer ladder for the value axis keeps five ticks on every scenario; the
+  // radius axis keeps the classic ladder so its labels stay 1, 2, 3, 4.
+  const niceStep = (raw, ladder) => {
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return ladder.map((m) => m * mag).find((s) => s >= raw) || raw;
+  };
+  const NICE_V = [1, 1.5, 2, 2.5, 3, 4, 5, 10];
+  const NICE_R = [1, 2, 2.5, 5, 10];
+  // Frame the curve that is actually drawn. The Newtonian branch has no r^-3
+  // term, so near the star it sits far above the GR well; reserving room for it
+  // pushed the well into the bottom half of the plot. Let it leave the frame
+  // instead — its divergence is the point — and land the top edge on a round
+  // value so the axis reads cleanly.
+  const yLo = vMin - 0.16 * span;
+  const yTopRaw = vTop + 0.14 * span;
+  const yStep = niceStep((yTopRaw - yLo) / 5, NICE_V);
+  // Land the top edge on a round value, but on a finer grid than the ticks so
+  // the rounding cannot re-open the headroom it was meant to close.
+  const ySub = yStep / 5;
+  const yHi = Math.ceil(yTopRaw / ySub) * ySub;
 
   const xs = (r) => PL + (r - rMin) / (rMax - rMin) * iw;
   const ys = (v) => PT + (yHi - v) / (yHi - yLo) * ih;
@@ -757,27 +772,29 @@ function VEffPanel({ mass, body, view, stRef }) {
   const path = (idx) => pts.map((s, i) =>
     (i ? "L" : "M") + xs(s[0]).toFixed(1) + " " + ys(s[idx]).toFixed(1)).join(" ");
 
-  const niceStep = (raw) => {
-    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-    return [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
-  };
   const yTicks = [];
   {
-    const step = niceStep((yHi - yLo) / 5);
-    for (let v = Math.ceil(yLo / step) * step; v <= yHi + 1e-9; v += step) yTicks.push(v);
+    const i0 = Math.ceil(yLo / yStep - 1e-9);
+    const i1 = Math.floor(yHi / yStep + 1e-9);
+    for (let i = i0; i <= i1; i++) yTicks.push(i * yStep);
   }
+  const xStep = niceStep((rMax - rMin) / 5, NICE_R);
   const xTicks = [];
   {
-    const step = niceStep((rMax - rMin) / 5);
-    for (let r = Math.ceil(rMin / step) * step; r <= rMax + 1e-9; r += step) xTicks.push(r);
+    const i0 = Math.ceil(rMin / xStep - 1e-9);
+    const i1 = Math.floor(rMax / xStep + 1e-9);
+    for (let i = i0; i <= i1; i++) xTicks.push(i * xStep);
   }
-  const fmt = (v) => {
-    const av = Math.abs(v);
-    if (av >= 100) return v.toFixed(0);
-    if (av >= 10) return v.toFixed(1);
-    if (av >= 1) return v.toFixed(2);
-    return v.toFixed(3);
+  // One decimal count per axis, so the tick column reads as a column.
+  const decOf = (step) => {
+    for (let d = 0; d <= 4; d++) {
+      const s = step * Math.pow(10, d);
+      if (Math.abs(s - Math.round(s)) < 1e-9) return d;
+    }
+    return 4;
   };
+  const fmtY = (v) => v.toFixed(decOf(yStep));
+  const fmtX = (v) => v.toFixed(decOf(xStep));
 
   const hex = body ? "#" + body.hex.toString(16).padStart(6, "0") : "#7fe0ee";
   const inRange = (r) => r > rMin && r < rMax;
@@ -809,14 +826,14 @@ function VEffPanel({ mass, body, view, stRef }) {
           <g key={"y" + v}>
             <line x1={PL} y1={ys(v)} x2={W - PR} y2={ys(v)} stroke="#1b2740" strokeWidth="0.7"></line>
             <text x={PL - 7} y={ys(v) + 2.8} fill="#6f86a8" fontSize="8.5"
-              fontFamily="var(--font-mono)" textAnchor="end">{fmt(v)}</text>
+              fontFamily="var(--font-mono)" textAnchor="end">{fmtY(v)}</text>
           </g>
         ))}
         {xTicks.map((r) => (
           <g key={"x" + r}>
             <line x1={xs(r)} y1={PT} x2={xs(r)} y2={H - PB} stroke="#1b2740" strokeWidth="0.7"></line>
             <text x={xs(r)} y={H - PB + 13} fill="#6f86a8" fontSize="8.5"
-              fontFamily="var(--font-mono)" textAnchor="middle">{fmt(r)}</text>
+              fontFamily="var(--font-mono)" textAnchor="middle">{fmtX(r)}</text>
           </g>
         ))}
         <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke="#2c3d5c" strokeWidth="1"></line>
