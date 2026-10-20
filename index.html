@@ -265,32 +265,38 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 }
 .panel-deck > .veff-wrap { grid-column: 1 / -1; }
 .panel-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 2px 12px;
   min-height: 22px;
-  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.18em;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--head); margin-bottom: 1px;
 }
-.panel-head em { font-style: normal; font-size: 9px; letter-spacing: 0.05em; text-transform: none; color: var(--text-dim); }
+.panel-head em { font-style: normal; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; color: var(--text-dim); }
+@media (max-width: 820px) {
+  /* Below this the two-column legends can no longer hold their longest label
+     ("Einstein ring θ_E = …") without clipping, so they stack. */
+  .ng-legend, .lens-legend { grid-template-columns: 1fr; }
+}
 @media (max-width: 720px) {
   .panel-deck { grid-template-columns: 1fr; gap: 14px; padding: 14px; }
   .panel-deck > .veff-wrap { grid-column: auto; }
 }
 .veff-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
 .veff-svg { width: 100%; height: auto; background: rgba(8, 13, 26, 0.55); border: 1px solid var(--line); border-radius: 10px; }
-.veff-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 4px 12px; align-items: center; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); margin-top: auto; }
+.veff-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: auto; }
 .veff-key { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .veff-key i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
 .veff-key i.dash { opacity: 0.55; }
 .veff-key i.dot { width: 7px; height: 7px; border-radius: 50%; }
 .veff-key i.ring { width: 7px; height: 7px; border-radius: 50%; border: 1.4px solid #fff; background: transparent; }
-.veff-formula { grid-column: 1 / -1; display: block; padding: 2px 0 4px; overflow-x: auto; overflow-y: hidden; }
+.veff-formula { flex: 1 0 100%; display: block; padding: 2px 0 4px; overflow-x: auto; overflow-y: hidden; }
 .veff-formula .katex { font-size: 0.92em; }
 .ng-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
 .ng-svg { width: 100%; height: auto; background: radial-gradient(circle at 50% 50%, rgba(12, 20, 38, 0.9), rgba(5, 8, 16, 0.95)); border: 1px solid var(--line); border-radius: 10px; }
-.ng-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: auto; }
+.ng-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: auto; }
 .ng-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .ng-legend i { display: inline-block; width: 12px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
-.ng-legend .ng-note { grid-column: 1 / -1; opacity: 0.8; }
+.ng-legend .ng-note { grid-column: 1 / -1; opacity: 0.8; white-space: normal; }
 @keyframes ng-flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 .ng-pulse { animation: ng-flow 3.6s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .ng-pulse { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: 0.85; } }
@@ -299,13 +305,13 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .lens-canvas { display: block; width: 100%; height: 100%; background: #02040a; border: 1px solid var(--line); border-radius: 10px; }
 .lens-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .lens-modes { display: inline-flex; gap: 4px; }
-.lens-mode { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text-dim); cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.lens-mode { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text-dim); cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s; }
 .lens-mode:hover { color: var(--head); border-color: var(--line-strong); }
 .lens-mode.is-on { color: var(--head); border-color: var(--acc); background: var(--acc-soft); }
-.lens-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: auto; }
+.lens-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: auto; }
 .lens-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .lens-legend i { display: inline-block; width: 12px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
-.lens-legend .lens-note { grid-column: 1 / -1; opacity: 0.8; }
+.lens-legend .lens-note { grid-column: 1 / -1; opacity: 0.8; white-space: normal; }
 .toggle-row { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
 .toggle-track { width: 30px; height: 16px; border-radius: 9px; border: 1px solid var(--line-strong); background: rgba(148,176,224,0.08); position: relative; transition: background 0.15s; flex: 0 0 auto; }
 .toggle-track.on { background: var(--acc-soft); border-color: var(--acc); }
