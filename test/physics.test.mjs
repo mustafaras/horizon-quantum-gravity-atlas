@@ -14,7 +14,7 @@ import {
   grPerihelionPrecession, grLightDeflection, planckUnits, probeEnergyGeV,
   GR_ENGINE_C2, grEngineGM, grCaptureRadius, grPlungeStep,
   GR_CURVATURE_SCENARIOS, grCurvatureScenario,
-  grPhotonSphereRadius, grIscoRadius, grNullStep, grEffectivePotential,
+  grPhotonSphereRadius, grIscoRadius, grNullStep, grNullDeflection, grEffectivePotential,
   grPetersDerivatives, grLenseThirringDeg,
   blackHoleEvaporationTimeYears, pageCurveEntropy, hawkingSpectralShape,
   clamp, transformPair, QFT_CONSTANTS,
@@ -650,6 +650,50 @@ test("null geodesic captures rays inside the b_crit = 3√3·GM/c² cone", () =>
   let qMin = Infinity;
   for (let i = 0; i < 40000 && q.x < 14; i++) { grNullStep(q, rs, 0.002); qMin = Math.min(qMin, Math.hypot(q.x, q.y)); }
   assert.ok(qMin > 2 * rs, "wide ray escapes");
+});
+
+test("grNullDeflection reproduces the weak-field 4GM/c²b limit", () => {
+  const gm = grEngineGM(5);
+  const rs = 2 * gm / GR_ENGINE_C2;
+  const b = 6;
+  const d = grNullDeflection(b, gm, GR_ENGINE_C2);
+  assert.equal(d.captured, false);
+  const expected = 2 * rs / b;       // = 4GM/c²b
+  assert.ok(Math.abs(d.deflection - expected) / expected < 0.05,
+    `deflection ${d.deflection} vs ${expected}`);
+});
+
+test("grNullDeflection splits escape from capture exactly at b_crit", () => {
+  for (const M of [1, 5, 9]) {
+    const gm = grEngineGM(M);
+    const bCrit = 3 * Math.sqrt(3) * gm / GR_ENGINE_C2;
+    assert.equal(grNullDeflection(0.9 * bCrit, gm, GR_ENGINE_C2).captured, true, `M=${M} inside`);
+    const out = grNullDeflection(1.1 * bCrit, gm, GR_ENGINE_C2);
+    assert.equal(out.captured, false, `M=${M} outside`);
+    // just outside the cone the ray still wraps far past 90° before escaping
+    assert.ok(out.deflection > Math.PI / 2, `M=${M} strong-field wrap ${out.deflection}`);
+  }
+});
+
+test("grNullDeflection is step-converged at the shipped dt", () => {
+  const gm = grEngineGM(5);
+  for (const b of [1.25, 3.3]) {
+    const coarse = grNullDeflection(b, gm, GR_ENGINE_C2, { dt: 0.002 });
+    const fine = grNullDeflection(b, gm, GR_ENGINE_C2, { dt: 0.0001 });
+    const errDeg = Math.abs(coarse.deflection - fine.deflection) * 180 / Math.PI;
+    assert.ok(errDeg < 0.1, `b=${b}: ${errDeg.toFixed(4)}° from converged`);
+  }
+});
+
+test("grNullDeflection decreases monotonically with impact parameter", () => {
+  const gm = grEngineGM(7);
+  let prev = Infinity;
+  for (const b of [1.0, 1.5, 2.2, 3.3, 5.0]) {
+    const d = grNullDeflection(b, gm, GR_ENGINE_C2);
+    assert.equal(d.captured, false, `b=${b} should escape`);
+    assert.ok(d.deflection < prev, `b=${b}: ${d.deflection} < ${prev}`);
+    prev = d.deflection;
+  }
 });
 
 test("effective potential: GR well is deeper than Newtonian at small r", () => {

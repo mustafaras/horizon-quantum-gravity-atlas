@@ -176,6 +176,34 @@ export function grNullStep(p, rs, dt) {
   return p;
 }
 
+// Total deflection of a null geodesic with impact parameter b, integrated to
+// convergence. The ray starts at x = −x0 moving along +x with |v| = v0 and is
+// followed until it escapes past r = 2·x0 or falls inside the photon sphere.
+// Returns { captured, deflection, steps }; `deflection` is the magnitude of the
+// asymptotic direction change in radians (0 when captured).
+export function grNullDeflection(b, gm, c2, opts = {}) {
+  const rs = (2 * gm) / c2;
+  const v0 = opts.v0 ?? 4;
+  const x0 = opts.x0 ?? 7.6;
+  const dt = opts.dt ?? 0.002;
+  const maxSteps = opts.maxSteps ?? 200000;
+  const rCap = 1.5 * rs;
+  const q = { x: -x0, y: b, vx: v0, vy: 0 };
+  const a0 = Math.atan2(q.vy, q.vx);
+  let steps = 0;
+  while (steps < maxSteps) {
+    grNullStep(q, rs, dt);
+    steps++;
+    const r = Math.hypot(q.x, q.y);
+    if (r < rCap) return { captured: true, deflection: 0, steps };
+    if (q.x > x0 || r > 2 * x0) break;
+  }
+  let d = Math.atan2(q.vy, q.vx) - a0;
+  while (d > Math.PI) d -= 2 * Math.PI;
+  while (d < -Math.PI) d += 2 * Math.PI;
+  return { captured: false, deflection: Math.abs(d), steps };
+}
+
 // Post-Newtonian effective potential V_eff(r) = −GM/r + L²/2r² − GM·L²/c²r³.
 // The last term is the GR correction that removes the stable-orbit barrier
 // below the ISCO and creates the photon sphere.

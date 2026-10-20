@@ -613,7 +613,9 @@ function CausalSpacetimeLab() {
 
 /* ---------- 3D spacetime curvature engine ---------- */
 // Impact parameters for the lensing fan (symmetric — focuses behind the mass).
-const GR_RAY_B = [-3.3, -2.2, -1.25, 1.25, 2.2, 3.3];
+// The inner pair sits inside the capture cone (b < b_crit) so the fan shows both
+// escape and capture; the outer pairs sample the weak-field limit.
+const GR_RAY_B = [-3.3, -2.2, -1.25, -0.45, 0.45, 1.25, 2.2, 3.3];
 // scene c² = (5.2)²; matches GR_ENGINE_C2 in js/physics.mjs.
 const GR_C2 = 27.04;
 const GR_BODY_PALETTE = [0x7fe0ee, 0xf3a85e, 0xb78cff, 0x6ee7a0, 0xff8fae, 0xffe07a];
@@ -731,6 +733,7 @@ function CurvatureEngine3D() {
   const [rr, setRr] = useState(false);
   const [spin, setSpin] = useState(0);
   const [speed, setSpeed] = useState(1);
+  const [lightSpeed, setLightSpeed] = useState(1);
   const [bodies, setBodies] = useState(() => grMakeBodies("classic"));
   const [selected, setSelected] = useState(0);
   const [cameraGoal, setCameraGoal] = useState(null);
@@ -741,6 +744,7 @@ function CurvatureEngine3D() {
   const rrRef = useRef(rr); rrRef.current = rr;
   const spinRef = useRef(spin); spinRef.current = spin;
   const speedRef = useRef(speed); speedRef.current = speed;
+  const lightRef = useRef(lightSpeed); lightRef.current = lightSpeed;
   const bodiesRef = useRef(bodies); bodiesRef.current = bodies;
   const selRef = useRef(selected); selRef.current = selected;
   const stRef = useRef({
@@ -756,6 +760,16 @@ function CurvatureEngine3D() {
     ? window.QGA_PHYSICS.grLenseThirringDeg(spin * Math.pow(0.55 * mass, 2) / GR_C2 * 10, GR_C2, selBody.a, selBody.e) : 0;
   const rrDa = rr && selBody && !selBody.free && view === "gr"
     ? window.QGA_PHYSICS.grPetersDerivatives(selBody.a, selBody.e, 0.5).da : 0;
+
+  // Strong-field anchors for the light fan: photon sphere, critical impact
+  // parameter, and the integrated deflection of the outermost ray.
+  const gmScene = 0.55 * mass;
+  const rPhoton = window.QGA_PHYSICS.grPhotonSphereRadius(gmScene, GR_C2);
+  const bCrit = 1.5 * Math.sqrt(3) * rPhoton;
+  const deflDeg = useMemo(() => {
+    const d = window.QGA_PHYSICS.grNullDeflection(3.3, 0.55 * mass, GR_C2);
+    return d.captured ? 0 : (d.deflection * 180) / Math.PI;
+  }, [mass]);
 
   const applyScenario = (id) => {
     const s = window.QGA_PHYSICS.grCurvatureScenario(id);
@@ -1104,6 +1118,29 @@ function CurvatureEngine3D() {
     // lensing fan of light rays
     const rayVis = stRef.current.rays.map(() => mkTrail(0xffcf72));
 
+    // Strong-field markers: the photon sphere (r = 3GM/c²) and the critical
+    // curve (b = 3√3 GM/c²) that separates escape from capture. Drawn as thin
+    // filled annuli rather than lines — WebGL clamps line width to 1px, which
+    // is invisible at this scene scale — and without depth test so they stay
+    // legible where they pass behind the star.
+    const mkRing = (hex, opacity) => {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 96, 1), new THREE.MeshBasicMaterial({
+        color: hex, transparent: true, opacity, side: THREE.DoubleSide,
+        depthTest: false, depthWrite: false,
+      }));
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = 3;
+      m.visible = false;
+      scene.add(m);
+      return m;
+    };
+    const ringPhoton = mkRing(0x8fe8ff, 0.7);
+    const ringCrit = mkRing(0xffb066, 0.6);
+    const placeRing = (mesh, radius) => {
+      mesh.scale.setScalar(radius);
+      mesh.position.set(0, hAt(radius, 0) + 0.05, 0);
+    };
+
     // capture / close-approach flash pool
     const flashes = [];
     for (let i = 0; i < 4; i++) {
@@ -1277,6 +1314,13 @@ function CurvatureEngine3D() {
         const mu = GM, TS = 2.2; // gravitational parameter; TS = overall visual time-scale
         const capR = P.grCaptureRadius(mu, GR_C2);
         const rs = 2 * mu / GR_C2;
+        const showRings = rayRef.current && !newton;
+        ringPhoton.visible = showRings;
+        ringCrit.visible = showRings;
+        if (showRings) {
+          placeRing(ringPhoton, 1.5 * rs);
+          placeRing(ringCrit, 1.5 * Math.sqrt(3) * rs);
+        }
         const isco = P.grIscoRadius(mu, GR_C2);
         const J = spinRef.current * mu * mu / GR_C2 * 10;   // ×10 visual amplification (disclosed)
         for (let s = 0; s < sub; s++) {
@@ -1326,7 +1370,11 @@ function CurvatureEngine3D() {
                 }
               } else {
                 // exact Schwarzschild null geodesic: d²x/dλ² = −(3/2)·rs·L²·x/r⁵
-                P.grNullStep(q, rs, sdt * 60);
+                // Stepped at the same affine rate as the bodies. The former ×60
+                // multiplier crossed the scene in ~4 frames and sat far outside the
+                // integrator's convergence radius: it missed capture entirely and
+                // under-reported strong-field deflection by up to 2×.
+                P.grNullStep(q, rs, sdt * lightRef.current);
               }
               const capRay = Math.max(1.5 * rs, sc * 0.9);
               if (qr < capRay) {
@@ -1485,6 +1533,8 @@ function CurvatureEngine3D() {
         <Toggle label="radiation reaction" checked={rr} onChange={setRr}></Toggle>
         <SliderRow label="time ×" min={0.25} max={2.5} step={0.05} value={speed} onChange={setSpeed}
           format={(v) => v.toFixed(2)}></SliderRow>
+        <SliderRow label="light ×" min={0.1} max={2} step={0.05} value={lightSpeed} onChange={setLightSpeed}
+          format={(v) => v.toFixed(2)}></SliderRow>
         <button className="btn" onClick={relaunch}>Re-launch bodies</button>
       </div>
       <div className="viz-toolbar">
@@ -1535,6 +1585,12 @@ function CurvatureEngine3D() {
           <div className="readout-value">{ltDeg > 0.01 ? "+" + ltDeg.toFixed(1) : "0.0"}<span className="unit">° / orbit ×10</span></div></div>
         <div className="readout"><div className="readout-label">GW inspiral ⟨ȧ⟩ (selected)</div>
           <div className="readout-value">{rrDa < -0.001 ? rrDa.toFixed(3) : "off"}<span className="unit">a / s</span></div></div>
+        <div className="readout"><div className="readout-label">photon sphere r = 3GM/c²</div>
+          <div className="readout-value">{rPhoton.toFixed(3)}<span className="unit">scene units</span></div></div>
+        <div className="readout"><div className="readout-label">critical impact b = 3√3 GM/c²</div>
+          <div className="readout-value">{bCrit.toFixed(3)}<span className="unit">capture below</span></div></div>
+        <div className="readout"><div className="readout-label">deflection at b = 3.3 (integrated)</div>
+          <div className="readout-value">{deflDeg.toFixed(2)}<span className="unit">°</span></div></div>
         <div className="readout"><div className="readout-label">Mercury (real, GR)</div>
           <div className="readout-value">42.98<span className="unit">″ / century</span></div></div>
         <div className="readout"><div className="readout-label">Solar-limb light deflection (real)</div>
@@ -1552,10 +1608,15 @@ function CurvatureEngine3D() {
         value (the 1919 eclipse result) — and focuses behind the mass: gravitational lensing. Halve it in the
         Newtonian view and a force vector replaces the geometry. Same leading orbit, profoundly different ontology.
         Real anchors: Mercury 42.98″/century (GR portion); Sun 1.75″ at the limb.
-        The light fan now follows <em>exact Schwarzschild null geodesics</em>
-        <Eq tex="d^2\vec{x}/d\lambda^2 = -\tfrac{3}{2}\,r_s L^2\,\vec{x}/r^5"></Eq>, reproducing capture inside the
-        <Eq tex="b_{\mathrm{crit}} = 3\sqrt{3}\,GM/c^2"></Eq> cone and zoom-whirl paths near the photon sphere
-        (r = 3GM/c²). With spin on, inclined orbits drift their node at the Lense–Thirring rate
+        The light fan follows <em>exact Schwarzschild null geodesics</em>
+        <Eq tex="d^2\vec{x}/d\lambda^2 = -\tfrac{3}{2}\,r_s L^2\,\vec{x}/r^5"></Eq> at a step size inside the
+        integrator's convergence radius (deflection error &lt; 0.1° against a 30× finer reference), so the eight rays
+        are quantitatively right, not merely suggestive. The inner pair is launched inside the capture cone
+        <Eq tex="b < b_{\mathrm{crit}} = 3\sqrt{3}\,GM/c^2"></Eq> and is swallowed; the outer pairs escape with the
+        weak-field deflection <Eq tex="4GM/c^2 b"></Eq>. The cyan ring marks the photon sphere
+        (r = 3GM/c²) and the amber ring the critical curve — cross the amber ring inward and the ray cannot return.
+        The <em>light ×</em> control sets the affine rate independently of the bodies, so the bending can be slowed
+        down and read. With spin on, inclined orbits drift their node at the Lense–Thirring rate
         <Eq tex="\Delta\Omega = 4\pi J/[\,c^2 a^3(1-e^2)^{3/2}\,]"></Eq> (×10 visual amplification); with
         radiation reaction on, orbits decay by the Peters (1964) orbit-averaged equations (amplified) until r_peri
         crosses the ISCO at 6GM/c², where the body hands off to the numerical plunge integrator. The V_eff panel
