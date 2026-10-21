@@ -21,10 +21,11 @@ import {
 import { adsLabState, ADS_LAB_DEFAULTS } from "../../science/ads-geometry.mjs";
 import { seededRng } from "../../physics.mjs";
 import { sharedGlowTexture, ringGlowTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
+
+const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
 const S = 3.2; // disk radius in world units
-const GOLD = new Color(1.0, 0.78, 0.35);
-const MAGENTA = new Color(0.88, 0.35, 0.85);
 
 const to3 = (p, lift = 0) => new Vector3(p.x * S, lift, p.y * S);
 
@@ -39,6 +40,8 @@ export function createAdsLabRuntime({
   const lab = adsLabState({ links, region, regulator, centralCharge });
   const group = new Group();
   group.name = "ads-holography-lab";
+  const GOLD = tokenColor("lab-gold");
+  const MAGENTA = tokenColor("lab-magenta");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
 
@@ -73,7 +76,7 @@ export function createAdsLabRuntime({
 
   // ---- disk floor: faint radial glow so the bulk reads as a surface ----
   const floorMat = track(new MeshBasicMaterial({
-    map: track(ringGlowTexture(0.0, 0.08, 0.98)), color: 0x1a2a4a,
+    map: track(ringGlowTexture(0.0, 0.08, 0.98)), color: TK.hex("pigment-blue-29-c06"),
     transparent: true, opacity: 0.55, depthWrite: false,
   }));
   const floor = new Mesh(track(new PlaneGeometry(S * 2.3, S * 2.3)), floorMat);
@@ -83,10 +86,10 @@ export function createAdsLabRuntime({
 
   // ---- hyperbolic grid: rings, spokes, weaving geodesic arcs (all tested) ----
   const gridLineMat = track(new LineBasicMaterial({
-    color: 0x4a6ea8, transparent: true, opacity: 0.22, depthWrite: false,
+    color: TK.hex("pigment-blue-54"), transparent: true, opacity: 0.22, depthWrite: false,
   }));
   const arcLineMat = track(new LineBasicMaterial({
-    color: 0x5a7ec8, transparent: true, opacity: 0.3, depthWrite: false,
+    color: TK.hex("pigment-blue-60-c12"), transparent: true, opacity: 0.3, depthWrite: false,
   }));
   for (const poly of lab.grid.ringPolys) {
     const g = track(new BufferGeometry());
@@ -126,7 +129,7 @@ export function createAdsLabRuntime({
   // ---- conformal boundary: bright ring + partition nodes with glow ----
   const ringGeo = track(new TorusGeometry(S, 0.028, 10, 160));
   const ringMat = track(new MeshBasicMaterial({
-    color: 0x6fd0e0, transparent: true, opacity: 0.9,
+    color: TK.hex("pigment-cyan-80-c09"), transparent: true, opacity: 0.9,
     blending: AdditiveBlending, depthWrite: false,
   }));
   const ring = new Mesh(ringGeo, ringMat);
@@ -138,7 +141,7 @@ export function createAdsLabRuntime({
   for (const iv of lab.geodesics) {
     const p = iv.points[0]; // first boundary endpoint of each interval
     const gm = track(new SpriteMaterial({
-      map: sharedGlowTexture(), color: 0x9fe8f0, transparent: true, opacity: 0.55,
+      map: sharedGlowTexture(), color: TK.hex("pigment-cyan-89"), transparent: true, opacity: 0.55,
       blending: AdditiveBlending, depthWrite: false,
     }));
     const sp = new Sprite(gm);
@@ -155,7 +158,7 @@ export function createAdsLabRuntime({
     const curve = new CatmullRomCurve3(iv.points.map((p) => to3(p, 0.012)));
     const geo = track(new TubeGeometry(curve, 48, 0.022, 6, false));
     const mat = track(new MeshBasicMaterial({
-      color: 0xb06ae0, transparent: true, opacity: 0.5,
+      color: TK.hex("pigment-violet-65-c18"), transparent: true, opacity: 0.5,
       blending: AdditiveBlending, depthWrite: false,
     }));
     partitionMats.push(mat);

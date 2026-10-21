@@ -6,12 +6,12 @@ function HorizonMark({ className }) {
     <svg className={className} viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <circle cx="20" cy="20" r="18" stroke="var(--acc)" strokeWidth="0.8" opacity="0.28"></circle>
       <circle cx="20" cy="20" r="12.5" stroke="var(--acc)" strokeWidth="1" opacity="0.55"></circle>
-      <circle cx="20" cy="20" r="6.6" fill="#02040a"></circle>
+      <circle cx="20" cy="20" r="6.6" fill={QGA_TOKENS.css("pigment-grey-11")}></circle>
       <circle cx="20" cy="20" r="6.6" stroke="var(--gold)" strokeWidth="1.4"></circle>
       <circle cx="20" cy="20" r="6.6" stroke="var(--gold)" strokeWidth="3" opacity="0.18"></circle>
       <g className="bm-orbit">
         <circle cx="32.5" cy="20" r="2.1" fill="var(--acc)"></circle>
-        <circle cx="7.5" cy="20" r="1.2" fill="#cfe0ff" opacity="0.7"></circle>
+        <circle cx="7.5" cy="20" r="1.2" fill={QGA_TOKENS.css("pigment-blue-90")} opacity="0.7"></circle>
       </g>
     </svg>
   );
@@ -48,7 +48,7 @@ function HorizonIntro() {
 }
 
 const QGA_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accent": "#54aeff",
+  "accent": QGA_TOKENS.css("accent"),
   "starfield": true,
   "uiScale": 15.5,
   "vizMode": "cinematic",
@@ -438,7 +438,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
           onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></TweakRadio>
         <TweakSection label="Theme"></TweakSection>
         <TweakColor label="Accent" value={t.accent}
-          options={["#54aeff", "#46d4e0", "#ff7b72", "#ffb454"]}
+          options={[QGA_TOKENS.css("accent"), QGA_TOKENS.css("accent-2"), QGA_TOKENS.css("signal-danger"), QGA_TOKENS.css("signal-warm")]}
           onChange={(v) => setTweak("accent", v)}></TweakColor>
         <TweakToggle label="Ambient starfield" value={t.starfield}
           onChange={(v) => setTweak("starfield", v)}></TweakToggle>

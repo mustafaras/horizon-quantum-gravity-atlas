@@ -10,7 +10,7 @@ function RgFlowFieldLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createRgFlowFieldRuntime } = await LABS.loadRgFlowField();
-    ctx.scene.fog = new ctx.THREE.FogExp2(0x04060b, 0.014);
+    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.014);
     const runtime = createRgFlowFieldRuntime({ model: state.rgModel, params, seed: 42 });
     ctx.scene.add(runtime.mesh);
     ctx.label("EFFECTIVE · g-runs via the shared beta function; r-direction γ(g)=g²/(1+g²) is a disclosed teaching model",

@@ -1,0 +1,52 @@
+/* styles/modules/standard-model.css — particle table, gauge sectors, comparator.
+   Extracted verbatim from index.html (S02); stylesheets are linked in original cascade order. */
+/* ---------- Particle table ---------- */
+.pt-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+@media (max-width: 860px) { .pt-wrap { grid-template-columns: 1fr; } }
+.pt-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+@media (max-width: 560px) { .pt-grid { grid-template-columns: repeat(4, 1fr); } }
+.pt-cell {
+  position: relative; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+  background: rgba(10,15,24,0.7); padding: 8px 6px 7px 6px; text-align: center;
+  transition: border-color 0.15s, background 0.15s, opacity 0.2s, box-shadow 0.15s;
+  font-family: inherit; color: inherit;
+}
+.pt-cell:hover { border-color: var(--line-strong); }
+.pt-cell.lit { border-color: var(--cell-color, var(--acc)); box-shadow: 0 0 14px -2px var(--cell-color, var(--acc)); background: rgba(14,20,32,0.9); }
+.pt-cell.dimmed { opacity: 0.28; }
+.pt-cell.selected { border-color: var(--cell-color, var(--acc)); background: rgba(14,20,32,0.95); box-shadow: 0 0 0 1px var(--cell-color, var(--acc)); }
+.pt-sym { font-family: var(--font-head); font-size: 19px; font-weight: 600; color: var(--head); line-height: 1.1; }
+.pt-sym sub, .pt-sym sup { font-size: 11px; }
+.pt-name { font-size: 10px; color: var(--text-dim); margin-top: 2px; line-height: 1.2; }
+.pt-mass { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+.pt-class-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--cell-color, var(--acc)); opacity: 0.85; }
+.pt-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+.pt-legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; }
+.pt-legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+.pt-detail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-height: 200px; }
+.pt-detail dl { margin: 10px 0 0 0; }
+.pt-detail dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-top: 9px; }
+.pt-detail dd { margin: 1px 0 0 0; font-size: 13.5px; }
+
+/* ---------- Gauge sectors ---------- */
+.gauge-sectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 720px) { .gauge-sectors { grid-template-columns: 1fr; } }
+.gauge-sector { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px; cursor: pointer; text-align: left; color: inherit; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+.gauge-sector:hover { border-color: var(--line-strong); }
+.gauge-sector.on { border-color: var(--sector-color); box-shadow: 0 0 18px -6px var(--sector-color); }
+.gauge-sector .gs-group { font-family: var(--font-head); font-size: 19px; font-weight: 600; color: var(--head); }
+.gauge-sector .gs-name { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sector-color); margin-top: 3px; }
+
+/* ---------- Comparator ---------- */
+.cmp-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(7,10,17,0.8); }
+.cmp-table { border-collapse: collapse; width: 100%; min-width: 760px; }
+.cmp-table th, .cmp-table td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 10px 12px; font-size: 12.5px; vertical-align: top; text-align: left; }
+.cmp-table th:last-child, .cmp-table td:last-child { border-right: none; }
+.cmp-table tr:last-child td { border-bottom: none; }
+.cmp-table th { font-family: var(--font-head); font-size: 12.5px; color: var(--head); background: rgba(148,176,224,0.05); position: sticky; top: 0; }
+.cmp-rowlabel { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; background: rgba(148,176,224,0.03); }
+.cmp-cell { cursor: pointer; transition: background 0.15s; }
+.cmp-cell:hover { background: var(--acc-soft); }
+.cmp-cell.sel { background: var(--acc-soft); box-shadow: inset 0 0 0 1px var(--acc); }
+.cmp-expand { margin-top: 14px; }
+

@@ -10,7 +10,7 @@ function AdsLabSection({ compact = false } = {}) {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createAdsLabRuntime } = await LABS.loadAdsLab();
-    ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.012);
+    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02"), 0.012);
     const runtime = createAdsLabRuntime({ links, region, seed: 42, camera: ctx.camera });
     ctx.scene.add(runtime.mesh);
     ctx.label("CONJECTURAL · AdS/CFT reading — the geometry is exact Poincaré math, the duality is not proven for our universe",

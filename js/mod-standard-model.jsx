@@ -1,5 +1,5 @@
 // mod-standard-model.jsx — Module 01: The Standard Model
-const SM3D_HEX = { quark: 0xb98af0, lepton: 0x6fd0e0, gauge: 0x6ba6ff, higgs: 0xe8c170 };
+const SM3D_HEX = { quark: QGA_TOKENS.hex("pigment-violet-72-c15"), lepton: QGA_TOKENS.hex("pigment-cyan-80-c09"), gauge: QGA_TOKENS.hex("pigment-blue-72"), higgs: QGA_TOKENS.hex("pigment-amber-83") };
 const SM3D_POS = {
   u: [-2.8, 2.1, 0], c: [0, 2.1, 0], t: [2.8, 2.1, 0],
   d: [-2.8, 0.7, 0], s: [0, 0.7, 0], b: [2.8, 0.7, 0],
@@ -30,9 +30,9 @@ function ParticleArchitecture3D() {
 
   const build = (ctx) => {
     const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.016);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.6));
-    const key = new THREE.DirectionalLight(0xbcd0ff, 0.9);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.6));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-86"), 0.9);
     key.position.set(4, 8, 6);
     scene.add(key);
     // quantum-field substrate: an undulating grid the particles live above (the "vacuum")
@@ -53,7 +53,7 @@ function ParticleArchitecture3D() {
     const fAttr = new THREE.BufferAttribute(fPos, 3);
     fGeo.setAttribute("position", fAttr);
     fGeo.setIndex(fSeg);
-    const fMat = new THREE.LineBasicMaterial({ color: 0x2a3a58, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, depthWrite: false });
+    const fMat = new THREE.LineBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-35"), transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, depthWrite: false });
     const fieldFloor = new THREE.LineSegments(fGeo, fMat);
     fieldFloor.position.y = -3.4;
     scene.add(fieldFloor);
@@ -88,7 +88,7 @@ function ParticleArchitecture3D() {
       if (p.higgs === true) {
         const halo = new THREE.Mesh(
           new THREE.TorusGeometry(scl * 1.7, 0.025, 8, 40),
-          new THREE.MeshBasicMaterial({ color: 0xe8c170, transparent: true, opacity: 0.75 })
+          new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-amber-83"), transparent: true, opacity: 0.75 })
         );
         halo.position.copy(m.position);
         halo.visible = false;
@@ -101,16 +101,16 @@ function ParticleArchitecture3D() {
     // selection marker
     const marker = new THREE.Mesh(
       new THREE.TorusGeometry(1, 0.03, 8, 48),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+      new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-white"), transparent: true, opacity: 0.9 })
     );
     scene.add(marker);
 
     // gauge-group symmetry layers (schematic): three stacked rings
     const layers = new THREE.Group();
     const layerDefs = [
-      ["SU(3)ᴄ · color", 5.8, -1.0, 0xb98af0],
-      ["SU(2)ʟ · weak isospin", 5.1, -1.9, 0x6ba6ff],
-      ["U(1)ʏ · hypercharge", 4.4, -2.8, 0x6fd0e0],
+      ["SU(3)ᴄ · color", 5.8, -1.0, QGA_TOKENS.hex("pigment-violet-72-c15")],
+      ["SU(2)ʟ · weak isospin", 5.1, -1.9, QGA_TOKENS.hex("pigment-blue-72")],
+      ["U(1)ʏ · hypercharge", 4.4, -2.8, QGA_TOKENS.hex("pigment-cyan-80-c09")],
     ];
     for (const [name, R, z, hex] of layerDefs) {
       const ring = new THREE.Mesh(
@@ -173,7 +173,7 @@ function ParticleArchitecture3D() {
     // pool of travelling force-carrier packets (visualizes interaction = boson exchange)
     const packets = [];
     for (let i = 0; i < 18; i++) {
-      const s = s3dGlow(0xffffff, 0.85, 0.0);
+      const s = s3dGlow(QGA_TOKENS.hex("pigment-white"), 0.85, 0.0);
       s.userData = { t: Math.random(), speed: 0.32 + Math.random() * 0.36 };
       scene.add(s); packets.push(s);
     }
@@ -193,7 +193,7 @@ function ParticleArchitecture3D() {
           fa[fidx(i, j) * 3 + 1] = (Math.sin(x * 0.5 + t * 0.9) * Math.cos(z * 0.4 - t * 0.7)) * famp;
         }
         fAttr.needsUpdate = true;
-        fMat.color.setHex(higgsRef.current ? 0x6a5a30 : 0x2a3a58);
+        fMat.color.setHex(higgsRef.current ? QGA_TOKENS.hex("pigment-amber-47") : QGA_TOKENS.hex("pigment-blue-35"));
         fMat.opacity = 0.24 + (higgsRef.current ? 0.14 : 0);
 
         // nodes: zero-point jitter + spin-correct motion
@@ -332,7 +332,7 @@ function ParticleAtlas() {
     return (
       <button key={p.id}
         className={"pt-cell" + (lit ? " lit" : "") + (dim && !higgsLit ? " dimmed" : "") + (selected === p.id ? " selected" : "")}
-        style={{ "--cell-color": color, outline: higgsLit ? "1px solid oklch(0.8 0.1 85 / 0.55)" : "none" }}
+        style={{ "--cell-color": color, outline: higgsLit ? `1px solid ${QGA_TOKENS.alpha("pigment-amber-80", 0.55)}` : "none" }}
         onMouseEnter={() => setHover(p.id)} onMouseLeave={() => setHover(null)}
         onFocus={() => setHover(p.id)} onBlur={() => setHover(null)}
         onClick={() => setSelected(p.id)}>
@@ -446,12 +446,12 @@ function HiggsPotentialViz() {
     for (let p = -1.2; p <= 1.2; p += 0.02) { vmin = Math.min(vmin, V(p)); vmax = Math.max(vmax, V(p)); }
     const Y = (v) => cy - ((v - vmin) / (vmax - vmin + 1e-9)) * h * 0.7;
     // axes
-    ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(cx, 14); ctx.lineTo(cx, cy + 6); ctx.moveTo(cx - scaleX * 1.25, Y(0)); ctx.lineTo(cx + scaleX * 1.25, Y(0)); ctx.stroke();
-    ctx.fillStyle = "rgba(148,176,224,0.5)"; ctx.font = "10px IBM Plex Mono";
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5); ctx.font = QGA_TOKENS.monoPx(10);
     ctx.fillText("V(φ)", cx + 8, 22); ctx.fillText("|φ|→", cx + scaleX * 1.1, Y(0) - 8);
     // curve
-    ctx.strokeStyle = "oklch(0.8 0.1 85)"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.strokeStyle = QGA_TOKENS.css("pigment-amber-80"); ctx.lineWidth = 2; ctx.beginPath();
     for (let p = -1.2; p <= 1.2; p += 0.01) {
       const x = cx + p * scaleX, y = Y(V(p));
       if (p === -1.2) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -461,18 +461,18 @@ function HiggsPotentialViz() {
     const vev = mu2 < 0 ? Math.sqrt(-mu2 / (2 * lam)) : 0;
     const wob = prm ? 0 : Math.sin(t * 2.2) * 0.03;
     const px = cx + (vev + wob) * scaleX, py = Y(V(vev + wob));
-    ctx.fillStyle = "oklch(0.78 0.1 200)";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-cyan-78");
     ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "oklch(0.78 0.1 200 / 0.4)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-cyan-78", 0.4);
     ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.stroke();
     if (vev > 0) {
-      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       ctx.fillText("⟨φ⟩ = v ≠ 0 — symmetry broken", cx + scaleX * 0.18, Y(V(vev)) + 22);
       // mirror minimum
-      ctx.fillStyle = "oklch(0.78 0.1 200 / 0.35)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-cyan-78", 0.35);
       ctx.beginPath(); ctx.arc(cx - vev * scaleX, Y(V(vev)), 5, 0, Math.PI * 2); ctx.fill();
     } else {
-      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       ctx.fillText("⟨φ⟩ = 0 — symmetric vacuum", cx + 14, Y(0) - 26);
     }
   }, [mu2, prm]);
@@ -511,12 +511,12 @@ function NeutrinoOscillationLab() {
     const X = (le) => padL + (le / LEmax) * pw;
     const Y = (p) => padT + ph * (1 - p);
     // axes + gridlines
-    ctx.strokeStyle = "rgba(148,176,224,0.22)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.55)";
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
     ctx.textAlign = "right";
     [0, 0.5, 1].forEach((p) => { ctx.fillText(p.toFixed(1), padL - 6, Y(p) + 3);
-      ctx.strokeStyle = "rgba(148,176,224,0.08)"; ctx.beginPath(); ctx.moveTo(padL, Y(p)); ctx.lineTo(padL + pw, Y(p)); ctx.stroke(); });
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08); ctx.beginPath(); ctx.moveTo(padL, Y(p)); ctx.lineTo(padL + pw, Y(p)); ctx.stroke(); });
     ctx.textAlign = "center";
     for (let le = 0; le <= LEmax; le += 300) ctx.fillText(le, X(le), padT + ph + 16);
     ctx.fillText("L / E   [km / GeV]", padL + pw / 2, h - 4);
@@ -532,12 +532,12 @@ function NeutrinoOscillationLab() {
       ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = col; ctx.fillText(lbl, lx, padT + 12);
     };
-    drawCurve(survP, "oklch(0.8 0.12 235)", "P(νμ→νμ) survival", padL + 6);
-    drawCurve(appP, "oklch(0.78 0.14 320)", "P(νμ→ντ) appearance", padL + pw - 150);
+    drawCurve(survP, QGA_TOKENS.css("pigment-azure-80"), "P(νμ→νμ) survival", padL + 6);
+    drawCurve(appP, QGA_TOKENS.css("pigment-magenta-78"), "P(νμ→ντ) appearance", padL + pw - 150);
     // T2K baseline marker (L=295 km, E≈0.6 GeV → L/E≈490)
-    ctx.strokeStyle = "rgba(224,179,90,0.5)"; ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.5); ctx.setLineDash([3, 3]);
     ctx.beginPath(); ctx.moveTo(X(490), padT); ctx.lineTo(X(490), padT + ph); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(224,179,90,0.85)"; ctx.fillText("T2K", X(490) + 4, padT + ph - 6);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("T2K", X(490) + 4, padT + ph - 6);
   }, [dm2, s22t]);
   return (
     <div className="viz-frame">
@@ -570,7 +570,7 @@ function MixingGrid({ title, rows, cols, mat, sub }) {
     <div className="panel" style={{ flex: 1 }}>
       <h3 style={{ marginBottom: 4 }}>{title}</h3>
       <p className="small dim" style={{ margin: "0 0 10px" }}>{sub}</p>
-      <div style={{ display: "grid", gridTemplateColumns: "auto repeat(3, 1fr)", gap: 4, fontFamily: "IBM Plex Mono, monospace", fontSize: 11 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "auto repeat(3, 1fr)", gap: 4, fontFamily: "var(--font-mono)", fontSize: 11 }}>
         <div></div>
         {cols.map((c) => <div key={c} style={{ textAlign: "center", color: "var(--dim)", paddingBottom: 2 }}>{c}</div>)}
         {rows.map((r, i) => [
@@ -582,8 +582,8 @@ function MixingGrid({ title, rows, cols, mat, sub }) {
             // the mid range, where neither label colour reaches the floor.
             return <div key={i + "-" + j} style={{
               textAlign: "center", padding: "8px 2px", borderRadius: 5,
-              background: "oklch(0.48 0.13 250 / " + a.toFixed(2) + ")",
-              color: "#cdd9ee", fontWeight: v > 0.4 ? 600 : 400,
+              background: QGA_TOKENS.alpha("pigment-azure-48", a.toFixed(2)),
+              color: QGA_TOKENS.css("pigment-blue-88-c03"), fontWeight: v > 0.4 ? 600 : 400,
             }}>{v < 0.01 ? v.toExponential(1) : v.toFixed(3)}</div>;
           }),
         ])}

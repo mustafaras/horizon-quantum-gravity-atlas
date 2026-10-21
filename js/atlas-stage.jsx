@@ -80,7 +80,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
         .catch((error) => QGA_RENDER.renderDiagnostics.message(diagnosticId, error.message))
         .finally(releaseScene);
     };
-    scene.fog = new THREE.FogExp2(0x04060b, 0.018);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.018);
     const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
     camera.position.set(0, 2.5, 34);
 
@@ -92,9 +92,10 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     // live palette (smoothly lerped toward target)
     let hue = targetRef.current[0], aShift = targetRef.current[1], warp = targetRef.current[2], neb = targetRef.current[3];
     const colPrimary = new THREE.Color(), colAccent = new THREE.Color();
+    const tintPrimary = QGA_TOKENS.tint("primary"), tintAccent = QGA_TOKENS.tint("accent");
     const setCols = () => {
-      colPrimary.setHSL(((hue % 360) + 360) % 360 / 360, 0.62, 0.62);
-      colAccent.setHSL(((hue + aShift) % 360 + 360) % 360 / 360, 0.58, 0.6);
+      colPrimary.setHSL(((hue % 360) + 360) % 360 / 360, tintPrimary.s, tintPrimary.l);
+      colAccent.setHSL(((hue + aShift) % 360 + 360) % 360 / 360, tintAccent.s, tintAccent.l);
     };
     setCols();
 
@@ -142,7 +143,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       core2 = s3dGlow(colAccent.getHex(), 54, 0.28);
       core2.position.set(28, -10, -56);
       root.add(core2);
-      core3 = s3dGlow(0xeaf2ff, 30, 0.22);
+      core3 = s3dGlow(QGA_TOKENS.hex("pigment-grey-96"), 30, 0.22);
       core3.position.set(-6, 2, -50);
       root.add(core3);
     }
@@ -151,7 +152,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     const heroN = detail0 === "low" ? 7 : 12;
     const heroes = [];
     for (let i = 0; i < heroN; i++) {
-      const s = window.s3dGlow ? s3dGlow(0xdfeaff, 2.6, 0.85) : null;
+      const s = window.s3dGlow ? s3dGlow(QGA_TOKENS.hex("pigment-blue-94"), 2.6, 0.85) : null;
       if (!s) break;
       s.position.set((Math.random() - 0.5) * 76, (Math.random() - 0.5) * 38, -8 - Math.random() * 52);
       s.userData.tw = Math.random() * Math.PI * 2;

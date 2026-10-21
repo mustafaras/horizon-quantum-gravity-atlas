@@ -46,10 +46,10 @@ function qgaGlowTexture() {
   c.width = c.height = 128;
   const g = c.getContext("2d");
   const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.25, "rgba(255,255,255,0.55)");
-  grad.addColorStop(0.6, "rgba(255,255,255,0.12)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
+  grad.addColorStop(0, QGA_TOKENS.css("pigment-white"));
+  grad.addColorStop(0.25, QGA_TOKENS.alpha("pigment-white", 0.55));
+  grad.addColorStop(0.6, QGA_TOKENS.alpha("pigment-white", 0.12));
+  grad.addColorStop(1, QGA_TOKENS.alpha("pigment-white", 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 128, 128);
   window.__qgaGlowTex = new THREE.CanvasTexture(c);
@@ -76,7 +76,7 @@ function s3dLine(points, color, opacity = 0.8, dashed = false) {
   if (dashed) line.computeLineDistances();
   return line;
 }
-function s3dGrid(size, divisions, color = 0x2a3a58, opacity = 0.35) {
+function s3dGrid(size, divisions, color = QGA_TOKENS.hex("pigment-blue-35"), opacity = 0.35) {
   const g = new THREE.GridHelper(size, divisions, color, color);
   g.material.transparent = true;
   g.material.opacity = opacity;
@@ -257,7 +257,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       let overlay;
       if (object.isMesh && object.geometry) {
         const material = new THREE.MeshBasicMaterial({
-          color: 0x6fb3ff, transparent: true, opacity: 0,
+          color: QGA_TOKENS.hex("pigment-azure-75"), transparent: true, opacity: 0,
           blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
         });
         overlay = new THREE.Mesh(object.geometry, material);
@@ -266,7 +266,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         overlay.rotation.copy(object.rotation);
         overlay.renderOrder = 6;
       } else {
-        overlay = s3dGlow(0x6fb3ff, (target.glowScale ?? 4.5) * intensity, 0);
+        overlay = s3dGlow(QGA_TOKENS.hex("pigment-azure-75"), (target.glowScale ?? 4.5) * intensity, 0);
         overlay.position.copy(object.position);
       }
       (object.parent ?? scene).add(overlay);

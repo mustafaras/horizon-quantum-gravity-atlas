@@ -43,11 +43,11 @@ function makeEvent(seed = Date.now()) {
   return tracks;
 }
 const TRACK_STYLE = {
-  jet: { color: "oklch(0.78 0.1 200)", dash: [], width: 1.4 },
-  electron: { color: "oklch(0.74 0.12 235)", dash: [], width: 1.8 },
-  muon: { color: "oklch(0.72 0.13 300)", dash: [], width: 1.8 },
-  photon: { color: "oklch(0.8 0.1 85)", dash: [4, 4], width: 1.6 },
-  met: { color: "oklch(0.7 0.13 25)", dash: [8, 5], width: 2 },
+  jet: { color: QGA_TOKENS.css("pigment-cyan-78"), dash: [], width: 1.4 },
+  electron: { color: QGA_TOKENS.css("pigment-azure-74"), dash: [], width: 1.8 },
+  muon: { color: QGA_TOKENS.css("pigment-violet-72"), dash: [], width: 1.8 },
+  photon: { color: QGA_TOKENS.css("pigment-amber-80"), dash: [4, 4], width: 1.6 },
+  met: { color: QGA_TOKENS.css("pigment-red-70"), dash: [8, 5], width: 2 },
 };
 function trackPoint(tr, f, R) {
   // f in [0,1] along track; curvature bends phi
@@ -67,20 +67,20 @@ function ColliderEvent() {
     const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.46;
     // detector rings: tracker, ECAL, HCAL, muon system
     const rings = [
-      [0.55, "tracker", "rgba(120,150,210,0.25)"],
-      [0.68, "ECAL", "rgba(120,150,210,0.2)"],
-      [0.82, "HCAL", "rgba(120,150,210,0.16)"],
-      [1.0, "muon system", "rgba(120,150,210,0.12)"],
+      [0.55, "tracker", QGA_TOKENS.alpha("pigment-blue-67", 0.25)],
+      [0.68, "ECAL", QGA_TOKENS.alpha("pigment-blue-67", 0.2)],
+      [0.82, "HCAL", QGA_TOKENS.alpha("pigment-blue-67", 0.16)],
+      [1.0, "muon system", QGA_TOKENS.alpha("pigment-blue-67", 0.12)],
     ];
-    ctx.font = "9px IBM Plex Mono";
+    ctx.font = QGA_TOKENS.monoPx(9);
     for (const [rr, name, col] of rings) {
       ctx.strokeStyle = col; ctx.lineWidth = rr === 1.0 ? 1.5 : 1;
       ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, R * rr), 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = "rgba(148,176,224,0.45)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.45);
       ctx.fillText(name, cx + R * rr * 0.711 + 4, cy - R * rr * 0.703);
     }
     // beam axis
-    ctx.strokeStyle = "rgba(148,176,224,0.3)"; ctx.setLineDash([2, 6]);
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.3); ctx.setLineDash([2, 6]);
     ctx.beginPath(); ctx.moveTo(cx - R * 1.04, cy); ctx.lineTo(cx + R * 1.04, cy); ctx.stroke();
     ctx.setLineDash([]);
     // growth animation: tracks extend over first 1.6s after (re)start
@@ -112,7 +112,7 @@ function ColliderEvent() {
       }
     });
     // vertex
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-white");
     ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI * 2); ctx.fill();
     if (!sim.tRef || !window.__qga) {} // noop
   }, []);
@@ -197,7 +197,7 @@ function GWInspiral() {
     for (const rp of st.ripples) {
       const age = t - rp.born;
       const rr = rp.r + age * orbR * 1.1;
-      ctx.strokeStyle = "rgba(140,190,255," + Math.max(0, 0.3 - age * 0.08).toFixed(3) + ")";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-79", Math.max(0, 0.3 - age * 0.08).toFixed(3));
       ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.arc(cx, cyTop, Math.max(0, rr), 0, Math.PI * 2); ctx.stroke();
     }
@@ -210,31 +210,31 @@ function GWInspiral() {
         const x = cx + Math.cos(ang) * rr, y = cyTop + Math.sin(ang) * rr * 0.96;
         const rad = 5 + m * 9;
         const g = ctx.createRadialGradient(x, y, 0, x, y, rad * 2);
-        g.addColorStop(0, "rgba(220,232,255,0.95)"); g.addColorStop(1, "rgba(220,232,255,0)");
+        g.addColorStop(0, QGA_TOKENS.alpha("pigment-blue-93", 0.95)); g.addColorStop(1, QGA_TOKENS.alpha("pigment-blue-93", 0));
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(x, y, rad * 2, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#0a0e16";
+        ctx.fillStyle = QGA_TOKENS.css("pigment-grey-16");
         ctx.beginPath(); ctx.arc(x, y, rad * 0.55, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "rgba(220,232,255,0.8)"; ctx.stroke();
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93", 0.8); ctx.stroke();
       };
       drawBody(r1, st.phi, m1);
       drawBody(r2, st.phi + Math.PI, m2);
     } else {
       const g = ctx.createRadialGradient(cx, cyTop, 0, cx, cyTop, 36);
-      g.addColorStop(0, "rgba(220,232,255,0.9)"); g.addColorStop(1, "rgba(220,232,255,0)");
+      g.addColorStop(0, QGA_TOKENS.alpha("pigment-blue-93", 0.9)); g.addColorStop(1, QGA_TOKENS.alpha("pigment-blue-93", 0));
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cyTop, 36, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#0a0e16"; ctx.beginPath(); ctx.arc(cx, cyTop, 11, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "rgba(220,232,255,0.8)"; ctx.stroke();
-      ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(170,195,230,0.8)";
+      ctx.fillStyle = QGA_TOKENS.css("pigment-grey-16"); ctx.beginPath(); ctx.arc(cx, cyTop, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93", 0.8); ctx.stroke();
+      ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.8);
       ctx.fillText("merger → ringdown", cx + 30, cyTop - 20);
     }
     // waveform panel
     const py0 = h - plotH - 16;
-    ctx.strokeStyle = "rgba(148,176,224,0.2)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.2);
     ctx.strokeRect(40, py0, w - 60, plotH);
-    ctx.font = "9.5px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.5)";
+    ctx.font = QGA_TOKENS.monoPx(9.5); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);
     ctx.fillText("strain h(t) — schematic chirp", 46, py0 - 6);
-    ctx.strokeStyle = "oklch(0.78 0.1 200)"; ctx.lineWidth = 1.4; ctx.beginPath();
+    ctx.strokeStyle = QGA_TOKENS.css("pigment-cyan-78"); ctx.lineWidth = 1.4; ctx.beginPath();
     st.wave.forEach((v, i) => {
       const x = 40 + (i / 520) * (w - 60);
       const y = py0 + plotH / 2 - (v / 3) * plotH * 0.46;
@@ -286,9 +286,9 @@ function GWStrainScope({ strainRef }) {
       const data = strainRef.current;
       const mid = h * 0.52;
       // baseline + frame
-      ctx.strokeStyle = "rgba(148,176,224,0.16)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.16); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
-      ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       ctx.fillText("strain  h(t)", 10, 16);
       if (!data.length) return;
       const tNow = data[data.length - 1].t;
@@ -300,14 +300,14 @@ function GWStrainScope({ strainRef }) {
       for (let i = 1; i < data.length; i++) {
         if (data[i].merged && !data[i - 1].merged) {
           const mx = X(data[i].t);
-          ctx.strokeStyle = "rgba(224,179,90,0.5)"; ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.5); ctx.setLineDash([4, 4]);
           ctx.beginPath(); ctx.moveTo(mx, 8); ctx.lineTo(mx, h - 8); ctx.stroke(); ctx.setLineDash([]);
-          ctx.fillStyle = "rgba(224,179,90,0.85)"; ctx.fillText("merger", mx + 4, h - 10);
+          ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("merger", mx + 4, h - 10);
         }
       }
       // waveform
-      ctx.strokeStyle = "oklch(0.82 0.13 230)"; ctx.lineWidth = 1.8;
-      ctx.shadowColor = "oklch(0.82 0.13 230)"; ctx.shadowBlur = 8;
+      ctx.strokeStyle = QGA_TOKENS.css("pigment-azure-82"); ctx.lineWidth = 1.8;
+      ctx.shadowColor = QGA_TOKENS.css("pigment-azure-82"); ctx.shadowBlur = 8;
       ctx.beginPath();
       let started = false;
       for (let i = 0; i < data.length; i++) {
@@ -318,7 +318,7 @@ function GWStrainScope({ strainRef }) {
       ctx.stroke(); ctx.shadowBlur = 0;
       // "now" cursor + frequency readout
       const last = data[data.length - 1];
-      ctx.fillStyle = "rgba(170,195,230,0.9)"; ctx.textAlign = "right";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.9); ctx.textAlign = "right";
       ctx.fillText("inspiral  →  chirp  →  merger  →  ringdown", w - 10, 16);
       ctx.textAlign = "left";
     };
@@ -341,8 +341,8 @@ function GWInspiral3D() {
   const build = (ctx) => {
     const { THREE, scene, camera } = ctx;
     const parked = ctx.motion() === 0; // reduced motion: park at a deterministic showcase state
-    scene.fog = new THREE.FogExp2(0x04060b, 0.011);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.5));
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.011);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.5));
 
     // seeded starfield backdrop (deterministic across loads, not just captures)
     const starRandom = QGA_SEEDED((qgaReadState().seed ^ 0x9e37) >>> 0);
@@ -356,14 +356,14 @@ function GWInspiral3D() {
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
     scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({
-      size: 1.3, map: qgaGlowTexture(), color: 0xb6c8f0, transparent: true,
+      size: 1.3, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-83"), transparent: true,
       opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     })));
 
     const det = ctx.settings.current.detail3d;
     const SEG = det === "low" ? 52 : det === "ultra" ? 96 : 72;
     const EXT = 13;
-    const dKey = new THREE.DirectionalLight(0xcfe0ff, 0.85); dKey.position.set(3, 8, 5); scene.add(dKey);
+    const dKey = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-90"), 0.85); dKey.position.set(3, 8, 5); scene.add(dKey);
     const geo = new THREE.PlaneGeometry(EXT, EXT, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
     const colAttr = new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3);
@@ -374,7 +374,7 @@ function GWInspiral3D() {
     // in the flat far field.
     const surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       vertexColors: true, metalness: 0.38, roughness: 0.36,
-      emissive: 0x0a1428, emissiveIntensity: 0.45, transparent: true, opacity: 0.92,
+      emissive: QGA_TOKENS.hex("pigment-blue-19-c04"), emissiveIntensity: 0.45, transparent: true, opacity: 0.92,
       side: THREE.DoubleSide,
     }));
     scene.add(surf);
@@ -389,11 +389,11 @@ function GWInspiral3D() {
     }));
     wire.renderOrder = 2;
     scene.add(wire);
-    const cCrest = new THREE.Color(0x8fd8ff);
-    const cTrough = new THREE.Color(0xb48af0);
-    const cFlat = new THREE.Color(0x101d36);
-    const cHot = new THREE.Color(0xeaf6ff);
-    const cWire = new THREE.Color(0x2c4a7c);
+    const cCrest = new THREE.Color(QGA_TOKENS.hex("pigment-azure-85"));
+    const cTrough = new THREE.Color(QGA_TOKENS.hex("pigment-violet-71-c15"));
+    const cFlat = new THREE.Color(QGA_TOKENS.hex("pigment-blue-23-c05"));
+    const cHot = new THREE.Color(QGA_TOKENS.hex("pigment-grey-97-c02"));
+    const cWire = new THREE.Color(QGA_TOKENS.hex("pigment-blue-41"));
     const tmpC = new THREE.Color();
     const pos = geo.attributes.position;
     const nV = pos.count;
@@ -412,11 +412,11 @@ function GWInspiral3D() {
       const c = document.createElement("canvas"); c.width = c.height = 256;
       const g = c.getContext("2d");
       const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, "rgba(255,255,255,0)");
-      grad.addColorStop(0.4, "rgba(255,255,255,0)");
-      grad.addColorStop(0.55, "rgba(255,255,255,0.9)");
-      grad.addColorStop(0.72, "rgba(255,255,255,0.2)");
-      grad.addColorStop(0.9, "rgba(255,255,255,0)");
+      grad.addColorStop(0, QGA_TOKENS.alpha("pigment-white", 0));
+      grad.addColorStop(0.4, QGA_TOKENS.alpha("pigment-white", 0));
+      grad.addColorStop(0.55, QGA_TOKENS.alpha("pigment-white", 0.9));
+      grad.addColorStop(0.72, QGA_TOKENS.alpha("pigment-white", 0.2));
+      grad.addColorStop(0.9, QGA_TOKENS.alpha("pigment-white", 0));
       g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
       return new THREE.CanvasTexture(c);
     })();
@@ -424,20 +424,20 @@ function GWInspiral3D() {
     // crisp black holes: opaque silhouette + billboarded photon-ring halo
     const mkHole = (tint) => {
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.34, 48, 32),
-        new THREE.MeshBasicMaterial({ color: 0x020409 }));
+        new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-grey-11-c02") }));
       const halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
         map: ringTex, color: tint, transparent: true, opacity: 0.9,
         blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
       }));
       halo.renderOrder = 6;
       const warmth = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: qgaGlowTexture(), color: 0x9fb8e8, transparent: true, opacity: 0.26,
+        map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-78-c07"), transparent: true, opacity: 0.26,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }));
       scene.add(m); scene.add(halo); scene.add(warmth);
       return { m, halo, warmth, trail: [] };
     };
-    const b1 = mkHole(0x9fc8ff), b2 = mkHole(0xc9a2ff);
+    const b1 = mkHole(QGA_TOKENS.hex("pigment-blue-82")), b2 = mkHole(QGA_TOKENS.hex("pigment-violet-78"));
     const orbR = 3.1;
 
     // orbital trails: additive lines whose colour fades head → tail to black
@@ -454,7 +454,7 @@ function GWInspiral3D() {
       l.frustumCulled = false; scene.add(l);
       return { buf, col, g, l, base: new THREE.Color(hex) };
     };
-    const t1 = mkTrail(0x8fd0ff), t2 = mkTrail(0xc9a2ff);
+    const t1 = mkTrail(QGA_TOKENS.hex("pigment-azure-83-c09")), t2 = mkTrail(QGA_TOKENS.hex("pigment-violet-78"));
     const writeTrail = (tr, list) => {
       const n = Math.min(list.length, TRAIL_N);
       for (let i = 0; i < n; i++) {
@@ -468,19 +468,19 @@ function GWInspiral3D() {
 
     // merger read-out: an expanding crisp ring + a brief compact core flash
     const burst = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
-      map: ringTex, color: 0xeaf2ff, transparent: true, opacity: 0,
+      map: ringTex, color: QGA_TOKENS.hex("pigment-grey-96"), transparent: true, opacity: 0,
       blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
     }));
     burst.renderOrder = 7;
     scene.add(burst);
-    const coreFlash = ctx.glow(0xffffff, 1, 0);
+    const coreFlash = ctx.glow(QGA_TOKENS.hex("pigment-white"), 1, 0);
     scene.add(coreFlash);
 
     // expanding wavefront rings: the radiation visibly leaves the binary
     const wavefronts = [];
     for (let i = 0; i < 3; i++) {
       const ring = new THREE.Mesh(new THREE.RingGeometry(0.972, 1, 128), new THREE.MeshBasicMaterial({
-        color: 0x7fb8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+        color: QGA_TOKENS.hex("pigment-azure-77"), transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
         depthWrite: false, side: THREE.DoubleSide,
       }));
       ring.rotation.x = -Math.PI / 2;
@@ -727,14 +727,14 @@ function InvariantMassLab() {
     const X = (i) => padL + (i / IM_BINS) * plotW;
     const Y = (c) => padT + plotH * (1 - c / maxC);
     // axes
-    ctx.strokeStyle = "rgba(148,176,224,0.25)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.25); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke();
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.textAlign = "center";
     for (let gx = IM_MIN; gx <= IM_MAX; gx += 10) {
       const px = padL + ((gx - IM_MIN) / (IM_MAX - IM_MIN)) * plotW;
       ctx.fillText(gx, px, padT + plotH + 16);
-      ctx.strokeStyle = "rgba(148,176,224,0.08)"; ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08); ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
     }
     ctx.fillText("dielectron invariant mass  m(e⁺e⁻)  [GeV]", padL + plotW / 2, h - 4);
     ctx.save(); ctx.translate(13, padT + plotH / 2); ctx.rotate(-Math.PI / 2);
@@ -742,19 +742,19 @@ function InvariantMassLab() {
     ctx.textAlign = "left";
     // Z marker
     const zx = padL + ((MZ - IM_MIN) / (IM_MAX - IM_MIN)) * plotW;
-    ctx.strokeStyle = "rgba(224,179,90,0.4)"; ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.4); ctx.setLineDash([4, 4]);
     ctx.beginPath(); ctx.moveTo(zx, padT); ctx.lineTo(zx, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(224,179,90,0.85)"; ctx.fillText("Z⁰  91.19 GeV", zx + 5, padT + 12);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("Z⁰  91.19 GeV", zx + 5, padT + 12);
     // bars
     for (let i = 0; i < IM_BINS; i++) {
       const c = bins[i]; if (c === 0) continue;
       const x = X(i), bw = (plotW / IM_BINS) - 1.5, y = Y(c);
       const inZ = (IM_MIN + i * IM_BW) > 86 && (IM_MIN + i * IM_BW) < 96;
-      ctx.fillStyle = inZ ? "oklch(0.8 0.13 235)" : "oklch(0.6 0.07 230 / 0.7)";
+      ctx.fillStyle = inZ ? QGA_TOKENS.css("pigment-azure-80-c13") : QGA_TOKENS.alpha("pigment-azure-60", 0.7);
       ctx.fillRect(x, y, bw, padT + plotH - y);
     }
     // Poisson error bars
-    ctx.strokeStyle = "rgba(210,225,250,0.5)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-91", 0.5); ctx.lineWidth = 1;
     for (let i = 0; i < IM_BINS; i++) {
       const c = bins[i]; if (c === 0) continue;
       const x = X(i) + ((plotW / IM_BINS) - 1.5) / 2, err = Math.sqrt(c);
@@ -898,17 +898,17 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
     const padL = PADL, padR = PADR, padT = 26, padB = 34;
     const pw = w - padL - padR, ph = h - padT - padB;
     const mid = padT + ph / 2;
-    ctx.font = "9.5px IBM Plex Mono";
+    ctx.font = QGA_TOKENS.monoPx(9.5);
     // frame + grid
-    ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.lineWidth = 1;
     ctx.strokeRect(padL, padT, pw, ph);
-    ctx.strokeStyle = "rgba(148,176,224,0.07)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
     for (let i = 1; i < 4; i++) {
       const y = padT + (ph * i) / 4;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
     }
     ctx.beginPath(); ctx.moveTo(padL, mid); ctx.lineTo(padL + pw, mid);
-    ctx.strokeStyle = "rgba(148,176,224,0.16)"; ctx.stroke();
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.16); ctx.stroke();
     const tracePath = (samples, amax, upto) => {
       const n = samples.length;
       const end = upto == null ? n : Math.max(2, Math.min(n, upto));
@@ -945,80 +945,80 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
       // phase ribbon: inspiral → merger → ringdown
       const ribY = padT + ph + 8, ribH = 7;
       const m0 = X(Math.max(0, tMerge - 0.12)), m1 = X(tMerge + 0.02);
-      ctx.fillStyle = "rgba(90,185,255,0.28)"; ctx.fillRect(padL, ribY, m0 - padL, ribH);
-      ctx.fillStyle = "rgba(255,189,102,0.55)"; ctx.fillRect(m0, ribY, m1 - m0, ribH);
-      ctx.fillStyle = "rgba(181,140,255,0.35)"; ctx.fillRect(m1, ribY, padL + pw - m1, ribH);
-      ctx.fillStyle = "rgba(170,195,230,0.75)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.28); ctx.fillRect(padL, ribY, m0 - padL, ribH);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.55); ctx.fillRect(m0, ribY, m1 - m0, ribH);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-violet-73", 0.35); ctx.fillRect(m1, ribY, padL + pw - m1, ribH);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.75);
       ctx.fillText("INSPIRAL", padL + 6, ribY + ribH + 11);
-      ctx.fillStyle = "rgba(255,189,102,0.9)"; ctx.fillText("MERGER", m0 - 8, ribY + ribH + 11);
-      ctx.fillStyle = "rgba(181,140,255,0.85)"; ctx.fillText("RINGDOWN", Math.min(m1 + 6, padL + pw - 66), ribY + ribH + 11);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.9); ctx.fillText("MERGER", m0 - 8, ribY + ribH + 11);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-violet-73", 0.85); ctx.fillText("RINGDOWN", Math.min(m1 + 6, padL + pw - 66), ribY + ribH + 11);
       // merger marker
-      ctx.strokeStyle = "rgba(255,189,102,0.5)"; ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.5); ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(X(tMerge), padT); ctx.lineTo(X(tMerge), padT + ph); ctx.stroke();
       ctx.setLineDash([]);
       // ghost of the full signal, then the live revealed portion
-      drawTrace(genL1.samples, "rgba(255,189,102,0.16)", false);
-      drawTrace(genH1.samples, "rgba(90,185,255,0.16)", false);
-      drawTrace(genL1.samples, "rgba(255,189,102,0.75)", false, upto);
-      const amaxH1 = drawTrace(genH1.samples, "rgba(90,185,255,0.95)", true, upto);
+      drawTrace(genL1.samples, QGA_TOKENS.alpha("pigment-orange-84-c13", 0.16), false);
+      drawTrace(genH1.samples, QGA_TOKENS.alpha("pigment-azure-76", 0.16), false);
+      drawTrace(genL1.samples, QGA_TOKENS.alpha("pigment-orange-84-c13", 0.75), false, upto);
+      const amaxH1 = drawTrace(genH1.samples, QGA_TOKENS.alpha("pigment-azure-76", 0.95), true, upto);
       // leading-edge reveal glow: a soft gradient at the draw-in front
       if (frac < 1) {
         const ex = padL + frac * pw;
         const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
-        g.addColorStop(0, "rgba(90,185,255,0)");
-        g.addColorStop(1, "rgba(90,185,255,0.18)");
+        g.addColorStop(0, QGA_TOKENS.alpha("pigment-azure-76", 0));
+        g.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-76", 0.18));
         ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
       }
-      if (frac < 1) drawHead(genH1.samples, amaxH1, upto, "rgba(160,220,255,1)");
+      if (frac < 1) drawHead(genH1.samples, amaxH1, upto, QGA_TOKENS.css("pigment-azure-87"));
       // merger flash, decaying after the playhead crosses coalescence
       if (playT >= tMerge) {
         const flash = Math.max(0, 1 - (playT - tMerge) / 0.45);
         if (flash > 0) {
           const g = ctx.createRadialGradient(X(tMerge), mid, 0, X(tMerge), mid, 110);
-          g.addColorStop(0, "rgba(255,205,130," + (0.5 * flash).toFixed(3) + ")");
-          g.addColorStop(1, "rgba(255,205,130,0)");
+          g.addColorStop(0, QGA_TOKENS.alpha("pigment-orange-88", (0.5 * flash).toFixed(3)));
+          g.addColorStop(1, QGA_TOKENS.alpha("pigment-orange-88", 0));
           ctx.fillStyle = g; ctx.fillRect(padL, padT, pw, ph);
         }
       }
       // axis labels
-      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       for (let t = 0; t <= genH1.duration; t++) ctx.fillText(t.toFixed(0) + "s", X(t) - 6, padT + ph + 30);
       ctx.fillText("h(t) · normalized", 8, padT + 10);
       // legend
-      ctx.fillStyle = "rgba(90,185,255,0.95)"; ctx.fillRect(padL + pw - 196, 8, 14, 3);
-      ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("H1 Hanford", padL + pw - 178, 13);
-      ctx.fillStyle = "rgba(255,189,102,0.85)"; ctx.fillRect(padL + pw - 104, 8, 14, 3);
-      ctx.fillStyle = "rgba(170,195,230,0.85)"; ctx.fillText("L1 +7 ms", padL + pw - 86, 13);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.95); ctx.fillRect(padL + pw - 196, 8, 14, 3);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.85); ctx.fillText("H1 Hanford", padL + pw - 178, 13);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.85); ctx.fillRect(padL + pw - 104, 8, 14, 3);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.85); ctx.fillText("L1 +7 ms", padL + pw - 86, 13);
       // hover crosshair with live readout
       if (hover != null) {
         const hi = Math.max(0, Math.min(n - 1, Math.round((hover / genH1.duration) * (n - 1))));
         const hx = X(hover);
-        ctx.strokeStyle = "rgba(220,235,255,0.35)"; ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93-c03", 0.35); ctx.setLineDash([3, 4]);
         ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
         ctx.setLineDash([]);
         const fHz = genH1.freqTrack ? genH1.freqTrack[hi] : 0;
         const txt = "t " + hover.toFixed(2) + " s · h " + genH1.samples[hi].toFixed(2) + (fHz > 0 ? " · f " + fHz.toFixed(0) + " Hz" : "");
         const tw = ctx.measureText(txt).width + 14;
         const bx = Math.min(hx + 8, padL + pw - tw - 4);
-        ctx.fillStyle = "rgba(7,12,21,0.92)"; ctx.strokeStyle = "rgba(90,185,255,0.4)";
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-15", 0.92); ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.4);
         ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
-        ctx.fillStyle = "rgba(205,229,255,0.95)"; ctx.fillText(txt, bx + 7, padT + 18);
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-91-c04", 0.95); ctx.fillText(txt, bx + 7, padT + 18);
       }
     } else if (mode === "real" && realData) {
       const n = realData.samples.length;
       const upto = Math.round(frac * (n - 1)) + 1;
-      drawTrace(realData.samples, "rgba(70,212,224,0.16)", false);
-      const amax = drawTrace(realData.samples, "rgba(70,212,224,0.95)", true, upto);
+      drawTrace(realData.samples, QGA_TOKENS.alpha("accent-2", 0.16), false);
+      const amax = drawTrace(realData.samples, QGA_TOKENS.alpha("accent-2", 0.95), true, upto);
       if (frac < 1) {
         const ex = padL + frac * pw;
         const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
-        g.addColorStop(0, "rgba(70,212,224,0)");
-        g.addColorStop(1, "rgba(70,212,224,0.18)");
+        g.addColorStop(0, QGA_TOKENS.alpha("accent-2", 0));
+        g.addColorStop(1, QGA_TOKENS.alpha("accent-2", 0.18));
         ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
       }
-      if (frac < 1) drawHead(realData.samples, amax, upto, "rgba(160,240,244,1)");
+      if (frac < 1) drawHead(realData.samples, amax, upto, QGA_TOKENS.css("pigment-cyan-91-c08"));
       const effRate = realData.samples.length / realData.duration;
-      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       ctx.fillText("GPS " + realData.start.toFixed(0), padL, padT + ph + 30);
       ctx.textAlign = "right";
       ctx.fillText("GPS " + (realData.start + realData.duration).toFixed(0), padL + pw, padT + ph + 30);
@@ -1028,26 +1028,26 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
       if (hover != null) {
         const hi = Math.max(0, Math.min(n - 1, Math.round((hover / realData.duration) * (n - 1))));
         const hx = padL + (hover / realData.duration) * pw;
-        ctx.strokeStyle = "rgba(220,235,255,0.35)"; ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93-c03", 0.35); ctx.setLineDash([3, 4]);
         ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
         ctx.setLineDash([]);
         const txt = "GPS " + (realData.start + hover).toFixed(2) + " · h " + realData.samples[hi].toFixed(2);
         const tw = ctx.measureText(txt).width + 14;
         const bx = Math.min(hx + 8, padL + pw - tw - 4);
-        ctx.fillStyle = "rgba(7,12,21,0.92)"; ctx.strokeStyle = "rgba(70,212,224,0.4)";
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-15", 0.92); ctx.strokeStyle = QGA_TOKENS.alpha("accent-2", 0.4);
         ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
-        ctx.fillStyle = "rgba(205,245,248,0.95)"; ctx.fillText(txt, bx + 7, padT + 18);
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-cyan-94", 0.95); ctx.fillText(txt, bx + 7, padT + 18);
       }
     } else {
-      ctx.fillStyle = "rgba(148,176,224,0.55)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
       ctx.fillText(mode === "real" ? "Awaiting GWOSC observation — load or check network." : "Preparing seeded waveform…", padL + 10, mid);
     }
     // playhead
     if (hasData && frac > 0) {
       const px = padL + frac * pw;
-      ctx.strokeStyle = "rgba(235,244,255,0.55)"; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.55); ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(px, padT - 4); ctx.lineTo(px, padT + ph); ctx.stroke();
-      ctx.fillStyle = "rgba(235,244,255,0.8)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.8);
       ctx.beginPath(); ctx.moveTo(px - 4, padT - 4); ctx.lineTo(px + 4, padT - 4); ctx.lineTo(px, padT + 2); ctx.closePath(); ctx.fill();
     }
   }, [mode, genH1, genL1, realData, detector, fontsReady, playT, hover, duration, amax]);
@@ -1115,8 +1115,8 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
     if (freqTrack && frac > 0) {
       const n = freqTrack.length;
       const upto = Math.round(frac * (n - 1));
-      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 1.2;
-      ctx.shadowColor = "rgba(70,212,224,0.9)"; ctx.shadowBlur = 5;
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-white", 0.85); ctx.lineWidth = 1.2;
+      ctx.shadowColor = QGA_TOKENS.alpha("accent-2", 0.9); ctx.shadowBlur = 5;
       ctx.beginPath();
       let started = false;
       for (let i = 0; i <= upto; i += 4) {
@@ -1128,21 +1128,21 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
       }
       ctx.stroke(); ctx.shadowBlur = 0;
     }
-    ctx.strokeStyle = "rgba(148,176,224,0.18)"; ctx.strokeRect(padL, padT, pw, ph);
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.strokeRect(padL, padT, pw, ph);
     // playhead
     if (frac > 0) {
       const px = padL + frac * pw;
-      ctx.strokeStyle = "rgba(235,244,255,0.55)"; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.55); ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + ph); ctx.stroke();
     }
     // frequency axis (linear, up to Nyquist)
-    ctx.font = "9.5px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.65)";
+    ctx.font = QGA_TOKENS.monoPx(9.5); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.65);
     const ny = spec.nyquist;
     const ticks = ny >= 200 ? [32, 64, 128, 192, 256].filter((f) => f <= ny) : [ny / 4, ny / 2, (3 * ny) / 4];
     for (const f of ticks) {
       const y = padT + ph - (f / ny) * ph;
       ctx.fillText(f.toFixed(0), 12, y + 3);
-      ctx.strokeStyle = "rgba(148,176,224,0.08)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08);
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
     }
     ctx.fillText("Hz", 12, padT - 2);
@@ -1152,10 +1152,10 @@ function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, n
     const lgX = padL + pw + 10, lgW = 12;
     for (let i = 0; i < ph; i++) {
       const [r, g, b] = gwColormap(1 - i / ph);
-      ctx.fillStyle = "rgb(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + ")";
+      ctx.fillStyle = QGA_TOKENS.rgb255(r, g, b);
       ctx.fillRect(lgX, padT + i, lgW, 1.5);
     }
-    ctx.fillStyle = "rgba(148,176,224,0.65)";
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.65);
     ctx.fillText(spec.maxDb.toFixed(0), lgX + lgW + 4, padT + 8);
     ctx.fillText((spec.maxDb - 46).toFixed(0), lgX + lgW + 4, padT + ph);
     ctx.fillText("dB", lgX + 2, padT + ph + 12);

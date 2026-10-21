@@ -25,7 +25,7 @@ function PlanckFluctuationCanvas({ logRef }) {
     };
     ctx.lineWidth = 1;
     for (let j = 0; j < n; j++) {
-      ctx.strokeStyle = "rgba(120,150,210," + (0.16 + fluct * 0.25).toFixed(3) + ")";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-67", (0.16 + fluct * 0.25).toFixed(3));
       ctx.beginPath();
       for (let i = 0; i < n; i++) {
         const x = i * gw + jit(i, j, 1), y = j * gh + jit(i, j, 2);
@@ -34,7 +34,7 @@ function PlanckFluctuationCanvas({ logRef }) {
       ctx.stroke();
     }
     for (let i = 0; i < n; i++) {
-      ctx.strokeStyle = "rgba(120,150,210," + (0.16 + fluct * 0.25).toFixed(3) + ")";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-67", (0.16 + fluct * 0.25).toFixed(3));
       ctx.beginPath();
       for (let j = 0; j < n; j++) {
         const x = i * gw + jit(i, j, 1), y = j * gh + jit(i, j, 2);
@@ -42,10 +42,10 @@ function PlanckFluctuationCanvas({ logRef }) {
       }
       ctx.stroke();
     }
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(170,195,230,0.75)";
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.75);
     if (fluct > 0.04) {
       ctx.fillText("metric fluctuations ~ O(1): classical geometry unreliable", 12, 20);
-      ctx.fillStyle = "rgba(224,179,90,0.8)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.8);
       ctx.fillText("visualization is theory-dependent — discreteness/foam NOT established", 12, h - 12);
     } else {
       ctx.fillText("smooth classical spacetime — excellent approximation at this scale", 12, 20);
@@ -60,13 +60,13 @@ function ScaleLadder() {
 
   const build = (ctx) => {
     const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.016);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.6));
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.6));
     const yOf = (lg) => 5 - (-lg / 35) * 10;
     const depthColor = (lg) => {
       const f = Math.min(1, -lg / 35);
-      const c = new THREE.Color(0x6ba6ff);
-      return c.lerp(new THREE.Color(0x8a78ff), Math.min(1, f * 1.3)).lerp(new THREE.Color(0xe0a85a), Math.max(0, f - 0.7) / 0.3);
+      const c = new THREE.Color(QGA_TOKENS.hex("pigment-blue-72"));
+      return c.lerp(new THREE.Color(QGA_TOKENS.hex("pigment-violet-65")), Math.min(1, f * 1.3)).lerp(new THREE.Color(QGA_TOKENS.hex("pigment-orange-77")), Math.max(0, f - 0.7) / 0.3);
     };
 
     // faint starfield for depth
@@ -80,12 +80,12 @@ function ScaleLadder() {
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
     scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({
-      size: 1.1, map: qgaGlowTexture(), color: 0x9fb6e8, transparent: true,
+      size: 1.1, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-78-c08"), transparent: true,
       opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     })));
 
     // glowing descent axis
-    const axis = ctx.line([new THREE.Vector3(0, 5.6, 0), new THREE.Vector3(0, -5.4, 0)], 0x6ba6ff, 0.6);
+    const axis = ctx.line([new THREE.Vector3(0, 5.6, 0), new THREE.Vector3(0, -5.4, 0)], QGA_TOKENS.hex("pigment-blue-72"), 0.6);
     axis.material.blending = THREE.AdditiveBlending; axis.material.depthWrite = false;
     scene.add(axis);
 
@@ -107,7 +107,7 @@ function ScaleLadder() {
     const desTop = yOf(-19), desBot = yOf(-35);
     const desert = new THREE.Mesh(
       new THREE.PlaneGeometry(1.5, desTop - desBot),
-      new THREE.MeshBasicMaterial({ color: 0x20304e, transparent: true, opacity: 0.32,
+      new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-31"), transparent: true, opacity: 0.32,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
     desert.position.set(0, (desTop + desBot) / 2, -0.05);
     scene.add(desert);
@@ -129,15 +129,15 @@ function ScaleLadder() {
     }
 
     const probe = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16),
-      new THREE.MeshBasicMaterial({ color: 0x9fe8f2 }));
+      new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-cyan-89-c07") }));
     scene.add(probe);
-    const pGlow = ctx.glow(0x7fe0ee, 2.0, 0.7);
+    const pGlow = ctx.glow(QGA_TOKENS.hex("pigment-cyan-85"), 2.0, 0.7);
     scene.add(pGlow);
-    const pHalo = ctx.glow(0x7fe0ee, 4.0, 0.28);
+    const pHalo = ctx.glow(QGA_TOKENS.hex("pigment-cyan-85"), 4.0, 0.28);
     scene.add(pHalo);
     // descent beam: probe down to the Planck floor
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.13, 1, 12, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0x7fb0ff, transparent: true, opacity: 0.32,
+      new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-75"), transparent: true, opacity: 0.32,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
     scene.add(beam);
 
@@ -148,7 +148,7 @@ function ScaleLadder() {
     lat.rotateX(-Math.PI / 2);
     const latBase = lat.attributes.position.array.slice();
     const latMesh = new THREE.Mesh(lat, new THREE.MeshBasicMaterial({
-      color: 0xf0c478, wireframe: true, transparent: true, opacity: 0.3,
+      color: QGA_TOKENS.hex("pigment-amber-84"), wireframe: true, transparent: true, opacity: 0.3,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     latMesh.position.y = -5.6;
@@ -156,7 +156,7 @@ function ScaleLadder() {
     // foam glow bubbles that bloom up near the Planck scale
     const foam = [];
     for (let i = 0; i < 7; i++) {
-      const g = ctx.glow(i % 2 ? 0xf0b86a : 0x9a7cff, 1.2, 0);
+      const g = ctx.glow(i % 2 ? QGA_TOKENS.hex("pigment-orange-82") : QGA_TOKENS.hex("pigment-violet-67"), 1.2, 0);
       const a = (i / 7) * Math.PI * 2;
       g.position.set(Math.cos(a) * 1.9, -5.6, Math.sin(a) * 1.9);
       scene.add(g);
@@ -290,7 +290,7 @@ function SpinFoamLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createSpinFoamRuntime } = await LABS.loadSpinFoam();
-    ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.013);
+    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02"), 0.013);
     const runtime = createSpinFoamRuntime({ topology, jMaxHalf: jMax, seed, step: stepIndex, mode, camera: ctx.camera });
     ctx.scene.add(runtime.mesh);
     ctx.label("CONJECTURAL · pedagogical spin network — geometry from area ∝ √(j(j+1)), no amplitudes computed",

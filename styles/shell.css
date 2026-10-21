@@ -1,0 +1,147 @@
+/* styles/shell.css — premium immersive layer: backdrop, sidebar, content surface, fullscreen overlay, intro.
+   Extracted verbatim from index.html (S02); stylesheets are linked in original cascade order. */
+/* ============================================================
+   HORIZON — premium immersive layer
+   ============================================================ */
+body { background:
+  radial-gradient(1200px 700px at 18% -8%, rgba(40, 90, 170, 0.20), transparent 60%),
+  radial-gradient(1000px 800px at 96% 4%, rgba(70, 50, 150, 0.16), transparent 58%),
+  radial-gradient(900px 700px at 50% 120%, rgba(20, 110, 130, 0.14), transparent 60%),
+  #05080f; }
+
+/* full-viewport cinematic 3D backdrop */
+.atlas-stage { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.atlas-stage canvas { width: 100%; height: 100%; display: block; }
+.starfield-canvas { z-index: 0; }
+.shell { background: transparent; }
+
+/* ---- premium sidebar ---- */
+.sidebar {
+  background: linear-gradient(180deg, rgba(8,12,21,0.86), rgba(5,8,15,0.62));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border-right: 1px solid var(--edge);
+  box-shadow: 24px 0 70px -50px rgba(0,0,0,0.9);
+}
+.brand {
+  display: flex; align-items: center; gap: 13px;
+  padding: 4px 6px 18px 6px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--edge);
+}
+.brand-mark { width: 38px; height: 38px; flex: 0 0 auto; filter: drop-shadow(0 0 10px var(--acc-soft)); }
+.brand-mark .bm-orbit { transform-origin: 20px 20px; }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion="full"] .brand-mark .bm-orbit, html[data-motion="balanced"] .brand-mark .bm-orbit {
+    animation: bmSpin 14s linear infinite;
+  }
+}
+@keyframes bmSpin { to { transform: rotate(360deg); } }
+.brand-words { min-width: 0; }
+.brand-title {
+  font-family: var(--font-head); font-weight: 700; font-size: 21px; color: var(--head);
+  letter-spacing: 0.22em; line-height: 1; text-indent: 0.22em;
+  background: linear-gradient(180deg, #fff, #b8c6e2);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 6px; }
+
+.nav-item { border-radius: 9px; }
+.nav-item.active { box-shadow: inset 0 0 0 1px var(--edge-bright); }
+.nav-item.active .nav-num { color: var(--acc); }
+
+/* ---- content: floating cinematic reading surface ---- */
+.content { background: transparent; }
+.content-inner {
+  max-width: 1080px; padding: 56px 40px 140px 40px;
+  position: relative;
+  background: linear-gradient(180deg,
+    rgba(5,8,14,0) 0px,
+    rgba(5,8,14,0.4) 150px,
+    rgba(5,8,14,0.72) 360px,
+    rgba(5,8,14,0.78) 100%);
+}
+
+/* cinematic module header */
+.content-inner h1 { font-size: 40px; letter-spacing: -0.015em; text-shadow: 0 2px 30px rgba(3,6,12,0.9); }
+.module-kicker { color: var(--acc); }
+.module-lede { font-size: 17.5px; text-shadow: 0 1px 18px rgba(3,6,12,0.85); }
+
+/* premium panels + viz frames */
+.panel, .formula-card, .pt-detail, .gloss-item {
+  background: var(--glass); backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border-color: var(--edge);
+}
+/* viz-frame uses an opaque-ish background (NO backdrop-filter — it must not
+   create a containing block, or fullscreen scenes can't escape to the viewport) */
+.viz-frame {
+  background: rgba(8, 12, 20, 0.86);
+  box-shadow: 0 30px 80px -36px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04);
+  border-color: var(--edge-bright);
+}
+.s3d-stage { background: radial-gradient(125% 100% at 50% -6%, rgba(18,28,52,0.66), rgba(4,7,13,0.96) 78%); }
+
+/* ---- fullscreen scene overlay ---- */
+.s3d-stage.s3d-full {
+  position: fixed; inset: 0; z-index: 150; width: 100vw; height: 100vh !important;
+  border-radius: 0;
+  background: radial-gradient(120% 100% at 50% 0%, rgba(14,22,44,0.88), rgba(3,5,10,0.98) 78%), #03050a;
+  animation: s3dFullIn 0.32s ease both;
+}
+@keyframes s3dFullIn { from { opacity: 0.4; } to { opacity: 1; } }
+.s3d-full .s3d-hud { top: 20px; right: 20px; gap: 8px; }
+.s3d-full .s3d-hud-btn { width: 38px; height: 38px; font-size: 15px; }
+.s3d-full .s3d-hint { left: 22px; bottom: 18px; font-size: 10.5px; }
+.s3d-full .s3d-label { font-size: 12px; }
+.s3d-full .s3d-label.s3d-strong { font-size: 14.5px; }
+.s3d-hud-full { color: var(--acc) !important; }
+/* while a scene is fullscreen, neutralize any ancestor transform so it can
+   reach the viewport (fixed-positioning escape) */
+.s3d-fs-open .content-inner { animation: none !important; transform: none !important; }
+
+/* ---- mobile topbar branding ---- */
+.topbar { background: rgba(5,8,14,0.82); backdrop-filter: blur(20px); }
+.topbar-title { letter-spacing: 0.2em; font-weight: 700; }
+
+/* ============================================================
+   HORIZON — cinematic intro splash
+   ============================================================ */
+.horizon-intro {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 26px; text-align: center;
+  background: radial-gradient(120% 100% at 50% 38%, rgba(8,14,28,0.62), rgba(3,5,10,0.92) 78%);
+  backdrop-filter: blur(4px);
+  animation: introWrapOut 0.9s ease 2.0s forwards;
+}
+.horizon-intro.dismissed { animation: introWrapOut 0.5s ease forwards; }
+@keyframes introWrapOut { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+.intro-mark { width: 132px; height: 132px; animation: introMark 1.5s cubic-bezier(0.16,0.84,0.3,1) both; filter: drop-shadow(0 0 26px var(--acc-soft)); }
+.intro-mark .bm-orbit { transform-origin: 20px 20px; animation: bmSpin 9s linear infinite; }
+@keyframes introMark { from { opacity: 0; transform: scale(0.6) rotate(-30deg); } to { opacity: 1; transform: none; } }
+.intro-word {
+  font-family: var(--font-head); font-weight: 700; font-size: clamp(40px, 9vw, 92px);
+  letter-spacing: 0.3em; text-indent: 0.3em; color: var(--head);
+  background: linear-gradient(180deg, #ffffff, #9fb4dc);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  display: flex; gap: 0; justify-content: center;
+}
+.intro-word span { display: inline-block; opacity: 0; animation: introLetter 0.7s cubic-bezier(0.2,0.8,0.2,1) both; }
+@keyframes introLetter { from { opacity: 0; transform: translateY(26px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+.intro-tag {
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.42em; text-transform: uppercase;
+  color: var(--text-dim); opacity: 0; animation: introFade 0.9s ease 0.9s both;
+}
+.intro-line { width: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--acc), transparent); animation: introLine 1.4s ease 0.7s both; }
+@keyframes introLine { to { width: min(360px, 60vw); } }
+.intro-skip {
+  position: absolute; bottom: 34px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--text-dim); opacity: 0; animation: introFade 0.6s ease 1.4s both; pointer-events: none;
+}
+@keyframes introFade { from { opacity: 0; } to { opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) {
+  .horizon-intro { animation: introWrapOut 0.3s ease 1.4s forwards; }
+  .intro-mark, .intro-word span, .intro-tag, .intro-line, .intro-mark .bm-orbit { animation: none !important; opacity: 1 !important; transform: none !important; width: min(360px,60vw); }
+}
+.ov-card:hover .gs-group { color: #fff; }
+

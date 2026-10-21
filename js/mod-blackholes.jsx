@@ -64,20 +64,20 @@ function HawkingSpectrumPlot({ logM, tempFactor }) {
     const Tvis = Math.max(0.06, (1 - logM / 9) * tempFactor * 0.95 + 0.05);
     const planck = (x) => window.QGA_PHYSICS.hawkingSpectralShape(x, Tvis);
     let pk = 0; for (let i = 1; i <= 200; i++) { const x = i / 200 * 3; pk = Math.max(pk, planck(x)); }
-    ctx.strokeStyle = "rgba(148,176,224,0.22)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("Hawking spectrum  (blackbody)", padL, 12);
     // filled curve
     const grad = ctx.createLinearGradient(padL, 0, padL + pw, 0);
-    grad.addColorStop(0, "oklch(0.7 0.16 25 / 0.7)"); grad.addColorStop(0.5, "oklch(0.78 0.15 60 / 0.7)"); grad.addColorStop(1, "oklch(0.82 0.13 230 / 0.7)");
+    grad.addColorStop(0, QGA_TOKENS.alpha("pigment-red-70-c16", 0.7)); grad.addColorStop(0.5, QGA_TOKENS.alpha("pigment-orange-78", 0.7)); grad.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-82", 0.7));
     ctx.beginPath(); ctx.moveTo(padL, padT + ph);
     for (let i = 0; i <= 200; i++) { const x = i / 200 * 3; const px = padL + (x / 3) * pw, py = padT + ph * (1 - planck(x) / pk); ctx.lineTo(px, py); }
     ctx.lineTo(padL + pw, padT + ph); ctx.closePath(); ctx.fillStyle = grad; ctx.globalAlpha = 0.5; ctx.fill(); ctx.globalAlpha = 1;
     ctx.beginPath();
     for (let i = 0; i <= 200; i++) { const x = i / 200 * 3; const px = padL + (x / 3) * pw, py = padT + ph * (1 - planck(x) / pk); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
-    ctx.strokeStyle = "oklch(0.85 0.13 70)"; ctx.lineWidth = 1.8; ctx.stroke();
-    ctx.fillStyle = "rgba(148,176,224,0.55)"; ctx.fillText("photon energy →", padL + pw - 96, padT + ph + 16);
+    ctx.strokeStyle = QGA_TOKENS.css("pigment-orange-85"); ctx.lineWidth = 1.8; ctx.stroke();
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55); ctx.fillText("photon energy →", padL + pw - 96, padT + ph + 16);
   }, [logM, tempFactor]);
   return <div className="viz-frame" style={{ padding: 6 }}><canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
     aria-label="Hawking blackbody spectrum; peak shifts with black hole mass and spin"></canvas></div>;
@@ -97,27 +97,27 @@ function PageCurvePlot() {
     const padL = 34, padR = 12, padT = 18, padB = 24;
     const pw = w - padL - padR, ph = h - padT - padB;
     const X = (f) => padL + f * pw, Y = (s) => padT + ph * (1 - s);
-    ctx.strokeStyle = "rgba(148,176,224,0.22)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("Page curve  S_rad(t)", padL, 12);
     // Hawking's (naive) ever-rising thermal entropy
-    ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(217,106,90,0.7)"; ctx.lineWidth = 1.4;
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = QGA_TOKENS.alpha("pigment-red-65", 0.7); ctx.lineWidth = 1.4;
     ctx.beginPath();
     for (let i = 0; i <= 100; i++) { const f = i / 100; const s = Math.min(1.6, 1.7 * f); ctx.lineTo(X(f), Y(Math.min(1, s))); }
     ctx.stroke(); ctx.setLineDash([]);
     // unitary Page curve: S_rad = min(thermal, remaining BH entropy)
-    ctx.strokeStyle = "oklch(0.82 0.13 230)"; ctx.lineWidth = 2;
-    ctx.shadowColor = "oklch(0.82 0.13 230)"; ctx.shadowBlur = 7;
+    ctx.strokeStyle = QGA_TOKENS.css("pigment-azure-82"); ctx.lineWidth = 2;
+    ctx.shadowColor = QGA_TOKENS.css("pigment-azure-82"); ctx.shadowBlur = 7;
     ctx.beginPath();
     for (let i = 0; i <= 100; i++) { const f = i / 100; const s = 0.85 * window.QGA_PHYSICS.pageCurveEntropy(f); ctx.lineTo(X(f), Y(s)); }
     ctx.stroke(); ctx.shadowBlur = 0;
     // Page time marker
-    ctx.strokeStyle = "rgba(224,179,90,0.5)"; ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.5); ctx.setLineDash([3, 3]);
     ctx.beginPath(); ctx.moveTo(X(0.5), padT); ctx.lineTo(X(0.5), padT + ph); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(224,179,90,0.85)"; ctx.fillText("Page time", X(0.5) + 4, padT + 24);
-    ctx.fillStyle = "rgba(217,106,90,0.85)"; ctx.fillText("Hawking (info lost)", X(0.04), padT + 12);
-    ctx.fillStyle = "rgba(148,176,224,0.55)"; ctx.fillText("evaporation →", padL + pw - 86, padT + ph + 16);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("Page time", X(0.5) + 4, padT + 24);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-red-65", 0.85); ctx.fillText("Hawking (info lost)", X(0.04), padT + 12);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55); ctx.fillText("evaporation →", padL + pw - 86, padT + ph + 16);
   }, []);
   return <div className="viz-frame" style={{ padding: 6 }}><canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
     aria-label="Page curve: entanglement entropy of Hawking radiation rising then falling for unitary evaporation"></canvas></div>;
@@ -136,12 +136,12 @@ function kerrCameraGoal(inclinationDeg, distance, theta = 0.35) {
 }
 
 const KERR_CURVES = [
-  { key: "isco", sense: "retro", color: "#b388ff", dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
-  { key: "isco", sense: "pro", color: "#54aeff", dash: "", width: 1.9, label: "ISCO prograde", read: (g) => g.rIsco },
-  { key: "photon", sense: "retro", color: "#ffb454", dash: "3 4", width: 1.1, label: "Photon retrograde", read: (g) => g.rPhotonRetrograde },
-  { key: "photon", sense: "pro", color: "#ffd38a", dash: "", width: 1.9, label: "Photon prograde", read: (g) => g.rPhoton },
-  { key: "ergo", sense: "", color: "#46d4e0", dash: "", width: 1.6, label: "Ergosurface (eq.)", read: (g) => g.rErgoEquator, fill: "rgba(70,212,224,0.07)" },
-  { key: "horizon", sense: "", color: "#ff7b72", dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: "rgba(4,7,13,0.97)" },
+  { key: "isco", sense: "retro", color: QGA_TOKENS.css("pigment-violet-72-c17"), dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
+  { key: "isco", sense: "pro", color: QGA_TOKENS.css("accent"), dash: "", width: 1.9, label: "ISCO prograde", read: (g) => g.rIsco },
+  { key: "photon", sense: "retro", color: QGA_TOKENS.css("signal-warm"), dash: "3 4", width: 1.1, label: "Photon retrograde", read: (g) => g.rPhotonRetrograde },
+  { key: "photon", sense: "pro", color: QGA_TOKENS.css("pigment-orange-89"), dash: "", width: 1.9, label: "Photon prograde", read: (g) => g.rPhoton },
+  { key: "ergo", sense: "", color: QGA_TOKENS.css("accent-2"), dash: "", width: 1.6, label: "Ergosurface (eq.)", read: (g) => g.rErgoEquator, fill: QGA_TOKENS.alpha("accent-2", 0.07) },
+  { key: "horizon", sense: "", color: QGA_TOKENS.css("signal-danger"), dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: QGA_TOKENS.alpha("pigment-grey-13", 0.97) },
 ];
 
 function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, motion }) {
@@ -182,17 +182,17 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
         aria-label={"Nested Kerr radii in units of GM over c squared, plotted to " + domain + " GM/c²"}>
         <defs>
           <radialGradient id="kerr-scope-field" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#10243c" stopOpacity="0.42"></stop>
-            <stop offset="68%" stopColor="#08111f" stopOpacity="0.18"></stop>
-            <stop offset="100%" stopColor="#02060c" stopOpacity="0"></stop>
+            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-azure-26")} stopOpacity="0.42"></stop>
+            <stop offset="68%" stopColor={QGA_TOKENS.css("pigment-blue-18-c03-h259")} stopOpacity="0.18"></stop>
+            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-grey-12")} stopOpacity="0"></stop>
           </radialGradient>
           <linearGradient id="kerr-sweep-fade" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#54aeff" stopOpacity="0"></stop>
-            <stop offset="100%" stopColor="#54aeff" stopOpacity="0.5"></stop>
+            <stop offset="0%" stopColor={QGA_TOKENS.css("accent")} stopOpacity="0"></stop>
+            <stop offset="100%" stopColor={QGA_TOKENS.css("accent")} stopOpacity="0.5"></stop>
           </linearGradient>
         </defs>
         <circle cx={cx} cy={cy} r={span} fill="url(#kerr-scope-field)"
-          stroke="rgba(148,176,224,0.18)" strokeWidth="0.7"></circle>
+          stroke={QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18)} strokeWidth="0.7"></circle>
         <line x1={cx - span - 10} y1={cy} x2={cx + span + 10} y2={cy} className="kerr-axis"></line>
         <line x1={cx} y1={cy - span - 10} x2={cx} y2={cy + span + 10} className="kerr-axis"></line>
         <text x="2" y={cy - span - 8} className="kerr-scope-label">RETROGRADE</text>
@@ -212,20 +212,20 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
             fill={curve.fill || "none"} stroke={curve.color} strokeWidth={curve.width}
             strokeDasharray={curve.dash}></circle>
         ))}
-        <circle cx={cx} cy={cy} r="1.8" fill="#e8eef8"></circle>
+        <circle cx={cx} cy={cy} r="1.8" fill={QGA_TOKENS.css("ink")}></circle>
         <g className="kerr-spin-mark">
           <path d={"M " + (cx + 56) + " " + (cy - 72) + " a 46 46 0 0 1 26 22"} fill="none"
-            stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
+            stroke={QGA_TOKENS.alpha("pigment-grey-97", 0.5)} strokeWidth="1.1"></path>
           <path d={"M " + (cx + 82) + " " + (cy - 50) + " l -6 -1 l 1 6"} fill="none"
-            stroke="rgba(233,246,255,0.5)" strokeWidth="1.1"></path>
+            stroke={QGA_TOKENS.alpha("pigment-grey-97", 0.5)} strokeWidth="1.1"></path>
           <text x={cx + 50} y={cy - 78} className="kerr-tick-label">a★ {readout.a.toFixed(2)}</text>
         </g>
         <line x1={cx - span} y1={cy + span + 24} x2={cx - span + px(tickStep)} y2={cy + span + 24}
-          stroke="rgba(205,219,241,0.6)" strokeWidth="1.3"></line>
+          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1.3"></line>
         <line x1={cx - span} y1={cy + span + 20} x2={cx - span} y2={cy + span + 28}
-          stroke="rgba(205,219,241,0.6)" strokeWidth="1"></line>
+          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1"></line>
         <line x1={cx - span + px(tickStep)} y1={cy + span + 20} x2={cx - span + px(tickStep)} y2={cy + span + 28}
-          stroke="rgba(205,219,241,0.6)" strokeWidth="1"></line>
+          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1"></line>
         <text x={cx - span + px(tickStep) + 24} y={cy + span + 27} className="kerr-tick-label">
           {tickStep} GM/c²
         </text>
@@ -808,7 +808,7 @@ function BlackHoleSim() {
       const rp = r + k / r;
       return [cx + (dx / r) * rp, cy + (dy / r) * rp];
     };
-    ctx.strokeStyle = "rgba(110,140,200,0.13)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-64", 0.13);
     const step = 36;
     for (let gx = -step * 14; gx <= w + step * 2; gx += step) {
       ctx.beginPath();
@@ -840,7 +840,7 @@ function BlackHoleSim() {
         const isFront = Math.sin(a0) > 0;
         if (isFront !== front) continue;
         const doppler = 0.45 + 0.55 * (1 + Math.cos(a0)) / 2; // brighter approaching side
-        ctx.fillStyle = "rgba(240,205,140," + (0.5 * doppler).toFixed(3) + ")";
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-86", (0.5 * doppler).toFixed(3));
         ctx.beginPath(); ctx.arc(x, y, 1.6 + doppler * 1.4, 0, Math.PI * 2); ctx.fill();
       }
     };
@@ -848,21 +848,21 @@ function BlackHoleSim() {
     // photon ring glow
     const ringR = rs * 1.32;
     const rg = ctx.createRadialGradient(cx, cy, ringR * 0.86, cx, cy, ringR * 1.25);
-    rg.addColorStop(0, "rgba(255,235,190,0)");
-    rg.addColorStop(0.5, "rgba(255,230,175,0.55)");
-    rg.addColorStop(1, "rgba(255,230,175,0)");
+    rg.addColorStop(0, QGA_TOKENS.alpha("pigment-amber-95", 0));
+    rg.addColorStop(0.5, QGA_TOKENS.alpha("pigment-amber-93-c08", 0.55));
+    rg.addColorStop(1, QGA_TOKENS.alpha("pigment-amber-93-c08", 0));
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.arc(cx, cy, ringR * 1.3, 0, Math.PI * 2); ctx.fill();
     // shadow / horizon
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-black");
     ctx.beginPath(); ctx.arc(cx, cy, rs, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(255,235,190,0.35)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-95", 0.35); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(cx, cy, rs, 0, Math.PI * 2); ctx.stroke();
     drawDisk(true);
     // annotations
     if (ovRef.current) {
-      ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(200,215,240,0.75)";
-      ctx.strokeStyle = "rgba(200,215,240,0.35)";
+      ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-88", 0.75);
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-88", 0.35);
       ctx.beginPath(); ctx.moveTo(cx + rs * 0.71, cy - rs * 0.71); ctx.lineTo(cx + rs * 1.7, cy - rs * 1.55); ctx.stroke();
       ctx.fillText("event horizon  r = r_s", cx + rs * 1.76, cy - rs * 1.55);
       ctx.beginPath(); ctx.moveTo(cx - ringR * 0.8, cy - ringR * 0.62); ctx.lineTo(cx - ringR * 2.0, cy - ringR * 1.15); ctx.stroke();
@@ -870,11 +870,11 @@ function BlackHoleSim() {
       ctx.fillText("photon-ring glow (lensed light)", cx - ringR * 2.04, cy - ringR * 1.15);
       ctx.textAlign = "left";
       // entropy-area tiling hint: dotted arc segments on horizon
-      ctx.strokeStyle = "rgba(140,190,255,0.5)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-79", 0.5);
       ctx.setLineDash([2, 5]);
       ctx.beginPath(); ctx.arc(cx, cy, rs * 0.999, -0.6, 0.9); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(140,190,255,0.7)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-79", 0.7);
       ctx.fillText("S ∝ horizon area / 4 l_P²", cx + rs * 0.75, cy + rs * 1.05);
     }
   }, [prm]);
@@ -929,7 +929,7 @@ function HawkingComputeLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createHawkingLabRuntime } = await LABS.loadHawkingLab();
-    ctx.scene.fog = new ctx.THREE.FogExp2(0x020409, 0.011);
+    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02"), 0.011);
     const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42, camera: ctx.camera });
     ctx.scene.add(runtime.mesh);
     const mA = Math.min(1, Math.abs(spin));

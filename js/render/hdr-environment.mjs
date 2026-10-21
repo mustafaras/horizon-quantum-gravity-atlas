@@ -25,6 +25,7 @@
 
 import { STARFIELD_LAYERS, STARFIELD_GALAXY, starKelvin, starFlux, unitLuminanceColor } from "../visualizations/kerr/starfield-sampler.mjs";
 import { latticeHash01, valueNoise3 } from "../visualizations/kerr/kerr-plasma.mjs";
+import * as TK from "../design/tokens.mjs";
 
 export const HDR_ENVIRONMENT = Object.freeze({
   status: "schematic",
@@ -321,14 +322,14 @@ export async function createHdrEnvironmentTexture({ seed = 42 } = {}) {
     const bits = buffer.getUint32(0);
     const sign = (bits >>> 31) & 1;
     const exponent = (bits >>> 23) & 0xff;
-    const mantissa = bits & 0x7fffff;
+    const mantissa = bits & TK.hex("pigment-cyan-93");
     if (exponent === 0xff) return (sign << 15) | 0x7c00;
     let newExponent = exponent - 127 + 15;
     if (newExponent >= 0x1f) return (sign << 15) | 0x7bff;
     if (newExponent <= 0) {
       if (newExponent < -10) return sign << 15;
       const mantissaShift = 14 - newExponent + 13;
-      const restored = 0x400000 | mantissa;
+      const restored = TK.hex("pigment-red-23") | mantissa;
       const fraction = restored >> mantissaShift;
       return (sign << 15) | fraction;
     }
