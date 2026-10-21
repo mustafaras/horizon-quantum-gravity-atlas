@@ -84,6 +84,10 @@ export async function initializeRenderSession({
         // an in-flight submit raises "used in submit while destroyed".
         try {
           const renderer = handle?.renderer;
+          // Open the teardown window before the pipeline releases its render
+          // targets — those are GPU resources too, and they are destroyed
+          // before renderer.dispose() gets a chance to open it.
+          handle?.beginQuiet?.();
           if (renderer?.isWebGPURenderer && renderer.initialized) {
             try { await renderer.setAnimationLoop(null); } catch { /* loop already stopped */ }
           }

@@ -14,6 +14,23 @@ let sharedGPU = null;
 const TEARDOWN_BUDGET_MS = 10_000;
 
 /**
+ * A resource destroyed while a submit that still references it is in flight is
+ * always teardown noise. three r186 frees buffers synchronously on dispose and
+ * never waits for submitted work, so this can only mean "a scene is being torn
+ * down", never "the live scene is broken". The time-based quiet window below
+ * cannot cover it on its own: the pipeline releases its render targets before
+ * the renderer opens that window, and a submit encoded just before teardown can
+ * land after it closes. Broadcasting it would blank the always-mounted backdrop
+ * for a scene that is merely unmounting.
+ */
+const TEARDOWN_NOISE = /used in submit while destroyed|destroyed while (?:in use|submitted)|Instance dropped in popErrorScope/i;
+
+/** True when a GPU error message can only describe a teardown race. */
+export function isTeardownNoise(message) {
+  return TEARDOWN_NOISE.test(String(message ?? ""));
+}
+
+/**
  * Chromium resolves popErrorScope() asynchronously and r186 pops scopes on
  * pipeline creation without awaiting those promises. Destroying a GPUDevice
  * with unresolved scopes makes Chromium log "Instance dropped in popErrorScope"
@@ -83,11 +100,16 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
     device: record.device,
     routeErrors() {
       record.device.onuncapturederror = (event) => {
+        const name = event.error?.constructor?.name || "GPUError";
+        const message = event.error?.message || "";
+        // Teardown races are never a live-scene defect, so they are dropped
+        // regardless of the quiet window (see TEARDOWN_NOISE).
+        if (isTeardownNoise(message)) return;
         // Transient validation/internal errors raised while some scene is
         // mid-teardown are that scene's teardown noise; broadcasting them
         // would blank the always-mounted backdrop for unrelated scenes.
-        if (/Validation|Internal/.test(event.error.constructor.name) && Date.now() < record.quietUntil) return;
-        for (const listener of record.leases) listener.onError(new Error(`GPU ${event.error.constructor.name}: ${event.error.message}`));
+        if (/Validation|Internal/.test(name) && Date.now() < record.quietUntil) return;
+        for (const listener of record.leases) listener.onError(new Error(`GPU ${name}: ${message}`));
       };
     },
     beginQuiet() { record.quietUntil = Math.max(record.quietUntil, Date.now() + 2500); },
@@ -204,6 +226,11 @@ export async function createRenderer({
       let disposed = false;
       return {
         renderer, backend, capabilities: capabilities(backend, renderer),
+        // Callers that release GPU resources of their own (render targets,
+        // passes, composer) must open the teardown window first: those are
+        // destroyed before renderer.dispose() runs, and an in-flight submit
+        // that still references one raises "used in submit while destroyed".
+        beginQuiet: () => deviceLease?.beginQuiet(),
         async dispose() {
           if (disposed) return;
           disposed = true;
