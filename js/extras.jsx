@@ -447,6 +447,9 @@ function ViewGlossary() {
         <p className="module-lede">Concise and advanced definitions, with the most common misconception attached to each term.</p>
       </header>
       <div className="section">
+        <div className="section-head">
+          <h2>Term index</h2>
+        </div>
         <input className="glossary-search" type="search" placeholder="Search terms — e.g. gauge, entropy, geodesic…"
           value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search glossary"></input>
         <div style={{ marginTop: 16 }}>
@@ -489,6 +492,9 @@ function ViewReferences() {
         </p>
       </header>
       <div className="section">
+        <div className="section-head">
+          <h2>Curated entries</h2>
+        </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
           {tags.map((tg) => (
             <button key={tg} className={"btn" + (tag === tg ? " on primary" : "")} onClick={() => setTag(tg)}>{tg}</button>
@@ -502,8 +508,11 @@ function ViewReferences() {
             </div>
           ))}
         </div>
-        <p className="small dim" style={{ marginTop: 16 }}>
-          Reading path suggestion: Peskin & Schroeder (QFT) → Wald (GR) → Donoghue (EFT of gravity) →
+        <div className="section-head" style={{ marginTop: 22 }}>
+          <h2>Reading path</h2>
+        </div>
+        <p className="small dim">
+          Peskin & Schroeder (QFT) → Wald (GR) → Donoghue (EFT of gravity) →
           the 1973–1975 black hole thermodynamics papers → ’t Hooft / Susskind / Maldacena (holography),
           alongside Rovelli and Polchinski for the two largest research programs.
         </p>
@@ -524,6 +533,9 @@ function ViewOpenProblems() {
         </p>
       </header>
       <div className="section">
+        <div className="section-head">
+          <h2>Frontier problems</h2>
+        </div>
         <div className="formula-grid">
           {QGA_OPEN_PROBLEMS.map((p) => (
             <div key={p.title} className="panel">
@@ -578,6 +590,9 @@ function ViewSymbols({ go }) {
         </p>
       </header>
       <div className="section">
+        <div className="section-head">
+          <h2>Symbol index</h2>
+        </div>
         <div className="sym-toolbar">
           <input className="glossary-search" type="search" placeholder="Search symbols — e.g. beta, coupling, kelvin…"
             value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search symbols"></input>
@@ -596,7 +611,7 @@ function ViewSymbols({ go }) {
         </p>
         <div className="sym-grid">
           {items.map((s, i) => (
-            <div key={s.sym} className="sym-card" style={{ "--i": Math.min(i, 14) }}>
+            <div key={s.sym} className="sym-card" role="group" aria-label={`${s.sym} — ${s.cat}`} style={{ "--i": Math.min(i, 14) }}>
               <div className="sym-head">
                 <div className="sym-glyph-tile" aria-hidden="true">
                   <Eq tex={s.tex || s.sym}></Eq>
@@ -633,7 +648,7 @@ function ViewSymbols({ go }) {
           {items.length === 0 ? <p className="dim">No symbols match “{query}”.</p> : null}
         </div>
         <div className="panel sym-conv-panel">
-          <div className="gloss-sub">Conventions used throughout the atlas</div>
+          <h2 className="gloss-sub sym-conv-head">Conventions used throughout the atlas</h2>
           <div className="sym-conv-grid">
             {QGA_CONVENTIONS.map((c, i) => (
               <div key={c.title} className="sym-conv" style={{ "--i": i }}>
@@ -687,7 +702,7 @@ function PaperSection({ id, index, title, children }) {
 function PaperSub({ index, title, children }) {
   return (
     <div className="paper-sub">
-      <h3 className="paper-sub-head"><span className="paper-sub-num">{index}</span>{title}</h3>
+      <h3 className="paper-sub-head"><span className="paper-sub-num">{index}</span>{" "}{title}</h3>
       {children}
     </div>
   );
