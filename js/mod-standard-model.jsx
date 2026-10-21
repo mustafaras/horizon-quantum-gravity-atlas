@@ -577,10 +577,13 @@ function MixingGrid({ title, rows, cols, mat, sub }) {
           <div key={"r" + i} style={{ color: "var(--dim)", alignSelf: "center" }}>{r}</div>,
           ...mat[i].map((v, j) => {
             const a = 0.1 + 0.85 * v; // magnitude → opacity
+            // Chip lightness is held at 0.48 so the light label clears 4.5:1 at
+            // every opacity in the ramp; a lighter chip would need dark text in
+            // the mid range, where neither label colour reaches the floor.
             return <div key={i + "-" + j} style={{
               textAlign: "center", padding: "8px 2px", borderRadius: 5,
-              background: "oklch(0.6 0.13 250 / " + a.toFixed(2) + ")",
-              color: v > 0.4 ? "#06121f" : "#cdd9ee", fontWeight: v > 0.4 ? 600 : 400,
+              background: "oklch(0.48 0.13 250 / " + a.toFixed(2) + ")",
+              color: "#cdd9ee", fontWeight: v > 0.4 ? 600 : 400,
             }}>{v < 0.01 ? v.toExponential(1) : v.toFixed(3)}</div>;
           }),
         ])}

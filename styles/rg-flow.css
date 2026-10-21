@@ -190,7 +190,7 @@
   letter-spacing: 0.14em; text-transform: uppercase;
 }
 .rg-formulation > header > span {
-  color: rgba(148, 176, 224, 0.64); font: 400 10px/1 var(--font-mono); letter-spacing: 0.06em;
+  color: rgba(148, 176, 224, 0.72); font: 400 10px/1 var(--font-mono); letter-spacing: 0.06em;
 }
 .rg-panel-id { color: var(--rg-flow); font: 600 10px/1 var(--font-mono); letter-spacing: 0.16em; }
 .rg-equation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
