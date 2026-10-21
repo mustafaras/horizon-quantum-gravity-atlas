@@ -30,11 +30,8 @@ import {
   fluxTubeProfile, modeOccupation,
 } from "../../science/qft-fields.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
 
-const COLOR_POS = new Color(0x9df3ff);
-const COLOR_NEG = new Color(1.0, 0.60, 0.235);
-const COLOR_BASE = new Color(0x16345f);
-const COLOR_HOT = new Color(0xeafcff);
 const EXTENT_X = 9;
 const EXTENT_Z = 7;
 
@@ -48,11 +45,11 @@ export function createQftFieldLabRuntime({
   group.name = "qft-field-lab";
 
   // ---- lights (the membrane is lit, not flat) ----
-  group.add(new AmbientLight(0x8899bb, 0.65));
-  const key = new DirectionalLight(0xbcd0ff, 1.05);
+  group.add(new AmbientLight(TK.hex("pigment-blue-68"), 0.65));
+  const key = new DirectionalLight(TK.hex("pigment-blue-86"), 1.05);
   key.position.set(4, 9, 6);
   group.add(key);
-  const rim = new DirectionalLight(0x4a7dff, 0.5);
+  const rim = new DirectionalLight(TK.hex("pigment-blue-62-c20"), 0.5);
   rim.position.set(-6, 3, -8);
   group.add(rim);
 
@@ -92,7 +89,7 @@ export function createQftFieldLabRuntime({
 
   const surfMat = new MeshStandardMaterial({
     vertexColors: true, metalness: 0.42, roughness: 0.32,
-    emissive: 0x0a1730, emissiveIntensity: 0.75, side: 2,
+    emissive: TK.hex("pigment-blue-21"), emissiveIntensity: 0.75, side: 2,
   });
   const surf = new Mesh(geo, surfMat);
   surf.frustumCulled = false;
@@ -113,6 +110,10 @@ export function createQftFieldLabRuntime({
   group.add(glow);
 
   const tmp = new Color();
+  const COLOR_POS = new Color(TK.hex("pigment-cyan-91"));
+  const COLOR_NEG = new Color().fromArray(TK.linearRef("field-negative"));
+  const COLOR_BASE = new Color(TK.hex("pigment-blue-33"));
+  const COLOR_HOT = new Color(TK.hex("pigment-grey-98"));
   function rebuildSurface() {
     for (let s = 0; s < history; s++) {
       const row = (head - s + history) % history;
@@ -150,13 +151,13 @@ export function createQftFieldLabRuntime({
   )));
   const corrTubeGeo = new TubeGeometry(corrCurve, 160, 0.045, 8, false);
   const corrTubeMat = new MeshBasicMaterial({
-    color: 0x9fd8ff, transparent: true, opacity: 0.95,
+    color: TK.hex("pigment-azure-86"), transparent: true, opacity: 0.95,
     blending: AdditiveBlending, depthWrite: false,
   });
   const corrTube = new Mesh(corrTubeGeo, corrTubeMat);
   const corrHaloGeo = new TubeGeometry(corrCurve, 160, 0.16, 8, false);
   const corrHaloMat = new MeshBasicMaterial({
-    color: 0x2a6cff, transparent: true, opacity: 0.16,
+    color: TK.hex("pigment-blue-58"), transparent: true, opacity: 0.16,
     blending: AdditiveBlending, depthWrite: false,
   });
   const corrHalo = new Mesh(corrHaloGeo, corrHaloMat);
@@ -215,18 +216,18 @@ export function createQftFieldLabRuntime({
       new Vector3(profile.separation / 2, -0.4, 0),
     ]);
     const coreMat = new MeshBasicMaterial({
-      color: 0xffe2b0, transparent: true, opacity: 0.9,
+      color: TK.hex("pigment-amber-92"), transparent: true, opacity: 0.9,
       blending: AdditiveBlending, depthWrite: false,
     });
     tube.add(new Mesh(new TubeGeometry(coreCurve, 32, 0.035, 6, false), coreMat));
-    const srcMat = new MeshBasicMaterial({ color: 0xffd9a0 });
+    const srcMat = new MeshBasicMaterial({ color: TK.hex("pigment-orange-90") });
     const srcGeo = new SphereGeometry(0.26, 20, 14);
     for (const s of [-1, 1]) {
       const src = new Mesh(srcGeo, srcMat);
       src.position.set(s * (profile.separation / 2), -0.4, 0);
       tube.add(src);
       const halo = new Sprite(new SpriteMaterial({
-        map: sharedGlowTexture(), color: 0xffc27a, transparent: true,
+        map: sharedGlowTexture(), color: TK.hex("pigment-orange-85-c11"), transparent: true,
         opacity: 0.8, blending: AdditiveBlending, depthWrite: false,
       }));
       halo.scale.setScalar(1.6);
@@ -240,7 +241,7 @@ export function createQftFieldLabRuntime({
   const particles = new Group();
   particles.visible = false;
   const spriteMat = new SpriteMaterial({
-    map: sharedGlowTexture(), color: 0xffffff, transparent: true,
+    map: sharedGlowTexture(), color: TK.hex("pigment-white"), transparent: true,
     opacity: 0.9, blending: AdditiveBlending, depthWrite: false,
   });
   const occ = modeOccupation(field);

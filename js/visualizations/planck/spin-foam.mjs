@@ -24,10 +24,11 @@ import {
 } from "../../science/spin-networks.mjs";
 import { seededRng } from "../../physics.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
+
+const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
 const S = 2.6; // graph scale in world units
-const CYAN = new Color(0.42, 0.82, 0.88);
-const GOLD = new Color(1.0, 0.78, 0.35);
 
 export function createSpinFoamRuntime({
   topology = SPIN_FOAM_LAB_DEFAULTS.topology,
@@ -43,6 +44,8 @@ export function createSpinFoamRuntime({
   const lab = spinFoamLabState({ topology, jMaxHalf, seed, step });
   const group = new Group();
   group.name = "spin-foam-lab";
+  const CYAN = tokenColor("lab-cyan");
+  const GOLD = tokenColor("lab-gold");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
   const spinColor = (j) => {
@@ -139,7 +142,7 @@ export function createSpinFoamRuntime({
     m.position.copy(v);
     group.add(m);
     const gm = track(new SpriteMaterial({
-      map: sharedGlowTexture(), color: n.volume > 0 ? 0xffc46a : 0x9fe8f0,
+      map: sharedGlowTexture(), color: n.volume > 0 ? TK.hex("pigment-orange-86") : TK.hex("pigment-cyan-89"),
       transparent: true, opacity: 0.5, blending: AdditiveBlending, depthWrite: false,
     }));
     const sp = new Sprite(gm);
@@ -155,7 +158,7 @@ export function createSpinFoamRuntime({
     const steps = lab.sequence.steps;
     const GAP = 1.15;
     const sliceLineMat = track(new LineBasicMaterial({
-      color: 0x4a6ea8, transparent: true, opacity: 0.16, depthWrite: false,
+      color: TK.hex("pigment-blue-54"), transparent: true, opacity: 0.16, depthWrite: false,
     }));
     const slicePositions = [];
     for (let s = 0; s < steps; s++) {
@@ -177,7 +180,7 @@ export function createSpinFoamRuntime({
     const pGeo = track(new BufferGeometry());
     pGeo.setAttribute("position", new BufferAttribute(new Float32Array(count * 3), 3));
     foamPoints = new Points(pGeo, track(new PointsMaterial({
-      size: 0.5, sizeAttenuation: true, map: sharedGlowTexture(), color: 0x9fe8f0,
+      size: 0.5, sizeAttenuation: true, map: sharedGlowTexture(), color: TK.hex("pigment-cyan-89"),
       transparent: true, opacity: 0.5, depthWrite: false, blending: AdditiveBlending,
     })));
     foamPoints.frustumCulled = false;

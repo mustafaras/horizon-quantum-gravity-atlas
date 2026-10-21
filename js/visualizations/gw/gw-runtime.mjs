@@ -27,6 +27,7 @@ import {
   latticeSide,
   particleBudget,
 } from "./spacetime-instrument.mjs";
+import * as TK from "../../design/tokens.mjs";
 
 const VERT = /* glsl */ `
 precision highp float;
@@ -87,13 +88,17 @@ void main() {
 }
 `;
 
-const COLOR_LOW = new Color(0x2a6cff);
-const COLOR_HIGH = new Color(0x9df3ff);
-const ARM_COLOR = new Color(0x6fd7ff);
-const RING_COLOR = new Color(0x59b7ff);
+// Read when a scene is built, so a theme change takes effect on the next build.
+const palette = () => ({
+  low: new Color(TK.hex("pigment-blue-58")),
+  high: new Color(TK.hex("pigment-cyan-91")),
+  arm: new Color(TK.hex("pigment-azure-83")),
+  ring: new Color(TK.hex("pigment-azure-75-c14")),
+});
 
 function detectorAssembly({ extent }) {
   const group = new Group();
+  const { arm: ARM_COLOR, ring: RING_COLOR } = palette();
   const armLength = extent * 0.92;
   const armMat = new MeshBasicMaterial({ color: ARM_COLOR, transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false });
   const armXGeo = new BoxGeometry(armLength * 2, 0.05, 0.05);
@@ -164,11 +169,12 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
     }
     ghostGeo.setAttribute("position", new BufferAttribute(ghostPos, 3));
     const ghostMat = new PointsMaterial({
-      color: 0x3d5f94, size: 1.5, sizeAttenuation: false,
+      color: TK.hex("pigment-blue-48-c09"), size: 1.5, sizeAttenuation: false,
       transparent: true, opacity: 0.28, depthWrite: false,
     });
     const ghost = new Points(ghostGeo, ghostMat);
     ghost.frustumCulled = false;
+    const { low: COLOR_LOW, high: COLOR_HIGH } = palette();
     const material = new ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,

@@ -355,12 +355,12 @@ function CausalSpacetimeLab() {
                 height={CAUSAL_PLOT.bottom - CAUSAL_PLOT.top}></rect>
             </clipPath>
             <linearGradient id="causal-future-fill" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="rgba(84,174,255,0.22)"></stop>
-              <stop offset="100%" stopColor="rgba(70,212,224,0.03)"></stop>
+              <stop offset="0%" stopColor={QGA_TOKENS.alpha("accent", 0.22)}></stop>
+              <stop offset="100%" stopColor={QGA_TOKENS.alpha("accent-2", 0.03)}></stop>
             </linearGradient>
             <linearGradient id="causal-past-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(255,180,84,0.03)"></stop>
-              <stop offset="100%" stopColor="rgba(255,180,84,0.18)"></stop>
+              <stop offset="0%" stopColor={QGA_TOKENS.alpha("signal-warm", 0.03)}></stop>
+              <stop offset="100%" stopColor={QGA_TOKENS.alpha("signal-warm", 0.18)}></stop>
             </linearGradient>
             <filter id="causal-glow" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="4" result="blur"></feGaussianBlur>
@@ -618,7 +618,7 @@ function CausalSpacetimeLab() {
 const GR_RAY_B = [-3.3, -2.2, -1.25, -0.45, 0.45, 1.25, 2.2, 3.3];
 // scene c² = (5.2)²; matches GR_ENGINE_C2 in js/physics.mjs.
 const GR_C2 = 27.04;
-const GR_BODY_PALETTE = [0x7fe0ee, 0xf3a85e, 0xb78cff, 0x6ee7a0, 0xff8fae, 0xffe07a];
+const GR_BODY_PALETTE = [QGA_TOKENS.hex("pigment-cyan-85"), QGA_TOKENS.hex("pigment-orange-79"), QGA_TOKENS.hex("pigment-violet-73-c17"), QGA_TOKENS.hex("pigment-green-84"), QGA_TOKENS.hex("pigment-pink-78"), QGA_TOKENS.hex("pigment-amber-91")];
 const GR_MAX_BODIES = 6;
 // Cinematic camera framing per scenario (Scene3D glides the orbit rig).
 const GR_CAMERA = {
@@ -796,12 +796,12 @@ function VEffPanel({ mass, body, view, stRef }) {
   const fmtY = (v) => v.toFixed(decOf(yStep));
   const fmtX = (v) => v.toFixed(decOf(xStep));
 
-  const hex = body ? "#" + body.hex.toString(16).padStart(6, "0") : "#7fe0ee";
+  const hex = body ? "#" + body.hex.toString(16).padStart(6, "0") : QGA_TOKENS.css("pigment-cyan-85");
   const inRange = (r) => r > rMin && r < rMax;
   const marks = [
-    { r: rs, c: "#ff8f6b", label: "r_s" },
-    { r: rPh, c: "#8f7ae8", label: "r_ph" },
-    { r: rIsco, c: "#4ec9d9", label: "r_ISCO" },
+    { r: rs, c: QGA_TOKENS.css("pigment-red-76"), label: "r_s" },
+    { r: rPh, c: QGA_TOKENS.css("pigment-violet-65-c16"), label: "r_ph" },
+    { r: rIsco, c: QGA_TOKENS.css("pigment-cyan-77"), label: "r_ISCO" },
   ].filter((m) => inRange(m.r));
   const liveR = Math.min(Math.max(rPeri, rMin), rMax);
 
@@ -815,8 +815,8 @@ function VEffPanel({ mass, body, view, stRef }) {
         aria-label="Effective potential of the selected body: general relativity against Newtonian, with the energy level, turning points and live radius">
         <defs>
           <linearGradient id="veff-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c3b2ff"></stop>
-            <stop offset="100%" stopColor="#6f5bd6"></stop>
+            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-violet-81")}></stop>
+            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-violet-56")}></stop>
           </linearGradient>
           <clipPath id={veffClipId}>
             <rect x={PL} y={PT} width={iw} height={ih}></rect>
@@ -824,23 +824,23 @@ function VEffPanel({ mass, body, view, stRef }) {
         </defs>
         {yTicks.map((v) => (
           <g key={"y" + v}>
-            <line x1={PL} y1={ys(v)} x2={W - PR} y2={ys(v)} stroke="#1b2740" strokeWidth="0.7"></line>
-            <text x={PL - 7} y={ys(v) + 2.8} fill="#6f86a8" fontSize="8.5"
+            <line x1={PL} y1={ys(v)} x2={W - PR} y2={ys(v)} stroke={QGA_TOKENS.css("pigment-blue-27")} strokeWidth="0.7"></line>
+            <text x={PL - 7} y={ys(v) + 2.8} fill={QGA_TOKENS.css("pigment-blue-61")} fontSize="8.5"
               fontFamily="var(--font-mono)" textAnchor="end">{fmtY(v)}</text>
           </g>
         ))}
         {xTicks.map((r) => (
           <g key={"x" + r}>
-            <line x1={xs(r)} y1={PT} x2={xs(r)} y2={H - PB} stroke="#1b2740" strokeWidth="0.7"></line>
-            <text x={xs(r)} y={H - PB + 13} fill="#6f86a8" fontSize="8.5"
+            <line x1={xs(r)} y1={PT} x2={xs(r)} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-27")} strokeWidth="0.7"></line>
+            <text x={xs(r)} y={H - PB + 13} fill={QGA_TOKENS.css("pigment-blue-61")} fontSize="8.5"
               fontFamily="var(--font-mono)" textAnchor="middle">{fmtX(r)}</text>
           </g>
         ))}
-        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke="#2c3d5c" strokeWidth="1"></line>
-        <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke="#2c3d5c" strokeWidth="1"></line>
-        <text x={PL + iw / 2} y={H - 9} fill="#8fa6c6" fontSize="9"
+        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-36")} strokeWidth="1"></line>
+        <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-36")} strokeWidth="1"></line>
+        <text x={PL + iw / 2} y={H - 9} fill={QGA_TOKENS.css("pigment-blue-72-c05")} fontSize="9"
           fontFamily="var(--font-mono)" textAnchor="middle">r  (scene units)</text>
-        <text x={15} y={PT + ih / 2} fill="#8fa6c6" fontSize="9"
+        <text x={15} y={PT + ih / 2} fill={QGA_TOKENS.css("pigment-blue-72-c05")} fontSize="9"
           fontFamily="var(--font-mono)" textAnchor="middle"
           transform={"rotate(-90 15 " + (PT + ih / 2) + ")"}>V_eff</text>
 
@@ -854,7 +854,7 @@ function VEffPanel({ mass, body, view, stRef }) {
         ))}
 
         <g clipPath={"url(#" + veffClipId + ")"}>
-          <path d={path(2)} fill="none" stroke="#4a6a9a" strokeWidth="1.2"
+          <path d={path(2)} fill="none" stroke={QGA_TOKENS.css("pigment-blue-52")} strokeWidth="1.2"
             strokeDasharray="5 4" opacity={view === "newton" ? 1 : 0.5}></path>
           <path d={path(1)} fill="none" stroke="url(#veff-grad)" strokeWidth="2.1"
             strokeLinecap="round" opacity={view === "newton" ? 0.3 : 1}></path>
@@ -881,13 +881,13 @@ function VEffPanel({ mass, body, view, stRef }) {
               </g>
             )}
             <circle ref={dotRef} cx={xs(liveR)} cy={ys(V(liveR))} r="3.4"
-              fill="#ffffff" stroke="#0a1020" strokeWidth="1.2"></circle>
+              fill={QGA_TOKENS.css("pigment-white")} stroke={QGA_TOKENS.css("pigment-blue-18")} strokeWidth="1.2"></circle>
           </g>
         )}
       </svg>
       <div className="veff-legend">
-        <span className="veff-key"><i style={{ background: "#9d8cff" }}></i>GR</span>
-        <span className="veff-key"><i className="dash" style={{ background: "#4a6a9a" }}></i>Newtonian</span>
+        <span className="veff-key"><i style={{ background: QGA_TOKENS.css("pigment-violet-71") }}></i>GR</span>
+        <span className="veff-key"><i className="dash" style={{ background: QGA_TOKENS.css("pigment-blue-52") }}></i>Newtonian</span>
         <span className="veff-key"><i className="dot" style={{ background: hex }}></i>E, turning points</span>
         <span className="veff-key"><i className="ring"></i>live r</span>
         <span className="veff-formula"><Eq tex="V_{\mathrm{eff}}=-\frac{GM}{r}+\frac{L^{2}}{2r^{2}}-\frac{GM\,L^{2}}{c^{2}r^{3}}"></Eq></span>
@@ -905,8 +905,8 @@ function VEffPanel({ mass, body, view, stRef }) {
    motion blur. The 3D fan cannot show the winding — the star's visual radius
    is larger than the photon sphere, so the loop hides inside it. */
 const NG_FRACTIONS = [0.55, 0.8, 0.95, 0.995, 1.005, 1.05, 1.25, 1.7, 2.4];
-const NG_ESCAPE = "#ffcf72";
-const NG_CAPTURE = "#ff6b6b";
+const NG_ESCAPE = QGA_TOKENS.css("pigment-amber-88");
+const NG_CAPTURE = QGA_TOKENS.css("pigment-red-71-c18");
 function NullGeodesicPanel({ mass }) {
   const clipId = useMemo(() => "ng-clip-" + (ngClipSeed++), []);
   const P = window.QGA_PHYSICS;
@@ -954,9 +954,9 @@ function NullGeodesicPanel({ mass }) {
         <defs>
           <clipPath id={clipId}><rect x="0" y="0" width={W} height={H} rx="10"></rect></clipPath>
           <radialGradient id="ng-hole">
-            <stop offset="0%" stopColor="#000000"></stop>
-            <stop offset="72%" stopColor="#04060c"></stop>
-            <stop offset="100%" stopColor="#0b1220"></stop>
+            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-black")}></stop>
+            <stop offset="72%" stopColor={QGA_TOKENS.css("pigment-grey-12-c02")}></stop>
+            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-blue-18-c03")}></stop>
           </radialGradient>
         </defs>
         <g clipPath={"url(#" + clipId + ")"}>
@@ -973,36 +973,36 @@ function NullGeodesicPanel({ mass }) {
               style={{ animationDelay: (p.idx * 0.34).toFixed(2) + "s" }}></path>
           ))}
           <circle cx={W / 2} cy={H / 2} r={bCrit * scale} fill="none"
-            stroke="#ffb066" strokeWidth="1" strokeDasharray="4 3" opacity="0.8"></circle>
+            stroke={QGA_TOKENS.css("pigment-orange-82-c13")} strokeWidth="1" strokeDasharray="4 3" opacity="0.8"></circle>
           <circle cx={W / 2} cy={H / 2} r={rPh * scale} fill="none"
-            stroke="#8fe8ff" strokeWidth="1" strokeDasharray="2 3" opacity="0.85"></circle>
+            stroke={QGA_TOKENS.css("pigment-azure-88")} strokeWidth="1" strokeDasharray="2 3" opacity="0.85"></circle>
           <circle cx={W / 2} cy={H / 2} r={rs * scale} fill="url(#ng-hole)"
-            stroke="#ff8f6b" strokeWidth="1.1"></circle>
+            stroke={QGA_TOKENS.css("pigment-red-76")} strokeWidth="1.1"></circle>
           {[1, 2, -1, -2].map((k) => {
             const label = k === 1 ? "b_c" : k === -1 ? "\u2212b_c" : k === 2 ? "2b_c" : "\u22122b_c";
             return (
               <g key={"t" + k}>
                 <line x1={PAD - 6} y1={sy(k * bCrit)} x2={PAD} y2={sy(k * bCrit)}
-                  stroke="#ffb066" strokeWidth="1" opacity="0.8"></line>
+                  stroke={QGA_TOKENS.css("pigment-orange-82-c13")} strokeWidth="1" opacity="0.8"></line>
                 <rect x={PAD + 2} y={sy(k * bCrit) - 5} width={label.length * 4.6 + 4} height="10"
-                  rx="2" fill="#05070d" opacity="0.82"></rect>
-                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill="#ffb066" fontSize="8"
+                  rx="2" fill={QGA_TOKENS.css("pigment-grey-13-c01")} opacity="0.82"></rect>
+                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill={QGA_TOKENS.css("pigment-orange-82-c13")} fontSize="8"
                   fontFamily="var(--font-mono)" opacity="0.95">{label}</text>
               </g>
             );
           })}
         </g>
-        <circle cx={W / 2} cy={H / 2} r="2.2" fill="#ffe9b0"></circle>
+        <circle cx={W / 2} cy={H / 2} r="2.2" fill={QGA_TOKENS.css("pigment-amber-94")}></circle>
         <rect x={W - PAD - 58} y={H - 17} width="58" height="12" rx="2"
-          fill="#05070d" opacity="0.82"></rect>
+          fill={QGA_TOKENS.css("pigment-grey-13-c01")} opacity="0.82"></rect>
         <text x={W - PAD} y={H - 8} fill="var(--text-dim)" fontSize="8"
           fontFamily="var(--font-mono)" textAnchor="end">orbital plane</text>
       </svg>
       <div className="ng-legend">
         <span><i style={{ background: NG_ESCAPE }}></i>escapes b &gt; b_crit</span>
         <span><i style={{ background: NG_CAPTURE }}></i>captured b &lt; b_crit</span>
-        <span><i style={{ background: "#8fe8ff" }}></i>r_ph = {rPh.toFixed(3)}</span>
-        <span><i style={{ background: "#ffb066" }}></i>b_crit = {bCrit.toFixed(3)}</span>
+        <span><i style={{ background: QGA_TOKENS.css("pigment-azure-88") }}></i>r_ph = {rPh.toFixed(3)}</span>
+        <span><i style={{ background: QGA_TOKENS.css("pigment-orange-82-c13") }}></i>b_crit = {bCrit.toFixed(3)}</span>
         <span className="ng-note">near-critical b = 1.005 b_crit winds {near ? near.windings.toFixed(2) : "\u2014"} turns</span>
       </div>
     </div>
@@ -1060,12 +1060,12 @@ function ngSkyTexture(mode) {
   if (grid) {
     g.lineWidth = 1.4;
     for (let k = 1; k <= 12; k++) {
-      g.strokeStyle = k % 3 === 0 ? "rgba(130,205,255,0.62)" : "rgba(90,150,220,0.30)";
+      g.strokeStyle = k % 3 === 0 ? QGA_TOKENS.alpha("pigment-azure-82-c10", 0.62) : QGA_TOKENS.alpha("pigment-azure-66", 0.30);
       g.beginPath(); g.arc(R, R, (k / 12) * R, 0, 6.2832); g.stroke();
     }
     for (let k = 0; k < 24; k++) {
       const a = k / 24 * 6.2832;
-      g.strokeStyle = k % 6 === 0 ? "rgba(130,205,255,0.62)" : "rgba(90,150,220,0.30)";
+      g.strokeStyle = k % 6 === 0 ? QGA_TOKENS.alpha("pigment-azure-82-c10", 0.62) : QGA_TOKENS.alpha("pigment-azure-66", 0.30);
       g.beginPath(); g.moveTo(R, R); g.lineTo(R + Math.cos(a) * R, R + Math.sin(a) * R); g.stroke();
     }
   } else {
@@ -1077,8 +1077,8 @@ function ngSkyTexture(mode) {
       const x = R + Math.cos(phi) * rad, y = R + Math.sin(phi) * rad;
       const mag = Math.pow(rnd(), 3.1);
       const tint = rnd();
-      const col = tint < 0.62 ? "255,255,255" : tint < 0.82 ? "200,220,255" : tint < 0.94 ? "255,232,200" : "255,205,190";
-      g.fillStyle = "rgba(" + col + "," + (0.25 + mag * 0.75) + ")";
+      const col = tint < 0.62 ? "pigment-white" : tint < 0.82 ? "pigment-blue-89" : tint < 0.94 ? "pigment-orange-94-c05" : "pigment-red-89";
+      g.fillStyle = QGA_TOKENS.alpha(col, 0.25 + mag * 0.75);
       g.beginPath(); g.arc(x, y, 0.35 + mag * 1.9, 0, 6.2832); g.fill();
     }
     for (let k = 0; k < 26; k++) {
@@ -1086,9 +1086,9 @@ function ngSkyTexture(mode) {
       const rad = beta / Math.PI * R;
       const x = R + Math.cos(phi) * rad, y = R + Math.sin(phi) * rad;
       const gr = g.createRadialGradient(x, y, 0, x, y, 7);
-      gr.addColorStop(0, "rgba(255,255,255,0.95)");
-      gr.addColorStop(0.25, "rgba(200,225,255,0.5)");
-      gr.addColorStop(1, "rgba(120,170,255,0)");
+      gr.addColorStop(0, QGA_TOKENS.alpha("pigment-white", 0.95));
+      gr.addColorStop(0.25, QGA_TOKENS.alpha("pigment-azure-90", 0.5));
+      gr.addColorStop(1, QGA_TOKENS.alpha("pigment-blue-74", 0));
       g.fillStyle = gr; g.beginPath(); g.arc(x, y, 7, 0, 6.2832); g.fill();
     }
   }
@@ -1229,16 +1229,16 @@ function LensedSkyPanel({ mass }) {
         {mode !== "flat" && (
           <svg viewBox="0 0 360 360" className="lens-overlay" aria-hidden="true">
             <circle cx="180" cy="180" r={rad(L.thetaShadow)} fill="none"
-              stroke="#ff8f6b" strokeWidth="1" strokeDasharray="4 3" opacity="0.85"></circle>
+              stroke={QGA_TOKENS.css("pigment-red-76")} strokeWidth="1" strokeDasharray="4 3" opacity="0.85"></circle>
             <circle cx="180" cy="180" r={rad(L.thetaE)} fill="none"
-              stroke="#ffe9b0" strokeWidth="1.2" opacity="0.9"></circle>
+              stroke={QGA_TOKENS.css("pigment-amber-94")} strokeWidth="1.2" opacity="0.9"></circle>
           </svg>
         )}
       </div>
       <div className="lens-legend">
-        <span><i style={{ background: "#ff8f6b" }}></i>shadow b &lt; b_crit</span>
-        <span><i style={{ background: "#8fe8ff" }}></i>photon ring</span>
-        <span><i style={{ background: "#ffe9b0" }}></i>Einstein ring θ_E = {L.thetaE.toFixed(3)}</span>
+        <span><i style={{ background: QGA_TOKENS.css("pigment-red-76") }}></i>shadow b &lt; b_crit</span>
+        <span><i style={{ background: QGA_TOKENS.css("pigment-azure-88") }}></i>photon ring</span>
+        <span><i style={{ background: QGA_TOKENS.css("pigment-amber-94") }}></i>Einstein ring θ_E = {L.thetaE.toFixed(3)}</span>
         <span className="lens-note">α(b) integrated per pixel · FOV = 2.5 θ_E</span>
       </div>
     </div>
@@ -1329,12 +1329,12 @@ function CurvatureEngine3D() {
   const build = (ctx) => {
     const { THREE, scene, camera } = ctx;
     const P = window.QGA_PHYSICS;
-    scene.fog = new THREE.FogExp2(0x03050a, 0.012);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.4));
-    const key = new THREE.DirectionalLight(0xbcd0ff, 0.7);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02-h261"), 0.012);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.4));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-86"), 0.7);
     key.position.set(6, 10, 4);
     scene.add(key);
-    const starLight = new THREE.PointLight(0xffd9a0, 2.2, 28, 1.7);
+    const starLight = new THREE.PointLight(QGA_TOKENS.hex("pigment-orange-90"), 2.2, 28, 1.7);
     scene.add(starLight);
 
     const det = ctx.settings.current.detail3d;
@@ -1398,7 +1398,7 @@ function CurvatureEngine3D() {
     scene.add(stars);
 
     const nebTex = mkRadialTex([
-      [0, "rgba(120,90,220,0.34)"], [0.4, "rgba(60,80,190,0.16)"], [1, "rgba(0,0,0,0)"],
+      [0, QGA_TOKENS.alpha("pigment-violet-57", 0.34)], [0.4, QGA_TOKENS.alpha("pigment-blue-48", 0.16)], [1, QGA_TOKENS.alpha("pigment-black", 0)],
     ]);
     for (let i = 0; i < 3; i++) {
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -1535,15 +1535,15 @@ function CurvatureEngine3D() {
         }`,
     }));
     scene.add(star);
-    const starGlow = ctx.glow(0xffe6b0, 5, 0.5);
+    const starGlow = ctx.glow(QGA_TOKENS.hex("pigment-amber-93-c07"), 5, 0.5);
     scene.add(starGlow);
-    const corona = ctx.glow(0xff9a4a, 7, 0.18);
+    const corona = ctx.glow(QGA_TOKENS.hex("pigment-orange-78-c15"), 7, 0.18);
     scene.add(corona);
-    const throat = ctx.glow(0x7a6cff, 6, 0.34);   // luminous well throat
+    const throat = ctx.glow(QGA_TOKENS.hex("pigment-blue-62"), 6, 0.34);   // luminous well throat
     scene.add(throat);
     const ringTex = mkRadialTex([
-      [0, "rgba(0,0,0,0)"], [0.34, "rgba(0,0,0,0)"], [0.42, "rgba(190,170,255,0.9)"],
-      [0.47, "rgba(255,240,220,0.35)"], [0.55, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"],
+      [0, QGA_TOKENS.alpha("pigment-black", 0)], [0.34, QGA_TOKENS.alpha("pigment-black", 0)], [0.42, QGA_TOKENS.alpha("pigment-violet-79", 0.9)],
+      [0.47, QGA_TOKENS.alpha("pigment-orange-96", 0.35)], [0.55, QGA_TOKENS.alpha("pigment-black", 0)], [1, QGA_TOKENS.alpha("pigment-black", 0)],
     ]);
     const einstein = new THREE.Sprite(new THREE.SpriteMaterial({
       map: ringTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -1551,8 +1551,8 @@ function CurvatureEngine3D() {
     scene.add(einstein);
     // frame-dragging vortex disc (visible only with spin > 0)
     const vortexTex = mkRadialTex([
-      [0, "rgba(0,0,0,0)"], [0.30, "rgba(0,0,0,0)"], [0.40, "rgba(110,230,255,0.55)"],
-      [0.46, "rgba(0,0,0,0)"], [0.56, "rgba(110,230,255,0.30)"], [0.62, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"],
+      [0, QGA_TOKENS.alpha("pigment-black", 0)], [0.30, QGA_TOKENS.alpha("pigment-black", 0)], [0.40, QGA_TOKENS.alpha("pigment-cyan-87", 0.55)],
+      [0.46, QGA_TOKENS.alpha("pigment-black", 0)], [0.56, QGA_TOKENS.alpha("pigment-cyan-87", 0.30)], [0.62, QGA_TOKENS.alpha("pigment-black", 0)], [1, QGA_TOKENS.alpha("pigment-black", 0)],
     ]);
     const vortex = new THREE.Sprite(new THREE.SpriteMaterial({
       map: vortexTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -1619,25 +1619,25 @@ function CurvatureEngine3D() {
     const bodyVis = [];
     for (let i = 0; i < GR_MAX_BODIES; i++) {
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), new THREE.MeshStandardMaterial({
-        color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.32, metalness: 0.15,
+        color: QGA_TOKENS.hex("pigment-white"), emissive: QGA_TOKENS.hex("pigment-white"), emissiveIntensity: 0.3, roughness: 0.32, metalness: 0.15,
       }));
       mesh.userData.bodyIndex = i;
       mesh.visible = false;
       scene.add(mesh);
-      const glow = ctx.glow(0xffffff, 1, 0.6);
+      const glow = ctx.glow(QGA_TOKENS.hex("pigment-white"), 1, 0.6);
       glow.visible = false;
       scene.add(glow);
-      bodyVis.push({ mesh, glow, trail: mkTrail(0xffffff) });
+      bodyVis.push({ mesh, glow, trail: mkTrail(QGA_TOKENS.hex("pigment-white")) });
     }
     const selRing = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 48), new THREE.MeshBasicMaterial({
-      color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide,
+      color: QGA_TOKENS.hex("pigment-white"), transparent: true, opacity: 0.85, side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     selRing.visible = false;
     scene.add(selRing);
 
     // lensing fan of light rays
-    const rayVis = stRef.current.rays.map(() => mkTrail(0xffcf72));
+    const rayVis = stRef.current.rays.map(() => mkTrail(QGA_TOKENS.hex("pigment-amber-88")));
 
     // Strong-field markers: the photon sphere (r = 3GM/c²) and the critical
     // curve (b = 3√3 GM/c²) that separates escape from capture. Drawn as thin
@@ -1655,8 +1655,8 @@ function CurvatureEngine3D() {
       scene.add(m);
       return m;
     };
-    const ringPhoton = mkRing(0x8fe8ff, 0.7);
-    const ringCrit = mkRing(0xffb066, 0.6);
+    const ringPhoton = mkRing(QGA_TOKENS.hex("pigment-azure-88"), 0.7);
+    const ringCrit = mkRing(QGA_TOKENS.hex("pigment-orange-82-c13"), 0.6);
     const placeRing = (mesh, radius) => {
       mesh.scale.setScalar(radius);
       mesh.position.set(0, hAt(radius, 0) + 0.05, 0);
@@ -1665,7 +1665,7 @@ function CurvatureEngine3D() {
     // capture / close-approach flash pool
     const flashes = [];
     for (let i = 0; i < 4; i++) {
-      const sp = ctx.glow(0xffffff, 0.001, 0);
+      const sp = ctx.glow(QGA_TOKENS.hex("pigment-white"), 0.001, 0);
       sp.visible = false;
       scene.add(sp);
       flashes.push({ sp, t: 9, dur: 0.7 });
@@ -1692,7 +1692,7 @@ function CurvatureEngine3D() {
       }
       dGeo.setAttribute("position", new THREE.BufferAttribute(dPos, 3));
       dust = new THREE.Points(dGeo, new THREE.PointsMaterial({
-        size: 0.09, map: qgaGlowTexture(), color: 0x9db8ff, transparent: true, opacity: 0.42,
+        size: 0.09, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-79-c11"), transparent: true, opacity: 0.42,
         depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
       }));
       dust.userData.data = dData;
@@ -1731,7 +1731,7 @@ function CurvatureEngine3D() {
       }),
     });
 
-    const force = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.4, 0xd96a5a, 0.35, 0.2);
+    const force = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.4, QGA_TOKENS.hex("pigment-red-65"), 0.35, 0.2);
     force.visible = false;
     scene.add(force);
 
@@ -1856,7 +1856,7 @@ function CurvatureEngine3D() {
               // numerically integrated post-Newtonian plunge; captured at r = 3GM/c²
               P.grPlungeStep(p, mu, GR_C2, TS * sdt);
               if (Math.hypot(p.x, p.y) < capR) {
-                triggerFlash(p.x, hAt(p.x, p.y) + 0.25, p.y, 0xbfa0ff);
+                triggerFlash(p.x, hAt(p.x, p.y) + 0.25, p.y, QGA_TOKENS.hex("pigment-violet-77"));
                 wellUniforms.uRippleT.value = 0;
                 p.x = p.x0; p.y = p.y0; p.vx = p.vx0; p.vy = p.vy0; p.trail = [];
               }
@@ -1904,13 +1904,13 @@ function CurvatureEngine3D() {
                 P.grNullStep(q, rs, sdt * lightRef.current);
               }
               if (qr < (newton ? capRay : 1.1 * rs)) {
-                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xff6b6b);
+                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, QGA_TOKENS.hex("pigment-red-71-c18"));
                 q.x = -7.6; q.y = q.b; q.vx = newton ? 5.2 : 4; q.vy = 0; q.trail = []; q.near = false;
                 continue;
               }
               if (qr < 2.4 * rs + 0.5 && !q.near) {
                 q.near = true;
-                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, 0xcfe8ff);   // photon-sphere graze
+                triggerFlash(q.x, hAt(q.x, q.y) + 0.15, q.y, QGA_TOKENS.hex("pigment-azure-92-c04"));   // photon-sphere graze
               }
               if (qr > 2.4 * rs + 1.2) q.near = false;
               if (qr > 9.6 || q.trail.length > 900) {
@@ -2004,7 +2004,7 @@ function CurvatureEngine3D() {
         rayVis.forEach((rv, i) => {
           const q = st.rays[i];
           const doomed = newton ? Math.abs(q.b) < capRay : Math.abs(q.b) < bCritNow;
-          rv.hex.setHex(doomed ? 0xff6b6b : 0xffcf72);
+          rv.hex.setHex(doomed ? QGA_TOKENS.hex("pigment-red-71-c18") : QGA_TOKENS.hex("pigment-amber-88"));
           rv.l.visible = showRays;
           if (rv.pts) rv.pts.visible = false;
           if (showRays) writeTrail(rv, q.trail);
@@ -2248,7 +2248,7 @@ function CurvatureEngine() {
     const R = 8;
     ctx.lineWidth = 1;
     for (let gy = -R; gy <= R; gy++) {
-      ctx.strokeStyle = "rgba(110,140,200," + (0.07 + 0.06 * (1 - Math.abs(gy) / R)).toFixed(3) + ")";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-64", (0.07 + 0.06 * (1 - Math.abs(gy) / R)).toFixed(3));
       ctx.beginPath();
       for (let gx = -R; gx <= R; gx += 0.25) {
         const [px, py] = P(gx, gy);
@@ -2257,7 +2257,7 @@ function CurvatureEngine() {
       ctx.stroke();
     }
     for (let gx = -R; gx <= R; gx++) {
-      ctx.strokeStyle = "rgba(110,140,200," + (0.07 + 0.06 * (1 - Math.abs(gx) / R)).toFixed(3) + ")";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-64", (0.07 + 0.06 * (1 - Math.abs(gx) / R)).toFixed(3));
       ctx.beginPath();
       for (let gy = -R; gy <= R; gy += 0.25) {
         const [px, py] = P(gx, gy);
@@ -2269,42 +2269,42 @@ function CurvatureEngine() {
     const [mx, my] = P(0, 0);
     const mr = 7 + M * 1.6;
     const grad = ctx.createRadialGradient(mx, my, 0, mx, my, mr * 2.4);
-    grad.addColorStop(0, "rgba(240,220,170,0.95)");
-    grad.addColorStop(0.4, "rgba(220,180,110,0.5)");
-    grad.addColorStop(1, "rgba(220,180,110,0)");
+    grad.addColorStop(0, QGA_TOKENS.alpha("pigment-amber-90", 0.95));
+    grad.addColorStop(0.4, QGA_TOKENS.alpha("pigment-amber-79", 0.5));
+    grad.addColorStop(1, QGA_TOKENS.alpha("pigment-amber-79", 0));
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(mx, my, mr * 2.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#f4e8c8";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-amber-93");
     ctx.beginPath(); ctx.arc(mx, my, mr * 0.55, 0, Math.PI * 2); ctx.fill();
     // particle trail + body
-    ctx.strokeStyle = "oklch(0.78 0.1 200 / 0.5)"; ctx.lineWidth = 1.5; ctx.beginPath();
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-cyan-78", 0.5); ctx.lineWidth = 1.5; ctx.beginPath();
     st.ptrail.forEach((q, i) => { const [px, py] = P(q.x, q.y); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
     ctx.stroke();
     const [ppx, ppy] = P(st.p.x, st.p.y);
-    ctx.fillStyle = "oklch(0.78 0.1 200)";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-cyan-78");
     ctx.beginPath(); ctx.arc(ppx, ppy, 4.5, 0, Math.PI * 2); ctx.fill();
     // Newton view: draw force vector; GR view: label geodesic
-    ctx.font = "10px IBM Plex Mono";
+    ctx.font = QGA_TOKENS.monoPx(10);
     if (viewRef.current === "newton") {
       const r = Math.hypot(st.p.x, st.p.y) + 1e-6;
       const fx = -st.p.x / r, fy = -st.p.y / r;
       const [tx, ty] = P(st.p.x + fx * 1.3, st.p.y + fy * 1.3);
-      ctx.strokeStyle = "oklch(0.7 0.13 25)"; ctx.lineWidth = 1.6;
+      ctx.strokeStyle = QGA_TOKENS.css("pigment-red-70"); ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(ppx, ppy); ctx.lineTo(tx, ty); ctx.stroke();
-      ctx.fillStyle = "oklch(0.7 0.13 25)";
+      ctx.fillStyle = QGA_TOKENS.css("pigment-red-70");
       ctx.fillText("F = −GMm r̂ / r²  (force picture)", ppx + 10, ppy - 10);
     } else {
-      ctx.fillStyle = "rgba(170,195,230,0.8)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.8);
       ctx.fillText("geodesic — no force, curved geometry", ppx + 10, ppy - 10);
     }
     // light ray
     if (rayRef.current) {
       const q = st.ray;
-      ctx.strokeStyle = "oklch(0.8 0.1 85)"; ctx.lineWidth = 1.8; ctx.beginPath();
+      ctx.strokeStyle = QGA_TOKENS.css("pigment-amber-80"); ctx.lineWidth = 1.8; ctx.beginPath();
       q.trail.forEach((pt, i) => { const [px, py] = P(pt.x, pt.y); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
       ctx.stroke();
       const [lx, ly] = P(q.x, q.y);
-      ctx.fillStyle = "oklch(0.8 0.1 85)";
+      ctx.fillStyle = QGA_TOKENS.css("pigment-amber-80");
       ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
       ctx.fillText("light ray", lx + 8, ly + 4);
     }

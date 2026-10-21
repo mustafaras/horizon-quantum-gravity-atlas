@@ -4,6 +4,22 @@ async function bootstrap() {
     Object.defineProperty(window, "THREE", { value: threeCompatibility, configurable: true });
     Object.defineProperty(window, "QGA_RENDER", { value: renderRuntime, configurable: true });
 
+    // Design tokens (S02): styles/tokens.css is the single source of colours, fonts, sizes and
+    // durations; this is its read side for the classic-script runtime. Exposed first so every
+    // module below can read tokens while it is being built.
+    const tokens = await import("./design/tokens.mjs");
+    const palettes = await import("./design/palettes.mjs");
+    Object.defineProperty(window, "QGA_TOKENS", {
+      value: Object.freeze({
+        readTokens: tokens.readTokens, onThemeChange: tokens.onThemeChange, cssColorToLinear: tokens.cssColorToLinear,
+        current: tokens.current, css: tokens.css, alpha: tokens.alpha, hex: tokens.hex, hexString: tokens.hexString,
+        linear: tokens.linear, linearRef: tokens.linearRef, rgb255: tokens.rgb255, tint: tokens.tint, hueTint: tokens.hueTint,
+        monoPx: tokens.monoPx, bodyPx: tokens.bodyPx, headPx: tokens.headPx,
+        palettes: Object.freeze({ ...palettes }),
+      }),
+      configurable: true,
+    });
+
     // Kerr observatory (science-backed, Node-testable) exposed to the classic-script runtime.
     const kerr = await import("./visualizations/kerr/kerr-observatory.mjs");
     kerr.registerKerrObservatoryProvenance();

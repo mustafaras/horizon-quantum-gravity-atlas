@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { inspectThreeVendor } from "./lib/three-vendor.mjs";
+import { lintTokenLiterals } from "./lib/token-lint.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -165,6 +166,7 @@ for (const file of [
 }
 
 failures.push(...inspectThreeVendor(root));
+failures.push(...lintTokenLiterals(root));
 
 for (const cssFile of ["vendor/fonts/fonts.css", "vendor/katex/katex.min.css"]) {
   if (!exists(cssFile)) continue;

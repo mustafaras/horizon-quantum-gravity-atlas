@@ -19,7 +19,7 @@ function FieldLab() {
   };
   if (!fieldRef.current) initField();
 
-  const KIND_COLOR = { scalar: "oklch(0.78 0.1 200)", spinor: "oklch(0.72 0.13 300)", gauge: "oklch(0.74 0.12 235)" };
+  const KIND_COLOR = { scalar: QGA_TOKENS.css("pigment-cyan-78"), spinor: QGA_TOKENS.css("pigment-violet-72"), gauge: QGA_TOKENS.css("pigment-azure-74") };
   const KIND_NOTE = {
     scalar: "Scalar field φ(x): one real amplitude per point. The Higgs field is the Standard Model's only fundamental scalar.",
     spinor: "Spinor field ψ(x): rendered here as the same amplitude — physically it carries four complex components and spin-½. All matter fields are spinors.",
@@ -53,7 +53,7 @@ function FieldLab() {
     ctx.clearRect(0, 0, w, h);
     const baseY = h * 0.62,amp = h * 0.3;
     // measurement ticks
-    ctx.strokeStyle = "rgba(148,176,224,0.12)";ctx.lineWidth = 1;ctx.beginPath();
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.12);ctx.lineWidth = 1;ctx.beginPath();
     for (let x = 0; x <= w; x += w / 16) {ctx.moveTo(x, baseY - 4);ctx.lineTo(x, baseY + 4);}
     ctx.moveTo(0, baseY);ctx.lineTo(w, baseY);ctx.stroke();
     // waterfall history
@@ -80,17 +80,17 @@ function FieldLab() {
     ctx.restore();
     // quanta labels (fade out)
     if (annotRef.current) {
-      ctx.font = "10px IBM Plex Mono";ctx.textAlign = "center";
+      ctx.font = QGA_TOKENS.monoPx(10);ctx.textAlign = "center";
       labelsRef.current = labelsRef.current.filter((L) => t - L.t0 < 3.2);
       for (const L of labelsRef.current) {
         const a = Math.max(0, 1 - (t - L.t0) / 3.2);
-        ctx.fillStyle = "rgba(200,215,240," + (a * 0.85).toFixed(3) + ")";
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-88", (a * 0.85).toFixed(3));
         ctx.fillText("localized excitation — particle-like quantum", L.x, baseY - amp * 0.95);
-        ctx.strokeStyle = "rgba(200,215,240," + (a * 0.3).toFixed(3) + ")";
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-88", (a * 0.3).toFixed(3));
         ctx.beginPath();ctx.moveTo(L.x, baseY - amp * 0.9);ctx.lineTo(L.x, baseY - amp * 0.55);ctx.stroke();
       }
       ctx.textAlign = "left";
-      ctx.fillStyle = "rgba(148,176,224,0.5)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);
       ctx.fillText("φ(x, t)", 12, 18);
       ctx.fillText("vacuum ⟨φ⟩ = 0", 12, baseY + 16);
     }
@@ -148,15 +148,15 @@ function FieldLab3D() {
   const build = (ctx) => {
     const { THREE, scene, camera } = ctx;
     const parked = ctx.motion() === 0; // reduced motion: frozen shimmer, no stepping
-    scene.fog = new THREE.FogExp2(0x04060b, 0.016);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
-    const key = new THREE.DirectionalLight(0xbcd0ff, 0.9);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.55));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-86"), 0.9);
     key.position.set(5, 9, 4);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x4a7dff, 0.45);
+    const rim = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-62-c20"), 0.45);
     rim.position.set(-6, 3, -8);
     scene.add(rim);
-    const floor = ctx.grid(18, 18, 0x2a3a58, 0.12);
+    const floor = ctx.grid(18, 18, QGA_TOKENS.hex("pigment-blue-35"), 0.12);
     floor.position.y = -2.5;
     scene.add(floor);
 
@@ -171,7 +171,7 @@ function FieldLab3D() {
     geo.setAttribute("color", colAttr);
     const surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       vertexColors: true, metalness: 0.4, roughness: 0.3,
-      emissive: 0x0b1830, emissiveIntensity: 0.75, side: THREE.DoubleSide,
+      emissive: QGA_TOKENS.hex("pigment-blue-21-c05"), emissiveIntensity: 0.75, side: THREE.DoubleSide,
       flatShading: false,
     }));
     scene.add(surf);
@@ -191,11 +191,11 @@ function FieldLab3D() {
     wire.renderOrder = 2;
     scene.add(wire);
 
-    const base = new THREE.Color(0x101c36);
-    const up = new THREE.Color(0x7fe0ee);
-    const dn = new THREE.Color(0xb48af0);
-    const white = new THREE.Color(0xffffff);
-    const cWire = new THREE.Color(0x2c4a7c);
+    const base = new THREE.Color(QGA_TOKENS.hex("pigment-blue-23"));
+    const up = new THREE.Color(QGA_TOKENS.hex("pigment-cyan-85"));
+    const dn = new THREE.Color(QGA_TOKENS.hex("pigment-violet-71-c15"));
+    const white = new THREE.Color(QGA_TOKENS.hex("pigment-white"));
+    const cWire = new THREE.Color(QGA_TOKENS.hex("pigment-blue-41"));
     const tmp = new THREE.Color();
 
     // deterministic vacuum shimmer: the vacuum is never still — a fixed spectrum
@@ -228,7 +228,7 @@ function FieldLab3D() {
         scene.remove(old.s); old.s.material.dispose();
       }
       const s = new THREE.Mesh(markerGeo, new THREE.MeshBasicMaterial({
-        map: qgaGlowTexture(), color: 0xbfefff, transparent: true, opacity: 0.85,
+        map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-azure-92"), transparent: true, opacity: 0.85,
         blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
       }));
       s.renderOrder = 5;
@@ -373,24 +373,24 @@ function DispersionPlot({ mass }) {
     const wmax = Math.sqrt(C * C * kmax * kmax + 9 * 9); // fixed y-scale (m up to 3 → m0=9)
     const X = (k) => padL + k / kmax * pw;
     const Y = (om) => padT + ph * (1 - om / wmax);
-    ctx.strokeStyle = "rgba(148,176,224,0.22)";ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);ctx.lineWidth = 1;
     ctx.beginPath();ctx.moveTo(padL, padT);ctx.lineTo(padL, padT + ph);ctx.lineTo(padL + pw, padT + ph);ctx.stroke();
-    ctx.font = "10px IBM Plex Mono";ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(10);ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("dispersion  ω(k)", padL, 12);
     // massless light cone ω = c k (dashed)
-    ctx.setLineDash([4, 4]);ctx.strokeStyle = "rgba(148,176,224,0.4)";
+    ctx.setLineDash([4, 4]);ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.4);
     ctx.beginPath();ctx.moveTo(X(0), Y(0));ctx.lineTo(X(kmax), Y(C * kmax));ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(148,176,224,0.5)";ctx.fillText("ω = ck (massless)", X(kmax) - 118, Y(C * kmax) + 2);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);ctx.fillText("ω = ck (massless)", X(kmax) - 118, Y(C * kmax) + 2);
     // massive branch ω = √(c²k² + m²)
-    ctx.strokeStyle = "oklch(0.8 0.12 200)";ctx.lineWidth = 2;
-    ctx.shadowColor = "oklch(0.8 0.12 200)";ctx.shadowBlur = 7;ctx.beginPath();
+    ctx.strokeStyle = QGA_TOKENS.css("pigment-cyan-80");ctx.lineWidth = 2;
+    ctx.shadowColor = QGA_TOKENS.css("pigment-cyan-80");ctx.shadowBlur = 7;ctx.beginPath();
     for (let i = 0; i <= 120; i++) {const k = i / 120 * kmax,om = Math.sqrt(C * C * k * k + m0 * m0);if (i === 0) ctx.moveTo(X(k), Y(om));else ctx.lineTo(X(k), Y(om));}
     ctx.stroke();ctx.shadowBlur = 0;
     // mass gap marker
-    ctx.fillStyle = "oklch(0.85 0.14 85)";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-amber-85");
     ctx.beginPath();ctx.arc(X(0), Y(m0), 3.5, 0, Math.PI * 2);ctx.fill();
     ctx.fillText("mass gap ω₀ = mc²", X(0) + 8, Y(m0) + (m0 > wmax * 0.6 ? 14 : -6));
-    ctx.fillStyle = "rgba(148,176,224,0.55)";ctx.fillText("wavenumber k →", padL + pw - 96, padT + ph + 16);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);ctx.fillText("wavenumber k →", padL + pw - 96, padT + ph + 16);
   }, [mass]);
   return <div className="viz-frame" style={{ padding: 6, marginTop: 6 }}>
     <canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
@@ -490,10 +490,10 @@ function FeynmanSVG({ result, labels }) {
     const ang = Math.atan2(y2 - y1, x2 - x1) + (anti ? Math.PI : 0);
     return (
       <g key={key}>
-        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#aebfdd" strokeWidth="1.6" className="fey-line-flow"></line>
-        <polygon points="0,-4 8,0 0,4" fill="#aebfdd"
+        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={QGA_TOKENS.css("pigment-blue-80")} strokeWidth="1.6" className="fey-line-flow"></line>
+        <polygon points="0,-4 8,0 0,4" fill={QGA_TOKENS.css("pigment-blue-80")}
         transform={"translate(" + mx + "," + my + ") rotate(" + ang * 180 / Math.PI + ")"}></polygon>
-        <text x={x1 < W / 2 ? x1 - 8 : x1 + 8} y={y1 + 4} fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk"
+        <text x={x1 < W / 2 ? x1 - 8 : x1 + 8} y={y1 + 4} fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)"
         textAnchor={x1 < W / 2 ? "end" : "start"}>{lbl}</text>
       </g>);
 
@@ -507,15 +507,15 @@ function FeynmanSVG({ result, labels }) {
         {fermion(60, 190, v1.x, v1.y, "i2", labels[1], true)}
         {fermion(v2.x, v2.y, 500, 50, "o1", "", false)}
         {fermion(v2.x, v2.y, 500, 190, "o2", "", true)}
-        <text x="508" y="54" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">{labels[2]}</text>
-        <text x="508" y="194" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">{labels[3]}</text>
+        <text x="508" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[2]}</text>
+        <text x="508" y="194" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[3]}</text>
         <path d={wavy(v1.x, v1.y, v2.x, v2.y)} stroke="var(--gold)" strokeWidth="2.0" fill="none" className="fey-wave-flow"></path>
         <circle className="fey-packet fey-packet-s" r="3.6"></circle>
-        <text x={(v1.x + v2.x) / 2} y={v1.y - 16} fill="oklch(0.8 0.1 85)" fontSize="13" textAnchor="middle" fontFamily="IBM Plex Mono">{result.boson}</text>
+        <text x={(v1.x + v2.x) / 2} y={v1.y - 16} fill={QGA_TOKENS.css("pigment-amber-80")} fontSize="13" textAnchor="middle" fontFamily="var(--font-mono)">{result.boson}</text>
         <circle cx={v1.x} cy={v1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
         <circle cx={v2.x} cy={v2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <text x={v1.x} y={v1.y + 22} fill="#7e8ba1" fontSize="10" textAnchor="middle" fontFamily="IBM Plex Mono">vertex</text>
-        <text x={(v1.x + v2.x) / 2} y={v1.y + 22} fill="#7e8ba1" fontSize="10" textAnchor="middle" fontFamily="IBM Plex Mono">internal propagator</text>
+        <text x={v1.x} y={v1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">vertex</text>
+        <text x={(v1.x + v2.x) / 2} y={v1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">internal propagator</text>
       </g>;
 
   } else if (result.topo === "t") {
@@ -526,10 +526,10 @@ function FeynmanSVG({ result, labels }) {
         {fermion(u1.x, u1.y, 500, 70, "o1", "", false)}
         {fermion(60, 170, u2.x, u2.y, "i2", labels[1], false)}
         {fermion(u2.x, u2.y, 500, 170, "o2", "", false)}
-        <text x="508" y="74" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">{labels[2]}</text>
-        <text x="508" y="174" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">{labels[3]}</text>
+        <text x="508" y="74" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[2]}</text>
+        <text x="508" y="174" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[3]}</text>
         <path d={wavy(u1.x, u1.y, u2.x, u2.y)} stroke="var(--gold)" strokeWidth="2.0" fill="none" className="fey-wave-flow"></path>
-        <text x={u1.x + 18} y={120} fill="var(--gold)" fontSize="13" fontFamily="IBM Plex Mono">{result.boson}</text>
+        <text x={u1.x + 18} y={120} fill="var(--gold)" fontSize="13" fontFamily="var(--font-mono)">{result.boson}</text>
         <circle className="fey-packet fey-packet-t" r="3.6"></circle>
         <circle cx={u1.x} cy={u1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
         <circle cx={u2.x} cy={u2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
@@ -539,26 +539,26 @@ function FeynmanSVG({ result, labels }) {
     const c1 = { x: 230, y: 130 },c2 = { x: 330, y: 130 };
     body =
     <g>
-        <path d={wavy(60, 50, c1.x, c1.y)} stroke="oklch(0.8 0.1 85)" strokeWidth="1.8" fill="none"></path>
-        <text x="52" y="54" fill="#dde6f5" fontSize="14" textAnchor="end" fontFamily="Space Grotesk">γ</text>
+        <path d={wavy(60, 50, c1.x, c1.y)} stroke={QGA_TOKENS.css("pigment-amber-80")} strokeWidth="1.8" fill="none"></path>
+        <text x="52" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" textAnchor="end" fontFamily="var(--font-head)">γ</text>
         {fermion(60, 200, c1.x, c1.y, "i2", labels.find((l) => l !== "γ"), false)}
-        <line x1={c1.x} y1={c1.y} x2={c2.x} y2={c2.y} stroke="#aebfdd" strokeWidth="1.6" className="fey-line-flow"></line>
+        <line x1={c1.x} y1={c1.y} x2={c2.x} y2={c2.y} stroke={QGA_TOKENS.css("pigment-blue-80")} strokeWidth="1.6" className="fey-line-flow"></line>
         <circle className="fey-packet fey-packet-c" r="3.4"></circle>
-        <path d={wavy(c2.x, c2.y, 500, 50)} stroke="oklch(0.8 0.1 85)" strokeWidth="1.8" fill="none"></path>
-        <text x="508" y="54" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">γ</text>
+        <path d={wavy(c2.x, c2.y, 500, 50)} stroke={QGA_TOKENS.css("pigment-amber-80")} strokeWidth="1.8" fill="none"></path>
+        <text x="508" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">γ</text>
         {fermion(c2.x, c2.y, 500, 200, "o2", "", false)}
-        <text x="508" y="204" fill="#dde6f5" fontSize="14" fontFamily="Space Grotesk">{labels.find((l) => l !== "γ")}</text>
+        <text x="508" y="204" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels.find((l) => l !== "γ")}</text>
         <circle cx={c1.x} cy={c1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
         <circle cx={c2.x} cy={c2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <text x={(c1.x + c2.x) / 2} y={c1.y + 22} fill="#7e8ba1" fontSize="10" textAnchor="middle" fontFamily="IBM Plex Mono">fermion propagator</text>
+        <text x={(c1.x + c2.x) / 2} y={c1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">fermion propagator</text>
       </g>;
 
   }
   return (
     <svg viewBox={"0 0 " + W + " " + H} style={{ width: "100%", display: "block" }} role="img" aria-label="Feynman diagram">
-      <text x="60" y="24" fill="#7e8ba1" fontSize="10" fontFamily="IBM Plex Mono">time →</text>
-      <line x1="60" y1="30" x2="120" y2="30" stroke="#7e8ba1" strokeWidth="1"></line>
-      <polygon points="120,26 128,30 120,34" fill="#7e8ba1"></polygon>
+      <text x="60" y="24" fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" fontFamily="var(--font-mono)">time →</text>
+      <line x1="60" y1="30" x2="120" y2="30" stroke={QGA_TOKENS.css("pigment-blue-63")} strokeWidth="1"></line>
+      <polygon points="120,26 128,30 120,34" fill={QGA_TOKENS.css("pigment-blue-63")}></polygon>
       {body}
     </svg>);
 
@@ -570,23 +570,23 @@ function FeynmanSVG({ result, labels }) {
    exchanged (s-channel propagator / t-channel exchange / Compton fermion line),
    and the products fly out with glowing motion trails. Synced to the builder. */
 const FEY_COL = {
-  "e-": 0x6ba6ff, "e+": 0x8fc2ff, "mu-": 0xb98af0, "mu+": 0xd0aef7,
-  "q": 0x6fd0e0, "qbar": 0x9be6f0, "ph": 0xe0b35a,
+  "e-": QGA_TOKENS.hex("pigment-blue-72"), "e+": QGA_TOKENS.hex("pigment-azure-80-c10"), "mu-": QGA_TOKENS.hex("pigment-violet-72-c15"), "mu+": QGA_TOKENS.hex("pigment-violet-81-c11"),
+  "q": QGA_TOKENS.hex("pigment-cyan-80-c09"), "qbar": QGA_TOKENS.hex("pigment-cyan-88"), "ph": QGA_TOKENS.hex("pigment-amber-79-c12"),
 };
-const feyColHex = (id) => FEY_COL[id] || 0x9fb6e8;
+const feyColHex = (id) => FEY_COL[id] || QGA_TOKENS.hex("pigment-blue-78-c08");
 
 function FeynmanCollision3D({ proc, procKey }) {
   const build = (ctx) => {
     const { THREE, scene } = ctx;
     const P = proc;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.02);
-    scene.add(new THREE.AmbientLight(0x8fa2c8, 0.7));
-    const key = new THREE.DirectionalLight(0xcfe0ff, 0.8); key.position.set(4, 7, 6); scene.add(key);
-    const rim = new THREE.DirectionalLight(0x5070b0, 0.5); rim.position.set(-5, -3, -4); scene.add(rim);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.02);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-71-c06"), 0.7));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-90"), 0.8); key.position.set(4, 7, 6); scene.add(key);
+    const rim = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-55"), 0.5); rim.position.set(-5, -3, -4); scene.add(rim);
 
     // beamline + faint reference plane
-    const grid = ctx.grid(20, 20, 0x223052, 0.1); grid.position.y = -3.0; scene.add(grid);
-    const beam = ctx.line([new THREE.Vector3(-8, 0, 0), new THREE.Vector3(8, 0, 0)], 0x37507e, 0.35, true);
+    const grid = ctx.grid(20, 20, QGA_TOKENS.hex("pigment-blue-31-c06"), 0.1); grid.position.y = -3.0; scene.add(grid);
+    const beam = ctx.line([new THREE.Vector3(-8, 0, 0), new THREE.Vector3(8, 0, 0)], QGA_TOKENS.hex("pigment-blue-43"), 0.35, true);
     scene.add(beam);
 
     const TRAIL = 30;
@@ -649,7 +649,7 @@ function FeynmanCollision3D({ proc, procKey }) {
     const medN = 46;
     const medBuf = new THREE.BufferAttribute(new Float32Array((medN + 1) * 3), 3);
     const medGeo = new THREE.BufferGeometry(); medGeo.setAttribute("position", medBuf);
-    const medHex = isCompton ? 0xc7d4ee : 0xffcf73;
+    const medHex = isCompton ? QGA_TOKENS.hex("pigment-blue-87") : QGA_TOKENS.hex("pigment-amber-88-c12");
     const medLine = new THREE.Line(medGeo, new THREE.LineBasicMaterial({
       color: medHex, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false,
     }));
@@ -657,8 +657,8 @@ function FeynmanCollision3D({ proc, procKey }) {
     const packet = ctx.glow(medHex, 0.9, 0); scene.add(packet);
 
     // collision flashes
-    const flashA = ctx.glow(0xfff2d0, 2.2, 0); scene.add(flashA); // primary vertex
-    const flashB = ctx.glow(0xfff2d0, 2.2, 0); scene.add(flashB); // secondary vertex
+    const flashA = ctx.glow(QGA_TOKENS.hex("pigment-amber-96"), 2.2, 0); scene.add(flashA); // primary vertex
+    const flashB = ctx.glow(QGA_TOKENS.hex("pigment-amber-96"), 2.2, 0); scene.add(flashB); // secondary vertex
 
     // labels follow the live particles
     const lblA = ctx.label(P.labels[0], () => qA.core.position, "s3d-strong");
@@ -954,19 +954,19 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
     const rMax = Math.min(6, maxRatio);
     const radius = (c) => R * Math.min(6, shape(c) / s90) / rMax;
 
-    ctx.strokeStyle = "rgba(148,176,224,0.10)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.10);
     ctx.lineWidth = 1;
     ctx.beginPath();ctx.arc(cx, cy, R, 0, Math.PI * 2);ctx.stroke();
-    ctx.strokeStyle = "rgba(148,176,224,0.06)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.06);
     for (const f of [0.5, 0.75]) {
       ctx.beginPath();ctx.arc(cx, cy, R * f, 0, Math.PI * 2);ctx.stroke();
     }
 
     ctx.setLineDash([4, 5]);
-    ctx.strokeStyle = "rgba(148,176,224,0.28)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.28);
     ctx.beginPath();ctx.moveTo(cx - R * 1.18, cy);ctx.lineTo(cx + R * 1.18, cy);ctx.stroke();
     ctx.setLineDash([]);
-    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);
     for (let i = -3; i <= 3; i++) {
       if (i === 0) continue;
       const tx = cx + R * 1.18 * i / 3;
@@ -982,58 +982,58 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
     }
     ctx.closePath();
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    grad.addColorStop(0, "rgba(90,185,255,0.20)");
-    grad.addColorStop(1, "rgba(120,90,255,0.05)");
+    grad.addColorStop(0, QGA_TOKENS.alpha("pigment-azure-76", 0.20));
+    grad.addColorStop(1, QGA_TOKENS.alpha("pigment-violet-59", 0.05));
     ctx.fillStyle = grad;ctx.fill();
     ctx.save();
-    ctx.shadowColor = "rgba(120,200,255,0.6)";
+    ctx.shadowColor = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.6);
     ctx.shadowBlur = 9;
-    ctx.strokeStyle = "rgba(120,200,255,0.6)";ctx.lineWidth = 1.4;ctx.stroke();
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.6);ctx.lineWidth = 1.4;ctx.stroke();
     ctx.restore();
 
     const L = R * 1.05;
     const th = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
     const pr = Math.max(5, R * 0.075);
-    const blob = (x, y, hue) => {
+    const blob = (x, y, tint) => {
       const g = ctx.createRadialGradient(x, y, 0, x, y, pr);
-      g.addColorStop(0, hue + "0.95)");
-      g.addColorStop(0.45, hue + "0.35)");
-      g.addColorStop(1, hue + "0)");
+      g.addColorStop(0, QGA_TOKENS.alpha(tint, 0.95));
+      g.addColorStop(0.45, QGA_TOKENS.alpha(tint, 0.35));
+      g.addColorStop(1, QGA_TOKENS.alpha(tint, 0));
       ctx.fillStyle = g;
       ctx.beginPath();ctx.arc(x, y, pr, 0, Math.PI * 2);ctx.fill();
     };
     if (tau <= 0.5) {
       const f = 1 - tau / 0.5;
-      blob(cx - L * f, cy, "rgba(120,200,255,");
-      blob(cx + L * f, cy, "rgba(255,150,120,");
+      blob(cx - L * f, cy, "pigment-azure-80-c11");
+      blob(cx + L * f, cy, "pigment-red-78");
     } else {
       const g = (tau - 0.5) / 0.5;
-      blob(cx + L * g * Math.cos(th), cy - L * g * Math.sin(th), "rgba(120,200,255,");
-      blob(cx - L * g * Math.cos(th), cy + L * g * Math.sin(th), "rgba(255,150,120,");
+      blob(cx + L * g * Math.cos(th), cy - L * g * Math.sin(th), "pigment-azure-80-c11");
+      blob(cx - L * g * Math.cos(th), cy + L * g * Math.sin(th), "pigment-red-78");
     }
 
     const flash = Math.max(0, 1 - Math.abs(tau - 0.5) / 0.14);
     if (flash > 0.01) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5 * flash);
-      g.addColorStop(0, "rgba(255,235,180," + 0.85 * flash + ")");
-      g.addColorStop(1, "rgba(255,200,90,0)");
+      g.addColorStop(0, QGA_TOKENS.alpha("pigment-amber-94-c07", 0.85 * flash));
+      g.addColorStop(1, QGA_TOKENS.alpha("pigment-amber-86-c14", 0));
       ctx.fillStyle = g;
       ctx.beginPath();ctx.arc(cx, cy, R * 0.5 * flash, 0, Math.PI * 2);ctx.fill();
     }
 
-    ctx.strokeStyle = "rgba(255,214,120,0.75)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.75);
     ctx.lineWidth = 1.2;
     ctx.beginPath();ctx.arc(cx, cy, R * 0.34, 0, -th, true);ctx.stroke();
-    ctx.font = "10px IBM Plex Mono";
-    ctx.fillStyle = "rgba(255,214,120,0.9)";
+    ctx.font = QGA_TOKENS.monoPx(10);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.9);
     ctx.fillText("θ = " + (th * 180 / Math.PI).toFixed(0) + "°",
     cx + R * 0.44 * Math.cos(th / 2) - 14, cy - R * 0.44 * Math.sin(th / 2) + 3);
 
-    ctx.font = "9.5px IBM Plex Mono";
-    ctx.fillStyle = "rgba(148,176,224,0.55)";
+    ctx.font = QGA_TOKENS.monoPx(9.5);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
     ctx.fillText("incoming", 8, cy - 8);
     ctx.fillText("forward", cx + R * 1.18 - 42, cy - 8);
-    ctx.fillStyle = "rgba(120,200,255,0.5)";
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.5);
     ctx.fillText("dσ/dΩ", 8, 14);
   }, [process.id, cosTheta, photonX, tau, fontsReady]);
   return (
@@ -1076,20 +1076,20 @@ function QFTWaterfall({ cosTheta, tau, fontsReady }) {
   const ref = useQFTCanvas((ctx, w, h) => {
     const padL = 40,padR = 12,padT = 16,padB = 26;
     const pw = w - padL - padR,ph = h - padT - padB;
-    ctx.fillStyle = "rgba(4,7,13,0.85)";
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-13", 0.85);
     ctx.fillRect(padL, padT, pw, ph);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(off, padL, padT, pw, ph);
-    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);
     ctx.lineWidth = 1;
     ctx.strokeRect(padL, padT, pw, ph);
 
     ctx.setLineDash([3, 4]);
-    ctx.strokeStyle = "rgba(148,176,224,0.30)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.30);
     ctx.beginPath();ctx.moveTo(padL + pw / 2, padT);ctx.lineTo(padL + pw / 2, padT + ph);ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.strokeStyle = "rgba(148,176,224,0.22)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);
     for (let i = 0; i <= 4; i++) {
       const ty = padT + ph * i / 4;
       ctx.beginPath();ctx.moveTo(padL - 4, ty);ctx.lineTo(padL, ty);ctx.stroke();
@@ -1097,24 +1097,24 @@ function QFTWaterfall({ cosTheta, tau, fontsReady }) {
 
     const cbW = 7,cbH = 34,cbX = padL + pw - cbW - 6,cbY = padT + 6;
     const cbg = ctx.createLinearGradient(0, cbY, 0, cbY + cbH);
-    cbg.addColorStop(0, "rgba(255,186,92,0.9)");
-    cbg.addColorStop(0.5, "rgba(10,16,28,0.92)");
-    cbg.addColorStop(1, "rgba(88,198,255,0.9)");
+    cbg.addColorStop(0, QGA_TOKENS.alpha("pigment-orange-84", 0.9));
+    cbg.addColorStop(0.5, QGA_TOKENS.alpha("pigment-blue-17", 0.92));
+    cbg.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-79", 0.9));
     ctx.fillStyle = cbg;ctx.fillRect(cbX, cbY, cbW, cbH);
-    ctx.strokeStyle = "rgba(148,176,224,0.28)";ctx.lineWidth = 1;
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.28);ctx.lineWidth = 1;
     ctx.strokeRect(cbX, cbY, cbW, cbH);
-    ctx.font = "8px IBM Plex Mono";
-    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(8);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("+", cbX - 7, cbY + 7);
     ctx.fillText("−", cbX - 7, cbY + cbH - 1);
 
     const py = padT + ph * Math.min(1, Math.max(0, tau));
-    ctx.strokeStyle = "rgba(255,214,120,0.85)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.85);
     ctx.lineWidth = 1.2;
     ctx.beginPath();ctx.moveTo(padL, py);ctx.lineTo(padL + pw, py);ctx.stroke();
 
-    ctx.font = "9.5px IBM Plex Mono";
-    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(9.5);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("−1", padL, h - 8);
     ctx.fillText("0", padL + pw / 2 - 3, h - 8);
     ctx.fillText("+1", padL + pw - 12, h - 8);
@@ -1147,10 +1147,10 @@ function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
     const X = (c) => padL + (c + 1) / 2 * pw;
     const Y = (r) => padT + ph - Math.min(r, yMax) / yMax * ph;
 
-    ctx.strokeStyle = "rgba(148,176,224,0.18)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18);
     ctx.lineWidth = 1;
     ctx.strokeRect(padL, padT, pw, ph);
-    ctx.strokeStyle = "rgba(148,176,224,0.07)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
     for (let i = 1; i < 4; i++) {
       const y = padT + ph * i / 4;
       ctx.beginPath();ctx.moveTo(padL, y);ctx.lineTo(padL + pw, y);ctx.stroke();
@@ -1158,7 +1158,7 @@ function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
       ctx.beginPath();ctx.moveTo(x, padT);ctx.lineTo(x, padT + ph);ctx.stroke();
     }
     ctx.setLineDash([3, 4]);
-    ctx.strokeStyle = "rgba(255,214,120,0.35)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.35);
     ctx.beginPath();ctx.moveTo(padL, Y(1));ctx.lineTo(padL + pw, Y(1));ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1168,33 +1168,33 @@ function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
       if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
     }
     ctx.save();
-    ctx.shadowColor = "rgba(120,200,255,0.55)";
+    ctx.shadowColor = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.55);
     ctx.shadowBlur = 8;
-    ctx.strokeStyle = "rgba(120,200,255,0.95)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.95);
     ctx.lineWidth = 1.8;
     ctx.stroke();
     ctx.restore();
 
     const cNow = Math.max(-1, Math.min(1, cosTheta));
     const mx = X(cNow),my = Y(shape(cNow) / s90);
-    ctx.strokeStyle = "rgba(255,214,120,0.5)";
+    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.5);
     ctx.lineWidth = 1;
     ctx.beginPath();ctx.moveTo(mx, padT);ctx.lineTo(mx, padT + ph);ctx.stroke();
     ctx.save();
-    ctx.shadowColor = "rgba(255,214,120,0.8)";
+    ctx.shadowColor = QGA_TOKENS.alpha("pigment-amber-89", 0.8);
     ctx.shadowBlur = 8;
-    ctx.fillStyle = "rgba(255,214,120,1)";
+    ctx.fillStyle = QGA_TOKENS.css("pigment-amber-89");
     ctx.beginPath();ctx.arc(mx, my, 3.4, 0, Math.PI * 2);ctx.fill();
     ctx.restore();
 
-    ctx.font = "9.5px IBM Plex Mono";
-    ctx.fillStyle = "rgba(148,176,224,0.6)";
+    ctx.font = QGA_TOKENS.monoPx(9.5);
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
     ctx.fillText("−1", padL - 4, h - 10);
     ctx.fillText("0", padL + pw / 2 - 3, h - 10);
     ctx.fillText("+1", padL + pw - 10, h - 10);
     ctx.fillText(yMax.toFixed(1) + "×", 6, padT + 8);
     ctx.fillText("0", 6, padT + ph);
-    ctx.fillStyle = "rgba(148,176,224,0.42)";
+    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.42);
     ctx.fillText("cos θ", padL + pw / 2 - 14, h - 1);
   }, [process.id, cosTheta, photonX, fontsReady]);
   return (
@@ -1216,10 +1216,10 @@ function QFTResonancePlot({ sqrtS, fontsReady }) {
         const t = logY ? (Math.log10(Math.max(1e-12, v)) - yMin) / (yMax - yMin) : (v - yMin) / (yMax - yMin);
         return padT + ph - t * ph;
       };
-      ctx.strokeStyle = "rgba(148,176,224,0.18)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18);
       ctx.lineWidth = 1;
       ctx.strokeRect(x0, padT, pw, ph);
-      ctx.strokeStyle = "rgba(148,176,224,0.07)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
       for (let i = 1; i < 4; i++) {
         const y = padT + ph * i / 4;
         ctx.beginPath();ctx.moveTo(x0, y);ctx.lineTo(x0 + pw, y);ctx.stroke();
@@ -1232,29 +1232,29 @@ function QFTResonancePlot({ sqrtS, fontsReady }) {
         if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
       }
       ctx.save();
-      ctx.shadowColor = "rgba(120,200,255,0.5)";
+      ctx.shadowColor = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.5);
       ctx.shadowBlur = 7;
-      ctx.strokeStyle = "rgba(120,200,255,0.95)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.95);
       ctx.lineWidth = 1.8;
       ctx.stroke();
       ctx.restore();
       if (sqrtS >= xMin && sqrtS <= xMax) {
-        ctx.strokeStyle = "rgba(255,214,120,0.5)";
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.5);
         ctx.lineWidth = 1;
         ctx.beginPath();ctx.moveTo(X(sqrtS), padT);ctx.lineTo(X(sqrtS), padT + ph);ctx.stroke();
         ctx.save();
-        ctx.shadowColor = "rgba(255,214,120,0.8)";
+        ctx.shadowColor = QGA_TOKENS.alpha("pigment-amber-89", 0.8);
         ctx.shadowBlur = 8;
-        ctx.fillStyle = "rgba(255,214,120,1)";
+        ctx.fillStyle = QGA_TOKENS.css("pigment-amber-89");
         ctx.beginPath();ctx.arc(X(sqrtS), Y(fn(sqrtS)), 3.2, 0, Math.PI * 2);ctx.fill();
         ctx.restore();
       }
-      ctx.font = "9.5px IBM Plex Mono";
-      ctx.fillStyle = "rgba(148,176,224,0.6)";
+      ctx.font = QGA_TOKENS.monoPx(9.5);
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
       ctx.fillText(title, x0 + 4, padT - 4);
       ctx.fillText(xMin.toFixed(0), x0 - 2, h - 10);
       ctx.fillText(xMax.toFixed(0), x0 + pw - 18, h - 10);
-      ctx.fillStyle = "rgba(148,176,224,0.42)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.42);
       ctx.fillText("√s (GeV)", x0 + pw / 2 - 22, h - 1);
     };
     panel(0, 1, 200, -3, 2, true,
@@ -1546,7 +1546,7 @@ function QftComputeLab() {
     const LABS = window.QGA_LABS;
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createQftFieldLabRuntime } = await LABS.loadQftLab();
-    ctx.scene.fog = new ctx.THREE.FogExp2(0x04060b, 0.016);
+    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
     const runtime = createQftFieldLabRuntime({ seed, mass, mode, showParticles: true });
     ctx.scene.add(runtime.mesh);
     ctx.label(mode === "flux"

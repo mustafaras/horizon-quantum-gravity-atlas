@@ -1180,6 +1180,9 @@ horizon-quantum-gravity-atlas/
 ├── scripts/
 │   └── validate-repo.mjs
 ├── styles/
+│   ├── tokens.css            (single source of colours, fonts, sizes, durations)
+│   ├── base.css, layout.css, components*.css, shell.css
+│   ├── modules/*.css         (per-module rules, linked in cascade order)
 │   └── rg-flow.css
 ├── vendor/
 │   ├── babel/

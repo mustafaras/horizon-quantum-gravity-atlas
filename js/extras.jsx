@@ -42,23 +42,23 @@ function OverviewEnergyLadder() {
       const midY = h * 0.52;
       ctx.clearRect(0, 0, w, h);
       // decade ticks: 62 decades, minor labels every 10
-      ctx.font = "9px var(--font-mono, monospace)";
+      ctx.font = QGA_TOKENS.monoPx(9);
       for (let e = Math.ceil(OVERVIEW_L_MIN / 5) * 5; e <= OVERVIEW_L_MAX; e += 5) {
         const x = xOf(e);
         const major = e % 10 === 0;
-        ctx.strokeStyle = major ? "rgba(148,176,224,0.3)" : "rgba(148,176,224,0.12)";
+        ctx.strokeStyle = major ? QGA_TOKENS.alpha("pigment-blue-75-c08", 0.3) : QGA_TOKENS.alpha("pigment-blue-75-c08", 0.12);
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(x, midY - (major ? 15 : 8)); ctx.lineTo(x, midY + (major ? 15 : 8)); ctx.stroke();
         if (major && e >= -30) {
-          ctx.fillStyle = "rgba(147,161,186,0.85)";
+          ctx.fillStyle = QGA_TOKENS.alpha("ink-dim", 0.85);
           ctx.fillText("10" + supScript(e) + " m", x - 14, midY + 32);
         }
       }
       // the axis itself
       const grad = ctx.createLinearGradient(40, 0, w - 40, 0);
-      grad.addColorStop(0, "rgba(70,212,224,0.55)");
-      grad.addColorStop(0.55, "rgba(84,174,255,0.55)");
-      grad.addColorStop(1, "rgba(255,141,22,0.55)");
+      grad.addColorStop(0, QGA_TOKENS.alpha("accent-2", 0.55));
+      grad.addColorStop(0.55, QGA_TOKENS.alpha("accent", 0.55));
+      grad.addColorStop(1, QGA_TOKENS.alpha("pigment-orange-75", 0.55));
       ctx.strokeStyle = grad; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(40, midY); ctx.lineTo(w - 40, midY); ctx.stroke();
       // ladder stops with a slow, deterministic probe sweep
@@ -73,20 +73,20 @@ function OverviewEnergyLadder() {
         ctx.beginPath();
         ctx.arc(x, y, 3.1 + 1.1 * near, 0, Math.PI * 2);
         ctx.fillStyle = stop.e === -35
-          ? "rgba(255,123,114," + hot.toFixed(3) + ")"
-          : "rgba(84,174,255," + hot.toFixed(3) + ")";
+          ? QGA_TOKENS.alpha("signal-danger", hot.toFixed(3))
+          : QGA_TOKENS.alpha("accent", hot.toFixed(3));
         ctx.fill();
         if (stop.e === -35 || stop.e === 27) {
-          ctx.strokeStyle = "rgba(255,123,114,0.4)"; ctx.lineWidth = 1;
+          ctx.strokeStyle = QGA_TOKENS.alpha("signal-danger", 0.4); ctx.lineWidth = 1;
           ctx.beginPath(); ctx.arc(x, y, 7.5 + 2.5 * near, 0, Math.PI * 2); ctx.stroke();
         }
-        ctx.fillStyle = near > 0.45 ? "#f3f7fe" : "rgba(232,238,248,0.85)";
-        ctx.font = "600 10.5px var(--font-head, sans-serif)";
+        ctx.fillStyle = near > 0.45 ? QGA_TOKENS.css("ink-strong") : QGA_TOKENS.alpha("ink", 0.85);
+        ctx.font = QGA_TOKENS.headPx(10.5, 600);
         ctx.textAlign = "center";
         ctx.fillText(stop.label, x, y - 9);
         // alternating leader lines below the axis
         const below = i % 2 === 0;
-        ctx.strokeStyle = "rgba(148,176,224,0.34)"; ctx.lineWidth = 1;
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.34); ctx.lineWidth = 1;
         ctx.beginPath();
         if (below) { ctx.moveTo(x, y + 5); ctx.lineTo(x, midY - 4); }
         else { ctx.moveTo(x, y + 5); ctx.lineTo(x, midY + 18); }
@@ -94,12 +94,12 @@ function OverviewEnergyLadder() {
         ctx.beginPath();
         ctx.arc(x, midY - (i % 2 === 0 ? 0 : 0), 0, 0, Math.PI * 2); ctx.stroke();
         if (below) {
-          ctx.fillStyle = "rgba(70,212,224,0.75)";
-          ctx.font = "9px var(--font-mono, monospace)";
+          ctx.fillStyle = QGA_TOKENS.alpha("accent-2", 0.75);
+          ctx.font = QGA_TOKENS.monoPx(9);
           ctx.fillText(stop.tag, x, y + 15);
         } else {
-          ctx.fillStyle = "rgba(70,212,224,0.75)";
-          ctx.font = "9px var(--font-mono, monospace)";
+          ctx.fillStyle = QGA_TOKENS.alpha("accent-2", 0.75);
+          ctx.font = QGA_TOKENS.monoPx(9);
           ctx.fillText(stop.tag, x, y - 22);
         }
         ctx.textAlign = "start";
@@ -119,7 +119,7 @@ function OverviewEnergyLadder() {
 const ARENA_RAMP_LEN = 44;
 const ARENA_SPAN = OVERVIEW_L_MAX - OVERVIEW_L_MIN; // 62 decades walked + 1 gate each
 const arenaZ = (e) => (e - OVERVIEW_L_MIN) / (OVERVIEW_L_MAX - OVERVIEW_L_MIN) * ARENA_RAMP_LEN;
-const ARENA_COLORS = { cosmic: 0x54aeff, human: 0x46d4e0, quantum: 0xffd08a, planck: 0xff7b72 };
+const ARENA_COLORS = { cosmic: QGA_TOKENS.hex("accent"), human: QGA_TOKENS.hex("accent-2"), quantum: QGA_TOKENS.hex("pigment-orange-88-c10"), planck: QGA_TOKENS.hex("signal-danger") };
 
 function OverviewArena3D() {
   const [focus, setFocus] = useState(null);
@@ -128,9 +128,9 @@ function OverviewArena3D() {
 
   const build = (ctx) => {
     const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x03050a, 0.0042);
-    scene.add(new THREE.AmbientLight(0x8fa3c8, 0.5));
-    const key = new THREE.DirectionalLight(0xcdd9ff, 0.7);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02-h261"), 0.0042);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-71-c06-h263"), 0.5));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-89-c05"), 0.7);
     key.position.set(10, 26, -18);
     scene.add(key);
 
@@ -156,7 +156,7 @@ function OverviewArena3D() {
     const classOf = (stop) => (stop.e === -35 ? "planck" : stop.e < 0 ? "quantum" : stop.e <= 16 ? "human" : "cosmic");
     const hoopGeo = track(new THREE.TorusGeometry(4.2, 0.085, 10, det === "low" ? 32 : 72));
     const coreGeo = track(new THREE.SphereGeometry(0.16, 12, 10));
-    const coreMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const coreMat = track(new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-white") }));
 
     // ---------- seeded drifting dust (deterministic layout) ----------
     const dustGeo = track(new THREE.BufferGeometry());
@@ -172,7 +172,7 @@ function OverviewArena3D() {
     dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
     const dust = new THREE.Points(dustGeo, track(new THREE.PointsMaterial({
       size: 0.55, map: qgaGlowTexture(),
-      color: 0xbdd2ff, transparent: true, opacity: 0.5,
+      color: QGA_TOKENS.hex("pigment-blue-86-c07"), transparent: true, opacity: 0.5,
       depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     })));
     scene.add(dust);
@@ -180,13 +180,13 @@ function OverviewArena3D() {
     // ---------- corridor: floor panel + grid, rails and ticks merged ----------
     const floor = new THREE.Mesh(
       track(new THREE.PlaneGeometry(16, ARENA_RAMP_LEN + 10)),
-      track(new THREE.MeshBasicMaterial({ color: 0x0a1424, transparent: true, opacity: 0.22, depthWrite: false })),
+      track(new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-19"), transparent: true, opacity: 0.22, depthWrite: false })),
     );
     floor.geometry.rotateX(-Math.PI / 2);
     floor.position.set(0, -0.02, ARENA_RAMP_LEN / 2 - 6);
     floor.renderOrder = -3;
     scene.add(floor);
-    const grid = s3dGrid(16, 16, 0x2a3a58, 0.16);
+    const grid = s3dGrid(16, 16, QGA_TOKENS.hex("pigment-blue-35"), 0.16);
     grid.geometry.rotateX(-Math.PI / 2);
     grid.position.set(0, 0.01, ARENA_RAMP_LEN / 2 - 6);
     grid.renderOrder = -2;
@@ -197,7 +197,7 @@ function OverviewArena3D() {
       railPts.push(x1, 0.04, z1, x2, 0.04, z2);
       railColors.push(color.r, color.g, color.b, color.r, color.g, color.b);
     };
-    const cRail = new THREE.Color(0x3d5a8f), cTick = new THREE.Color(0x2a3a58), cMajor = new THREE.Color(0x5382c8);
+    const cRail = new THREE.Color(QGA_TOKENS.hex("pigment-blue-47-c09")), cTick = new THREE.Color(QGA_TOKENS.hex("pigment-blue-35")), cMajor = new THREE.Color(QGA_TOKENS.hex("pigment-blue-60"));
     pushSeg(-6.2, -5, -6.2, ARENA_RAMP_LEN + 3, cRail);
     pushSeg(6.2, -5, 6.2, ARENA_RAMP_LEN + 3, cRail);
     for (let e = Math.ceil(OVERVIEW_L_MIN / 5) * 5; e <= OVERVIEW_L_MAX; e += 5) {
@@ -243,7 +243,7 @@ function OverviewArena3D() {
     const wall = new THREE.Mesh(
       track(new THREE.CircleGeometry(4.6, 40)),
       track(new THREE.MeshBasicMaterial({
-        color: 0xff7b72, transparent: true, opacity: 0.16, side: THREE.DoubleSide,
+        color: QGA_TOKENS.hex("signal-danger"), transparent: true, opacity: 0.16, side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending, depthWrite: false,
       })),
     );

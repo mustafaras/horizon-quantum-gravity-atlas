@@ -383,7 +383,7 @@ function Starfield({ enabled = true, motionScale = 1, hue = 226 }) {
       mouse.ey += (mouse.y - mouse.ey) * 0.04 * (mo > 0 ? 1 : 0);
       const px = (mouse.ex - 0.5) * 26 * mo, py = (mouse.ey - 0.5) * 18 * mo;
       // faint coordinate grid
-      ctx.strokeStyle = "hsla(" + hueNow.toFixed(0) + ", 45%, 65%, 0.035)";
+      ctx.strokeStyle = QGA_TOKENS.hueTint("grid", hueNow, 0.035);
       ctx.lineWidth = 1;
       const g = 90;
       ctx.beginPath();
@@ -392,12 +392,12 @@ function Starfield({ enabled = true, motionScale = 1, hue = 226 }) {
       ctx.stroke();
       // module-tinted cosmic glow
       const grad = ctx.createRadialGradient(w * 0.75 - px * 2, h * 0.08 - py * 2, 0, w * 0.75, h * 0.1, Math.max(w, h) * 0.9);
-      grad.addColorStop(0, "hsla(" + hueNow.toFixed(0) + ", 50%, 42%, 0.1)");
-      grad.addColorStop(1, "rgba(0,0,0,0)");
+      grad.addColorStop(0, QGA_TOKENS.hueTint("glow", hueNow, 0.1));
+      grad.addColorStop(1, QGA_TOKENS.alpha("pigment-black", 0));
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
       const t = (mo > 0 ? now / 1000 : 0) * mo;
-      const starCol = "hsl(" + hueNow.toFixed(0) + ", 38%, 80%)";
+      const starCol = QGA_TOKENS.hueTint("star", hueNow);
       for (const st of stars) {
         const tw = mo > 0 ? 0.45 + 0.4 * Math.sin(t * st.s + st.p) : 0.6;
         ctx.globalAlpha = Math.max(0.08, tw * (0.3 + st.z * 0.35));

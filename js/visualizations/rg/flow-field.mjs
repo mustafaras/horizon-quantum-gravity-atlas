@@ -25,10 +25,11 @@ import {
   RG_FLOW_3D_DEFAULTS, RG_VALIDITY_G,
 } from "../../science/rg-flow-3d.mjs";
 import { sharedGlowTexture, wallGradientTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
+
+const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
 const SCALE = { x: 1.5, y: 1.1, z: 1.5 }; // scene units per (g, t, r)
-const UV_COLOR = new Color(0.45, 0.8, 1.0);
-const IR_COLOR = new Color(1.0, 0.68, 0.32);
 const PARTICLES_PER_RUN = 5;
 
 function toScene(p) {
@@ -42,6 +43,8 @@ export function createRgFlowFieldRuntime({
 } = {}) {
   const group = new Group();
   group.name = "rg-flow-field-3d";
+  const UV_COLOR = tokenColor("rg-flow-uv");
+  const IR_COLOR = tokenColor("rg-flow-ir");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
 
@@ -51,7 +54,7 @@ export function createRgFlowFieldRuntime({
 
   // ---- dim reference grid at the IR floor ----
   {
-    const grid = track(new GridHelper(16, 16, 0x24406b, 0x182c49));
+    const grid = track(new GridHelper(16, 16, TK.hex("pigment-blue-37"), TK.hex("pigment-blue-29")));
     grid.material.transparent = true;
     grid.material.opacity = 0.22;
     grid.material.depthWrite = false;
@@ -146,13 +149,13 @@ export function createRgFlowFieldRuntime({
     const path = new CatmullRomCurve3(curve.points.map(toScene));
     const coreGeo = track(new TubeGeometry(path, 96, 0.028, 6, false));
     const coreMat = track(new MeshBasicMaterial({
-      color: 0xffd27a, transparent: true, opacity: 0.95,
+      color: TK.hex("pigment-amber-88-c12-h083"), transparent: true, opacity: 0.95,
       blending: AdditiveBlending, depthWrite: false,
     }));
     group.add(new Mesh(coreGeo, coreMat));
     const haloGeo = track(new TubeGeometry(path, 96, 0.09, 6, false));
     const haloMat = track(new MeshBasicMaterial({
-      color: 0xffb060, transparent: true, opacity: 0.14,
+      color: TK.hex("pigment-orange-82-c13-h064"), transparent: true, opacity: 0.14,
       blending: AdditiveBlending, depthWrite: false,
     }));
     group.add(new Mesh(haloGeo, haloMat));
@@ -163,12 +166,12 @@ export function createRgFlowFieldRuntime({
   for (const fp of fixedPoints) {
     const pos = toScene({ g: fp.g, r: fp.r, t: 0 });
     const geo = track(new IcosahedronGeometry(0.17, 1));
-    const mat = track(new MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.9 }));
+    const mat = track(new MeshBasicMaterial({ color: TK.hex("pigment-white"), wireframe: true, transparent: true, opacity: 0.9 }));
     const marker = new Mesh(geo, mat);
     marker.position.copy(pos);
     group.add(marker);
     const haloMat = track(new SpriteMaterial({
-      map: sharedGlowTexture(), color: 0xffffff, transparent: true,
+      map: sharedGlowTexture(), color: TK.hex("pigment-white"), transparent: true,
       opacity: 0.75, blending: AdditiveBlending, depthWrite: false,
     }));
     const halo = new Sprite(haloMat);
@@ -186,7 +189,7 @@ export function createRgFlowFieldRuntime({
     for (const sign of [-1, 1]) {
       const planeGeo = track(new PlaneGeometry(zSpan, h));
       const planeMat = track(new MeshBasicMaterial({
-        map: wallTex, color: 0xff5a5a, transparent: true, opacity: 0.5,
+        map: wallTex, color: TK.hex("pigment-red-69"), transparent: true, opacity: 0.5,
         side: 2, depthWrite: false,
       }));
       const plane = new Mesh(planeGeo, planeMat);
@@ -203,7 +206,7 @@ export function createRgFlowFieldRuntime({
       const loopPts = [...edgePts, edgePts[0]];
       const edgeGeo = track(new BufferGeometry().setFromPoints(loopPts));
       const edgeMat = track(new LineBasicMaterial({
-        color: 0xff6a5a, transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false,
+        color: TK.hex("pigment-red-71"), transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false,
       }));
       group.add(new Line(edgeGeo, edgeMat));
     }
@@ -228,8 +231,8 @@ export function createRgFlowFieldRuntime({
       tip.position.set(axisX, y + (flip ? -0.35 : 0.35), 0);
       group.add(tip);
     };
-    mk((RG_FLOW_3D_DEFAULTS.tMax + 1.4) * SCALE.y, 0x7ec8ff, false); // UV up
-    mk((RG_FLOW_3D_DEFAULTS.tMin - 1.4) * SCALE.y, 0xffb066, true);  // IR down
+    mk((RG_FLOW_3D_DEFAULTS.tMax + 1.4) * SCALE.y, TK.hex("pigment-azure-81"), false); // UV up
+    mk((RG_FLOW_3D_DEFAULTS.tMin - 1.4) * SCALE.y, TK.hex("pigment-orange-82-c13"), true);  // IR down
   }
 
   function sync({ time = 0, motion = 1 } = {}) {

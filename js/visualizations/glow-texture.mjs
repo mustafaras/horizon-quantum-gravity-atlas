@@ -7,6 +7,7 @@
  */
 
 import { CanvasTexture } from "three";
+import * as TK from "../design/tokens.mjs";
 
 export function sharedGlowTexture() {
   if (window.__qgaGlowTex) return window.__qgaGlowTex;
@@ -14,10 +15,10 @@ export function sharedGlowTexture() {
   c.width = c.height = 128;
   const g = c.getContext("2d");
   const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.25, "rgba(255,255,255,0.55)");
-  grad.addColorStop(0.6, "rgba(255,255,255,0.12)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
+  grad.addColorStop(0, TK.css("pigment-white"));
+  grad.addColorStop(0.25, TK.alpha("pigment-white", 0.55));
+  grad.addColorStop(0.6, TK.alpha("pigment-white", 0.12));
+  grad.addColorStop(1, TK.alpha("pigment-white", 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 128, 128);
   window.__qgaGlowTex = new CanvasTexture(c);
@@ -30,18 +31,18 @@ export function ringGlowTexture(inner = 0.26, peak = 0.36, outer = 1.0) {
   c.width = c.height = 256;
   const g = c.getContext("2d");
   const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  grad.addColorStop(0, "rgba(255,255,255,0)");
-  grad.addColorStop(inner, "rgba(255,255,255,0)");
-  grad.addColorStop(peak, "rgba(255,255,255,0.9)");
-  grad.addColorStop((peak + outer) / 2, "rgba(255,255,255,0.22)");
-  grad.addColorStop(outer, "rgba(255,255,255,0)");
+  grad.addColorStop(0, TK.alpha("pigment-white", 0));
+  grad.addColorStop(inner, TK.alpha("pigment-white", 0));
+  grad.addColorStop(peak, TK.alpha("pigment-white", 0.9));
+  grad.addColorStop((peak + outer) / 2, TK.alpha("pigment-white", 0.22));
+  grad.addColorStop(outer, TK.alpha("pigment-white", 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 256, 256);
   return new CanvasTexture(c);
 }
 
 /** Vertical gradient texture for validity walls: strong at the top edge, fading down. */
-export function wallGradientTexture(rgbaTop = "rgba(255,90,90,0.55)", rgbaBottom = "rgba(255,90,90,0)") {
+export function wallGradientTexture(rgbaTop = TK.alpha("pigment-red-69", 0.55), rgbaBottom = TK.alpha("pigment-red-69", 0)) {
   const c = document.createElement("canvas");
   c.width = 4; c.height = 256;
   const g = c.getContext("2d");

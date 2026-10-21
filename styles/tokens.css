@@ -1,0 +1,371 @@
+/* styles/tokens.css — the single source of every colour, font, size and duration.
+   Consumed by CSS (var()), by canvas 2D and by three.js through js/design/tokens.mjs
+   (readTokens → window.QGA_TOKENS). Specification: docs/design/art-direction.md.
+
+   Rules for this file
+   - One `:root` rule. The token reader scans it, so keep every custom property in it.
+   - Sections 1–8c are the vocabulary. Section 9 keeps the pre-S02 names as aliases so no
+     rule breaks; S34 removes them. Section 10 holds the legacy scene pigments, generated
+     by the S02 migration from the literals that used to sit in module code; new work
+     must use sections 1–8c and never add a pigment. */
+
+:root {
+  /* 1. Surfaces ------------------------------------------------------------ */
+  --surface-0: #05080f;
+  --surface-1: #080d1a;
+  --surface-2: #0c1322;
+  --surface-glass: rgba(16, 22, 38, 0.72);
+  --surface-glass-thin: rgba(11, 16, 27, 0.55);
+  --surface-glass-strong: rgba(9, 13, 22, 0.8);
+
+  /* 2. Ink ----------------------------------------------------------------- */
+  --ink-strong: #f3f7fe;
+  --ink: #e8eef8;
+  --ink-dim: #93a1ba;
+  --ink-faint: #44598a;           /* gridlines only, never text */
+
+  /* 3. Rules and edges ----------------------------------------------------- */
+  --rule: rgba(120, 160, 220, 0.14);
+  --rule-strong: rgba(120, 160, 220, 0.28);
+  --edge: rgba(150, 180, 230, 0.16);
+  --edge-bright: rgba(150, 180, 230, 0.34);
+
+  /* 4. Accent and signal --------------------------------------------------- */
+  --accent: #54aeff;
+  --accent-2: #46d4e0;
+  --accent-soft: rgba(84, 174, 255, 0.16);
+  --signal-warm: #ffb454;
+  --signal-danger: #ff7b72;
+
+  /* 5. Epistemic status. Colour never carries status alone (a label always does);
+        the six are pairwise ΔE00 ≥ 12 for normal, protan, deutan and tritan vision. */
+  --status-established: oklch(0.814 0.085 141.7);
+  --status-effective: oklch(0.78 0.098 197.6);
+  --status-schematic: oklch(0.806 0.13 89.6);
+  --status-conjectural: oklch(0.72 0.12 295);
+  --status-open: oklch(0.668 0.13 23);
+  --status-heuristic: oklch(0.661 0.136 100.4);
+
+  /* 6. Data palettes. Categorical: Okabe & Ito (2008) "Color Universal Design", with the
+        black swapped for a light neutral so the eighth entry reads on a dark surface. */
+  --cat-1: #e69f00;
+  --cat-2: #56b4e9;
+  --cat-3: #009e73;
+  --cat-4: #f0e442;
+  --cat-5: #0072b2;
+  --cat-6: #d55e00;
+  --cat-7: #cc79a7;
+  --cat-8: #b8c4d9;
+  /* Diverging (signed quantities): blue ← dark neutral → orange, lightness rising away from zero. */
+  --div-neg-2: oklch(0.78 0.12 235);
+  --div-neg-1: oklch(0.56 0.11 250);
+  --div-mid: oklch(0.30 0.012 260);
+  --div-pos-1: oklch(0.58 0.12 55);
+  --div-pos-2: oklch(0.80 0.14 75);
+  /* Sequential tables (viridis, magma, cividis) are committed in js/design/palette-data.mjs. */
+
+  /* 7. Typography ---------------------------------------------------------- */
+  --font-head: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Sora", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  /* Type scale: base 15 px, ratio 1.2 (px values rounded to 0.01). Absolute floor 10 px. */
+  --step--2: 10.42px;
+  --step--1: 12.5px;
+  --step-0: 15px;
+  --step-1: 18px;
+  --step-2: 21.6px;
+  --step-3: 25.92px;
+  --step-4: 31.1px;
+  --step-5: 37.32px;
+
+  /* 8. Motion and geometry ------------------------------------------------- */
+  --dur-instant: 90ms;
+  --dur-quick: 180ms;
+  --dur-settle: 420ms;
+  --dur-scene: 900ms;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  --radius: 13px;
+  --sidebar-w: 276px;
+
+  /* 8b. Emitter and lab colours stored as linear-light floats (exact values from the scenes that
+         used to hard-code them in `new Color(r, g, b)`; feed three.js through TK.linearRef). */
+  --emit-hawking-cold: color(srgb-linear 1 0.42 0.22);
+  --emit-hawking-hot: color(srgb-linear 0.62 0.9 1);
+  --emit-infall: color(srgb-linear 0.55 0.16 0.1);
+  --rg-flow-uv: color(srgb-linear 0.45 0.8 1);
+  --rg-flow-ir: color(srgb-linear 1 0.68 0.32);
+  --lab-gold: color(srgb-linear 1 0.78 0.35);
+  --lab-magenta: color(srgb-linear 0.88 0.35 0.85);
+  --lab-cyan: color(srgb-linear 0.42 0.82 0.88);
+  --field-negative: color(srgb-linear 1 0.6 0.235);
+
+  /* 8c. Hue tints. The module hue is state (it follows the active view); saturation and
+         lightness are style and live here. Read with tokens.tint(name) / hueTint(name, hue, a). */
+  --tint-primary-s: 62%;
+  --tint-primary-l: 62%;
+  --tint-accent-s: 58%;
+  --tint-accent-l: 60%;
+  --tint-grid-s: 45%;
+  --tint-grid-l: 65%;
+  --tint-glow-s: 50%;
+  --tint-glow-l: 42%;
+  --tint-star-s: 38%;
+  --tint-star-l: 80%;
+
+  /* 9. Legacy names (aliases; removed in S34) ------------------------------ */
+  --bg: var(--surface-0);
+  --bg-2: var(--surface-1);
+  --panel: var(--surface-glass);
+  --panel-solid: var(--surface-2);
+  --glass: var(--surface-glass-thin);
+  --glass-strong: var(--surface-glass-strong);
+  --line: var(--rule);
+  --line-strong: var(--rule-strong);
+  --text: var(--ink);
+  --text-dim: var(--ink-dim);
+  --head: var(--ink-strong);
+  --acc: var(--accent);
+  --acc-2: var(--accent-2);
+  --cyan: var(--accent-2);
+  --gold: var(--signal-warm);
+  --acc-soft: var(--accent-soft);
+  --danger: var(--signal-danger);
+
+  /* 10. Legacy scene pigments (generated; see header) ---------------------- */
+  /* @pigments:begin */
+  /* white */
+  --pigment-white: #ffffff;
+  /* grey */
+  --pigment-grey-98: #eafcff;
+  --pigment-grey-97-c02: #eaf6ff;
+  --pigment-grey-97: #e9f6ff;
+  --pigment-grey-96-c02: #ebf4ff;
+  --pigment-grey-96-c01: #edf2fb;
+  --pigment-grey-96: #eaf2ff;
+  --pigment-grey-92: #dde6f5;
+  --pigment-grey-16: #0a0e16;
+  --pigment-grey-15: #070c15;
+  --pigment-grey-13-c01: #05070d;
+  --pigment-grey-13: #04070d;
+  --pigment-grey-12-c02: #04060c;
+  --pigment-grey-12-c01: #04060b;
+  --pigment-grey-12: #02060c;
+  --pigment-grey-11-c02-h261: #03050a;
+  --pigment-grey-11: #02040a;
+  --pigment-grey-11-c02: #020409;
+  --pigment-grey-10: #01030a;
+  /* black */
+  --pigment-black: #000000;
+  /* pink */
+  --pigment-pink-78: #ff8fae;
+  /* red */
+  --pigment-red-89: #ffcdbe;
+  --pigment-red-78: #ff9678;
+  --pigment-red-76: #ff8f6b;
+  --pigment-red-71-c18: #ff6b6b;
+  --pigment-red-71: #ff6a5a;
+  --pigment-red-70: oklch(0.7 0.13 25);
+  --pigment-red-70-c16: oklch(0.7 0.16 25);
+  --pigment-red-69: #ff5a5a;
+  --pigment-red-65: #d96a5a;
+  --pigment-red-43: #8a2a1a;
+  --pigment-red-23: #400000;
+  /* orange */
+  --pigment-orange-96: #fff0dc;
+  --pigment-orange-94-c05: #ffe8c8;
+  --pigment-orange-94: #ffe8c4;
+  --pigment-orange-90: #ffd9a0;
+  --pigment-orange-89: #ffd38a;
+  --pigment-orange-88-c10: #ffd08a;
+  --pigment-orange-88: #ffcd82;
+  --pigment-orange-87: #ffc98a;
+  --pigment-orange-86: #ffc46a;
+  --pigment-orange-85-c11: #ffc27a;
+  --pigment-orange-85: oklch(0.85 0.13 70);
+  --pigment-orange-84-c13: #ffbd66;
+  --pigment-orange-84: #ffba5c;
+  --pigment-orange-82-c13: #ffb066;
+  --pigment-orange-82-c13-h064: #ffb060;
+  --pigment-orange-82: #f0b86a;
+  --pigment-orange-79: #f3a85e;
+  --pigment-orange-78: oklch(0.78 0.15 60);
+  --pigment-orange-78-c15-h055: #ff9a50;
+  --pigment-orange-78-c15: #ff9a4a;
+  --pigment-orange-78-c16: #ff9a3c;
+  --pigment-orange-77: #e0a85a;
+  --pigment-orange-75: #ff8d16;
+  /* amber */
+  --pigment-amber-97: #fff4d6;
+  --pigment-amber-96: #fff2d0;
+  --pigment-amber-95: #ffebbe;
+  --pigment-amber-94-c07: #ffebb4;
+  --pigment-amber-94: #ffe9b0;
+  --pigment-amber-93-c07: #ffe6b0;
+  --pigment-amber-93-c08: #ffe6af;
+  --pigment-amber-93: #f4e8c8;
+  --pigment-amber-92: #ffe2b0;
+  --pigment-amber-91: #ffe07a;
+  --pigment-amber-90: #f0dcaa;
+  --pigment-amber-89: #ffd678;
+  --pigment-amber-88-c12-h083: #ffd27a;
+  --pigment-amber-88-c12: #ffcf73;
+  --pigment-amber-88: #ffcf72;
+  --pigment-amber-86: #f0cd8c;
+  --pigment-amber-86-c14: #ffc85a;
+  --pigment-amber-85: oklch(0.85 0.14 85);
+  --pigment-amber-84: #f0c478;
+  --pigment-amber-83: #e8c170;
+  --pigment-amber-80: oklch(0.8 0.1 85);
+  --pigment-amber-79: #dcb46e;
+  --pigment-amber-79-c12: #e0b35a;
+  --pigment-amber-47: #6a5a30;
+  /* green */
+  --pigment-green-84: #6ee7a0;
+  --pigment-green-82: #8fd6a8;
+  /* cyan */
+  --pigment-cyan-94: #cdf5f8;
+  --pigment-cyan-93: #7fffff;
+  --pigment-cyan-91: #9df3ff;
+  --pigment-cyan-91-c08: #a0f0f4;
+  --pigment-cyan-89-c07: #9fe8f2;
+  --pigment-cyan-89: #9fe8f0;
+  --pigment-cyan-88: #9be6f0;
+  --pigment-cyan-87: #6ee6ff;
+  --pigment-cyan-85: #7fe0ee;
+  --pigment-cyan-80-c09: #6fd0e0;
+  --pigment-cyan-80: oklch(0.8 0.12 200);
+  --pigment-cyan-78: oklch(0.78 0.1 200);
+  --pigment-cyan-77: #4ec9d9;
+  --pigment-cyan-75: oklch(0.75 0.11 200);
+  /* azure */
+  --pigment-azure-95: #dff2ff;
+  --pigment-azure-92: #bfefff;
+  --pigment-azure-92-c04: #cfe8ff;
+  --pigment-azure-91-c04: #cde5ff;
+  --pigment-azure-91: #bfe8ff;
+  --pigment-azure-90: #c8e1ff;
+  --pigment-azure-88: #8fe8ff;
+  --pigment-azure-87: #a0dcff;
+  --pigment-azure-86: #9fd8ff;
+  --pigment-azure-85-c08: #9fd4ff;
+  --pigment-azure-85: #8fd8ff;
+  --pigment-azure-84: #9fd0ff;
+  --pigment-azure-83: #6fd7ff;
+  --pigment-azure-83-c09: #8fd0ff;
+  --pigment-azure-82: oklch(0.82 0.13 230);
+  --pigment-azure-82-c10: #82cdff;
+  --pigment-azure-81: #7ec8ff;
+  --pigment-azure-80-c11: #78c8ff;
+  --pigment-azure-80-c10: #8fc2ff;
+  --pigment-azure-80: oklch(0.8 0.12 235);
+  --pigment-azure-80-c13: oklch(0.8 0.13 235);
+  --pigment-azure-79: #58c6ff;
+  --pigment-azure-77: #7fb8ff;
+  --pigment-azure-76: #5ab9ff;
+  --pigment-azure-75: #6fb3ff;
+  --pigment-azure-75-c14: #59b7ff;
+  --pigment-azure-74-c11: #5ab8e8;
+  --pigment-azure-74: oklch(0.74 0.12 235);
+  --pigment-azure-66: #5a96dc;
+  --pigment-azure-64: #5f8fc8;
+  --pigment-azure-60: oklch(0.6 0.07 230);
+  --pigment-azure-48: oklch(0.48 0.13 250);
+  --pigment-azure-26: #10243c;
+  /* blue */
+  --pigment-blue-94: #dfeaff;
+  --pigment-blue-93-c03: #dcebff;
+  --pigment-blue-93: #dce8ff;
+  --pigment-blue-91-c03: #d6e2f5;
+  --pigment-blue-91: #d2e1fa;
+  --pigment-blue-90: #cfe0ff;
+  --pigment-blue-89: #c8dcff;
+  --pigment-blue-89-c05: #cdd9ff;
+  --pigment-blue-89-c03: #cddbf1;
+  --pigment-blue-88-c03: #cdd9ee;
+  --pigment-blue-88: #c8d7f0;
+  --pigment-blue-87: #c7d4ee;
+  --pigment-blue-86-c07: #bdd2ff;
+  --pigment-blue-86: #bcd0ff;
+  --pigment-blue-83: #b6c8f0;
+  --pigment-blue-82: #9fc8ff;
+  --pigment-blue-81: #aac3e6;
+  --pigment-blue-80: #aebfdd;
+  --pigment-blue-79: #8cbeff;
+  --pigment-blue-79-c11: #9db8ff;
+  --pigment-blue-78-c05: #aab8d6;
+  --pigment-blue-78-c07: #9fb8e8;
+  --pigment-blue-78: #8fb8ff;
+  --pigment-blue-78-c08: #9fb6e8;
+  --pigment-blue-75: #7fb0ff;
+  --pigment-blue-75-c08: #94b0e0;
+  --pigment-blue-75-c05: #9ab0d0;
+  --pigment-blue-74: #78aaff;
+  --pigment-blue-73: #6fa8ff;
+  --pigment-blue-72: #6ba6ff;
+  --pigment-blue-72-c05: #8fa6c6;
+  --pigment-blue-71-c06-h263: #8fa3c8;
+  --pigment-blue-71-c06: #8fa2c8;
+  --pigment-blue-71: #78a0e6;
+  --pigment-blue-68: #8899bb;
+  --pigment-blue-67: #7896d2;
+  --pigment-blue-64: #6e8cc8;
+  --pigment-blue-63: #7e8ba1;
+  --pigment-blue-62-c20: #4a7dff;
+  --pigment-blue-62: #7a6cff;
+  --pigment-blue-61: #6f86a8;
+  --pigment-blue-60: #5382c8;
+  --pigment-blue-60-c12: #5a7ec8;
+  --pigment-blue-58: #2a6cff;
+  --pigment-blue-55: #5070b0;
+  --pigment-blue-54: #4a6ea8;
+  --pigment-blue-52: #4a6a9a;
+  --pigment-blue-48-c09: #3d5f94;
+  --pigment-blue-48: #3c50be;
+  --pigment-blue-47-c09: #3d5a8f;
+  --pigment-blue-47: #3a5a8a;
+  --pigment-blue-43: #37507e;
+  --pigment-blue-41: #2c4a7c;
+  --pigment-blue-37: #24406b;
+  --pigment-blue-36: #2c3d5c;
+  --pigment-blue-35: #2a3a58;
+  --pigment-blue-33: #16345f;
+  --pigment-blue-31-c06: #223052;
+  --pigment-blue-31: #20304e;
+  --pigment-blue-29: #182c49;
+  --pigment-blue-29-c06: #1a2a4a;
+  --pigment-blue-27: #1b2740;
+  --pigment-blue-23-c05: #101d36;
+  --pigment-blue-23: #101c36;
+  --pigment-blue-21-c05: #0b1830;
+  --pigment-blue-21: #0a1730;
+  --pigment-blue-19-c04: #0a1428;
+  --pigment-blue-19: #0a1424;
+  --pigment-blue-18-c03: #0b1220;
+  --pigment-blue-18-c03-h259: #08111f;
+  --pigment-blue-18: #0a1020;
+  --pigment-blue-17: #0a101c;
+  /* violet */
+  --pigment-violet-81-c11: #d0aef7;
+  --pigment-violet-81: #c3b2ff;
+  --pigment-violet-79: #beaaff;
+  --pigment-violet-78: #c9a2ff;
+  --pigment-violet-77: #bfa0ff;
+  --pigment-violet-73-c17: #b78cff;
+  --pigment-violet-73: #b58cff;
+  --pigment-violet-72: oklch(0.72 0.13 300);
+  --pigment-violet-72-c15: #b98af0;
+  --pigment-violet-72-c17: #b388ff;
+  --pigment-violet-71-c15: #b48af0;
+  --pigment-violet-71: #9d8cff;
+  --pigment-violet-67: #9a7cff;
+  --pigment-violet-65: #8a78ff;
+  --pigment-violet-65-c18: #b06ae0;
+  --pigment-violet-65-c16: #8f7ae8;
+  --pigment-violet-59: #785aff;
+  --pigment-violet-57: #785adc;
+  --pigment-violet-56: #6f5bd6;
+  /* magenta */
+  --pigment-magenta-78: oklch(0.78 0.14 320);
+  /* @pigments:end */
+}

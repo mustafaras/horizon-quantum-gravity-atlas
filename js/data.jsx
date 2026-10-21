@@ -43,10 +43,10 @@ const QGA_PARTICLES = [
 ];
 
 const QGA_CLASS_COLORS = {
-  quark: "oklch(0.72 0.13 300)",
-  lepton: "oklch(0.75 0.11 200)",
-  gauge: "oklch(0.74 0.12 235)",
-  higgs: "oklch(0.8 0.1 85)",
+  quark: QGA_TOKENS.css("pigment-violet-72"),
+  lepton: QGA_TOKENS.css("pigment-cyan-75"),
+  gauge: QGA_TOKENS.css("pigment-azure-74"),
+  higgs: QGA_TOKENS.css("pigment-amber-80"),
 };
 
 // which gauge bosons couple to a given particle
@@ -60,11 +60,11 @@ function QGA_couplings(p) {
 }
 
 const QGA_SECTORS = [
-  { id: "su3", group: "SU(3)_C", name: "Color · strong force", color: "oklch(0.72 0.13 300)",
+  { id: "su3", group: "SU(3)_C", name: "Color · strong force", color: QGA_TOKENS.css("pigment-violet-72"),
     body: "Eight gluon fields act on the three color charges carried by quarks. Because the group is non-abelian, gluons self-interact: the coupling grows at long distances (confinement) and shrinks at short distances (asymptotic freedom). Quantum chromodynamics binds quarks into hadrons and generates most of the visible mass in the universe." },
-  { id: "su2", group: "SU(2)_L", name: "Weak isospin", color: "oklch(0.74 0.12 235)",
+  { id: "su2", group: "SU(2)_L", name: "Weak isospin", color: QGA_TOKENS.css("pigment-azure-74"),
     body: "Acts only on left-handed fermion doublets — a maximally parity-violating structure. Its three gauge fields mix with hypercharge after symmetry breaking to form the massive W± and Z⁰ and the massless photon. The weak interaction changes quark and lepton flavor, powering beta decay and stellar fusion." },
-  { id: "u1", group: "U(1)_Y", name: "Hypercharge", color: "oklch(0.78 0.1 200)",
+  { id: "u1", group: "U(1)_Y", name: "Hypercharge", color: QGA_TOKENS.css("pigment-cyan-78"),
     body: "An abelian phase symmetry assigning hypercharge Y to each field. Electric charge emerges from the combination Q = T₃ + Y/2 after electroweak symmetry breaking. The surviving unbroken symmetry is U(1)_EM — ordinary electromagnetism with the photon as its gauge boson." },
 ];
 

@@ -36,11 +36,11 @@ import {
 } from "../../science/hawking.mjs";
 import { seededRng } from "../../physics.mjs";
 import { sharedGlowTexture, ringGlowTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
+
+const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
 const R_HORIZON = 1.4;
-const COLD = new Color(1.0, 0.42, 0.22);
-const HOT = new Color(0.62, 0.9, 1.0);
-const FALL_COLOR = new Color(0.55, 0.16, 0.1);
 
 /* Display-rate mapping: the true relative power P(a*,M)/P(10 solar, a*=0)
  * spans ~30 orders of magnitude across the sliders, so the scene maps it
@@ -62,6 +62,9 @@ export function createHawkingLabRuntime({
   const emission = sampleEmission({ massSolar, spin, seed, count: HAWKING_LAB_DEFAULTS.samples });
   const group = new Group();
   group.name = "bh-hawking-lab";
+  const COLD = tokenColor("emit-hawking-cold");
+  const HOT = tokenColor("emit-hawking-hot");
+  const FALL_COLOR = tokenColor("emit-infall");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
 
@@ -113,7 +116,7 @@ export function createHawkingLabRuntime({
   const billboards = [];
   const haloMat = track(new MeshBasicMaterial({
     map: track(ringGlowTexture(0.5, 0.6, 0.8)),
-    color: hotColor.clone().lerp(new Color(0xffd9a0), 0.45),
+    color: hotColor.clone().lerp(new Color(TK.hex("pigment-orange-90")), 0.45),
     transparent: true, opacity: 0.5 + 0.25 * heat,
     blending: AdditiveBlending, depthWrite: false, depthTest: false,
   }));
@@ -126,7 +129,7 @@ export function createHawkingLabRuntime({
   // whisper of ambient warmth (kept very faint — depth, never a blob)
   const ambMat = track(new MeshBasicMaterial({
     map: track(ringGlowTexture(0.16, 0.3, 1.0)),
-    color: hotColor.clone().lerp(new Color(0xff9a50), 0.6),
+    color: hotColor.clone().lerp(new Color(TK.hex("pigment-orange-78-c15-h055")), 0.6),
     transparent: true, opacity: 0.1 + 0.08 * heat,
     blending: AdditiveBlending, depthWrite: false, depthTest: false,
   }));
@@ -138,12 +141,12 @@ export function createHawkingLabRuntime({
 
   // ---- horizon sphere + tight atmosphere shells ----
   const holeGeo = track(new SphereGeometry(R_HORIZON, 64, 48));
-  const holeMat = track(new MeshBasicMaterial({ color: 0x01030a }));
+  const holeMat = track(new MeshBasicMaterial({ color: TK.hex("pigment-grey-10") }));
   group.add(new Mesh(holeGeo, holeMat));
   for (const [scale, opacity] of [[1.018, 0.16], [1.05, 0.06]]) {
     const shellGeo = track(new SphereGeometry(R_HORIZON * scale, 48, 32));
     const shellMat = track(new MeshBasicMaterial({
-      color: 0xffb060, transparent: true, opacity,
+      color: TK.hex("pigment-orange-82-c13-h064"), transparent: true, opacity,
       blending: AdditiveBlending, depthWrite: false,
     }));
     group.add(new Mesh(shellGeo, shellMat));
@@ -151,8 +154,8 @@ export function createHawkingLabRuntime({
 
   // ---- photon ring: bright torus + soft halo torus in the disk plane ----
   for (const [radius, tube, color, opacity] of [
-    [R_HORIZON * 1.055, 0.014, 0xffe8c4, 0.95],
-    [R_HORIZON * 1.1, 0.05, 0xff9a3c, 0.22],
+    [R_HORIZON * 1.055, 0.014, TK.hex("pigment-orange-94"), 0.95],
+    [R_HORIZON * 1.1, 0.05, TK.hex("pigment-orange-78-c16"), 0.22],
   ]) {
     const torusGeo = track(new TorusGeometry(radius, tube, 10, 160));
     const torusMat = track(new MeshBasicMaterial({
@@ -168,9 +171,9 @@ export function createHawkingLabRuntime({
     const disk = new Group();
     disk.name = "bh-hawking-radii";
     const rings = [
-      [R_HORIZON, 0xffb060, 0.2],
-      [R_HORIZON * 1.5, 0xffc98a, 0.12],
-      [R_HORIZON * 3, 0x6fa8ff, 0.12],
+      [R_HORIZON, TK.hex("pigment-orange-82-c13-h064"), 0.2],
+      [R_HORIZON * 1.5, TK.hex("pigment-orange-87"), 0.12],
+      [R_HORIZON * 3, TK.hex("pigment-blue-73"), 0.12],
     ];
     for (const [r, color, opacity] of rings) {
       const ringGeo = track(new RingGeometry(r - 0.014, r + 0.014, 180, 1));
@@ -192,7 +195,7 @@ export function createHawkingLabRuntime({
     const spokeGeo = track(new BufferGeometry());
     spokeGeo.setAttribute("position", new BufferAttribute(new Float32Array(spokePos), 3));
     const spokeMat = track(new LineBasicMaterial({
-      color: 0x8fb8ff, transparent: true, opacity: 0.07,
+      color: TK.hex("pigment-blue-78"), transparent: true, opacity: 0.07,
       blending: AdditiveBlending, depthWrite: false,
     }));
     const spokes = new LineSegments(spokeGeo, spokeMat);
@@ -219,13 +222,13 @@ export function createHawkingLabRuntime({
     const curve = new CatmullRomCurve3(pts);
     const tubeGeo = track(new TubeGeometry(curve, 128, 0.026, 8, false));
     const tubeMat = track(new MeshBasicMaterial({
-      color: 0x8fd0ff, transparent: true, opacity: 0.95,
+      color: TK.hex("pigment-azure-83-c09"), transparent: true, opacity: 0.95,
       blending: AdditiveBlending, depthWrite: false,
     }));
     group.add(new Mesh(tubeGeo, tubeMat));
     const haloGeo = track(new TubeGeometry(curve, 128, 0.085, 6, false));
     const haloMat2 = track(new MeshBasicMaterial({
-      color: 0x2a6cff, transparent: true, opacity: 0.13,
+      color: TK.hex("pigment-blue-58"), transparent: true, opacity: 0.13,
       blending: AdditiveBlending, depthWrite: false,
     }));
     group.add(new Mesh(haloGeo, haloMat2));
@@ -239,7 +242,7 @@ export function createHawkingLabRuntime({
     const tickGeo = track(new BufferGeometry());
     tickGeo.setAttribute("position", new BufferAttribute(new Float32Array(tickPos), 3));
     const tickMat = track(new LineBasicMaterial({
-      color: 0x5f8fc8, transparent: true, opacity: 0.5,
+      color: TK.hex("pigment-azure-64"), transparent: true, opacity: 0.5,
       blending: AdditiveBlending, depthWrite: false,
     }));
     const ticks = new LineSegments(tickGeo, tickMat);
@@ -249,7 +252,7 @@ export function createHawkingLabRuntime({
     // endpoint dots on the rail
     for (const a of [0, 1]) {
       const dotMat = track(new SpriteMaterial({
-        map: sharedGlowTexture(), color: 0xbfe8ff, transparent: true, opacity: 0.85,
+        map: sharedGlowTexture(), color: TK.hex("pigment-azure-91"), transparent: true, opacity: 0.85,
         blending: AdditiveBlending, depthWrite: false,
       }));
       const dot = new Sprite(dotMat);
@@ -262,7 +265,7 @@ export function createHawkingLabRuntime({
   // sliding marker at the current |a*| + guide line dropping to the disk
   const markerA = Math.min(1, Math.abs(lab.spin));
   const markerMat = track(new SpriteMaterial({
-    map: sharedGlowTexture(), color: 0xdff2ff, transparent: true, opacity: 1,
+    map: sharedGlowTexture(), color: TK.hex("pigment-azure-95"), transparent: true, opacity: 1,
     blending: AdditiveBlending, depthWrite: false,
   }));
   const marker = new Sprite(markerMat);
@@ -272,7 +275,7 @@ export function createHawkingLabRuntime({
   const guideGeo = track(new BufferGeometry());
   guideGeo.setAttribute("position", new BufferAttribute(new Float32Array(6), 3));
   const guideMat = track(new LineBasicMaterial({
-    color: 0x9fd4ff, transparent: true, opacity: 0.35,
+    color: TK.hex("pigment-azure-85-c08"), transparent: true, opacity: 0.35,
     blending: AdditiveBlending, depthWrite: false,
   }));
   const guide = new LineSegments(guideGeo, guideMat);
@@ -357,7 +360,7 @@ export function createHawkingLabRuntime({
     return { geo, pos, col, color: new Color(color) };
   };
   const escapeTrails = mkTrails(escapeRig, hotColor);
-  const fallTrails = mkTrails(fallRig, 0x8a2a1a);
+  const fallTrails = mkTrails(fallRig, TK.hex("pigment-red-43"));
 
   function writeEscapeTrails(phase) {
     for (let i = 0; i < escapeRig.length; i++) {

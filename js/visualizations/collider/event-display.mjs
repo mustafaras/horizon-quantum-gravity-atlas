@@ -25,6 +25,7 @@ import {
 } from "../../science/collider-kinematics.mjs";
 import { seededRng } from "../../physics.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
+import * as TK from "../../design/tokens.mjs";
 
 const R = 4.4;      // barrel radius
 const LEN = 6.6;    // barrel half-length ×2
@@ -33,10 +34,11 @@ const TOWERS_PHI = 24;
 const TOWERS_ETA = 12;
 const ETA_MAX = 2.5;
 
-const TRACK_HEX = {
-  jet: 0x6fd0e0, bquark: 0x5ab8e8, electron: 0x6ba6ff, positron: 0x6ba6ff,
-  muon: 0xb98af0, antimuon: 0xb98af0, photon: 0xe0b35a, neutrino: 0xd96a5a,
-};
+// Read when a display is built, so a theme change takes effect on the next build.
+const trackHex = () => ({
+  jet: TK.hex("pigment-cyan-80-c09"), bquark: TK.hex("pigment-azure-74-c11"), electron: TK.hex("pigment-blue-72"), positron: TK.hex("pigment-blue-72"),
+  muon: TK.hex("pigment-violet-72-c15"), antimuon: TK.hex("pigment-violet-72-c15"), photon: TK.hex("pigment-amber-79-c12"), neutrino: TK.hex("pigment-red-65"),
+});
 const DASHED_KINDS = new Set(["photon", "neutrino"]);
 
 export function createColliderDisplayRuntime({
@@ -49,6 +51,7 @@ export function createColliderDisplayRuntime({
   if (!COLLIDER_CHANNELS.includes(channel)) {
     throw new TypeError(`unknown channel: ${channel}`);
   }
+  const TRACK_HEX = trackHex();
   const event = syntheticEvent({ channel, sqrtSGev, seed });
   const summary = eventSummary(event);
   const group = new Group();
@@ -62,7 +65,7 @@ export function createColliderDisplayRuntime({
     const cyl = new Mesh(
       track(new CylinderGeometry(R * fr, R * fr, LEN, 30, 1, true)),
       track(new MeshBasicMaterial({
-        color: 0x44598a, wireframe: true, transparent: true,
+        color: TK.hex("ink-faint"), wireframe: true, transparent: true,
         opacity: fr === 1 ? 0.1 : 0.07, depthWrite: false,
       })),
     );
@@ -75,17 +78,17 @@ export function createColliderDisplayRuntime({
       0, 0, -LEN * 0.62, 0, 0, LEN * 0.62,
     ]), 3));
     const axis = new Line(g, track(new LineBasicMaterial({
-      color: 0x44598a, transparent: true, opacity: 0.4, depthWrite: false,
+      color: TK.hex("ink-faint"), transparent: true, opacity: 0.4, depthWrite: false,
     })));
     group.add(axis);
   }
 
   // ---- interaction vertex + beam bunches ----
   const vertex = new Mesh(track(new SphereGeometry(0.1, 16, 12)),
-    track(new MeshBasicMaterial({ color: 0xffffff })));
+    track(new MeshBasicMaterial({ color: TK.hex("pigment-white") })));
   group.add(vertex);
   const vFlash = new Sprite(track(new SpriteMaterial({
-    map: sharedGlowTexture(), color: 0xfff4d6, transparent: true, opacity: 0.12,
+    map: sharedGlowTexture(), color: TK.hex("pigment-amber-97"), transparent: true, opacity: 0.12,
     blending: AdditiveBlending, depthWrite: false,
   })));
   vFlash.scale.setScalar(1.2);
@@ -94,7 +97,7 @@ export function createColliderDisplayRuntime({
   const beamMats = [];
   const beams = [1, -1].map(() => {
     const m = track(new SpriteMaterial({
-      map: sharedGlowTexture(), color: 0x9fd0ff, transparent: true, opacity: 0,
+      map: sharedGlowTexture(), color: TK.hex("pigment-azure-84"), transparent: true, opacity: 0,
       blending: AdditiveBlending, depthWrite: false,
     }));
     beamMats.push(m);
@@ -130,11 +133,11 @@ export function createColliderDisplayRuntime({
     const dashed = DASHED_KINDS.has(p.kind);
     const mat = track(dashed
       ? new LineDashedMaterial({
-        color: TRACK_HEX[p.kind] || 0x9ab0d0, transparent: true, opacity: 0.95,
+        color: TRACK_HEX[p.kind] || TK.hex("pigment-blue-75-c05"), transparent: true, opacity: 0.95,
         dashSize: 0.18, gapSize: 0.12, blending: AdditiveBlending, depthWrite: false,
       })
       : new LineBasicMaterial({
-        color: TRACK_HEX[p.kind] || 0x9ab0d0, transparent: true, opacity: 0.95,
+        color: TRACK_HEX[p.kind] || TK.hex("pigment-blue-75-c05"), transparent: true, opacity: 0.95,
         blending: AdditiveBlending, depthWrite: false,
       }));
     const line = new Line(g, mat);
@@ -175,7 +178,7 @@ export function createColliderDisplayRuntime({
   const towers = new InstancedMesh(towerGeo, towerMat, bins.length);
   towers.frustumCulled = false;
   const dummy = new Object3D();
-  const coldC = new Color(0x2a6cff), hotC = new Color(0xffc46a);
+  const coldC = new Color(TK.hex("pigment-blue-58")), hotC = new Color(TK.hex("pigment-orange-86"));
   const towerBase = new Float32Array(bins.length); // normalized height per tower
   for (let i = 0; i < bins.length; i++) {
     if (bins[i] <= 0) { towers.setColorAt(i, coldC); continue; }
@@ -206,7 +209,7 @@ export function createColliderDisplayRuntime({
     const cone = new Mesh(
       track(new ConeGeometry(Math.tan(coneR) * h, h, 20, 1, true)),
       track(new MeshBasicMaterial({
-        color: 0x6fd0e0, wireframe: true, transparent: true, opacity: 0.3,
+        color: TK.hex("pigment-cyan-80-c09"), wireframe: true, transparent: true, opacity: 0.3,
         blending: AdditiveBlending, depthWrite: false,
       })),
     );
@@ -227,14 +230,14 @@ export function createColliderDisplayRuntime({
       0, 0, 0, dir.x * len, dir.y * len, 0,
     ]), 3));
     const line = new Line(g, track(new LineDashedMaterial({
-      color: 0xd96a5a, transparent: true, opacity: 0.95, dashSize: 0.2, gapSize: 0.14,
+      color: TK.hex("pigment-red-65"), transparent: true, opacity: 0.95, dashSize: 0.2, gapSize: 0.14,
       depthWrite: false,
     })));
     line.computeLineDistances();
     line.userData = { info: `missing E_T · ${event.met.et.toFixed(0)} GeV · φ ${phi.toFixed(2)}` };
     group.add(line);
     const head = new Mesh(track(new ConeGeometry(0.14, 0.4, 10)),
-      track(new MeshBasicMaterial({ color: 0xd96a5a, transparent: true, opacity: 0.95, depthWrite: false })));
+      track(new MeshBasicMaterial({ color: TK.hex("pigment-red-65"), transparent: true, opacity: 0.95, depthWrite: false })));
     head.quaternion.setFromUnitVectors(up, dir);
     head.position.copy(dir).multiplyScalar(len + 0.2);
     group.add(head);
@@ -253,7 +256,7 @@ export function createColliderDisplayRuntime({
     const g = track(new BufferGeometry());
     g.setAttribute("position", new BufferAttribute(pos, 3));
     const dust = new Points(g, track(new PointsMaterial({
-      size: 0.3, sizeAttenuation: true, map: sharedGlowTexture(), color: 0x3a5a8a,
+      size: 0.3, sizeAttenuation: true, map: sharedGlowTexture(), color: TK.hex("pigment-blue-47"),
       transparent: true, opacity: 0.4, depthWrite: false, blending: AdditiveBlending,
     })));
     dust.frustumCulled = false;

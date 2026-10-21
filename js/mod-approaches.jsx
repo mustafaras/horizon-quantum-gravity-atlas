@@ -1,11 +1,11 @@
 // mod-approaches.jsx — Module 06: Major Quantum Gravity Approaches
 /* ---------- 3D theory constellation ---------- */
 const CONST_NODES = [
-  { id: "string", pos: [-4.6, 1.8, -0.6], hex: 0xb98af0 },
-  { id: "lqg", pos: [4.6, 1.8, -0.6], hex: 0x6fd0e0 },
-  { id: "eft", pos: [0, -0.2, 4.2], hex: 0x8fd6a8 },
-  { id: "asymsafe", pos: [-3.6, -1.4, -3.8], hex: 0x6ba6ff },
-  { id: "holo", pos: [3.6, -1.4, -3.8], hex: 0xe0b35a },
+  { id: "string", pos: [-4.6, 1.8, -0.6], hex: QGA_TOKENS.hex("pigment-violet-72-c15") },
+  { id: "lqg", pos: [4.6, 1.8, -0.6], hex: QGA_TOKENS.hex("pigment-cyan-80-c09") },
+  { id: "eft", pos: [0, -0.2, 4.2], hex: QGA_TOKENS.hex("pigment-green-82") },
+  { id: "asymsafe", pos: [-3.6, -1.4, -3.8], hex: QGA_TOKENS.hex("pigment-blue-72") },
+  { id: "holo", pos: [3.6, -1.4, -3.8], hex: QGA_TOKENS.hex("pigment-amber-79-c12") },
 ];
 function TheoryConstellation3D() {
   const [sel, setSel] = useState("string");
@@ -13,12 +13,12 @@ function TheoryConstellation3D() {
 
   const build = (ctx) => {
     const { THREE, scene } = ctx;
-    scene.fog = new THREE.FogExp2(0x04060b, 0.016);
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.6));
-    const key = new THREE.DirectionalLight(0xbcd0ff, 0.85);
+    scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
+    scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.6));
+    const key = new THREE.DirectionalLight(QGA_TOKENS.hex("pigment-blue-86"), 0.85);
     key.position.set(4, 8, 6);
     scene.add(key);
-    const floor = ctx.grid(20, 20, 0x2a3a58, 0.18);
+    const floor = ctx.grid(20, 20, QGA_TOKENS.hex("pigment-blue-35"), 0.18);
     floor.position.y = -3.2;
     scene.add(floor);
 
@@ -33,15 +33,15 @@ function TheoryConstellation3D() {
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
     const starField = new THREE.Points(sGeo, new THREE.PointsMaterial({
-      size: 1.2, map: qgaGlowTexture(), color: 0xb6c8f0, transparent: true,
+      size: 1.2, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-83"), transparent: true,
       opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     }));
     scene.add(starField);
 
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 26, 18),
-      new THREE.MeshStandardMaterial({ color: 0xedf2fb, emissive: 0xaab8d6, emissiveIntensity: 0.85 }));
+      new THREE.MeshStandardMaterial({ color: QGA_TOKENS.hex("pigment-grey-96-c01"), emissive: QGA_TOKENS.hex("pigment-blue-78-c05"), emissiveIntensity: 0.85 }));
     scene.add(core);
-    const coreGlow = ctx.glow(0xd6e2f5, 4.2, 0.5);
+    const coreGlow = ctx.glow(QGA_TOKENS.hex("pigment-blue-91-c03"), 4.2, 0.5);
     scene.add(coreGlow);
     ctx.label("the quantum gravity problem", () => ({ x: 0, y: 1.05, z: 0 }), "s3d-strong");
 
@@ -77,7 +77,7 @@ function TheoryConstellation3D() {
     }
 
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 10, 64),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9,
+      new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-white"), transparent: true, opacity: 0.9,
         blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(ring);
 
@@ -174,12 +174,12 @@ function MicrostructureViz() {
       const cx = w / 2, cy = h / 2, len = Math.min(w * 0.7, 420), amp = h * 0.22;
       const k = nRef.current;
       // standing wave on a string: y = A sin(nπx/L) cos(ωt), ω ∝ n
-      ctx.strokeStyle = "rgba(148,176,224,0.25)";
+      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.25);
       ctx.setLineDash([3, 5]); ctx.beginPath();
       ctx.moveTo(cx - len / 2, cy); ctx.lineTo(cx + len / 2, cy); ctx.stroke(); ctx.setLineDash([]);
       ctx.save();
-      ctx.shadowColor = "oklch(0.72 0.13 300)"; ctx.shadowBlur = 12;
-      ctx.strokeStyle = "oklch(0.72 0.13 300)"; ctx.lineWidth = 2.2; ctx.beginPath();
+      ctx.shadowColor = QGA_TOKENS.css("pigment-violet-72"); ctx.shadowBlur = 12;
+      ctx.strokeStyle = QGA_TOKENS.css("pigment-violet-72"); ctx.lineWidth = 2.2; ctx.beginPath();
       for (let i = 0; i <= 120; i++) {
         const f = i / 120;
         const x = cx - len / 2 + f * len;
@@ -187,30 +187,30 @@ function MicrostructureViz() {
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke(); ctx.restore();
-      ctx.fillStyle = "#dde6f5";
+      ctx.fillStyle = QGA_TOKENS.css("pigment-grey-92");
       ctx.beginPath(); ctx.arc(cx - len / 2, cy, 3, 0, Math.PI * 2); ctx.arc(cx + len / 2, cy, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.font = "10px IBM Plex Mono"; ctx.fillStyle = "rgba(170,195,230,0.7)";
+      ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.7);
       ctx.fillText("vibration mode n = " + k + "  →  one particle species (mass² ∝ mode number)", 14, 22);
       ctx.fillText("n = 2 closed-string mode: massless spin-2 → the graviton", 14, h - 14);
     } else {
       const { nodes, edges } = netRef.current;
       const px = (q) => [q.x * w, q.y * h];
-      ctx.font = "9.5px IBM Plex Mono";
+      ctx.font = QGA_TOKENS.monoPx(9.5);
       for (const e of edges) {
         const [x1, y1] = px(nodes[e.a]), [x2, y2] = px(nodes[e.b]);
         const pulse = prm ? 0.5 : 0.4 + 0.25 * Math.sin(tt * 1.4 + e.a + e.b);
-        ctx.strokeStyle = "rgba(120,160,230," + pulse.toFixed(3) + ")";
+        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-71", pulse.toFixed(3));
         ctx.lineWidth = e.spin[1] * 0.8;
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        ctx.fillStyle = "rgba(224,179,90,0.85)";
+        ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85);
         ctx.fillText("j=" + e.spin[0], (x1 + x2) / 2 + 4, (y1 + y2) / 2 - 4);
       }
       for (const q of nodes) {
         const [x, y] = px(q);
-        ctx.fillStyle = "oklch(0.78 0.1 200)";
+        ctx.fillStyle = QGA_TOKENS.css("pigment-cyan-78");
         ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = "rgba(170,195,230,0.7)";
+      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.7);
       ctx.fillText("spin network: edges carry SU(2) spins j; a surface crossing an edge gains area ∝ √(j(j+1)) l_P²", 14, 22);
       ctx.fillText("nodes carry quantized volume — geometry itself is the quantum variable", 14, h - 14);
     }
