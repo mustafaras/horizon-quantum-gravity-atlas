@@ -83,20 +83,27 @@ function useSimLoop(draw, deps = []) {
 }
 
 /* ---------- equation rendering (KaTeX) ---------- */
+// Formula Core (js/formula) marks addressable terms with \htmlData; KaTeX 0.16.9 renders that only
+// under `trust`, so trust exactly that command and nothing else.
+const KATEX_BASE_OPTIONS = {
+  throwOnError: false,
+  trust: (ctx) => ctx.command === "\\htmlData",
+  strict: (code) => (code === "htmlExtension" ? "ignore" : "warn"),
+};
 function Eq({ tex, display = false }) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (window.katex) {
-      try { window.katex.render(tex, el, { displayMode: display, throwOnError: false }); }
+      try { window.katex.render(tex, el, { ...KATEX_BASE_OPTIONS, displayMode: display }); }
       catch (e) { el.textContent = tex; }
     } else {
       el.textContent = tex;
       // katex may still be loading; retry once shortly after
       const id = setTimeout(() => {
         if (window.katex && ref.current) {
-          try { window.katex.render(tex, ref.current, { displayMode: display, throwOnError: false }); } catch (e) {}
+          try { window.katex.render(tex, ref.current, { ...KATEX_BASE_OPTIONS, displayMode: display }); } catch (e) {}
         }
       }, 600);
       return () => clearTimeout(id);

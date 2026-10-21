@@ -140,6 +140,16 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Formula Core (S03): one definition per equation, compiled to JS, KaTeX and TSL.
+    // Pass the "three/tsl" namespace to compileTSL; the formula modules never import three.
+    const { library: formulaLibrary } = await import("./formula/library/index.mjs");
+    const { compileTSL } = await import("./formula/to-tsl.mjs");
+    const { toTeX, KATEX_OPTIONS } = await import("./formula/to-tex.mjs");
+    Object.defineProperty(window, "QGA_FORMULA", {
+      value: Object.freeze({ library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS }),
+      configurable: true,
+    });
+
     // Prompt 09: cinematic direction system. The runtime assembles the
     // camera director, scroll driver, shot-space registry, and the
     // capability-gated scene transition; the transition shader is prewarmed
