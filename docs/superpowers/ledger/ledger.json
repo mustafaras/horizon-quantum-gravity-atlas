@@ -120,22 +120,22 @@
       "id": "F-04",
       "title": "~199 hex literals plus per-canvas palettes and font strings in module code",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S02"
       ],
-      "closedIn": null
+      "closedIn": "82cf27ffe7d5edcfbe28f3e0e2a5212d28b8b03c"
     },
     {
       "id": "F-05",
       "title": "Nearly all CSS inline in a 2,332-line index.html; no light or print theme",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S02",
         "S34"
       ],
-      "closedIn": null
+      "closedIn": "82cf27ffe7d5edcfbe28f3e0e2a5212d28b8b03c"
     },
     {
       "id": "F-06",
@@ -411,17 +411,30 @@
         "F-04",
         "F-05"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "https://claude.ai/code/session_01JXexwH9qaswzKmmsKP8o4G",
       "branch": "claude/blissful-meitner-52qy02",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/48",
       "commits": [],
       "startedAt": "2026-10-21",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 561/562 (1 pre-existing skip), incl. 40 new in test/design-tokens.test.mjs, token-lint.test.mjs, stylesheets.test.mjs",
+          "npm run validate: passed, token-literal rule active, 0 violations",
+          "npm run perf:audit: passed",
+          "qa visual.spec + a11y.spec (QGA_QA_VISUAL=1, Chromium r1194, WebGPU off): 95/96 after, 95/96 before; sole failure bh-mobile-lab identical (49,630 px) on the untouched base"
+        ],
+        "screenshots": [
+          "qa/baselines/ (unchanged; no baseline refreshed)"
+        ],
+        "measurements": [
+          "index.html 2332 lines / 129,654 B -> 106 lines / 6,813 B; inline critical CSS 329 B (limit 4096 B)",
+          "CSS cascade proof: concatenated styles/* equals the original inline <style> minus the two :root blocks, 2218/2218 lines",
+          "Colour and font literals in js/ (AST): ~630 -> 0; token reads: 600+; pigment tokens 220",
+          "CIEDE2000 implementation vs Sharma et al. 2005: 10/10 pairs within 5e-5; OKLCH round trip < 1e-6",
+          "Status colours min pairwise ΔE00 >= 12.6 in all four vision conditions; ink tokens >= 4.5:1 on all surfaces"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1310,6 +1323,41 @@
       "prompt": "S01",
       "decision": "S01 branch was fast-forwarded onto origin/claude/eloquent-bardeen-8rt6ch, which carries the ledger and prompt pack that are not on main.",
       "rationale": "Step 1 requires the ledger; main did not contain it. The two docs-only commits ride in the S01 PR."
+    },
+    {
+      "id": "D-006",
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "decision": "cividis is documented as Battelle-licensed, not CC0.",
+      "rationale": "The prompt calls viridis, magma and cividis CC0. The primary source (pnnl/cmaputil LICENSE, Battelle Memorial Institute) is a BSD-style licence; only mpl-colormaps (viridis, magma) is CC0. The notice is reproduced in js/design/palette-data.mjs."
+    },
+    {
+      "id": "D-007",
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "decision": "Machado 2009 matrices (11 severities per type) transcribed from colour-science machado2010.py (BSD-3-Clause).",
+      "rationale": "The authors' page (inf.ufrgs.br) was blocked by the sandbox proxy. Severity-1.0 matrices match the published values; intermediate severities interpolate between the 0.1-step tables."
+    },
+    {
+      "id": "D-008",
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "decision": "Status tokens adjusted to pass ΔE00 >= 12 for normal, protan, deutan and tritan vision. Before -> after (OKLCH): established 0.78 0.10 160 -> 0.814 0.085 141.7; effective 0.78 0.10 200 -> 0.78 0.098 197.6; schematic 0.80 0.10 85 -> 0.806 0.13 89.6; conjectural 0.72 0.12 295 -> unchanged; open 0.70 0.13 25 -> 0.668 0.13 23; heuristic 0.80 0.10 85 -> 0.661 0.136 100.4.",
+      "rationale": "schematic and heuristic were identical (ΔE00 0), so every pair failed. Minimal-displacement search, all six >= 4.5:1 text contrast on every surface. Existing .badge-* CSS keeps its own colours so the atlas looks the same; badges adopt --status-* later."
+    },
+    {
+      "id": "D-009",
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "decision": "Canvas labels below 10 px (8, 9, 9.5 px in mod-qft, mod-experiments, mod-planck, extras) keep their exact size via tokens.font.monoPx(px) instead of snapping to a type step. extras.jsx used 'var(--font-mono)' inside canvas font strings, which canvas ignores; they now resolve to the real mono family.",
+      "rationale": "Moving to step -2 (10.42 px) or the 10 px floor would change pixels, against 'the atlas must look the same'. The Figure Kit (S09) replaces these labels. The extras.jsx change is the only intended pixel difference and is not captured by a baseline."
+    },
+    {
+      "id": "D-010",
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "decision": "~220 frozen --pigment-* tokens preserve the exact legacy scene colours; tweaks-panel.jsx (self-contained light-theme widget at the repo root) is out of scope; float-triple three.js colours became color(srgb-linear …) tokens; bh-mobile-lab fails on the untouched base too (49,630 px).",
+      "rationale": "Naming one-off shades semantically per scene is S-later work and would risk visible drift. The lint covers all of js/ (wider than the prompt's paths). The bh-mobile-lab baseline was not refreshed."
     }
   ],
   "log": [
@@ -1340,6 +1388,13 @@
       "agent": "https://claude.ai/code/session_01JXexwH9qaswzKmmsKP8o4G",
       "event": "claimed",
       "detail": "S02 claimed on claude/blissful-meitner-52qy02"
+    },
+    {
+      "date": "2026-10-21",
+      "prompt": "S02",
+      "agent": "https://claude.ai/code/session_01JXexwH9qaswzKmmsKP8o4G",
+      "event": "review",
+      "detail": "PR #48 opened; tests, validate, perf:audit and visual/a11y QA recorded. closedIn holds the PR code commit until the merge commit exists."
     }
   ]
 }
