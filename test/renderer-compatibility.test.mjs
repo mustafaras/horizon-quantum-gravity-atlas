@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inspectSceneCompatibility, createRenderer } from "../js/render/create-renderer.mjs";
+import { inspectSceneCompatibility, createRenderer, isTeardownNoise } from "../js/render/create-renderer.mjs";
 
 const sceneWith = (...materials) => ({ traverse: (fn) => fn({ material: materials }) });
 test("only pinned standard mapped/node materials qualify; raw shaders never do", () => {
@@ -24,4 +24,17 @@ test("invalid options and cancellation are surfaced", async () => {
   const abort = new AbortController();
   abort.abort();
   await assert.rejects(createRenderer({ signal: abort.signal }), { name: "AbortError" });
+});
+test("teardown races are classified as noise, real defects are not", () => {
+  // A buffer freed while a submit that references it is still in flight can
+  // only mean a scene is being torn down; it must never blank a live renderer.
+  assert.equal(isTeardownNoise("[Buffer (unlabeled)] used in submit while destroyed."), true);
+  assert.equal(isTeardownNoise("Buffer used in submit while destroyed"), true);
+  assert.equal(isTeardownNoise("Texture destroyed while in use by a bind group"), true);
+  assert.equal(isTeardownNoise("Instance dropped in popErrorScope"), true);
+  // Genuine defects must still reach the leases.
+  assert.equal(isTeardownNoise("Vertex buffer slot 0 is missing"), false);
+  assert.equal(isTeardownNoise("Shader module compilation failed"), false);
+  assert.equal(isTeardownNoise(""), false);
+  assert.equal(isTeardownNoise(undefined), false);
 });
