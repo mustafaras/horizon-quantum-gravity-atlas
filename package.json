@@ -16,6 +16,8 @@
     "validate": "node scripts/validate-repo.mjs",
     "check": "npm run validate",
     "benchmark:kerr": "node scripts/benchmark-kerr.mjs",
+    "perf:collect": "node scripts/perf/collect.mjs",
+    "perf:audit": "node scripts/perf/static-audit.mjs",
     "qa:verify": "node qa/verify-manifest.mjs",
     "qa:capture": "node qa/capture.mjs",
     "qa:update": "node qa/capture.mjs --update",

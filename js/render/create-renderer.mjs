@@ -3,6 +3,7 @@ import { normalizeRenderQuality } from "./capabilities.mjs";
 import { abortIfNeeded, invalidatePrewarm } from "./shader-prewarm.mjs";
 import { awaitInitialization } from "./await-initialization.mjs";
 import { attachWebGPUValidation, drainWebGPUValidation } from "./webgpu-validation.mjs";
+import { retainRenderer } from "./renderer-census.mjs";
 
 const NODE_TYPES = new Set([
   "MeshPhongMaterial", "MeshStandardMaterial", "MeshPhysicalMaterial", "MeshToonMaterial",
@@ -172,7 +173,7 @@ export async function createRenderer({
   const attempts = hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2"
     ? ["webgpu", "webgl2"] : ["webgl2"];
   for (const requested of attempts) {
-    let renderer, deviceLease, initialization;
+    let renderer, deviceLease, initialization, releaseCensus = () => {};
     try {
       abortIfNeeded(signal);
       if (requested === "webgpu") {
@@ -189,6 +190,7 @@ export async function createRenderer({
         }
         deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost });
         renderer = new WebGPURenderer({ canvas, alpha, antialias, powerPreference, device: deviceLease.device });
+        releaseCensus = retainRenderer(renderer);
         renderer.onDeviceLost = (info) => onDeviceLost(new Error(`GPU device lost: ${info.message || info.reason}`));
         renderer.onError = (info) => onDeviceLost(new Error(`GPU ${info.type}: ${info.message}`));
         report("WebGPU renderer created; awaiting init().");
@@ -206,6 +208,7 @@ export async function createRenderer({
         if (!context) throw new Error("WebGL2 context unavailable");
         hasWebGL2 = true;
         renderer = new WebGLRenderer({ canvas, context, alpha, antialias, powerPreference, preserveDrawingBuffer: true });
+        releaseCensus = retainRenderer(renderer);
         renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
           throw new Error(`Shader compilation failed: ${gl.getProgramInfoLog(program)} ${gl.getShaderInfoLog(vertex)} ${gl.getShaderInfoLog(fragment)}`);
         };
@@ -238,6 +241,7 @@ export async function createRenderer({
           deviceLease?.beginQuiet();
           try { await renderer.dispose(); }
           finally {
+            releaseCensus();
             renderer.onDeviceLost = () => {};
             await deviceLease?.release();
           }
@@ -252,6 +256,7 @@ export async function createRenderer({
           if (!renderer.isWebGPURenderer || renderer.initialized) await renderer.dispose();
         }
       } finally {
+        releaseCensus();
         if (renderer?.isWebGPURenderer) renderer.onDeviceLost = () => {};
         await deviceLease?.release();
       }

@@ -1,5 +1,7 @@
 # HORIZON Ultra-Realistic Atlas Implementation Prompt Pack
 
+> **Status (2026-10-21):** prompts 00–10 are done. Prompts 11, 12 and 13 were never started and are absorbed into the [v2 sequential prompt pack](horizon-v2/README.md) (S32, S33/S34, S36), where their text stays normative. Track work in the [ledger](../ledger/README.md), not here.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `subagent-driven-development` (recommended) or `executing-plans` to implement this plan prompt-by-prompt. Do not run prompts in parallel. Each prompt assumes every earlier prompt has passed its acceptance gate and has been committed.
 
 **Goal:** Transform HORIZON into a scientifically grounded, ultra-realistic, cinematic quantum-gravity atlas using the current stable Three.js/WebGPU/TSL stack while retaining a robust WebGL2 fallback, static GitHub Pages deployment, reduced-motion behavior, and explicit scientific-status labeling.

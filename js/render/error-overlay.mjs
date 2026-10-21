@@ -1,3 +1,5 @@
+import { liveRenderers, rendererStats } from "./renderer-census.mjs";
+
 const entries = new Map();
 const listeners = new Set();
 let serial = 0;
@@ -22,6 +24,8 @@ export const renderDiagnostics = Object.freeze({
   remove(id) { entries.delete(id); notify(); },
   snapshot() { return [...entries.values()]; },
   subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+  liveRenderers,
+  rendererStats,
 });
 
 export function describeRenderError(error) {
