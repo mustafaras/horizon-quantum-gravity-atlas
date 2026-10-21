@@ -986,7 +986,7 @@ function NullGeodesicPanel({ mass }) {
                   stroke="#ffb066" strokeWidth="1" opacity="0.8"></line>
                 <rect x={PAD + 2} y={sy(k * bCrit) - 5} width={label.length * 4.6 + 4} height="10"
                   rx="2" fill="#05070d" opacity="0.82"></rect>
-                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill="#ffb066" fontSize="7.5"
+                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill="#ffb066" fontSize="8"
                   fontFamily="var(--font-mono)" opacity="0.95">{label}</text>
               </g>
             );
