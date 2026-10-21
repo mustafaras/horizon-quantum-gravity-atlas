@@ -268,6 +268,9 @@ function CompareView({ go }) {
         </div>
         <button className="btn" onClick={() => go("overview")}>← Back to the atlas</button>
       </header>
+      <div className="section-head" style={{ marginTop: 4 }}>
+        <h2>Comparison stage</h2>
+      </div>
       <div className="compare-toolbar viz-toolbar" role="toolbar" aria-label="Comparison controls">
         <span className="seg">
           {window.QGA_COMPARE?.COMPARE_PRESETS.map((entry) => (
