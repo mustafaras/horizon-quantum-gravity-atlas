@@ -145,7 +145,7 @@ const KERR_CURVES = [
 ];
 
 function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, motion }) {
-  const cx = 118, cy = 110, span = 94;
+  const cx = 100, cy = 100, span = 76;
   const visible = KERR_CURVES.filter((curve) => layers[curve.key]);
   const widest = visible.reduce((acc, curve) => Math.max(acc, curve.read(geometry)), 2);
   const domain = Math.max(4, Math.ceil(widest));
@@ -170,7 +170,7 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
       <figcaption className="kerr-map-head">
         <span className="kerr-map-ident">
           <span className="kerr-map-id">FIG.1</span>
-          <span className="kerr-map-title">Equatorial Kerr radii</span>
+          <span className="kerr-map-title">Kerr radii</span>
         </span>
         <span className="kerr-map-head-tools">
           <span className="kerr-map-unit">R / r<sub>g</sub></span>
@@ -178,7 +178,7 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
             aria-expanded="true" onClick={onToggle}>Hide</button>
         </span>
       </figcaption>
-      <svg viewBox="0 0 236 232" role="img"
+      <svg viewBox="0 0 240 208" role="img"
         aria-label={"Nested Kerr radii in units of GM over c squared, plotted to " + domain + " GM/c²"}>
         <defs>
           <radialGradient id="kerr-scope-field" cx="50%" cy="50%" r="50%">
@@ -195,8 +195,8 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
           stroke="rgba(148,176,224,0.18)" strokeWidth="0.7"></circle>
         <line x1={cx - span - 10} y1={cy} x2={cx + span + 10} y2={cy} className="kerr-axis"></line>
         <line x1={cx} y1={cy - span - 10} x2={cx} y2={cy + span + 10} className="kerr-axis"></line>
-        <text x={cx - span + 6} y={cy - span + 12} className="kerr-scope-label">RETROGRADE</text>
-        <text x={cx + span - 6} y={cy + span - 8} className="kerr-scope-label kerr-scope-label-end">PROGRADE</text>
+        <text x="2" y={cy - span - 8} className="kerr-scope-label">RETROGRADE</text>
+        <text x="238" y={cy + span + 14} className="kerr-scope-label kerr-scope-label-end">PROGRADE</text>
         {ticks.map((r) => (
           <g key={r}>
             <line x1={cx + px(r)} y1={cy - 3} x2={cx + px(r)} y2={cy + 3} className="kerr-tick"></line>
