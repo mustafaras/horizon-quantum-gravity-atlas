@@ -203,7 +203,7 @@
   display: block; margin-bottom: 6px; color: rgba(148, 176, 224, 0.7);
   font: 500 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
 }
-.rg-equation-grid .katex { color: #e7efff; font-size: 0.92em; }
+.rg-equation-grid .katex { color: #e7efff; font-size: max(10px, 0.92em); }
 .rg-equation-note {
   margin: 0; padding: 10px 13px; color: rgba(171, 194, 226, 0.74);
   font: 400 10px/1.6 var(--font-mono); background: rgba(84, 174, 255, 0.035);
