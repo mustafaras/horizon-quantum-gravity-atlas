@@ -372,13 +372,15 @@
       "file": "docs/superpowers/plans/horizon-v2/S01-baseline-harness.md",
       "dependsOn": [],
       "findings": [],
-      "status": "review",
+      "status": "done",
       "owner": "https://claude.ai/code/session_01K1CA3tiktFAUyPy51vckrb",
       "branch": "claude/sharp-edison-k1pqf0",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/46",
-      "commits": [],
+      "commits": [
+        "49df6eb88c5b2eb7932a2b42e7dc5d8564382d6d"
+      ],
       "startedAt": "2026-10-21",
-      "completedAt": null,
+      "completedAt": "2026-10-21",
       "evidence": {
         "tests": [
           "npm test: 521/522 (1 pre-existing skip), incl. 8 new in test/perf-harness.test.mjs",
@@ -1324,6 +1326,13 @@
       "agent": "claude-code (session_01K1CA3tiktFAUyPy51vckrb)",
       "event": "review",
       "detail": "Harness, static audit, renderer census and v2 baseline delivered; PR #46 opened."
+    },
+    {
+      "date": "2026-10-21",
+      "prompt": "S01",
+      "agent": "claude-code (session_01K1CA3tiktFAUyPy51vckrb)",
+      "event": "done",
+      "detail": "PR #46 merged as 49df6eb; CI green."
     }
   ]
 }
