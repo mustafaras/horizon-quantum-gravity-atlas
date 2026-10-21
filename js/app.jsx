@@ -352,6 +352,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         ? <AtlasStage view={view} motion={effMotion} detail={t.detail3d} enabled={true}></AtlasStage>
         : <Starfield enabled={false}></Starfield>}
       <div className="shell">
+        <a className="skip-link" href="#main-content">Skip to main content</a>
         <nav className="sidebar" aria-label="Module navigation">
           <div className="brand">
             <HorizonMark className="brand-mark"></HorizonMark>
@@ -384,7 +385,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
           <button className="btn" onClick={() => QGA_EXPORT_JSON(qgaReadState())}>Export JSON</button>
           <button className="menu-btn" onClick={() => setMenuOpen(true)}>MODULES ☰</button>
         </div>
-        <main className="content" ref={contentRef}>
+        <main className="content" id="main-content" tabIndex={-1} ref={contentRef}>
           <div className="content-inner" key={view}>
             {Comp ? <Comp go={go}></Comp> : <p className="dim">Loading module…</p>}
             <AnnotationLayer view={view}></AnnotationLayer>

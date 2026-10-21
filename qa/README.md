@@ -46,7 +46,7 @@ qa/
 | `smoke.spec.mjs` | All 14 views mount with zero console/page errors. |
 | `state.spec.mjs` | URL→state round-trip, reload persistence, back/forward, copy-link, export JSON schema (`horizon-qga-state/v1`). |
 | `motion.spec.mjs` | Reduced vs normal motion: GW auto-play and RG settling differ observably. |
-| `a11y.spec.mjs` | Keyboard focus (`:focus-visible`), arrow-key sliders, mobile overflow, 44px touch targets, horizontal chart scroll. |
+| `a11y.spec.mjs` | Keyboard focus (`:focus-visible`), arrow-key sliders, mobile overflow, 44px touch targets, horizontal chart scroll, skip link as first Tab stop, per-view heading outline, accessible names on every control, symbol-card labels, and WCAG AA text contrast on every view. |
 | `rg.spec.mjs` | Conjectural badge on asymptotic safety, Custom transition, Reset preset. |
 | `gwosc.spec.mjs` | Deterministic fixture: ok / http-error / abort / oversized / cancel phases, parser contract (≤1200 samples, provenance). |
 | `visual.spec.mjs` | Per-capture screenshot vs committed baseline, each with its justified `maxDiffPixelRatio`. Viewport-fixed cinematic chrome is excluded from captures. |

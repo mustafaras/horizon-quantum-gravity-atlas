@@ -1570,7 +1570,12 @@ The application includes:
 - ARIA labels on interactive scenes;
 - 2D fallbacks for WebGL failure;
 - status labels that do not rely only on color;
-- responsive navigation for narrow screens.
+- responsive navigation for narrow screens;
+- a skip link as the first focusable element, so keyboard users bypass the sidebar instead of tabbing through it on every view;
+- a section outline on every view: exactly one `h1`, no skipped heading levels, and a non-empty accessible name on every interactive control;
+- WCAG 2.2 AA text contrast (4.5:1 body, 3:1 large) verified across all views.
+
+The last four are enforced by `qa/specs/a11y.spec.mjs`, which measures contrast by resolving computed colours through a canvas and compositing every ancestor background bottom-up — a single-layer read un-premultiplies translucent overlays into false failures.
 
 The mobile black-hole screenshot documents that the visual module remains accessible on smaller viewports.
 
