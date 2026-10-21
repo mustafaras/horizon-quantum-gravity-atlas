@@ -292,7 +292,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .veff-key i.dot { width: 7px; height: 7px; border-radius: 50%; }
 .veff-key i.ring { width: 7px; height: 7px; border-radius: 50%; border: 1.4px solid #fff; background: transparent; }
 .veff-formula { flex: 1 0 100%; display: block; padding: 2px 0 4px; overflow-x: auto; overflow-y: hidden; }
-.veff-formula .katex { font-size: 0.92em; }
+.veff-formula .katex { font-size: max(10px, 0.92em); }
 .ng-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
 .ng-svg { width: 100%; height: auto; background: radial-gradient(circle at 50% 50%, rgba(12, 20, 38, 0.9), rgba(5, 8, 16, 0.95)); border: 1px solid var(--line); border-radius: 10px; }
 .ng-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: auto; }
@@ -1825,7 +1825,7 @@ body { background:
   display: block; margin-bottom: 5px; color: rgba(148,176,224,0.72);
   font: 500 10px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
 }
-.causal-equation-grid .katex { color: #e7efff; font-size: 0.94em; }
+.causal-equation-grid .katex { color: #e7efff; font-size: max(10px, 0.94em); }
 .causal-equation-note {
   margin: 0; padding: 10px 13px; color: rgba(170,192,222,0.72);
   font: 400 10px/1.55 var(--font-mono); background: rgba(84,174,255,0.035);
