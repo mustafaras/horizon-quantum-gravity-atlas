@@ -372,20 +372,31 @@
       "file": "docs/superpowers/plans/horizon-v2/S01-baseline-harness.md",
       "dependsOn": [],
       "findings": [],
-      "status": "claimed",
+      "status": "review",
       "owner": "https://claude.ai/code/session_01K1CA3tiktFAUyPy51vckrb",
       "branch": "claude/sharp-edison-k1pqf0",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/46",
       "commits": [],
       "startedAt": "2026-10-21",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 521/522 (1 pre-existing skip), incl. 8 new in test/perf-harness.test.mjs",
+          "npm run validate: passed",
+          "npm run perf:audit run twice: byte-identical output",
+          "npm run perf:collect: 30/30 view×viewport runs ok, 0 page errors (Chromium 141, WebGPU disabled, SwiftShader)"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "QFT view renderers: 4 (shader programs 38) vs 1 target of S05; every view: classic WebGLRenderer in CI mode",
+          "BH view desktop CPU frame p95: 683.3 ms (p50 583.2) on SwiftShader; mobile 200 ms; compare like-for-like only",
+          "Babel transform (qga:babel marks): 3.3-4.4 s per load; JS transferred ~10.4 MiB per view (compare view ~25 MiB, two embeds)",
+          "First frame (first 'ready' diagnostic): 4.7-6.3 s desktop; GPU frame time null (no WebGPU adapter in CI mode; probe unvalidated)",
+          "Static audit: 28 VizCaption in 13 files, 8 registerVisualization sites, 35 Math.random sites, 83 #hex / 230 0xRRGGBB / 246 rgba( / 49 oklch( literals, 48 needsUpdate = true in 19 files, 12 new THREE.Line, 13 ShaderMaterial sites, 14 files over 800 lines"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "GPU-timestamp probe in scripts/perf/collect.mjs is written from the r186 source but could not be run on a working WebGPU device in the authoring sandbox."
     },
     {
       "id": "S02",
@@ -1276,6 +1287,27 @@
       "prompt": null,
       "decision": "The v2 pack is strictly sequential: one prompt at a time, each requiring its predecessor to be done.",
       "rationale": "Requested by the maintainer so a single agent can execute each prompt completely without coordination."
+    },
+    {
+      "id": "D-003",
+      "date": "2026-10-21",
+      "prompt": "S01",
+      "decision": "Recorded that CI-equivalent runs use the classic WebGLRenderer, not the node renderer's WebGL2 backend.",
+      "rationale": "With --disable-blink-features=WebGPU, navigator.gpu exists but requestAdapter() is null; createRenderer throws and retries classic WebGLRenderer (programs read from info.programs; node renderers use info.memory.programs). The S01 context text and render-architecture assumptions for CI should be corrected."
+    },
+    {
+      "id": "D-004",
+      "date": "2026-10-21",
+      "prompt": "S01",
+      "decision": "Added an 0xRRGGBB column to the colour-literal audit and kept per-view gpuFrameMs null where no WebGPU timestamp device exists.",
+      "rationale": "F-04 quotes ~199 hex literals but grep finds 83 #hex and 230 0xRRGGBB; the column makes the discrepancy re-runnable. Per-view GPU time needs trackTimestamp at renderer construction (S04), so the harness uses a throw-away reference-scene probe, unvalidated here because WebGPU is unusable in the sandbox (Chromium 141 + SwiftShader)."
+    },
+    {
+      "id": "D-005",
+      "date": "2026-10-21",
+      "prompt": "S01",
+      "decision": "S01 branch was fast-forwarded onto origin/claude/eloquent-bardeen-8rt6ch, which carries the ledger and prompt pack that are not on main.",
+      "rationale": "Step 1 requires the ledger; main did not contain it. The two docs-only commits ride in the S01 PR."
     }
   ],
   "log": [
@@ -1285,6 +1317,13 @@
       "agent": "claude-code",
       "event": "created",
       "detail": "Ledger v2 and the 36-prompt sequential pack, built from a module-by-module and three.js-architecture review of commit 9013fba."
+    },
+    {
+      "date": "2026-10-21",
+      "prompt": "S01",
+      "agent": "claude-code (session_01K1CA3tiktFAUyPy51vckrb)",
+      "event": "review",
+      "detail": "Harness, static audit, renderer census and v2 baseline delivered; PR #46 opened."
     }
   ]
 }
