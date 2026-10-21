@@ -1,6 +1,6 @@
 {
-  "schema": "horizon-ledger/v1",
-  "pack": "docs/superpowers/plans/2026-10-21-horizon-v2-prompt-pack.md",
+  "schema": "horizon-ledger/v2",
+  "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
   "updated": "2026-10-21",
   "statuses": [
@@ -62,22 +62,22 @@
         "id": "11",
         "status": "absorbed",
         "into": [
-          "V2-D1"
+          "S32"
         ]
       },
       {
         "id": "12",
         "status": "absorbed",
         "into": [
-          "V2-D2",
-          "V2-D3"
+          "S33",
+          "S34"
         ]
       },
       {
         "id": "13",
         "status": "absorbed",
         "into": [
-          "V2-D5"
+          "S36"
         ]
       }
     ]
@@ -85,13 +85,14 @@
   "findings": [
     {
       "id": "F-01",
-      "title": "v1 prompts 11-13 never executed (export, PWA/workers/themes, release gate)",
+      "title": "v1 prompts 11–13 never executed (export, PWA/workers/themes, release gate)",
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-D1",
-        "V2-D2",
-        "V2-D5"
+        "S32",
+        "S33",
+        "S34",
+        "S36"
       ],
       "closedIn": null
     },
@@ -101,38 +102,38 @@
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-A3"
+        "S11"
       ],
       "closedIn": null
     },
     {
       "id": "F-03",
-      "title": "Math.random feeds labelled science figures and unseeded starfields",
+      "title": "Math.random feeds labelled science figures; starfields unseeded",
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-A3"
+        "S11"
       ],
       "closedIn": null
     },
     {
       "id": "F-04",
-      "title": "~199 hex literals and per-canvas palettes/fonts in module code",
+      "title": "~199 hex literals plus per-canvas palettes and font strings in module code",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-A1"
+        "S02"
       ],
       "closedIn": null
     },
     {
       "id": "F-05",
-      "title": "Nearly all CSS inline in index.html; no light or print theme",
+      "title": "Nearly all CSS inline in a 2,332-line index.html; no light or print theme",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-A1",
-        "V2-D3"
+        "S02",
+        "S34"
       ],
       "closedIn": null
     },
@@ -142,7 +143,7 @@
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-A2"
+        "S09"
       ],
       "closedIn": null
     },
@@ -152,7 +153,7 @@
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B1"
+        "S12"
       ],
       "closedIn": null
     },
@@ -162,7 +163,7 @@
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B1"
+        "S13"
       ],
       "closedIn": null
     },
@@ -172,7 +173,7 @@
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-B7"
+        "S24"
       ],
       "closedIn": null
     },
@@ -182,38 +183,40 @@
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B7"
+        "S24"
       ],
       "closedIn": null
     },
     {
       "id": "F-11",
-      "title": "Synthetic GW: Newtonian chirp, ad hoc amplitude clamp, fixed ringdown; no matched filter",
+      "title": "Synthetic GW: Newtonian chirp, ad hoc amplitude clamp, fixed 190 Hz/60 ms ringdown; no matched filter",
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-B8"
+        "S26",
+        "S27"
       ],
       "closedIn": null
     },
     {
       "id": "F-12",
-      "title": "Observational net (CMB, nu/DM, QG phenomenology, EHT) is prose only",
+      "title": "The observational net (CMB, ν/DM, QG phenomenology, EHT) is prose only",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B5",
-        "V2-B8"
+        "S21",
+        "S28"
       ],
       "closedIn": null
     },
     {
       "id": "F-13",
-      "title": "Approaches cover five programs; no quantitative cross-program comparison",
+      "title": "Approaches cover five programs; no computed program, no quantitative comparison",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B6"
+        "S22",
+        "S23"
       ],
       "closedIn": null
     },
@@ -223,47 +226,49 @@
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B3"
+        "S17",
+        "S18"
       ],
       "closedIn": null
     },
     {
       "id": "F-15",
-      "title": "Amplitude room is t-channel-pole-only and omits gamma-Z interference",
+      "title": "Amplitude room is t-channel-pole-only and omits γ–Z interference",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B2"
+        "S16"
       ],
       "closedIn": null
     },
     {
       "id": "F-16",
-      "title": "GR engine on display constant; few observational tests; no Penrose diagrams",
+      "title": "GR engine on a display constant; few observational tests; no Penrose diagrams; rubber-sheet well",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B4"
+        "S19",
+        "S20"
       ],
       "closedIn": null
     },
     {
       "id": "F-17",
-      "title": "Kerr observatory lacks Bardeen curve overlay and EHT comparison",
+      "title": "Kerr observatory lacks the Bardeen-curve overlay and an EHT comparison",
       "severity": "medium",
       "status": "open",
       "closedBy": [
-        "V2-B7"
+        "S25"
       ],
       "closedIn": null
     },
     {
       "id": "F-18",
-      "title": "Production ships React development builds and in-browser Babel",
+      "title": "Production ships React development builds and transpiles JSX in the browser with Babel (3.0 MB)",
       "severity": "high",
       "status": "open",
       "closedBy": [
-        "V2-D2"
+        "S33"
       ],
       "closedIn": null
     },
@@ -273,7 +278,7 @@
       "severity": "low",
       "status": "open",
       "closedBy": [
-        "V2-D4"
+        "S35"
       ],
       "closedIn": null
     },
@@ -283,17 +288,88 @@
       "severity": "low",
       "status": "open",
       "closedBy": [
-        "V2-C3"
+        "S31"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-21",
+      "title": "Every Scene3D builds its own renderer: 4 renderers and 4 shader caches on the QFT view",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "S04",
+        "S05"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-22",
+      "title": "WebGL2 contexts always use preserveDrawingBuffer: true",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "S04"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-23",
+      "title": "Quality governor uses CPU frame time only; GPU timestamps unused",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "S04"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-24",
+      "title": "Geometry drawn with 1 px THREE.Line hairlines (20+ sites); no width control",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "S06"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-25",
+      "title": "GPU work split between ad hoc GLSL ShaderMaterials and TSL",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "S07"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-26",
+      "title": "No numeric check that shader formulas equal the tested JS formulas",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "S03",
+        "S10"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-27",
+      "title": "CPU per-frame buffer uploads (needsUpdate) at ~38 sites in 15 files",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "S08"
       ],
       "closedIn": null
     }
   ],
   "prompts": [
     {
-      "id": "V2-A0",
-      "title": "Baseline audit and ledger activation",
-      "phase": "A",
-      "lane": null,
+      "id": "S01",
+      "title": "Measurement Harness and Baseline",
+      "file": "docs/superpowers/plans/horizon-v2/S01-baseline-harness.md",
       "dependsOn": [],
       "findings": [],
       "status": "todo",
@@ -312,12 +388,11 @@
       "notes": ""
     },
     {
-      "id": "V2-A1",
-      "title": "Design tokens v2 and stylesheet extraction",
-      "phase": "A",
-      "lane": null,
+      "id": "S02",
+      "title": "Art Direction Document, Design Tokens and Stylesheet Extraction",
+      "file": "docs/superpowers/plans/horizon-v2/S02-design-tokens.md",
       "dependsOn": [
-        "V2-A0"
+        "S01"
       ],
       "findings": [
         "F-04",
@@ -339,12 +414,163 @@
       "notes": ""
     },
     {
-      "id": "V2-A2",
-      "title": "Figure Kit: one scientific plotting system",
-      "phase": "A",
-      "lane": null,
+      "id": "S03",
+      "title": "Formula Core: One Definition → JS, KaTeX and TSL",
+      "file": "docs/superpowers/plans/horizon-v2/S03-formula-core.md",
       "dependsOn": [
-        "V2-A1"
+        "S02"
+      ],
+      "findings": [
+        "F-26"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S04",
+      "title": "Shared GPU Stage: One Renderer per Page, Frames on Demand",
+      "file": "docs/superpowers/plans/horizon-v2/S04-shared-stage.md",
+      "dependsOn": [
+        "S03"
+      ],
+      "findings": [
+        "F-21",
+        "F-22",
+        "F-23"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S05",
+      "title": "Migrate Every Scene to the Shared Stage",
+      "file": "docs/superpowers/plans/horizon-v2/S05-stage-migration.md",
+      "dependsOn": [
+        "S04"
+      ],
+      "findings": [
+        "F-21"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S06",
+      "title": "Engraved Line System",
+      "file": "docs/superpowers/plans/horizon-v2/S06-engraved-lines.md",
+      "dependsOn": [
+        "S05"
+      ],
+      "findings": [
+        "F-24"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S07",
+      "title": "TSL Material Kit and the End of Ad Hoc GLSL",
+      "file": "docs/superpowers/plans/horizon-v2/S07-tsl-materials.md",
+      "dependsOn": [
+        "S06"
+      ],
+      "findings": [
+        "F-25"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S08",
+      "title": "GPU Compute Particle Kit",
+      "file": "docs/superpowers/plans/horizon-v2/S08-compute-particles.md",
+      "dependsOn": [
+        "S07"
+      ],
+      "findings": [
+        "F-27"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S09",
+      "title": "Figure Kit: One Scientific 2D Plotting System",
+      "file": "docs/superpowers/plans/horizon-v2/S09-figure-kit.md",
+      "dependsOn": [
+        "S08"
       ],
       "findings": [
         "F-06"
@@ -365,12 +591,36 @@
       "notes": ""
     },
     {
-      "id": "V2-A3",
-      "title": "Provenance coverage and determinism sweep",
-      "phase": "A",
-      "lane": null,
+      "id": "S10",
+      "title": "Formula Lens: Terms You Can See",
+      "file": "docs/superpowers/plans/horizon-v2/S10-formula-lens.md",
       "dependsOn": [
-        "V2-A2"
+        "S09"
+      ],
+      "findings": [
+        "F-26"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S11",
+      "title": "Provenance Coverage, Layer Classes and Determinism",
+      "file": "docs/superpowers/plans/horizon-v2/S11-provenance-sweep.md",
+      "dependsOn": [
+        "S10"
       ],
       "findings": [
         "F-02",
@@ -392,15 +642,38 @@
       "notes": ""
     },
     {
-      "id": "V2-B1",
-      "title": "Standard Model: three-flavour neutrinos, physical Higgs, vacuum stability",
-      "phase": "B",
-      "lane": 1,
+      "id": "S12",
+      "title": "Standard Model I: Three-Flavour Oscillations in Matter",
+      "file": "docs/superpowers/plans/horizon-v2/S12-sm-neutrinos.md",
       "dependsOn": [
-        "V2-A3"
+        "S11"
       ],
       "findings": [
-        "F-07",
+        "F-07"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S13",
+      "title": "Standard Model II: The Physical Higgs and Vacuum Stability",
+      "file": "docs/superpowers/plans/horizon-v2/S13-sm-higgs.md",
+      "dependsOn": [
+        "S12"
+      ],
+      "findings": [
         "F-08"
       ],
       "status": "todo",
@@ -419,12 +692,57 @@
       "notes": ""
     },
     {
-      "id": "V2-B2",
-      "title": "QFT: lattice fields, Casimir effect, full e+e- electroweak scattering",
-      "phase": "B",
-      "lane": 1,
+      "id": "S14",
+      "title": "QFT I: GPU Lattice Field Theory",
+      "file": "docs/superpowers/plans/horizon-v2/S14-qft-lattice.md",
       "dependsOn": [
-        "V2-B1"
+        "S13"
+      ],
+      "findings": [],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S15",
+      "title": "QFT II: The Casimir Cavity",
+      "file": "docs/superpowers/plans/horizon-v2/S15-qft-casimir.md",
+      "dependsOn": [
+        "S14"
+      ],
+      "findings": [],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S16",
+      "title": "QFT III: Electroweak e⁺e⁻ Scattering and Publication-Grade Feynman Diagrams",
+      "file": "docs/superpowers/plans/horizon-v2/S16-qft-electroweak.md",
+      "dependsOn": [
+        "S15"
       ],
       "findings": [
         "F-15"
@@ -445,12 +763,11 @@
       "notes": ""
     },
     {
-      "id": "V2-B3",
-      "title": "RG: gauge-coupling unification and asymptotic-safety flow of gravity",
-      "phase": "B",
-      "lane": 1,
+      "id": "S17",
+      "title": "RG I: Running of the Standard-Model Gauge Couplings",
+      "file": "docs/superpowers/plans/horizon-v2/S17-rg-unification.md",
       "dependsOn": [
-        "V2-B2"
+        "S16"
       ],
       "findings": [
         "F-14"
@@ -471,12 +788,36 @@
       "notes": ""
     },
     {
-      "id": "V2-B4",
-      "title": "GR: Penrose diagrams, tidal geometry, observational tests",
-      "phase": "B",
-      "lane": 2,
+      "id": "S18",
+      "title": "RG II: Asymptotic Safety and the Flow Silk",
+      "file": "docs/superpowers/plans/horizon-v2/S18-rg-asymptotic-safety.md",
       "dependsOn": [
-        "V2-A3"
+        "S17"
+      ],
+      "findings": [
+        "F-14"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S19",
+      "title": "GR I: The Penrose Atlas",
+      "file": "docs/superpowers/plans/horizon-v2/S19-gr-penrose.md",
+      "dependsOn": [
+        "S18"
       ],
       "findings": [
         "F-16"
@@ -497,12 +838,36 @@
       "notes": ""
     },
     {
-      "id": "V2-B5",
-      "title": "Planck frontier: the constraint plane",
-      "phase": "B",
-      "lane": 2,
+      "id": "S20",
+      "title": "GR II: Tidal Geometry, the Flamm Embedding and the Tested Universe",
+      "file": "docs/superpowers/plans/horizon-v2/S20-gr-tidal-embedding.md",
       "dependsOn": [
-        "V2-B4"
+        "S19"
+      ],
+      "findings": [
+        "F-16"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S21",
+      "title": "Planck Frontier: The Map of the Unseen",
+      "file": "docs/superpowers/plans/horizon-v2/S21-planck-constraints.md",
+      "dependsOn": [
+        "S20"
       ],
       "findings": [
         "F-12"
@@ -523,12 +888,11 @@
       "notes": ""
     },
     {
-      "id": "V2-B6",
-      "title": "Approaches: causal sets, CDT, spectral-dimension comparison",
-      "phase": "B",
-      "lane": 1,
+      "id": "S22",
+      "title": "Approaches I: Causal Sets",
+      "file": "docs/superpowers/plans/horizon-v2/S22-approaches-causal-sets.md",
       "dependsOn": [
-        "V2-B3"
+        "S21"
       ],
       "findings": [
         "F-13"
@@ -549,16 +913,64 @@
       "notes": ""
     },
     {
-      "id": "V2-B7",
-      "title": "Black holes: evaporation, greybody spectra, measured shadows",
-      "phase": "B",
-      "lane": 3,
+      "id": "S23",
+      "title": "Approaches II: CDT, the Spectral Dimension, and the String Spectrum",
+      "file": "docs/superpowers/plans/horizon-v2/S23-approaches-cdt-spectral.md",
       "dependsOn": [
-        "V2-A3"
+        "S22"
+      ],
+      "findings": [
+        "F-13"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S24",
+      "title": "Black Holes I: Evaporation Dynamics and Greybody Spectra",
+      "file": "docs/superpowers/plans/horizon-v2/S24-bh-evaporation.md",
+      "dependsOn": [
+        "S23"
       ],
       "findings": [
         "F-09",
-        "F-10",
+        "F-10"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S25",
+      "title": "Black Holes II: The Shadow, Measured",
+      "file": "docs/superpowers/plans/horizon-v2/S25-bh-shadow-eht.md",
+      "dependsOn": [
+        "S24"
+      ],
+      "findings": [
         "F-17"
       ],
       "status": "todo",
@@ -577,16 +989,63 @@
       "notes": ""
     },
     {
-      "id": "V2-B8",
-      "title": "Experiments: PN waveforms, matched filtering, observational net",
-      "phase": "B",
-      "lane": 3,
+      "id": "S26",
+      "title": "Gravitational Waves I: Post-Newtonian Waveforms and a GPU Spacetime Field",
+      "file": "docs/superpowers/plans/horizon-v2/S26-gw-waveforms.md",
       "dependsOn": [
-        "V2-B5",
-        "V2-B7"
+        "S25"
       ],
       "findings": [
-        "F-11",
+        "F-11"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S27",
+      "title": "Gravitational Waves II: Matched Filtering on Real Data",
+      "file": "docs/superpowers/plans/horizon-v2/S27-gw-matched-filter.md",
+      "dependsOn": [
+        "S26"
+      ],
+      "findings": [
+        "F-11"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "S28",
+      "title": "Experiments III: The Observational Net as Instruments",
+      "file": "docs/superpowers/plans/horizon-v2/S28-exp-observational-net.md",
+      "dependsOn": [
+        "S27"
+      ],
+      "findings": [
         "F-12"
       ],
       "status": "todo",
@@ -605,19 +1064,11 @@
       "notes": ""
     },
     {
-      "id": "V2-C1",
-      "title": "Chapter identity and the atlas map",
-      "phase": "C",
-      "lane": null,
+      "id": "S29",
+      "title": "Chapter Identity and the Atlas Map",
+      "file": "docs/superpowers/plans/horizon-v2/S29-chapter-covers.md",
       "dependsOn": [
-        "V2-B1",
-        "V2-B2",
-        "V2-B3",
-        "V2-B4",
-        "V2-B5",
-        "V2-B6",
-        "V2-B7",
-        "V2-B8"
+        "S28"
       ],
       "findings": [],
       "status": "todo",
@@ -636,12 +1087,11 @@
       "notes": ""
     },
     {
-      "id": "V2-C2",
-      "title": "Living equations",
-      "phase": "C",
-      "lane": null,
+      "id": "S30",
+      "title": "Living Equations: Every Formula Card from Formula Core",
+      "file": "docs/superpowers/plans/horizon-v2/S30-living-equations.md",
       "dependsOn": [
-        "V2-C1"
+        "S29"
       ],
       "findings": [],
       "status": "todo",
@@ -660,12 +1110,11 @@
       "notes": ""
     },
     {
-      "id": "V2-C3",
-      "title": "Guided tours, teacher mode, Turkish/English",
-      "phase": "C",
-      "lane": null,
+      "id": "S31",
+      "title": "Guided Tours, Teacher Mode, and Turkish",
+      "file": "docs/superpowers/plans/horizon-v2/S31-tours-i18n.md",
       "dependsOn": [
-        "V2-C2"
+        "S30"
       ],
       "findings": [
         "F-20"
@@ -686,12 +1135,11 @@
       "notes": ""
     },
     {
-      "id": "V2-D1",
-      "title": "Publishing studio (absorbs v1 P11)",
-      "phase": "D",
-      "lane": null,
+      "id": "S32",
+      "title": "Publishing Studio",
+      "file": "docs/superpowers/plans/horizon-v2/S32-publishing-studio.md",
       "dependsOn": [
-        "V2-C1"
+        "S31"
       ],
       "findings": [
         "F-01"
@@ -712,16 +1160,15 @@
       "notes": ""
     },
     {
-      "id": "V2-D2",
-      "title": "Runtime: precompiled JSX, production React, workers, offline",
-      "phase": "D",
-      "lane": null,
+      "id": "S33",
+      "title": "Production Runtime, Workers and Offline",
+      "file": "docs/superpowers/plans/horizon-v2/S33-runtime-offline.md",
       "dependsOn": [
-        "V2-D1"
+        "S32"
       ],
       "findings": [
-        "F-18",
-        "F-01"
+        "F-01",
+        "F-18"
       ],
       "status": "todo",
       "owner": null,
@@ -739,14 +1186,14 @@
       "notes": ""
     },
     {
-      "id": "V2-D3",
-      "title": "Themes and accessibility+",
-      "phase": "D",
-      "lane": null,
+      "id": "S34",
+      "title": "Themes and Accessible Figures",
+      "file": "docs/superpowers/plans/horizon-v2/S34-themes-a11y.md",
       "dependsOn": [
-        "V2-D2"
+        "S33"
       ],
       "findings": [
+        "F-01",
         "F-05"
       ],
       "status": "todo",
@@ -765,12 +1212,11 @@
       "notes": ""
     },
     {
-      "id": "V2-D4",
-      "title": "Scholarly release",
-      "phase": "D",
-      "lane": null,
+      "id": "S35",
+      "title": "Scholarly Release Structure",
+      "file": "docs/superpowers/plans/horizon-v2/S35-scholarly-release.md",
       "dependsOn": [
-        "V2-D3"
+        "S34"
       ],
       "findings": [
         "F-19"
@@ -791,30 +1237,11 @@
       "notes": ""
     },
     {
-      "id": "V2-D5",
-      "title": "Release gate (absorbs v1 P13)",
-      "phase": "D",
-      "lane": null,
+      "id": "S36",
+      "title": "Release Gate",
+      "file": "docs/superpowers/plans/horizon-v2/S36-release-gate.md",
       "dependsOn": [
-        "V2-A0",
-        "V2-A1",
-        "V2-A2",
-        "V2-A3",
-        "V2-B1",
-        "V2-B2",
-        "V2-B3",
-        "V2-B4",
-        "V2-B5",
-        "V2-B6",
-        "V2-B7",
-        "V2-B8",
-        "V2-C1",
-        "V2-C2",
-        "V2-C3",
-        "V2-D1",
-        "V2-D2",
-        "V2-D3",
-        "V2-D4"
+        "S35"
       ],
       "findings": [
         "F-01"
@@ -835,21 +1262,20 @@
       "notes": ""
     }
   ],
-  "locks": [],
   "decisions": [
     {
       "id": "D-001",
       "date": "2026-10-21",
       "prompt": null,
-      "decision": "v1 prompts 11, 12 and 13 are not executed separately; their requirements are normative inside V2-D1, V2-D2/V2-D3 and V2-D5.",
-      "rationale": "They were never started, and v2 Phase A changes the foundations they depend on (tokens, Figure Kit, provenance)."
+      "decision": "v1 prompts 11, 12 and 13 are absorbed into S32, S33/S34 and S36, where their text stays normative.",
+      "rationale": "They were never started, and v2 rebuilds the foundations they depend on (shared stage, Formula Core, Figure Kit, tokens)."
     },
     {
       "id": "D-002",
       "date": "2026-10-21",
       "prompt": null,
-      "decision": "Lanes 1-3 of Phase B may run concurrently only after V2-A3 is done; shared files are edited under ledger locks.",
-      "rationale": "Phase A rewrites the colour, plotting and provenance layers every Phase B prompt builds on."
+      "decision": "The v2 pack is strictly sequential: one prompt at a time, each requiring its predecessor to be done.",
+      "rationale": "Requested by the maintainer so a single agent can execute each prompt completely without coordination."
     }
   ],
   "log": [
@@ -858,7 +1284,7 @@
       "prompt": null,
       "agent": "claude-code",
       "event": "created",
-      "detail": "Ledger and v2 prompt pack created from a module-by-module review of commit 9013fba."
+      "detail": "Ledger v2 and the 36-prompt sequential pack, built from a module-by-module and three.js-architecture review of commit 9013fba."
     }
   ]
 }

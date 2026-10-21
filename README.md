@@ -1698,7 +1698,7 @@ The following are especially central:
 
 ## Roadmap
 
-The next stage is the **v2 prompt pack** — [`docs/superpowers/plans/2026-10-21-horizon-v2-prompt-pack.md`](docs/superpowers/plans/2026-10-21-horizon-v2-prompt-pack.md) — a module-by-module plan for scientific depth and a unified visual language, tracked by every contributing agent in the shared ledger at [`docs/superpowers/ledger/`](docs/superpowers/ledger/README.md). It also absorbs prompts 11–13 of the first pack (publishing studio, offline runtime and themes, release gate), which have not shipped yet.
+The next stage is the **v2 sequential prompt pack** — [`docs/superpowers/plans/horizon-v2/`](docs/superpowers/plans/horizon-v2/README.md) — thirty-six prompts executed one at a time. They cover formula-first rendering (one definition per equation compiled to JavaScript, KaTeX and TSL), a shared WebGPU stage, a unified visual language, and a scientific deep-dive for every module, tracked in the shared ledger at [`docs/superpowers/ledger/`](docs/superpowers/ledger/README.md). The pack also absorbs prompts 11–13 of the first pack (publishing studio, offline runtime and themes, release gate), which have not shipped yet.
 
 Completed since the first release:
 

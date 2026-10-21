@@ -1,11 +1,11 @@
 // Agent ledger integrity — docs/superpowers/ledger/ledger.json is the shared
-// record every agent working the v2 prompt pack reads and writes. A ledger that
-// lets work start before its dependencies are done, or marks a prompt done
-// without evidence, defeats its purpose, so the protocol rules are enforced here.
+// record every agent working the sequential v2 prompt pack reads and writes. A
+// ledger that lets a prompt start before its predecessor is done, or marks one
+// done without evidence, defeats its purpose, so the protocol is enforced here.
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,31 +20,26 @@ const byId = new Map(ledger.prompts.map((p) => [p.id, p]));
 const findingIds = new Set(ledger.findings.map((f) => f.id));
 
 test("ledger declares the expected schema and status vocabulary", () => {
-  assert.equal(ledger.schema, "horizon-ledger/v1");
+  assert.equal(ledger.schema, "horizon-ledger/v2");
   assert.deepEqual(ledger.statuses, STATUSES);
   assert.match(ledger.updated, /^\d{4}-\d{2}-\d{2}$/);
 });
 
-test("prompt ids are unique and each has a section in the pack", () => {
+test("prompts are S01…Sn, each with its own prompt file listed in the pack index", async () => {
   assert.equal(byId.size, ledger.prompts.length, "duplicate prompt id");
-  const headings = new Set([...pack.matchAll(/^## (V2-[A-D]\d) — /gm)].map((m) => m[1]));
-  for (const id of byId.keys()) assert.ok(headings.has(id), `${id} has no "## ${id} — " section in the pack`);
-  for (const id of headings) assert.ok(byId.has(id), `pack section ${id} is missing from the ledger`);
+  for (const [i, p] of ledger.prompts.entries()) {
+    assert.equal(p.id, `S${String(i + 1).padStart(2, "0")}`, `prompt ${i + 1} must be numbered in order`);
+    await access(path.join(root, p.file));
+    const body = await readFile(path.join(root, p.file), "utf8");
+    assert.ok(body.startsWith(`# ${p.id} — ${p.title}\n`), `${p.file} must start with "# ${p.id} — ${p.title}"`);
+    assert.ok(pack.includes(`](${path.basename(p.file)})`), `${p.id} is missing from the pack index`);
+  }
 });
 
-test("dependencies exist and form an acyclic graph", () => {
-  for (const p of ledger.prompts) {
-    for (const d of p.dependsOn) assert.ok(byId.has(d), `${p.id} depends on unknown ${d}`);
+test("the pack is strictly sequential", () => {
+  for (const [i, p] of ledger.prompts.entries()) {
+    assert.deepEqual(p.dependsOn, i === 0 ? [] : [ledger.prompts[i - 1].id], `${p.id} must depend only on its predecessor`);
   }
-  const state = new Map();
-  const visit = (id, trail) => {
-    if (state.get(id) === "done") return;
-    assert.notEqual(state.get(id), "open", `dependency cycle: ${[...trail, id].join(" → ")}`);
-    state.set(id, "open");
-    for (const d of byId.get(id).dependsOn) visit(d, [...trail, id]);
-    state.set(id, "done");
-  };
-  for (const id of byId.keys()) visit(id, []);
 });
 
 test("every prompt follows the status rules of the protocol", () => {
@@ -92,17 +87,6 @@ test("findings cross-reference prompts in both directions", () => {
   }
 });
 
-test("locks belong to active prompts and cover distinct paths", () => {
-  const paths = new Set();
-  for (const l of ledger.locks) {
-    assert.ok(byId.has(l.prompt), `lock on ${l.path} names unknown prompt ${l.prompt}`);
-    const owner = byId.get(l.prompt);
-    assert.ok(ACTIVE.has(owner.status), `lock on ${l.path} held by ${l.prompt}, which is ${owner.status}`);
-    assert.equal(l.owner, owner.owner, `lock on ${l.path} owner differs from ${l.prompt}'s owner`);
-    assert.ok(!paths.has(l.path), `${l.path} is locked twice`);
-    paths.add(l.path);
-  }
-});
 
 test("decisions and log entries are well formed", () => {
   const ids = new Set();
