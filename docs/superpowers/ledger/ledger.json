@@ -1,0 +1,864 @@
+{
+  "schema": "horizon-ledger/v1",
+  "pack": "docs/superpowers/plans/2026-10-21-horizon-v2-prompt-pack.md",
+  "auditedCommit": "9013fba",
+  "updated": "2026-10-21",
+  "statuses": [
+    "todo",
+    "claimed",
+    "in_progress",
+    "blocked",
+    "review",
+    "done"
+  ],
+  "v1": {
+    "pack": "docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
+    "prompts": [
+      {
+        "id": "00",
+        "status": "done"
+      },
+      {
+        "id": "01",
+        "status": "done"
+      },
+      {
+        "id": "02",
+        "status": "done"
+      },
+      {
+        "id": "03",
+        "status": "done"
+      },
+      {
+        "id": "04",
+        "status": "done"
+      },
+      {
+        "id": "05",
+        "status": "done"
+      },
+      {
+        "id": "06",
+        "status": "done"
+      },
+      {
+        "id": "07",
+        "status": "done"
+      },
+      {
+        "id": "08",
+        "status": "done"
+      },
+      {
+        "id": "09",
+        "status": "done"
+      },
+      {
+        "id": "10",
+        "status": "done"
+      },
+      {
+        "id": "11",
+        "status": "absorbed",
+        "into": [
+          "V2-D1"
+        ]
+      },
+      {
+        "id": "12",
+        "status": "absorbed",
+        "into": [
+          "V2-D2",
+          "V2-D3"
+        ]
+      },
+      {
+        "id": "13",
+        "status": "absorbed",
+        "into": [
+          "V2-D5"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "F-01",
+      "title": "v1 prompts 11-13 never executed (export, PWA/workers/themes, release gate)",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-D1",
+        "V2-D2",
+        "V2-D5"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-02",
+      "title": "Provenance registry covers 9 views while 28 VizCaption panels exist",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-A3"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-03",
+      "title": "Math.random feeds labelled science figures and unseeded starfields",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-A3"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-04",
+      "title": "~199 hex literals and per-canvas palettes/fonts in module code",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-A1"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-05",
+      "title": "Nearly all CSS inline in index.html; no light or print theme",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-A1",
+        "V2-D3"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-06",
+      "title": "Every 2D plot hand-rolls axes, ticks and legends",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-A2"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-07",
+      "title": "Neutrino lab is two-flavour vacuum only",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B1"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-08",
+      "title": "Higgs potential in toy units; no vacuum-stability story",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B1"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-09",
+      "title": "Page curve hardcodes slope 1.7 and a tent function",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-B7"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-10",
+      "title": "Hawking spectrum is a pure blackbody; no greybody factors",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B7"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-11",
+      "title": "Synthetic GW: Newtonian chirp, ad hoc amplitude clamp, fixed ringdown; no matched filter",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-B8"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-12",
+      "title": "Observational net (CMB, nu/DM, QG phenomenology, EHT) is prose only",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B5",
+        "V2-B8"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-13",
+      "title": "Approaches cover five programs; no quantitative cross-program comparison",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B6"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-14",
+      "title": "RG limited to one-loop QED/QCD and toy fixed points",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B3"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-15",
+      "title": "Amplitude room is t-channel-pole-only and omits gamma-Z interference",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B2"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-16",
+      "title": "GR engine on display constant; few observational tests; no Penrose diagrams",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B4"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-17",
+      "title": "Kerr observatory lacks Bardeen curve overlay and EHT comparison",
+      "severity": "medium",
+      "status": "open",
+      "closedBy": [
+        "V2-B7"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-18",
+      "title": "Production ships React development builds and in-browser Babel",
+      "severity": "high",
+      "status": "open",
+      "closedBy": [
+        "V2-D2"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-19",
+      "title": "README 2,500+ lines, stale Roadmap, no archival DOI",
+      "severity": "low",
+      "status": "open",
+      "closedBy": [
+        "V2-D4"
+      ],
+      "closedIn": null
+    },
+    {
+      "id": "F-20",
+      "title": "English only; no localisation",
+      "severity": "low",
+      "status": "open",
+      "closedBy": [
+        "V2-C3"
+      ],
+      "closedIn": null
+    }
+  ],
+  "prompts": [
+    {
+      "id": "V2-A0",
+      "title": "Baseline audit and ledger activation",
+      "phase": "A",
+      "lane": null,
+      "dependsOn": [],
+      "findings": [],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-A1",
+      "title": "Design tokens v2 and stylesheet extraction",
+      "phase": "A",
+      "lane": null,
+      "dependsOn": [
+        "V2-A0"
+      ],
+      "findings": [
+        "F-04",
+        "F-05"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-A2",
+      "title": "Figure Kit: one scientific plotting system",
+      "phase": "A",
+      "lane": null,
+      "dependsOn": [
+        "V2-A1"
+      ],
+      "findings": [
+        "F-06"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-A3",
+      "title": "Provenance coverage and determinism sweep",
+      "phase": "A",
+      "lane": null,
+      "dependsOn": [
+        "V2-A2"
+      ],
+      "findings": [
+        "F-02",
+        "F-03"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B1",
+      "title": "Standard Model: three-flavour neutrinos, physical Higgs, vacuum stability",
+      "phase": "B",
+      "lane": 1,
+      "dependsOn": [
+        "V2-A3"
+      ],
+      "findings": [
+        "F-07",
+        "F-08"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B2",
+      "title": "QFT: lattice fields, Casimir effect, full e+e- electroweak scattering",
+      "phase": "B",
+      "lane": 1,
+      "dependsOn": [
+        "V2-B1"
+      ],
+      "findings": [
+        "F-15"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B3",
+      "title": "RG: gauge-coupling unification and asymptotic-safety flow of gravity",
+      "phase": "B",
+      "lane": 1,
+      "dependsOn": [
+        "V2-B2"
+      ],
+      "findings": [
+        "F-14"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B4",
+      "title": "GR: Penrose diagrams, tidal geometry, observational tests",
+      "phase": "B",
+      "lane": 2,
+      "dependsOn": [
+        "V2-A3"
+      ],
+      "findings": [
+        "F-16"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B5",
+      "title": "Planck frontier: the constraint plane",
+      "phase": "B",
+      "lane": 2,
+      "dependsOn": [
+        "V2-B4"
+      ],
+      "findings": [
+        "F-12"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B6",
+      "title": "Approaches: causal sets, CDT, spectral-dimension comparison",
+      "phase": "B",
+      "lane": 1,
+      "dependsOn": [
+        "V2-B3"
+      ],
+      "findings": [
+        "F-13"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B7",
+      "title": "Black holes: evaporation, greybody spectra, measured shadows",
+      "phase": "B",
+      "lane": 3,
+      "dependsOn": [
+        "V2-A3"
+      ],
+      "findings": [
+        "F-09",
+        "F-10",
+        "F-17"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-B8",
+      "title": "Experiments: PN waveforms, matched filtering, observational net",
+      "phase": "B",
+      "lane": 3,
+      "dependsOn": [
+        "V2-B5",
+        "V2-B7"
+      ],
+      "findings": [
+        "F-11",
+        "F-12"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-C1",
+      "title": "Chapter identity and the atlas map",
+      "phase": "C",
+      "lane": null,
+      "dependsOn": [
+        "V2-B1",
+        "V2-B2",
+        "V2-B3",
+        "V2-B4",
+        "V2-B5",
+        "V2-B6",
+        "V2-B7",
+        "V2-B8"
+      ],
+      "findings": [],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-C2",
+      "title": "Living equations",
+      "phase": "C",
+      "lane": null,
+      "dependsOn": [
+        "V2-C1"
+      ],
+      "findings": [],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-C3",
+      "title": "Guided tours, teacher mode, Turkish/English",
+      "phase": "C",
+      "lane": null,
+      "dependsOn": [
+        "V2-C2"
+      ],
+      "findings": [
+        "F-20"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-D1",
+      "title": "Publishing studio (absorbs v1 P11)",
+      "phase": "D",
+      "lane": null,
+      "dependsOn": [
+        "V2-C1"
+      ],
+      "findings": [
+        "F-01"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-D2",
+      "title": "Runtime: precompiled JSX, production React, workers, offline",
+      "phase": "D",
+      "lane": null,
+      "dependsOn": [
+        "V2-D1"
+      ],
+      "findings": [
+        "F-18",
+        "F-01"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-D3",
+      "title": "Themes and accessibility+",
+      "phase": "D",
+      "lane": null,
+      "dependsOn": [
+        "V2-D2"
+      ],
+      "findings": [
+        "F-05"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-D4",
+      "title": "Scholarly release",
+      "phase": "D",
+      "lane": null,
+      "dependsOn": [
+        "V2-D3"
+      ],
+      "findings": [
+        "F-19"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    },
+    {
+      "id": "V2-D5",
+      "title": "Release gate (absorbs v1 P13)",
+      "phase": "D",
+      "lane": null,
+      "dependsOn": [
+        "V2-A0",
+        "V2-A1",
+        "V2-A2",
+        "V2-A3",
+        "V2-B1",
+        "V2-B2",
+        "V2-B3",
+        "V2-B4",
+        "V2-B5",
+        "V2-B6",
+        "V2-B7",
+        "V2-B8",
+        "V2-C1",
+        "V2-C2",
+        "V2-C3",
+        "V2-D1",
+        "V2-D2",
+        "V2-D3",
+        "V2-D4"
+      ],
+      "findings": [
+        "F-01"
+      ],
+      "status": "todo",
+      "owner": null,
+      "branch": null,
+      "pr": null,
+      "commits": [],
+      "startedAt": null,
+      "completedAt": null,
+      "evidence": {
+        "tests": [],
+        "screenshots": [],
+        "measurements": []
+      },
+      "blockers": [],
+      "notes": ""
+    }
+  ],
+  "locks": [],
+  "decisions": [
+    {
+      "id": "D-001",
+      "date": "2026-10-21",
+      "prompt": null,
+      "decision": "v1 prompts 11, 12 and 13 are not executed separately; their requirements are normative inside V2-D1, V2-D2/V2-D3 and V2-D5.",
+      "rationale": "They were never started, and v2 Phase A changes the foundations they depend on (tokens, Figure Kit, provenance)."
+    },
+    {
+      "id": "D-002",
+      "date": "2026-10-21",
+      "prompt": null,
+      "decision": "Lanes 1-3 of Phase B may run concurrently only after V2-A3 is done; shared files are edited under ledger locks.",
+      "rationale": "Phase A rewrites the colour, plotting and provenance layers every Phase B prompt builds on."
+    }
+  ],
+  "log": [
+    {
+      "date": "2026-10-21",
+      "prompt": null,
+      "agent": "claude-code",
+      "event": "created",
+      "detail": "Ledger and v2 prompt pack created from a module-by-module review of commit 9013fba."
+    }
+  ]
+}
