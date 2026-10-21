@@ -142,11 +142,13 @@ async function bootstrap() {
       if (!response.ok) throw new Error(`Cannot load ${script.getAttribute("src")}: HTTP ${response.status}`);
       return response.text();
     }));
+    performance.mark("qga:babel:start");
     const compiled = sources.map((source, i) => Babel.transform(source, {
       presets: ["react", "env"],
       filename: scripts[i].getAttribute("src"),
       sourceMaps: "inline",
     }).code);
+    performance.mark("qga:babel:end");
 
     // Classic scripts share lexical/global bindings, exactly as the Babel tag loader did.
     // Evaluate as one script so a synchronous error aborts before app.jsx can mount.
