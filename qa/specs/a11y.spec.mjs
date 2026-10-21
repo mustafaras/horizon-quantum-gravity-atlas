@@ -158,3 +158,149 @@ test.describe("symbol atlas", () => {
     }
   });
 });
+
+test.describe("bypass blocks", () => {
+  test("skip link is the first Tab stop and moves focus into main", async ({ page }) => {
+    await gotoReady(page, "/?view=gr");
+    // The once-per-session intro splash is itself focusable and auto-dismisses
+    // after 3s; drop it so the skip link is unambiguously the first stop.
+    await page.evaluate(() => document.querySelector(".horizon-intro")?.remove());
+    await page.evaluate(() => document.activeElement?.blur?.());
+
+    await page.keyboard.press("Tab");
+    const first = await page.evaluate(() => {
+      const el = document.activeElement;
+      return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim() };
+    });
+    expect(first.cls, "first Tab stop is not the skip link").toContain("skip-link");
+    expect(first.text.length).toBeGreaterThan(0);
+
+    // The reveal is a 0.16s transform transition; wait for it to land rather
+    // than sampling mid-flight.
+    await page.waitForFunction(() => {
+      const el = document.querySelector(".skip-link");
+      return !!el && el.getBoundingClientRect().top >= 0;
+    }, null, { timeout: 3000 });
+    const onScreen = await page.evaluate(() => {
+      const r = document.querySelector(".skip-link").getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom, height: r.height };
+    });
+    expect(onScreen.height, "skip link has no box").toBeGreaterThan(0);
+    expect(onScreen.top, "skip link is still parked off-screen while focused").toBeGreaterThanOrEqual(0);
+    expect(onScreen.bottom).toBeLessThanOrEqual(200);
+
+    await page.keyboard.press("Enter");
+    const landed = await page.evaluate(() => {
+      const el = document.activeElement;
+      return { id: el?.id || "", tag: el?.tagName || "" };
+    });
+    expect(landed.tag, "skip link did not move focus into <main>").toBe("MAIN");
+    expect(landed.id).toBe("main-content");
+  });
+
+  test("skip link target exists and is programmatically focusable", async ({ page }) => {
+    await gotoReady(page, "/?view=gr");
+    const target = await page.evaluate(() => {
+      const link = document.querySelector(".skip-link");
+      if (!link) return null;
+      const id = (link.getAttribute("href") || "").replace(/^#/, "");
+      const el = id ? document.getElementById(id) : null;
+      return el ? { tag: el.tagName, tabindex: el.getAttribute("tabindex") } : null;
+    });
+    expect(target, "skip link target is missing").not.toBeNull();
+    expect(target.tag).toBe("MAIN");
+    expect(target.tabindex, "skip target must accept programmatic focus").toBe("-1");
+  });
+});
+
+test.describe("contrast", () => {
+  // WCAG 2.2 SC 1.4.3 (AA): 4.5:1 for body text, 3:1 for large text.
+  // Colours are resolved through a 1x1 canvas because getComputedStyle can
+  // return oklch()/color(), which a naive numeric parse misreads as RGB.
+  // Backgrounds are composited bottom-up across every ancestor: a single
+  // "first non-transparent layer" read un-premultiplies a 6% overlay into a
+  // light colour and reports hundreds of false failures.
+  const MEASURE = () => {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 1;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    const parse = (color) => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1);
+      const w = ctx.getImageData(0, 0, 1, 1).data;
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = color; ctx.fillRect(0, 0, 1, 1);
+      const b = ctx.getImageData(0, 0, 1, 1).data;
+      const a = 1 - ((w[0] - b[0]) + (w[1] - b[1]) + (w[2] - b[2])) / 3 / 255;
+      if (a <= 0.002) return { rgb: [0, 0, 0], a: 0 };
+      return { rgb: [b[0] / a, b[1] / a, b[2] / a], a };
+    };
+    const lum = (rgb) => {
+      const f = rgb.map((v) => {
+        const s = Math.min(1, Math.max(0, v / 255));
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+    };
+    const ratio = (x, y) => {
+      const l1 = lum(x), l2 = lum(y);
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    };
+    const bgOf = (el) => {
+      const layers = [];
+      for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c.a > 0) layers.push(c);
+      }
+      let out = [0, 0, 0];
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const { rgb, a } = layers[i];
+        out = out.map((v, k) => v * (1 - a) + rgb[k] * a);
+      }
+      return out;
+    };
+    const SKIP = ".katex, .katex-mathml, .sym-glyph-tile";
+    const out = [];
+    for (const el of document.querySelectorAll("body *")) {
+      if (el.closest(SKIP)) continue;
+      const ownsText = [...el.childNodes].some(
+        (n) => n.nodeType === 3 && n.textContent.trim().length > 1
+      );
+      if (!ownsText) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) === 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      const fg = parse(cs.color);
+      if (fg.a === 0) continue;
+      const bg = bgOf(el);
+      const fgRgb = fg.a < 1 ? fg.rgb.map((v, k) => v * fg.a + bg[k] * (1 - fg.a)) : fg.rgb;
+      const size = parseFloat(cs.fontSize) || 16;
+      const bold = Number(cs.fontWeight) >= 700;
+      const need = size >= 24 || (size >= 18.66 && bold) ? 3 : 4.5;
+      const got = ratio(fgRgb, bg);
+      if (got < need) {
+        out.push({
+          text: el.textContent.trim().slice(0, 48),
+          cls: (typeof el.className === "string" ? el.className : el.getAttribute("class") || "").slice(0, 48),
+          got: Math.round(got * 100) / 100,
+          need,
+        });
+      }
+    }
+    return out;
+  };
+
+  for (const view of VIEWS) {
+    test(`view "${view}" meets WCAG AA text contrast`, async ({ page }) => {
+      await gotoReady(page, `/?view=${view}`);
+      const failures = await page.evaluate(MEASURE);
+      expect(
+        failures,
+        `${failures.length} contrast failure(s): ${JSON.stringify(failures.slice(0, 8))}`
+      ).toEqual([]);
+    });
+  }
+});
