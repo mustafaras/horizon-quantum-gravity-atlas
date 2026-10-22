@@ -19,6 +19,9 @@ import { kerrHorizonRadii, kerrIsco, kerrPhotonSphere } from "../../js/science/k
 const VIEWPORT = { width: 1440, height: 1000 };
 const SEED = 42;
 const READINESS = ["fonts", "network-idle", "view-mounted"];
+// One full-size Kerr redraw takes about 16 s on a software rasterizer (measured), so waiting for the redraw that a
+// control change owes needs more than the 15 s default expect timeout; the test ceiling below still bounds it.
+const REDRAW_MS = 90_000;
 const COMPARE_BASELINES = !process.env.CI || process.env.QGA_QA_VISUAL === "1";
 
 test.describe.configure({ timeout: 240_000 });
@@ -248,13 +251,13 @@ test.describe("forced WebGL2, reduced motion", () => {
     expect((await runtime(page)).resets, "exposure is display-only").toBe(before.resets);
 
     await setRange(page, "spin a★ (negative = retrograde disk)", -0.4);
-    await expect.poll(async () => (await runtime(page)).resets).toBeGreaterThan(before.resets);
+    await expect.poll(async () => (await runtime(page)).resets, { timeout: REDRAW_MS }).toBeGreaterThan(before.resets);
     await settled(page);
     const afterSpin = await runtime(page);
 
     await page.locator(".kerr-controls").getByRole("button", { name: "Page–Thorne opaque" }).click();
     await expect.poll(() => page.evaluate(() => window.QGA_READ_STATE().bhDiskModel)).toBe("page-thorne-opaque");
-    await expect.poll(async () => (await runtime(page)).resets).toBeGreaterThan(afterSpin.resets);
+    await expect.poll(async () => (await runtime(page)).resets, { timeout: REDRAW_MS }).toBeGreaterThan(afterSpin.resets);
     await settled(page);
 
     await page.locator(".kerr-controls").getByRole("button", { name: "Performance" }).click();
