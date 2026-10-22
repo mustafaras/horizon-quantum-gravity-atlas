@@ -368,6 +368,8 @@ export async function initializeRenderSession({
     if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
     if (stageKind === "webgl2") {
       stageView = acquireStage({ backend: "webgl2" }).attachContext({ label: diagnosticId, onError, suspend: suspendGPU, resume: resumeGPU });
+      const rect = mount.getBoundingClientRect();
+      stageView.hintVisible(rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth);
       if (!(await stageView.acquireContext())) return parkedSession();
     }
     handle = await createHandle();

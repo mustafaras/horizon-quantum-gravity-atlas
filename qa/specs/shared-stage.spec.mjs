@@ -67,13 +67,14 @@ test("webgl2: the QFT view keeps at most 4 live contexts and its static scenes d
   expect(s.views.some((v) => /Fourier modes/.test(v.label)), "Fourier vacuum lab is a pilot").toBe(true);
 
   // Pause every scene (the backdrop follows the Motion setting, so it is handled separately) and let the loop go idle.
-  const pauses = page.getByRole("button", { name: "Pause simulation" });
-  for (let i = 0, n = await pauses.count(); i < n; i++) await pauses.first().click().catch(() => {});
-  await expect.poll(async () => (await stage(page, "webgl2")).views.filter((v) => /scalar field|Fourier/.test(v.label)).every((v) => !v.animated && !v.dirty), { timeout: 20_000 }).toBe(true);
+  // Pause the scene at the top of the page (clicking the others would scroll it out of view).
+  await page.getByRole("button", { name: "Pause simulation" }).first().click();
+  await expect.poll(async () => (await stage(page, "webgl2")).views.filter((v) => /scalar field/.test(v.label) && v.visible).every((v) => !v.animated && !v.dirty), { timeout: 20_000 }).toBe(true);
   const before = await stage(page, "webgl2");
   await page.waitForTimeout(2000);
   const after = await stage(page, "webgl2");
-  for (const v of before.views.filter((x) => /scalar field|Fourier/.test(x.label))) {
+  expect(before.views.some((x) => /scalar field/.test(x.label) && x.visible), "a visible paused scene is under test").toBe(true);
+  for (const v of before.views.filter((x) => /scalar field/.test(x.label) && x.visible)) {
     expect(after.views.find((x) => x.id === v.id).frames, `${v.label}: frames drawn during 2 s idle`).toBe(v.frames);
   }
   expect(errors).toEqual([]);
@@ -131,7 +132,11 @@ test("webgpu: one renderer serves every pilot canvas, static scenes draw nothing
   await configure(context, { forceBackend: "webgpu", stage: "shared" });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/favicon.svg");
-  const hasWebGPU = await page.evaluate(async () => !!(navigator.gpu && await navigator.gpu.requestAdapter().catch(() => null)));
+  const gpu = await page.evaluate(async () => {
+    const adapter = navigator.gpu ? await navigator.gpu.requestAdapter().catch(() => null) : null;
+    return { available: !!adapter, timestamps: !!adapter?.features.has("timestamp-query") };
+  });
+  const hasWebGPU = gpu.available;
   if (!hasWebGPU) {
     test.info().annotations.push({ type: "backend-unavailable", description: "no WebGPU adapter in this browser; the webgl2 cases are the CI gate" });
     test.skip(true, "no WebGPU adapter in this browser");
@@ -144,13 +149,20 @@ test("webgpu: one renderer serves every pilot canvas, static scenes draw nothing
   expect(s.renderers, "live WebGPU renderers").toBe(1);
   expect(s.views.every((v) => v.live)).toBe(true);
   expect((await phases(page)).every((e) => e.backend === "webgpu")).toBe(true);
-  const pauses = page.getByRole("button", { name: "Pause simulation" });
-  for (let i = 0, n = await pauses.count(); i < n; i++) await pauses.first().click().catch(() => {});
-  await expect.poll(async () => (await stage(page, "webgpu")).views.filter((v) => /scalar field|Fourier/.test(v.label)).every((v) => !v.animated && !v.dirty), { timeout: 20_000 }).toBe(true);
+  if (gpu.timestamps) {
+    // F-23: the governor is fed resolved GPU render time, not just CPU frame time.
+    await expect.poll(async () => (await stage(page, "webgpu")).views.some((v) => v.gpuMs > 0), { timeout: 60_000 }).toBe(true);
+  } else {
+    test.info().annotations.push({ type: "no-timestamp-query", description: "adapter lacks timestamp-query; the governor stays on CPU time" });
+  }
+  // Pause the scene at the top of the page (clicking the others would scroll it out of view).
+  await page.getByRole("button", { name: "Pause simulation" }).first().click();
+  await expect.poll(async () => (await stage(page, "webgpu")).views.filter((v) => /scalar field/.test(v.label) && v.visible).every((v) => !v.animated && !v.dirty), { timeout: 20_000 }).toBe(true);
   const before = await stage(page, "webgpu");
   await page.waitForTimeout(2000);
   const after = await stage(page, "webgpu");
-  for (const v of before.views.filter((x) => /scalar field|Fourier/.test(x.label))) {
+  expect(before.views.some((x) => /scalar field/.test(x.label) && x.visible), "a visible paused scene is under test").toBe(true);
+  for (const v of before.views.filter((x) => /scalar field/.test(x.label) && x.visible)) {
     expect(after.views.find((x) => x.id === v.id).frames, `${v.label}: frames drawn during 2 s idle`).toBe(v.frames);
   }
   for (const st of await captureStats(page)) { expect(st.captured).toBe(true); expect(st.distinct).toBeGreaterThan(8); }

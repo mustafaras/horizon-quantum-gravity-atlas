@@ -285,6 +285,8 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
           return run;
         },
         /** The scene released its renderer (eviction or parked start): it must not be planned until resumed. */
+        /** Tell the pool whether the scene is in view before it asks for a context (no resume side effects). */
+        hintVisible(value) { view.visible = !!value; pool.setVisible(view.id, view.visible); },
         markSuspended() { view.live = false; pool.release(view.id); view.refreshVisibility(); },
         contextCreated() { view.live = true; view.refreshVisibility(); view.handle.invalidate({ input: false }); wake(); },
         /** The scene's visible state changed while suspended: bring its context back. */
