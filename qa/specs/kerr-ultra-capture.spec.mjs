@@ -227,17 +227,21 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
   });
 
   test("cancelling mid-capture surfaces a named error and the observatory keeps rendering", async ({ page }) => {
-    test.setTimeout(TWO_K_TIMEOUT_MS);
     const problems = observe(page);
     await gotoReady(page, "/?view=bh", READINESS);
     await settled(page);
-    const error = await page.evaluate(async () => {
+    const error = await page.evaluate(async (small) => {
       const signal = { aborted: false };
-      const pending = window.__qgaKerrCapture({ preset: "2k", samples: 400, samplesPerChunk: 2, signal }).catch((err) => err);
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      signal.aborted = true;
+      // Cancel from the first progress report, i.e. after the first chunk of a 400-sample capture has been drawn.
+      // Cancellation stops submission between chunks but cannot recall chunks already queued on the GPU, so a
+      // timer would queue an amount that depends on machine speed (a software rasterizer needs minutes per 50
+      // samples before the next capture can run); the progress hook queues exactly one chunk everywhere.
+      const pending = window.__qgaKerrCapture({
+        ...small, samples: 400, samplesPerChunk: 2, signal,
+        onProgress: (progress) => { if (progress.stage === "accumulating") signal.aborted = true; },
+      }).catch((err) => err);
       return pending;
-    });
+    }, SMALL);
     expect(error.name).toBe("CaptureCancelledError");
     // Repeated captures after a cancellation still succeed (no leaked state).
     const again = await capture(page, { ...SMALL, samples: SMALL_SAMPLES, samplesPerChunk: SMALL_SAMPLES });
