@@ -544,12 +544,12 @@
       "findings": [
         "F-21"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "branch": "claude/ecstatic-pasteur-a6i8mp",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-22",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -1571,6 +1571,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "done",
       "detail": "PR #52 merged as 262b24e; CI green on the pinned Chromium (Browser QA, Validate). F-21 stays open until S05."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S05",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "claimed",
+      "detail": "S05 claimed on branch claude/ecstatic-pasteur-a6i8mp created from main d9a25bc."
     }
   ]
 }
