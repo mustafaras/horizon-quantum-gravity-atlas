@@ -14,6 +14,7 @@ import { test, expect, chromium } from "playwright/test";
 import { readFile } from "node:fs/promises";
 import { gotoReady } from "./helpers.mjs";
 import { installDeterministicRandom } from "../lib/determinism.mjs";
+import { webgpuAdapterKind } from "../lib/webgpu-adapter.mjs";
 import { kerrHorizonRadii, kerrIsco, kerrPhotonSphere } from "../../js/science/kerr.mjs";
 
 const VIEWPORT = { width: 1440, height: 1000 };
@@ -419,11 +420,8 @@ test.describe("native WebGPU when available", () => {
       const page = await context.newPage();
       const problems = observe(page);
       await gotoReady(page, `/?view=bh&bhm=1&bhs=0.9&seed=${SEED}`, READINESS);
-      const adapter = await page.evaluate(async () => {
-        if (!navigator.gpu) return false;
-        try { return !!(await navigator.gpu.requestAdapter()); } catch { return false; }
-      });
-      testInfo.skip(!adapter, "No WebGPU adapter on this machine; the forced-WebGL2 cases cover the fallback.");
+      const adapter = await webgpuAdapterKind(page);
+      testInfo.skip(adapter !== "native", `No native WebGPU adapter (${adapter}); a software adapter loses the Kerr WebGL context and is not hardware evidence. The forced-WebGL2 cases cover the fallback.`);
       await settled(page);
       const info = await runtime(page);
       expect(info.backend).toBe("webgpu");

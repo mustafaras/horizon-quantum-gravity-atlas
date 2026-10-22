@@ -19,6 +19,7 @@
 import { test, expect } from "playwright/test";
 import { gotoReady } from "./helpers.mjs";
 import { installDeterministicRandom } from "../lib/determinism.mjs";
+import { webgpuAdapterKind } from "../lib/webgpu-adapter.mjs";
 import { parsePngChunks } from "../../js/render/progressive-capture.mjs";
 
 const VIEWPORT = { width: 1440, height: 1000 };
@@ -325,6 +326,13 @@ test.describe("Kerr ultra-quality capture (WebGPU compute path)", () => {
       const page = await context.newPage();
       const problems = observe(page);
       await gotoReady(page, "/?view=bh&bhs=0.7&bhdm=page-thorne", READINESS);
+      // A software adapter (CI SwiftShader) is not native WebGPU: the Kerr WebGL context is lost on it and the
+      // scene never converges. The software-adapter contracts live in render-backends.spec.mjs.
+      const adapter = await webgpuAdapterKind(page);
+      if (adapter !== "native") {
+        testInfo.skip(true, `native WebGPU unavailable (adapter: ${adapter})`);
+        return;
+      }
       await settled(page);
       const info = await runtime(page);
       if (info?.backend !== "webgpu") {
