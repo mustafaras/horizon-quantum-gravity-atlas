@@ -107,6 +107,18 @@ test("webgl2: a context budget below the scene count parks unseen scenes, then s
   expect(errors).toEqual([]);
 });
 
+test("webgl2: the tightest budget (1 context) still settles: no deadlock, the displaced scene keeps its last frame", async ({ page, context }) => {
+  await configure(context, { forceBackend: "webgl2", stage: "shared", maxContexts: 1 });
+  const errors = observe(page);
+  await gotoReady(page, "/?view=qft&seed=42", READINESS);
+  await settle(page, "webgl2", 3);
+  const s = await stage(page, "webgl2");
+  expect(s.renderers, "pooled WebGL2 contexts").toBe(1);
+  expect(s.views.filter((v) => v.live).length).toBe(1);
+  await expect(page.locator("img[data-qga-snapshot]").first(), "the displaced scene shows its last frame").toBeAttached();
+  expect(errors).toEqual([]);
+});
+
 test("webgl2: captures are non-blank without preserveDrawingBuffer, with and without the shared stage", async ({ page, context }) => {
   for (const mode of ["classic", "shared"]) {
     const fresh = await page.context().browser().newContext({ viewport: { width: 1200, height: 800 } });

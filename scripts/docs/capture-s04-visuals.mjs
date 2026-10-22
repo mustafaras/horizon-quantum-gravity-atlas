@@ -48,7 +48,7 @@ async function open({ renderOptions, reducedMotion = false, viewport = { width: 
 }
 async function shot(page, name) {
   const file = path.join(outDir, name);
-  const bytes = await page.screenshot();
+  const bytes = await page.screenshot({ timeout: 180_000 });
   await writeFile(file, bytes);
   console.log(`[docs] wrote ${path.relative(root, file)}`);
   return bytes;

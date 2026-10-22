@@ -30,7 +30,7 @@ export async function initializeRenderSession({
   const wantsStage = shared === true && sharedStageRequested(options) && forceBackend !== "static";
   let stageKind = !wantsStage ? null
     : canUseWebGPUStage({ forceBackend, nodeCompatible: inspectSceneCompatibility(scene).nodeCompatible, shadows: !!source?.castShadow }) ? "webgpu" : "webgl2";
-  let stageView = null, host = null, snapshotImage = null, snapshotUrl = null, suspended = false, suspendPromise = null, governor, contextLostBound = null;
+  let stageView = null, host = null, snapshotImage = null, snapshotUrl = null, suspended = false, suspendPromise = null, contextAcquired = false, governor, contextLostBound = null;
   // Resolves when the first bring-up has finished (or failed): a pool eviction must not tear down a view that is still being built.
   let resolveReady;
   const initialized = new Promise((resolve) => { resolveReady = resolve; });
@@ -196,7 +196,10 @@ export async function initializeRenderSession({
         });
       }
       // A fallback from WebGPU may exceed the budget by one rather than park a scene that has nothing to show.
-      await stageView.acquireContext({ force: true });
+      // The primary path already holds its context: asking again would queue behind a request that is itself
+      // waiting for this view to finish building (a deadlock under a tight budget).
+      if (!contextAcquired) await stageView.acquireContext({ force: true });
+      contextAcquired = true;
     }
     // The unshared path keeps the original arguments exactly: the initial attempt honours detail/antialias,
     // the retry after a failed node pipeline does not.
@@ -371,6 +374,7 @@ export async function initializeRenderSession({
       const rect = mount.getBoundingClientRect();
       stageView.hintVisible(rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth);
       if (!(await stageView.acquireContext())) return parkedSession();
+      contextAcquired = true;
     }
     handle = await createHandle();
     if (handle.backend === "static") {
