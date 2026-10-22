@@ -146,8 +146,10 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   useEffect(() => () => {
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
-  // On a shared stage a static scene draws only when invalidated: React-side changes owe it a frame.
-  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d, invalidateKey]);
+  // On a shared stage a static scene draws only when invalidated: React-side changes owe it a frame. `build` is a
+  // new closure whenever the owning module renders, and modules feed live parameters to a built scene through refs
+  // (the Kerr observatory's spin, corona and jets, the Planck probe's scale), so a render owes one frame as well.
+  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d, invalidateKey, build]);
   const animatedRef = useRef(animated); animatedRef.current = animated;
   useEffect(() => { setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
