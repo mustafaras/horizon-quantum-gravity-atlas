@@ -27,9 +27,17 @@ test("system preference overrides full motion, including pipeline grain, tempora
   }
   await page.getByRole("button", { name: "Close tweaks" }).click();
   await page.getByRole("button", { name: "Pause simulation", exact: true }).first().click();
-  const image = await page.locator(".s3d-canvas").first().screenshot();
+  // The shared stage draws on demand: the pause and the closing settings panel owe the scene a few settling
+  // frames, so first wait until the pixels stop changing, then require them (and the frame count) to stay put.
+  const shot = () => page.locator(".s3d-canvas").first().screenshot();
+  const drawn = () => page.evaluate(() => QGA_RENDER.stageDiagnostics.snapshot().flatMap((s) => s.views).reduce((sum, v) => sum + v.frames, 0));
+  let previous = await shot();
+  await expect.poll(async () => { const now = await shot(); const same = now.equals(previous); previous = now; return same; },
+    { intervals: [500], timeout: 20_000 }).toBe(true);
+  const framesBefore = await drawn();
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  expect((await page.locator(".s3d-canvas").first().screenshot()).equals(image), "reduced-motion renderer pixels must remain static").toBe(true);
+  expect((await shot()).equals(previous), "reduced-motion renderer pixels must remain static").toBe(true);
+  expect(await drawn(), "reduced-motion paused scene draws no frames").toBe(framesBefore);
   expect(errors).toEqual([]);
   expect(loadingErrors()).toEqual([]);
 });
