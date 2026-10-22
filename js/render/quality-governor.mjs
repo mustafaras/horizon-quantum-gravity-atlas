@@ -3,6 +3,9 @@ const ORDER = ["maxDpr", "temporalSamples", "ssgi", "raySteps", "particleBudget"
 export function createQualityGovernor({
   quality, windowSize = 60, slowMs = 26, fastMs = 14, slowWindows = 2,
   fastWindows = 3, cooldownMs = 3000, active = ORDER,
+  // Thresholds for resolved GPU render time (WebGPU `timestamp-query`); the contract's
+  // desktop budget is 8 ms. CPU frame time includes vsync waits, GPU time does not.
+  gpuSlowMs = 8, gpuFastMs = 4,
 } = {}) {
   if (!quality || !Number.isFinite(quality.maxDpr) || quality.maxDpr < 1
       || !Number.isFinite(quality.particleBudget) || quality.particleBudget < 1
@@ -12,12 +15,13 @@ export function createQualityGovernor({
   }
   if (!Number.isInteger(windowSize) || windowSize < 4 || !Number.isInteger(slowWindows)
       || slowWindows < 1 || !Number.isInteger(fastWindows) || fastWindows < 1
-      || !(fastMs > 0 && slowMs > fastMs) || !(cooldownMs >= 3000)) {
+      || !(fastMs > 0 && slowMs > fastMs) || !(gpuFastMs > 0 && gpuSlowMs > gpuFastMs) || !(cooldownMs >= 3000)) {
     throw new RangeError("governor requires valid windows, hysteresis and cooldown >= 3000ms");
   }
   const ceiling = { ...quality, ssgi: !!quality.ssgi };
   let current = Object.freeze({ ...ceiling });
   const frames = [];
+  const gpuFrames = [];
   let count = 0, slow = 0, fast = 0, lastChange = -Infinity, lastTime = -Infinity;
   const floor = {
     maxDpr: 1, temporalSamples: 1, ssgi: false,
@@ -43,26 +47,31 @@ export function createQualityGovernor({
   }
   return {
     get quality() { return current; },
-    resetWindow() { frames.length = 0; count = 0; slow = fast = 0; },
-    sample(frameMs, now) {
+    resetWindow() { frames.length = 0; gpuFrames.length = 0; count = 0; slow = fast = 0; },
+    /** `gpuFrameMs` is optional: when every frame in the window carries one, the window is judged on GPU time. */
+    sample(frameMs, now, gpuFrameMs = null) {
       if (!Number.isFinite(frameMs) || frameMs < 0) throw new RangeError("frame time must be finite and nonnegative");
       if (!Number.isFinite(now) || now < 0 || now < lastTime) throw new RangeError("time must be monotonic");
       lastTime = now;
       if (frameMs === 0) return { quality: current, change: null, fps: null };
       frames.push(frameMs);
-      if (frames.length > windowSize) frames.shift();
+      gpuFrames.push(Number.isFinite(gpuFrameMs) && gpuFrameMs > 0 ? gpuFrameMs : null);
+      if (frames.length > windowSize) { frames.shift(); gpuFrames.shift(); }
       const mean = frames.reduce((a, b) => a + b, 0) / frames.length;
+      const gpu = gpuFrames.every((value) => value !== null);
+      const judged = gpu ? gpuFrames.reduce((a, b) => a + b, 0) / gpuFrames.length : mean;
+      const slowAt = gpu ? gpuSlowMs : slowMs, fastAt = gpu ? gpuFastMs : fastMs;
       let change = null;
       if (++count >= windowSize && frames.length === windowSize) {
         count = 0;
-        slow = mean > slowMs ? slow + 1 : 0;
-        fast = mean < fastMs ? fast + 1 : 0;
+        slow = judged > slowAt ? slow + 1 : 0;
+        fast = judged < fastAt ? fast + 1 : 0;
         if (now - lastChange >= cooldownMs && (slow >= slowWindows || fast >= fastWindows)) {
           change = adjust(slow >= slowWindows ? -1 : 1);
-          if (change) { lastChange = now; slow = fast = 0; frames.length = 0; }
+          if (change) { lastChange = now; slow = fast = 0; frames.length = 0; gpuFrames.length = 0; }
         }
       }
-      return { quality: current, change, fps: 1000 / mean };
+      return { quality: current, change, fps: 1000 / mean, gpuMs: gpu ? judged : null };
     },
   };
 }

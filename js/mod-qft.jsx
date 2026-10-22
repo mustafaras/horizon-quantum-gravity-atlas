@@ -336,7 +336,7 @@ function FieldLab3D() {
         format={(v) => v.toFixed(2)}></SliderRow>
         <button className="btn" onClick={clearField}>Clear field</button>
       </div>
-      <Scene3D height={430} shotSpace="qft-field" aria="Interactive three-dimensional scalar field membrane; click to excite the field"
+      <Scene3D shared height={430} shotSpace="qft-field" aria="Interactive three-dimensional scalar field membrane; click to excite the field"
       initial={{ radius: 13.2, theta: 0.52, phi: 1.06, minR: 7, maxR: 32, bloom: { strength: 0.85, radius: 0.5, threshold: 0.16 } }}
       build={build} fallback={<FieldLab></FieldLab>}></Scene3D>
       <DispersionPlot mass={mass}></DispersionPlot>
@@ -1583,7 +1583,7 @@ function QftComputeLab() {
         <SliderRow label="mass m" min={0} max={3} step={0.05} value={mass}
         onChange={(v) => setState({ qftLabMass: v })} format={(v) => v.toFixed(2)}></SliderRow>
       </div>
-      <Scene3D height={420} aria="Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube"
+      <Scene3D shared height={420} aria="Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube"
       initial={{ radius: 15.5, theta: 0.55, phi: 1.06, minR: 6, maxR: 34, bloom: { strength: 0.62, radius: 0.5, threshold: 0.2 } }}
       build={build} deps={[mode, mass, seed]}
       fallback={<div className="lab-fallback">The 3-D vacuum lab needs WebGL; the module numerics remain available via the export.</div>}></Scene3D>

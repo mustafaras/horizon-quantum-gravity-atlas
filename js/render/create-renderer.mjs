@@ -147,6 +147,7 @@ export async function createRenderer({
   signal, toneMapping = "agx", onDiagnostic = () => {}, onDeviceLost = () => {},
   reducedMotion = false,
   shadows = false,
+  trackTimestamp = false,
 } = {}) {
   abortIfNeeded(signal);
   if (!["agx", "neutral"].includes(toneMapping)) throw new RangeError("toneMapping must be agx or neutral");
@@ -189,7 +190,7 @@ export async function createRenderer({
           finally { window.removeEventListener("load", loaded); }
         }
         deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost });
-        renderer = new WebGPURenderer({ canvas, alpha, antialias, powerPreference, device: deviceLease.device });
+        renderer = new WebGPURenderer({ canvas, alpha, antialias, powerPreference, device: deviceLease.device, trackTimestamp });
         releaseCensus = retainRenderer(renderer);
         renderer.onDeviceLost = (info) => onDeviceLost(new Error(`GPU device lost: ${info.message || info.reason}`));
         renderer.onError = (info) => onDeviceLost(new Error(`GPU ${info.type}: ${info.message}`));
@@ -204,10 +205,10 @@ export async function createRenderer({
         report("Node renderer initialization completed; compiling current scene shaders.");
       } else {
         canvas ??= document.createElement("canvas");
-        const context = canvas.getContext("webgl2", { alpha, antialias, powerPreference, preserveDrawingBuffer: true });
+        const context = canvas.getContext("webgl2", { alpha, antialias, powerPreference });
         if (!context) throw new Error("WebGL2 context unavailable");
         hasWebGL2 = true;
-        renderer = new WebGLRenderer({ canvas, context, alpha, antialias, powerPreference, preserveDrawingBuffer: true });
+        renderer = new WebGLRenderer({ canvas, context, alpha, antialias, powerPreference });
         releaseCensus = retainRenderer(renderer);
         renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
           throw new Error(`Shader compilation failed: ${gl.getProgramInfoLog(program)} ${gl.getShaderInfoLog(vertex)} ${gl.getShaderInfoLog(fragment)}`);

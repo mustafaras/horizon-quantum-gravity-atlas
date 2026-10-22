@@ -121,11 +121,12 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
      fallback      node rendered if WebGL/THREE unavailable or context lost
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = false }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
   const hudStateRef = useRef({});
+  const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [rebuildNonce, setRebuildNonce] = useState(0);
   const [phase, setPhase] = useState("initializing");
@@ -139,6 +140,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   useEffect(() => () => {
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
+  // On a shared stage a static scene draws only when invalidated: React-side changes owe it a frame.
+  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d]);
   useEffect(() => { setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
   // WebGL scene; the frame loop glides the orbit rig toward it instead.
@@ -273,6 +276,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       if (conceptPulse.active) conceptPulse.active.overlay.removeFromParent();
       conceptPulse.active = { overlay, object, target, startTime: clockT, duration: 0.8, intensity, hold: true };
       conceptPulse.symbol = symbol;
+      session.invalidate({ input: false });
       // Dev/QA diagnostic: the active concept highlight (also lets the QA
       // suite assert the scene reacted without touching scene internals).
       window.__qgaConceptHighlight = { symbol, interaction: conceptPulse.lastInteraction ?? "hover", at: performance.now() };
@@ -306,6 +310,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     };
     const stopConceptPulse = () => {
       if (conceptPulse.active) conceptPulse.active.hold = false;
+      session.invalidate({ input: false });
       conceptPulse.focusTween?.();
       conceptPulse.focusTween = null;
     };
@@ -339,7 +344,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       scene, camera, mount, settings: settingsRef.current, view: aria || "scene",
       signal: abort.signal, diagnosticId, onError: fail, onPhase: (value) => { if (alive) setPhase(value); },
       source: built.lightSource || null, applyQuality: built.applyRenderQuality || null,
-      depthValid: built.renderCapabilities?.depth !== false,
+      depthValid: built.renderCapabilities?.depth !== false, shared,
     });
     session = await initPromise;
     if (!alive) { await session.dispose(); return; }
@@ -347,8 +352,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       fail(new Error(session.capabilities.diagnostics.join(" ")));
       return;
     }
+    sessionRef.current = session;
     renderer = session.renderer;
-    renderer.domElement.className = "s3d-canvas";
+    session.element.className = "s3d-canvas";
     setPhase("ready");
     const releaseResources = stop;
 
@@ -367,17 +373,19 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
           orbit.vTheta = 0; orbit.vPhi = 0; orbit.introT = 0;
           orbit.lastInteract = clockT;
           if (Array.isArray(pose.target)) target.set(pose.target[0], pose.target[1], pose.target[2]);
+          session.invalidate({ input: false });
         },
       };
       window.QGA_CINEMATIC.registerSpace(shotSpace, spaceBridge);
     }
 
     // ---------- interaction ----------
-    const el = renderer.domElement;
+    const el = session.element;
     const ptr = { down: false, id: null, x: 0, y: 0, moved: 0, pinch: 0 };
     const touches = new Map();
     const markInteract = () => {
       orbit.lastInteract = clockT; orbit.introT = 0;
+      session.invalidate();
       broadcastPose();
       // user orbit/pan/zoom immediately pauses automated cinematic direction
       if (shotSpace && window.QGA_CINEMATIC) window.QGA_CINEMATIC.notifySceneInput(shotSpace);
@@ -475,6 +483,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const resetCam = () => {
       orbit.radius = home.radius; orbit.theta = home.theta; orbit.phi = home.phi;
       orbit.vTheta = 0; orbit.vPhi = 0;
+      session.invalidate({ input: false });
     };
     hudStateRef.current.reset = resetCam;
     // Prompt 10 snapshot/compare camera bridge: read the live orbit pose and
@@ -491,6 +500,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         easing: opts.easing === "quint" ? "quint" : "cubic",
         duration: Number.isFinite(opts.duration) ? Math.min(0.9, Math.max(0.1, opts.duration)) : 0.9,
       };
+      session.invalidate({ input: false });
     };
 
     // ---------- Prompt 10 interaction bridges ----------
@@ -515,7 +525,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     // Palette open: the active scene keeps rendering but idle auto-drift
     // pauses while the command palette is open (cinematic discipline).
     let paletteOpen = false;
-    const offPalette = window.QGA_CONCEPT_BUS?.on("palette-visibility", (payload) => { paletteOpen = payload.open; });
+    const offPalette = window.QGA_CONCEPT_BUS?.on("palette-visibility", (payload) => { paletteOpen = payload.open; session.invalidate({ input: false }); });
 
     // Compare embed bridge: broadcast the orbit pose on interaction and
     // apply synchronized poses from the twin scene (single blended pose).
@@ -535,6 +545,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       orbit.theta = Number.isFinite(data.pose.theta) ? data.pose.theta : orbit.theta;
       orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, Number.isFinite(data.pose.phi) ? data.pose.phi : orbit.phi));
       orbit.vTheta = 0; orbit.vPhi = 0; orbit.introT = 0;
+      session.invalidate({ input: false });
     };
     if (compareRole) {
       window.addEventListener("message", onCompareMessage);
@@ -574,13 +585,14 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const sceneHandle = Object.freeze({
       element: mount,
       cameraSpace: "orbit",
+      capture: () => session.capture(),
       getPose: hudStateRef.current.getPose,
       flyTo: hudStateRef.current.flyTo,
       projectPoint(point) {
         registryVector.set(point.x, point.y, point.z);
         const worldPosition = registryVector.clone();
         registryVector.project(camera);
-        const rect = renderer.domElement.getBoundingClientRect();
+        const rect = session.element.getBoundingClientRect();
         const result = {
           x: (registryVector.x * 0.5 + 0.5) * rect.width,
           y: (-registryVector.y * 0.5 + 0.5) * rect.height,
@@ -611,8 +623,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       const w = Math.max(40, mount.clientWidth);
       const h = Math.max(40, mount.clientHeight);
       session.resize();
-      renderer.domElement.style.width = "100%";
-      renderer.domElement.style.height = "100%";
+      session.element.style.width = "100%";
+      session.element.style.height = "100%";
+      session.invalidate({ input: false });
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
@@ -622,7 +635,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
     // ---------- offscreen pause ----------
     let visible = true;
-    const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { threshold: 0.02 });
+    const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; session.setVisible(visible); }, { threshold: 0.02 });
     io.observe(mount);
 
     // ---------- frame loop ----------
@@ -630,12 +643,12 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const v3 = new THREE.Vector3();
     const tick = (now) => {
       if (!alive) return;
-      if (!renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
+      if (!session.shared && !renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
       try {
       const frameMs = Math.max(0, now - last);
       const rawDt = Math.min(0.05, frameMs / 1000);
       last = now;
-      if (!visible || document.hidden) { session.suspend(); return; }
+      if (!visible || document.hidden) { session.suspend(); session.setAnimated(false); return; }
 
       clockT += rawDt;
       const mo = motion();
@@ -735,7 +748,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       // project labels
       const showLabels = settingsRef.current.labels3d !== false;
       const showAnnot = settingsRef.current.annotations3d !== false;
-      const r = renderer.domElement.getBoundingClientRect();
+      const r = session.element.getBoundingClientRect();
       for (const L of labels) {
         const on = L.show && (L.annotationOnly ? showAnnot && showLabels : showLabels);
         if (!on) { L.el.style.display = "none"; continue; }
@@ -749,6 +762,11 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
           ((v3.x * 0.5 + 0.5) * r.width).toFixed(1) + "px," +
           ((-v3.y * 0.5 + 0.5) * r.height).toFixed(1) + "px)";
       }
+      // A shared stage draws a static scene only when invalidated: keep ticking while anything can still
+      // change (running simulation, inertia, easing, intro, a highlight, a drag, or cinematic drift).
+      session.setAnimated(playingRef.current || easing || orbit.introT > 0 || orbit.vTheta !== 0 || orbit.vPhi !== 0
+        || !!conceptPulse.active || ptr.down
+        || (mo > 0 && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic" && !paletteOpen));
       renderFrame(rawDt, now, mo > 0 && playingRef.current, frameMs);
       }
       catch (error) { fail(error); }
@@ -757,6 +775,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     stop = () => {
       if (released) return;
       released = true;
+      sessionRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect(); io.disconnect();
       el.removeEventListener("pointerdown", onPointerDown);
@@ -780,7 +799,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     };
     try { renderFrame(); }
     catch (error) { fail(error); return; }
-    if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
+    if (session.drive(tick)) { /* the shared stage calls tick, and only when this view has a frame to draw */ }
+    else if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
     else raf = requestAnimationFrame(tick);
     };
     void start().catch((error) => {

@@ -70,3 +70,33 @@ test("inactive budgets are not adjusted and samples remain bounded", () => {
   g.resetWindow();
   assert.equal(g.sample(20, 6001).fps, 50);
 });
+
+function gpuWindow(governor, cpuMs, gpuMs, time) {
+  let result;
+  for (let i = 0; i < 4; i++) result = governor.sample(cpuMs, time + i, gpuMs);
+  return result;
+}
+test("gpuFrameMs: a window judged on GPU time ignores vsync-padded CPU frame time", () => {
+  const g = createQualityGovernor({ quality, windowSize: 4, slowWindows: 1, fastWindows: 1 });
+  // 16.7 ms CPU frames (vsync) with 3 ms of GPU work are neither slow nor, with the default 4 ms, anything but fast.
+  const result = gpuWindow(g, 16.7, 3, 4000);
+  assert.equal(result.gpuMs, 3);
+  assert.equal(result.change, null, "already at the ceiling, nothing to raise");
+  assert.equal(g.quality.maxDpr, 2);
+  const slow = gpuWindow(g, 16.7, 12, 8000);
+  assert.equal(slow.change.dimension, "maxDpr", "12 ms of GPU time is over the 8 ms desktop budget");
+  assert.equal(slow.change.direction, "down");
+});
+test("gpuFrameMs: thresholds, cooldown and order are the CPU ones; missing GPU samples fall back to CPU time", () => {
+  const g = createQualityGovernor({ quality, windowSize: 4, slowWindows: 1, fastWindows: 1, gpuSlowMs: 6, gpuFastMs: 2 });
+  assert.equal(gpuWindow(g, 16, 7, 4000).change.dimension, "maxDpr");
+  assert.equal(gpuWindow(g, 16, 7, 4100).change, null, "cooldown still applies");
+  // one window with a missing GPU sample is judged on CPU frame time: 16 ms is neither slow (26) nor fast (14)
+  let result;
+  for (let i = 0; i < 4; i++) result = g.sample(16, 9000 + i, i === 2 ? null : 7);
+  assert.equal(result.change, null);
+  assert.equal(result.gpuMs, null);
+  assert.throws(() => createQualityGovernor({ quality, gpuSlowMs: 2, gpuFastMs: 4 }), RangeError);
+  const none = createQualityGovernor({ quality, windowSize: 4 });
+  assert.equal(none.sample(10, 1).gpuMs, null);
+});
