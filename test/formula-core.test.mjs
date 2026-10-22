@@ -15,7 +15,7 @@ import { SOLAR_MASS } from "../js/science/constants.mjs";
 
 const { add, sub, mul, div, neg, pow, sqrt, cbrt, num, sym, rat, term, lt, gt, select, clamp, atan2, min, max, PI } = E;
 const close = (a, b, rel, label) => assert.ok(Math.abs(a - b) <= rel * Math.abs(b), `${label ?? ""} ${a} vs ${b}`);
-const REFS = [{ citation: "test", url: "https://example.org" }];
+const REFS = [{ citation: "test", url: "https://example.org", retrieved: "2026-10-22" }];
 
 /* ---------- constructors ---------- */
 
@@ -230,7 +230,8 @@ test("defineFormula validates its input and returns a frozen formula", () => {
   assert.throws(() => defineFormula({ ...base, domain: {} }), /domain\.x/);
   assert.throws(() => defineFormula({ ...base, domain: { x: [0, 1, "log"] } }), /domain\.x/);
   assert.throws(() => defineFormula({ ...base, references: [] }), /references/);
-  assert.throws(() => defineFormula({ ...base, references: [{ citation: "no locator" }] }), /references\[0\]/);
+  assert.throws(() => defineFormula({ ...base, references: [{ citation: "no locator", retrieved: "2026-10-22" }] }), /references\[0\]/);
+  assert.throws(() => defineFormula({ ...base, references: [{ citation: "no date", url: "https://example.org" }] }), /retrieved/);
   assert.throws(() => defineFormula({ ...base, output: { dims: { T: 1 } } }), /output declares/);
   assert.throws(() => defineFormula({ ...base, expr: add("x", 1) }), { name: "TypeError", message: /^add:/ });
 });

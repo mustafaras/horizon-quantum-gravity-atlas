@@ -4,11 +4,11 @@ import { defineFormula } from "../formula.mjs";
 import { div, mul, add, sqrt, pow, sub, term, PI } from "../expr.mjs";
 import { constants, CODATA_2018 } from "./constants.mjs";
 
-const SCHWARZSCHILD = { citation: "Schwarzschild, On the gravitational field of a mass point according to Einstein's theory (1916), trans. Antoci & Loinger", arxiv: "physics/9905030" };
-const HAWKING = { citation: "Hawking, Particle creation by black holes, Commun. Math. Phys. 43, 199 (1975)", doi: "10.1007/BF02345020" };
-const BEKENSTEIN = { citation: "Bekenstein, Black holes and entropy, Phys. Rev. D 7, 2333 (1973)", doi: "10.1103/PhysRevD.7.2333" };
-const KERR = { citation: "Kerr, Gravitational field of a spinning mass as an example of algebraically special metrics, Phys. Rev. Lett. 11, 237 (1963)", doi: "10.1103/PhysRevLett.11.237" };
-const BPT = { citation: "Bardeen, Press & Teukolsky, Rotating black holes: locally nonrotating frames, energy extraction, and scalar synchrotron radiation, Astrophys. J. 178, 347 (1972)", doi: "10.1086/151796" };
+const SCHWARZSCHILD = { citation: "Schwarzschild, On the gravitational field of a mass point according to Einstein's theory (1916), trans. Antoci & Loinger", arxiv: "physics/9905030", retrieved: "2026-10-22" };
+const HAWKING = { citation: "Hawking, Particle creation by black holes, Commun. Math. Phys. 43, 199 (1975)", doi: "10.1007/BF02345020", retrieved: "2026-10-22" };
+const BEKENSTEIN = { citation: "Bekenstein, Black holes and entropy, Phys. Rev. D 7, 2333 (1973)", doi: "10.1103/PhysRevD.7.2333", retrieved: "2026-10-22" };
+const KERR = { citation: "Kerr, Gravitational field of a spinning mass as an example of algebraically special metrics, Phys. Rev. Lett. 11, 237 (1963)", doi: "10.1103/PhysRevLett.11.237", retrieved: "2026-10-22" };
+const BPT = { citation: "Bardeen, Press & Teukolsky, Rotating black holes: locally nonrotating frames, energy extraction, and scalar synchrotron radiation, Astrophys. J. 178, 347 (1972)", doi: "10.1086/151796", retrieved: "2026-10-22" };
 
 const mass = { tex: "M", unit: "kg", dims: { M: 1 }, description: "black-hole mass" };
 

@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "statuses": [
     "todo",
     "claimed",
@@ -460,7 +460,7 @@
       "completedAt": null,
       "evidence": {
         "tests": [
-          "npm test: 579/579 pass, 1 skipped (580 total; 18 new in test/formula-core.test.mjs)",
+          "npm test: 579/579 pass, 1 skipped (580 total; 18 new in test/formula-core.test.mjs, now also asserting retrieval dates)",
           "npm run validate: passed",
           "npm run perf:audit: runs; no new Math.random, colour literals or files over the line limit",
           "npm run qa:test -- qa/specs/formula-gpu.spec.mjs: webgl2 1/1 pass (12 formulas, FloatType readback); webgpu skipped with annotation (no WebGPU adapter in this environment)",
@@ -1385,8 +1385,8 @@
       "id": "D-012",
       "date": "2026-10-21",
       "prompt": "S03",
-      "decision": "Reference DOIs and arXiv ids in js/formula/library were NOT machine-verified and carry no retrieval date: crossref.org, arxiv.org and doi.org are blocked by the build environment proxy (403). Numeric values were verified by computation instead (see evidence.measurements). M_sun stays at the repo/prompt value 1.98847e30 kg; IAU 2015 nominal GM_sun / CODATA 2018 G gives 1.98841e30 (3e-5 relative), kept so the library equals js/physics.mjs to 1e-12.",
-      "rationale": "Same situation as D-007. The citations are the standard primary sources for each formula, written from knowledge; a follow-up with network access should confirm them and add retrieval dates."
+      "decision": "Citations were verified on 2026-10-22 once network access was opened: every DOI resolves on Crossref to the stated title, journal, volume, pages and year; arXiv physics/9905030 and 1310.1528 resolve on export.arxiv.org; NIST gives G = 6.67430(15)e-11 and Planck length 1.616255(18)e-35 m. Two locators could not be reached (Casimir 1948 on dwc.knaw.nl returned 403, the Flamm translation on Wikisource 404); both entries were removed and replaced by Bordag, Mohideen & Mostepanenko, Phys. Rep. 353, 1 (2001), doi 10.1016/S0370-1573(01)00015-1 (Crossref-verified) for Casimir, with Morris & Thorne (DOI verified) covering the Flamm embedding. Every reference now carries retrieved: 2026-10-22 and defineFormula rejects a reference without it. M_sun stays at the repo/prompt value 1.98847e30 kg; IAU 2015 nominal GM_sun / CODATA 2018 G gives 1.98841e30 (3e-5 relative), kept so the library equals js/physics.mjs to 1e-12.",
+      "rationale": "Supersedes the earlier \"not machine-verified\" note, which was due to the build proxy blocking these hosts. Primary Casimir (1948) and Flamm (1916) papers have no DOI and no reachable open copy."
     },
     {
       "id": "D-013",
@@ -1459,6 +1459,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "review",
       "detail": "PR #50 opened; tests, validate, perf:audit and GPU readback spec recorded. closedIn holds the PR code commit until the merge commit exists."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S03",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "update",
+      "detail": "Citations verified against Crossref/arXiv/NIST; unreachable Casimir 1948 and Flamm locators replaced; retrieved dates required by defineFormula (D-012 revised)."
     }
   ]
 }

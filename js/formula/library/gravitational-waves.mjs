@@ -4,7 +4,7 @@ import { defineFormula } from "../formula.mjs";
 import { div, mul, pow, add, rat, term, PI } from "../expr.mjs";
 import { constants, CODATA_2018 } from "./constants.mjs";
 
-const BLANCHET = { citation: "Blanchet, Gravitational radiation from post-Newtonian sources and inspiralling compact binaries, Living Rev. Relativ. 17, 2 (2014)", doi: "10.12942/lrr-2014-2", arxiv: "1310.1528" };
+const BLANCHET = { citation: "Blanchet, Gravitational radiation from post-Newtonian sources and inspiralling compact binaries, Living Rev. Relativ. 17, 2 (2014)", doi: "10.12942/lrr-2014-2", arxiv: "1310.1528", retrieved: "2026-10-22" };
 const mass = (tex, description) => ({ tex, unit: "kg", dims: { M: 1 }, description });
 
 export const chirpMass = defineFormula({

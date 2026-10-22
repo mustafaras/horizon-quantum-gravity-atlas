@@ -19,7 +19,7 @@ export const casimirPressure = defineFormula({
   expr: term("P_C", div(mul(pow(PI, 2), "hbar", "c"), mul(240, pow("a", 4)))),
   domain: { a: [0.1, 10, "log"] },
   references: [
-    { citation: "Casimir, On the attraction between two perfectly conducting plates, Proc. K. Ned. Akad. Wet. 51, 793 (1948)", url: "https://dwc.knaw.nl/DL/publications/PU00018547.pdf" },
-    { citation: "Lamoreaux, Demonstration of the Casimir force in the 0.6 to 6 μm range, Phys. Rev. Lett. 78, 5 (1997)", doi: "10.1103/PhysRevLett.78.5" },
+    { citation: "Bordag, Mohideen & Mostepanenko, New developments in the Casimir effect, Phys. Rep. 353, 1 (2001)", doi: "10.1016/S0370-1573(01)00015-1", retrieved: "2026-10-22" },
+    { citation: "Lamoreaux, Demonstration of the Casimir force in the 0.6 to 6 μm range, Phys. Rev. Lett. 78, 5 (1997)", doi: "10.1103/PhysRevLett.78.5", retrieved: "2026-10-22" },
   ],
 });

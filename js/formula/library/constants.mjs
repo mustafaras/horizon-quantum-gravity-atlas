@@ -16,6 +16,7 @@ export const CONSTANT_SYMBOLS = Object.freeze({
 export const CODATA_2018 = Object.freeze({
   citation: "Tiesinga, Mohr, Newell & Taylor, CODATA recommended values of the fundamental physical constants: 2018, Rev. Mod. Phys. 93, 025010 (2021)",
   doi: "10.1103/RevModPhys.93.025010",
+  retrieved: "2026-10-22",
 });
 
 /** Pick constant symbols by name. */

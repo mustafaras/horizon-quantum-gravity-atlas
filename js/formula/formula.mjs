@@ -33,8 +33,8 @@ function halton(index, base) {
 function validateReferences(id, references) {
   if (!Array.isArray(references) || references.length === 0) throw new TypeError(`${id}: references must be a non-empty array`);
   references.forEach((r, i) => {
-    if (!r || typeof r.citation !== "string" || !(r.doi || r.arxiv || r.url)) {
-      throw new TypeError(`${id}: references[${i}] needs a citation and one of doi, arxiv or url`);
+    if (!r || typeof r.citation !== "string" || !(r.doi || r.arxiv || r.url) || !/^\d{4}-\d{2}-\d{2}$/.test(r.retrieved ?? "")) {
+      throw new TypeError(`${id}: references[${i}] needs a citation, one of doi, arxiv or url, and a retrieved date (YYYY-MM-DD)`);
     }
   });
 }

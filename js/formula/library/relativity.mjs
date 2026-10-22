@@ -13,8 +13,7 @@ export const flammEmbedding = defineFormula({
   expr: term("z", mul(2, sqrt(mul("rs", sub("r", "rs"))))),
   domain: { rs: [0.5, 1, "lin"], r: [1, 20, "lin"] },
   references: [
-    { citation: "Flamm, Beiträge zur Einsteinschen Gravitationstheorie, Physikalische Zeitschrift 17, 448 (1916)", url: "https://en.wikisource.org/wiki/Translation:Contributions_to_Einstein%27s_Theory_of_Gravitation" },
-    { citation: "Morris & Thorne, Wormholes in spacetime and their use for interstellar travel, Am. J. Phys. 56, 395 (1988)", doi: "10.1119/1.15620" },
+    { citation: "Morris & Thorne, Wormholes in spacetime and their use for interstellar travel, Am. J. Phys. 56, 395 (1988)", doi: "10.1119/1.15620", retrieved: "2026-10-22" },
   ],
 });
 
@@ -24,5 +23,5 @@ export const lorentzGamma = defineFormula({
   output: { tex: "\\gamma", unit: "1", dims: {} },
   expr: term("gamma", div(1, sqrt(sub(1, pow("beta", 2))))),
   domain: { beta: [0, 0.999, "lin"] },
-  references: [{ citation: "Einstein, Zur Elektrodynamik bewegter Körper, Ann. Phys. 322, 891 (1905)", doi: "10.1002/andp.19053221004" }],
+  references: [{ citation: "Einstein, Zur Elektrodynamik bewegter Körper, Ann. Phys. 322, 891 (1905)", doi: "10.1002/andp.19053221004", retrieved: "2026-10-22" }],
 });
