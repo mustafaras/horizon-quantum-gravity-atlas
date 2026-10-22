@@ -37,6 +37,9 @@ const SMALL_SAMPLES = 4;
 const COMMIT = "qa-test-commit";
 
 test.describe.configure({ timeout: 300_000 });
+// A 2K ultra still costs ~18 s per sample on a software rasterizer, on top of the convergence wait: the two cases
+// that render 2K stills get an explicit larger budget instead of sharing the statistical tests' 300 s.
+const TWO_K_TIMEOUT_MS = 600_000;
 test.use({ viewport: VIEWPORT, contextOptions: { reducedMotion: "reduce" } });
 
 async function force(context, backend) {
@@ -159,6 +162,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
   });
 
   test("a 2K capture completes, decodes and embeds the metadata sidecar", async ({ page }) => {
+    test.setTimeout(TWO_K_TIMEOUT_MS);
     const problems = observe(page);
     await gotoReady(page, "/?view=bh&bhs=0.7", READINESS);
     await settled(page);
@@ -223,6 +227,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
   });
 
   test("cancelling mid-capture surfaces a named error and the observatory keeps rendering", async ({ page }) => {
+    test.setTimeout(TWO_K_TIMEOUT_MS);
     const problems = observe(page);
     await gotoReady(page, "/?view=bh", READINESS);
     await settled(page);
@@ -254,7 +259,9 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhCorona: false, bhJets: false }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    // The change reaches the runtime on the next redraw, which takes seconds on a software rasterizer; `settled`
+    // alone would still see the previous converged frame.
+    await expect.poll(async () => (await runtime(page))?.volume.corona, { timeout: 90_000 }).toBe(false);
     await settled(page);
     const off = await runtime(page);
     expect(off.volume.corona).toBe(false);
@@ -270,7 +277,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhSpin: 0, bhCorona: false, bhJets: true }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    await expect.poll(async () => (await runtime(page))?.volume.jets, { timeout: 90_000 }).toBe(true);
     await settled(page);
     const zeroSpin = await runtime(page);
     expect(zeroSpin.volume.jets).toBe(true);
@@ -280,7 +287,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhSpin: 0, bhCorona: false, bhJets: false }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    await expect.poll(async () => (await runtime(page))?.volume.jets, { timeout: 90_000 }).toBe(false);
     await settled(page);
     const zeroOff = await capture(page, { ...SMALL, samples: SMALL_SAMPLES, samplesPerChunk: SMALL_SAMPLES });
     const zeroOffStats = await pngStats(page, Buffer.from(zeroOff.pngBase64, "base64"));
