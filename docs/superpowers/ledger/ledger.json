@@ -301,7 +301,7 @@
         "S04",
         "S05"
       ],
-      "closedIn": "21c3534"
+      "closedIn": "930012e4d32cc6115c39fb832aaeb332eb3e45a3"
     },
     {
       "id": "F-22",
@@ -544,13 +544,15 @@
       "findings": [
         "F-21"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "branch": "claude/ecstatic-pasteur-a6i8mp",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/54",
-      "commits": [],
+      "commits": [
+        "930012e4d32cc6115c39fb832aaeb332eb3e45a3"
+      ],
       "startedAt": "2026-10-22",
-      "completedAt": null,
+      "completedAt": "2026-10-22",
       "evidence": {
         "tests": [
           "npm test: 604/605 pass, 1 skipped (test/stage-policy.test.mjs 8 tests, perf-harness +1)",
@@ -558,7 +560,7 @@
           "qa/specs/shared-stage.spec.mjs webgl2: 8/8 pass (default vs ?stage=legacy; QFT view fully idle under reduced motion: 0 frames from every view; Kerr draws until converged then 0 frames; GW lattice 0 frames while stopped; budgets 4, 2 and 1; non-blank captures)",
           "qa/specs/shared-stage.spec.mjs webgpu (local WebGPU, Chrome 145 SwiftShader): 1/1 pass, exactly 1 renderer on the whole QFT view; formula-gpu webgpu 1/1",
           "Local scan of 9 views on the new default: WebGL2 9/9 mount with no console or page errors, at most 4 live contexts; WebGPU 9/9 mount, 8 views on a single renderer, gr uses 2 (GLSL gravity well on the WebGL2 pool)",
-          "Full browser suite (207 tests) NOT completed locally: a run was interrupted after about 108 tests; 7 to 9 failures seen under load (a11y, cinematic, esm-runtime), a11y re-run alone 25/25 pass before it was stopped for time. The pull request CI on the pinned Chromium is the full-suite gate (D-026)"
+          "Full browser suite (207 tests) NOT completed locally: a run was interrupted after about 108 tests; 7 to 9 failures seen under load (a11y, cinematic, esm-runtime), a11y re-run alone 25/25 pass before it was stopped for time. PR CI ran only the critical subset; the full suite was dispatched on the PR head (run 161) and merged before it finished (D-026)"
         ],
         "screenshots": [],
         "measurements": [
@@ -1524,8 +1526,8 @@
       "id": "D-026",
       "date": "2026-10-22",
       "prompt": "S05",
-      "decision": "The full local browser suite was not completed: a run of all 207 tests was cut off after about 108 (hours on a software rasterizer, 7 to 9 failures under load, including a11y tests that passed 25/25 when re-run alone), and the owner asked for shorter runs. Locally verified: unit tests, the shared-stage spec (webgl2 and webgpu), formula-gpu, a 9-view mount scan on both backends, and the perf comparison. The full suite, including visual baselines (none refreshed), is left to this pull request's CI on the pinned Chromium; any failure there is to be fixed, not skipped.",
-      "rationale": "Acceptance asks for the full qa:test suite on the new default; the evidence for it is the CI run on the PR, stated here instead of claimed."
+      "decision": "The full local browser suite was not completed: a run of all 207 tests was cut off after about 108 (hours on a software rasterizer, 7 to 9 failures under load, including a11y tests that passed 25/25 when re-run alone), and the owner asked for shorter runs. Locally verified: unit tests, the shared-stage spec (webgl2 and webgpu), formula-gpu, a 9-view mount scan on both backends, and the perf comparison. The full suite, including visual baselines (none refreshed), was dispatched on the PR head as workflow run 161. The PR's own CI only runs the critical subset (qa:critical, green). On the owner's instruction the PR was merged while run 161 was still running; its result is checked after merge and any failure caused by S05 is fixed in a follow-up PR, not skipped.",
+      "rationale": "Acceptance asks for the full qa:test suite on the new default. The PR CI is not that gate; stated here instead of claimed."
     }
   ],
   "log": [
@@ -1633,6 +1635,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "review",
       "detail": "PR #54 opened; shared stage is the default; unit, shared-stage and WebGPU specs, view scan and perf comparison recorded; full browser suite is the PR CI. closedIn holds the PR code commit until the merge commit exists."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S05",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "done",
+      "detail": "PR #54 merged as 930012e4d32cc6115c39fb832aaeb332eb3e45a3; full-suite run 161 pending at merge time."
     }
   ]
 }
