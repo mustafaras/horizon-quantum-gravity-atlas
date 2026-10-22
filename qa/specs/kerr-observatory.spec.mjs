@@ -362,10 +362,19 @@ test.describe("forced WebGL2, full motion", () => {
   test.use({ viewport: VIEWPORT, contextOptions: { reducedMotion: "no-preference" } });
 
   test("quality budget: temporal accumulation converges at the documented sample count", async ({ page, context }) => {
+    test.setTimeout(600_000);
     await force(context, "webgl2");
     const problems = observe(page);
     await gotoReady(page, `/?view=bh&bhm=1&bhs=0.9&seed=${SEED}`, READINESS);
-    await settled(page);
+    // Full motion starts with a camera dolly-in that advances at most 50 ms of scene time per drawn frame, so it
+    // needs 28+ frames and restarts the accumulation on each. That is invisible on a GPU but takes minutes at
+    // ~15 s per frame on a software rasterizer. A pointer press ends the intro, as it does for a user.
+    await expect.poll(() => page.evaluate(() => !!window.__qgaKerrRuntime), { timeout: 200_000 }).toBe(true);
+    const box = await page.locator(".s3d-canvas").first().boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.up();
+    await settled(page, 360_000);
     const info = await runtime(page);
     expect(info.budget).toMatchObject({ effective: "balanced", maxSteps: 224, temporalSamples: 8, samplesPerFrame: 1 });
     expect(info.frames).toBe(8);
