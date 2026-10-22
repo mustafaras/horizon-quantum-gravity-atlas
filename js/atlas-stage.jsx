@@ -27,6 +27,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
+  const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [phase, setPhase] = useState("initializing");
@@ -41,6 +42,8 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const detailRef = useRef(detail); detailRef.current = detail;
   const prmRef = useRef(prm); prmRef.current = prm;
   const pausedRef = useRef(paused); pausedRef.current = paused;
+  // On a shared stage the backdrop draws only when something changed: a palette, pause or motion change owes it a frame.
+  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [view, paused, motion]);
 
   useEffect(() => {
     if (!enabled || failed) return;
@@ -209,7 +212,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     initPromise = QGA_RENDER.initializeRenderSession({
       scene, camera, mount, settings: { ...settings, motion: prmRef.current ? "reduced" : motionRef.current },
       view: "atlas-backdrop", signal: abort.signal, diagnosticId, onError: fail,
-      onPhase: (value) => { if (alive) setPhase(value); },
+      onPhase: (value) => { if (alive) setPhase(value); }, shared: true,
     });
     session = await initPromise;
     if (!alive) { await session.dispose(); return; }
@@ -217,6 +220,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       fail(new Error(session.capabilities.diagnostics.join(" ")));
       return;
     }
+    sessionRef.current = session;
     renderer = session.renderer;
     const releaseResources = stop;
 
@@ -240,18 +244,18 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
 
     // ---------- loop ----------
     let raf, last = performance.now(), clk = 0, hidden = document.hidden;
-    const onVis = () => { hidden = document.hidden; };
+    const onVis = () => { hidden = document.hidden; session.invalidate({ input: false }); };
     document.addEventListener("visibilitychange", onVis);
     const motionVal = () => (prmRef.current ? 0 : (ATLAS_MOTION[motionRef.current] ?? 0.62));
 
     const tick = (now) => {
       if (!alive) return;
-      if (!renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
+      if (!session.shared && !renderer.isWebGPURenderer) raf = requestAnimationFrame(tick);
       try {
       const frameMs = Math.max(0, now - last);
       const rawDt = Math.min(0.05, frameMs / 1000);
       last = now;
-      if (pausedRef.current || hidden) { session.suspend(); return; }
+      if (pausedRef.current || hidden) { session.suspend(); session.setAnimated(false); return; }
       const mo = motionVal();
       clk += rawDt * (mo > 0 ? 1 : 0);
 
@@ -342,6 +346,8 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       fabricAttr.needsUpdate = true;
       fabricMat.opacity = 0.16 + 0.08 * warp;
 
+      // Motion on: the backdrop animates every frame. Motion off: it settles on one frame and idles.
+      session.setAnimated(mo > 0);
       renderFrame(rawDt, now, mo > 0, frameMs);
       }
       catch (error) { fail(error); }
@@ -350,6 +356,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     stop = () => {
       if (released) return;
       released = true;
+      sessionRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);
@@ -358,7 +365,8 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     };
     try { renderFrame(); }
     catch (error) { fail(error); return; }
-    if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
+    if (session.drive(tick)) { /* the shared stage calls tick, and only when the backdrop has a frame to draw */ }
+    else if (renderer.isWebGPURenderer) void renderer.setAnimationLoop(tick).catch(fail);
     else raf = requestAnimationFrame(tick);
     };
     void start().catch((error) => { fail(error); stop(); });

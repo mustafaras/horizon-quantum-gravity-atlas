@@ -14,7 +14,9 @@ function captureSnapshotThumbnail(maxEdge = 320) {
     try {
       const scenes = window.__qgaActiveScenes;
       const handle = scenes ? [...scenes][scenes.size - 1] : null;
-      const canvas = handle?.element?.querySelector("canvas");
+      // The WebGL drawing buffer is no longer preserved (F-22): ask the scene to draw now, in this task, and
+      // read the canvas before returning to the event loop. A scene without capture() keeps the old lookup.
+      const canvas = handle?.capture?.() ?? handle?.element?.querySelector("canvas");
       if (!canvas || !canvas.width) { resolve(null); return; }
       const scale = Math.min(1, maxEdge / Math.max(canvas.width, canvas.height));
       const width = Math.max(1, Math.round(canvas.width * scale));

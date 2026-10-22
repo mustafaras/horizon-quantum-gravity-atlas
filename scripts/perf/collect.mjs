@@ -2,6 +2,7 @@
 //
 //   node scripts/perf/collect.mjs [--out=docs/audit/v2-baseline.json] [--views=qft,bh]
 //        [--viewports=desktop,mobile] [--duration=5000] [--webgpu] [--launch-arg=…]
+//        [--render-option=stage=shared]   (repeatable; sets window.QGA_RENDER_OPTIONS before any page script)
 //
 // Serves this worktree with the QA static server, loads every view of
 // QGA_VIEWS at two viewports in a fresh browser context, waits until every
@@ -34,7 +35,7 @@ const POLL_MS = 250;
 const GPU_PROBE_FRAMES = 120;
 
 function parseArgs(argv) {
-  const options = { out: "docs/audit/v2-baseline.json", views: null, viewports: VIEWPORTS.map((v) => v.name), duration: 5000, webgpu: false, launchArgs: [] };
+  const options = { out: "docs/audit/v2-baseline.json", views: null, viewports: VIEWPORTS.map((v) => v.name), duration: 5000, webgpu: false, launchArgs: [], renderOptions: {} };
   for (const arg of argv) {
     const [flag, value] = arg.split(/=(.*)/s);
     if (flag === "--out") options.out = value;
@@ -43,6 +44,13 @@ function parseArgs(argv) {
     else if (flag === "--duration") options.duration = Number(value);
     else if (flag === "--webgpu") options.webgpu = true;
     else if (flag === "--launch-arg") options.launchArgs.push(value);
+    else if (flag === "--render-option") {
+      const [key, raw] = value.split(/=(.*)/s);
+      if (!key || raw === undefined) throw new RangeError("--render-option needs key=value");
+      let parsed = raw;
+      try { parsed = JSON.parse(raw); } catch { /* plain string */ }
+      options.renderOptions[key] = parsed;
+    }
     else throw new Error(`Unknown argument ${arg}`);
   }
   if (!(options.duration > 0)) throw new RangeError("--duration must be a positive number of milliseconds");
@@ -78,12 +86,12 @@ async function waitForScenes(page) {
   let lastKey = null, since = Date.now(), scenes = [];
   for (;;) {
     scenes = await page.evaluate(sceneSnapshot);
-    const settled = scenes.every((scene) => scene.phase === "ready" || scene.phase === "static");
+    const settled = scenes.every((scene) => ["ready", "static", "suspended"].includes(scene.phase));
     const key = scenes.map((scene) => `${scene.id}:${scene.phase}`).join("|");
     if (key !== lastKey || !settled) { lastKey = key; since = Date.now(); }
     else if (Date.now() - since >= STABLE_MS) return scenes;
     if (Date.now() > deadline) {
-      throw new Error(`scenes not ready within ${READY_TIMEOUT_MS} ms: ${scenes.filter((s) => s.phase !== "ready" && s.phase !== "static").map((s) => `${s.label}=${s.phase}`).join(", ") || "none mounted"}`);
+      throw new Error(`scenes not ready within ${READY_TIMEOUT_MS} ms: ${scenes.filter((s) => !["ready", "static", "suspended"].includes(s.phase)).map((s) => `${s.label}=${s.phase}`).join(", ") || "none mounted"}`);
     }
     await page.waitForTimeout(POLL_MS); // poll cadence, not a readiness sleep
   }
@@ -175,6 +183,7 @@ async function measureView(browser, baseUrl, viewport, view, options) {
   const pageErrors = [];
   try {
     await context.addInitScript(() => sessionStorage.setItem("horizon-intro", "1"));
+    if (Object.keys(options.renderOptions).length) await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { ...(window.QGA_RENDER_OPTIONS || {}), ...value }; }, options.renderOptions);
     await context.addInitScript(installFirstFrameProbe);
     const page = await context.newPage();
     page.on("pageerror", (error) => pageErrors.push(`pageerror: ${error.message}`));
@@ -265,7 +274,7 @@ async function main() {
       date: new Date().toISOString().slice(0, 10),
       environment: await describeEnvironment(browser, server.baseUrl, options),
       config: {
-        durationMs: options.duration, gpuProbeFrames: GPU_PROBE_FRAMES, launchArgs: args, readyStableMs: STABLE_MS,
+        durationMs: options.duration, renderOptions: options.renderOptions, gpuProbeFrames: GPU_PROBE_FRAMES, launchArgs: args, readyStableMs: STABLE_MS,
         viewports: VIEWPORTS.filter((v) => options.viewports.includes(v.name)),
       },
       results: [],

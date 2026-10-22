@@ -17,10 +17,11 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass as CurrentUnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { GammaCorrectionShader } from "three/addons/shaders/GammaCorrectionShader.js";
 import { initializeRenderSession } from "./render-session.mjs";
+import { stageDiagnostics } from "./stage/shared-stage.mjs";
 import { renderDiagnostics, describeRenderError } from "./error-overlay.mjs";
 import { softwareRendererClamp } from "./software-renderer.mjs";
 
-export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError, softwareRendererClamp });
+export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError, softwareRendererClamp, stageDiagnostics });
 
 // Production scenes now use native linear-light color management and HDR output.
 ColorManagement.enabled = true;
