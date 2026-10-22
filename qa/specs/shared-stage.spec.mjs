@@ -58,7 +58,8 @@ test("webgl2: the QFT view keeps at most 4 live contexts and its static scenes d
   await settle(page, "webgl2", 2);
   const s = await stage(page, "webgl2");
   expect(s.contextLimit).toBe(4);
-  expect(s.renderers, "live WebGL2 contexts").toBeLessThanOrEqual(4);
+  expect(s.renderers, "pooled WebGL2 contexts").toBeLessThanOrEqual(4);
+  expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), "every live renderer on the page, pooled or not").toBeLessThanOrEqual(4);
   expect(s.views.some((v) => v.label.startsWith("Atlas backdrop")), "backdrop is a pilot").toBe(true);
   expect(s.views.some((v) => /scalar field membrane/.test(v.label)), "field membrane is a pilot").toBe(true);
   expect(s.views.some((v) => /Fourier modes/.test(v.label)), "Fourier vacuum lab is a pilot").toBe(true);
@@ -83,7 +84,7 @@ test("webgl2: a context budget below the scene count snapshots, releases and lat
   await settle(page, "webgl2", 3);
   let s = await stage(page, "webgl2");
   expect(s.contextLimit).toBe(2);
-  expect(s.renderers, "live WebGL2 contexts").toBeLessThanOrEqual(2);
+  expect(s.renderers, "pooled WebGL2 contexts").toBeLessThanOrEqual(2);
   const parked = s.views.filter((v) => !v.live);
   expect(parked.length, "at least one scene gave its context back").toBeGreaterThanOrEqual(1);
   await expect(page.locator("img[data-qga-snapshot]").first(), "a released scene shows its last frame").toBeAttached();

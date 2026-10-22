@@ -100,7 +100,8 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
     const t0 = now();
     try {
       view.onFrame?.(dt, time);
-      if (!view.drawn) view.render(dt);
+      // A view with its own onFrame decides whether it draws (it may legitimately skip); the stage draws only views without one.
+      if (!view.drawn && !view.onFrame) view.render(dt);
     } catch (error) {
       if (view.onError) view.onError(error); else throw error;
     }
@@ -260,7 +261,7 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
       const view = makeView({ id, label, animated, priority, onFrame, onError, visible: false });
       view.live = false;
       view.suspendFn = suspend; view.resumeFn = resume;
-      view.render = () => { throw new Error("a WebGL2 view draws itself from onFrame"); };
+      view.render = () => { view.drawn = true; };
       pool.register(view.id);
       view.handle.setVisible(false);
       const result = publicView(view, {
