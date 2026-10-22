@@ -311,7 +311,7 @@
       "closedBy": [
         "S04"
       ],
-      "closedIn": "4f1f8ba"
+      "closedIn": "262b24e3abdf129be1bdf989065854c29a0a950d"
     },
     {
       "id": "F-23",
@@ -321,7 +321,7 @@
       "closedBy": [
         "S04"
       ],
-      "closedIn": "4f1f8ba"
+      "closedIn": "262b24e3abdf129be1bdf989065854c29a0a950d"
     },
     {
       "id": "F-24",
@@ -493,13 +493,15 @@
         "F-22",
         "F-23"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "branch": "claude/ecstatic-pasteur-a6i8mp",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/52",
-      "commits": [],
+      "commits": [
+        "262b24e3abdf129be1bdf989065854c29a0a950d"
+      ],
       "startedAt": "2026-10-22",
-      "completedAt": null,
+      "completedAt": "2026-10-22",
       "evidence": {
         "tests": [
           "npm test: 595/596 pass, 1 skipped (596 total; test/frame-scheduler.test.mjs 14 tests incl. context pool, test/quality-governor.test.mjs +2 for gpuFrameMs)",
@@ -1562,6 +1564,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "review",
       "detail": "Shared stage, frame scheduler, WebGL2 context pool, GPU-time governor input and non-preserved drawing buffer implemented behind QGA_RENDER_OPTIONS.stage; tests, specs, perf runs and visual documentation recorded. closedIn holds the PR code commit until the merge commit exists."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "done",
+      "detail": "PR #52 merged as 262b24e; CI green on the pinned Chromium (Browser QA, Validate). F-21 stays open until S05."
     }
   ]
 }
