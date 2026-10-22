@@ -352,7 +352,7 @@
         "S03",
         "S10"
       ],
-      "closedIn": "dd19f6d"
+      "closedIn": "9ade2676dc4ace62ab456f476131680f8ec6ac5d"
     },
     {
       "id": "F-27",
@@ -451,13 +451,15 @@
       "findings": [
         "F-26"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "branch": "claude/ecstatic-pasteur-a6i8mp",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/50",
-      "commits": [],
+      "commits": [
+        "9ade2676dc4ace62ab456f476131680f8ec6ac5d"
+      ],
       "startedAt": "2026-10-21",
-      "completedAt": null,
+      "completedAt": "2026-10-22",
       "evidence": {
         "tests": [
           "npm test: 579/579 pass, 1 skipped (580 total; 18 new in test/formula-core.test.mjs, now also asserting retrieval dates)",
@@ -1466,6 +1468,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "update",
       "detail": "Citations verified against Crossref/arXiv/NIST; unreachable Casimir 1948 and Flamm locators replaced; retrieved dates required by defineFormula (D-012 revised)."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S03",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "done",
+      "detail": "PR #50 merged as 9ade267; CI green (Browser QA, Validate)."
     }
   ]
 }
