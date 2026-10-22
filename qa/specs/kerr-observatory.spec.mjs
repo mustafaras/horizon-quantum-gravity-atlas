@@ -86,7 +86,11 @@ async function halves(page, png) {
   }, png.toString("base64"));
 }
 
-const canvasPng = (page) => page.locator(".s3d-canvas").first().screenshot();
+// Pixels of the rendered canvas only: the radii map, labels and other DOM overlays sit over the canvas and
+// would bias the left/right measurements.
+const canvasPng = (page) => page.locator(".s3d-canvas").first().screenshot({
+  style: ".s3d-stage > :not(.s3d-canvas), .kerr-map { visibility: hidden !important; }",
+});
 
 async function audit(page) {
   const text = await page.locator(".viz-frame").first().innerText();
