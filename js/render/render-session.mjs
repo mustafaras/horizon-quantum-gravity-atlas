@@ -31,6 +31,9 @@ export async function initializeRenderSession({
   let stageKind = !wantsStage ? null
     : canUseWebGPUStage({ forceBackend, nodeCompatible: inspectSceneCompatibility(scene).nodeCompatible, shadows: !!source?.castShadow }) ? "webgpu" : "webgl2";
   let stageView = null, host = null, snapshotImage = null, snapshotUrl = null, suspended = false, suspendPromise = null, governor, contextLostBound = null;
+  // Resolves when the first bring-up has finished (or failed): a pool eviction must not tear down a view that is still being built.
+  let resolveReady;
+  const initialized = new Promise((resolve) => { resolveReady = resolve; });
   scene.traverse((object) => {
     if (object.isPoints && object.geometry) {
       const range = object.geometry.drawRange;
@@ -140,16 +143,27 @@ export async function initializeRenderSession({
     const canvas = canvasOf();
     canvas.style.cssText = "display:block;width:100%;height:100%";
     canvas.setAttribute("aria-hidden", "true");
-    if (stageKind) {
-      if (!host) {
-        host = document.createElement("div");
-        host.style.cssText = "display:block;position:relative;width:100%;height:100%";
-        mount.appendChild(host);
-      }
-      host.appendChild(canvas);
-    } else mount.appendChild(canvas);
+    if (stageKind) ensureHost().appendChild(canvas);
+    else mount.appendChild(canvas);
     bindContextLost();
   }
+  function ensureHost() {
+    if (!host) {
+      host = document.createElement("div");
+      host.style.cssText = "display:block;position:relative;width:100%;height:100%";
+      mount.appendChild(host);
+    }
+    return host;
+  }
+  function makeGovernor() {
+    const active = ["maxDpr"];
+    if (ranges.size) active.push("particleBudget");
+    if (pipeline.effects.some((effect) => effect.name === "temporal-aa" && effect.status === "enabled")) active.push("temporalSamples");
+    if (pipeline.effects.some((effect) => effect.name === "ssgi" && effect.status === "enabled")) active.push("ssgi");
+    if (applyQuality) active.push("raySteps");
+    return createQualityGovernor({ quality, active });
+  }
+  const currentQuality = () => governor?.quality ?? quality;
 
   /** Creates the renderer (or joins the shared WebGPU renderer) for the current stage kind. */
   async function createHandle(backendOverride = null) {
@@ -181,7 +195,8 @@ export async function initializeRenderSession({
           label: diagnosticId, onError, suspend: suspendGPU, resume: resumeGPU,
         });
       }
-      await stageView.acquireContext();
+      // A fallback from WebGPU may exceed the budget by one rather than park a scene that has nothing to show.
+      await stageView.acquireContext({ force: true });
     }
     // The unshared path keeps the original arguments exactly: the initial attempt honours detail/antialias,
     // the retry after a failed node pipeline does not.
@@ -193,6 +208,7 @@ export async function initializeRenderSession({
   /** WebGL2 pool eviction: freeze the last frame as an image, then give the context back. */
   function suspendGPU() {
     suspendPromise = (async () => {
+      await initialized;
       if (disposed || suspended || !handle?.renderer) return;
       suspended = true;
       await pendingChange;
@@ -224,6 +240,7 @@ export async function initializeRenderSession({
         await releasing.handle?.dispose();
       } finally { releasing.handle?.renderer?.domElement.remove(); }
       renderDiagnostics.update(diagnosticId, { phase: "suspended", effects: [] });
+      stageView?.markSuspended?.();
     })();
     return suspendPromise;
   }
@@ -234,103 +251,72 @@ export async function initializeRenderSession({
       quality, scene, camera, signal, reducedMotion, toneMapping: settings.toneMapping || "agx", shadows: !!source?.castShadow,
       onDiagnostic: messages, onDeviceLost: onError, antialias: !softwareRenderer && settings.detail3d !== "low", forceBackend: "webgl2",
     });
-    const value = governor?.quality ?? quality;
+    const value = currentQuality();
     pipeline = await buildPipeline(value);
     await warm(value);
+    governor ??= makeGovernor();
     mountCanvas();
     releaseSnapshot();
     suspended = false;
     publish("ready", value);
   }
 
-  try {
-    if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
-    handle = await createHandle();
-    if (handle.backend === "static") {
-      publish("static");
-      return { backend: "static", capabilities: handle.capabilities, dispose };
-    }
+  async function changeQuality(value, change) {
+    changing = true;
+    const pipelineSwap = ["temporalSamples", "ssgi"].includes(change.dimension);
+    // A material-signature change only adds shader derivations to compile —
+    // the pipeline effect graph is unaffected, so keep the canvas visible
+    // instead of tearing the pipeline down and hiding the frame (the visible
+    // outcome was a blank scene for the whole prewarm, which on software
+    // rasterizers reads as "fullscreen goes black").
+    publish(pipelineSwap ? "prewarming" : "ready", value);
+    const canvas = canvasOf();
+    if (pipelineSwap) canvas.style.visibility = "hidden";
     try {
-      pipeline = await buildPipeline(quality);
-      await warm(quality);
+      activate();
+      surface().setPixelRatio(value.maxDpr);
+      if (pipelineSwap) {
+        const previousPipeline = pipeline;
+        pipeline = null;
+        retiringPipeline = previousPipeline;
+        await previousPipeline.dispose();
+        retiringPipeline = null;
+        if (disposed) return;
+        const replacement = await buildPipeline(value);
+        if (disposed) { await replacement.dispose(); return; }
+        pipeline = replacement;
+      }
+      await warm(value);
+      if (disposed) return;
+      canvas.style.visibility = "";
+      publish("ready", value);
+      stageView?.invalidate({ input: false });
+      messages(change.dimension === "material" ? "Material variants changed; shader graph rebuilt and prewarmed."
+        : `Adaptive ${change.direction}: ${change.dimension} ${change.previous} -> ${change.value} (rendering budget only).`);
     } catch (error) {
-      if (error.name === "AbortError" || !handle.renderer.isWebGPURenderer) throw error;
-      messages(`Node pipeline compilation failed: ${error.message}. Retrying classic WebGL2 once.`);
-      await pipeline?.dispose();
-      pipeline = null;
-      await handle.dispose();
-      if (stageView?.detach && stageKind === "webgpu") { await stageView.detach(); stageView = null; stageKind = "webgl2"; }
-      handle = await createHandle("webgl2");
-      if (handle.backend === "static") { publish("static"); return { backend: "static", capabilities: handle.capabilities, dispose }; }
-      pipeline = await buildPipeline(quality);
-      await warm(quality);
-    }
-    abortIfNeeded(signal);
-    mountCanvas();
-    const active = ["maxDpr"];
-    if (ranges.size) active.push("particleBudget");
-    if (pipeline.effects.some((effect) => effect.name === "temporal-aa" && effect.status === "enabled")) active.push("temporalSamples");
-    if (pipeline.effects.some((effect) => effect.name === "ssgi" && effect.status === "enabled")) active.push("ssgi");
-    if (applyQuality) active.push("raySteps");
-    governor = createQualityGovernor({ quality, active });
-    const ownedDispose = dispose;
+      if (error.name !== "AbortError" && !disposed) onError(error);
+    } finally { changing = false; }
+  }
+
+  function buildApi() {
     const disposeSession = async () => {
       contextLostBound?.();
-      await ownedDispose();
+      await dispose();
     };
-    async function changeQuality(value, change) {
-      changing = true;
-      const pipelineSwap = ["temporalSamples", "ssgi"].includes(change.dimension);
-      // A material-signature change only adds shader derivations to compile —
-      // the pipeline effect graph is unaffected, so keep the canvas visible
-      // instead of tearing the pipeline down and hiding the frame (the visible
-      // outcome was a blank scene for the whole prewarm, which on software
-      // rasterizers reads as "fullscreen goes black").
-      publish(pipelineSwap ? "prewarming" : "ready", value);
-      const canvas = canvasOf();
-      if (pipelineSwap) canvas.style.visibility = "hidden";
-      try {
-        activate();
-        surface().setPixelRatio(value.maxDpr);
-        if (pipelineSwap) {
-          const previousPipeline = pipeline;
-          pipeline = null;
-          retiringPipeline = previousPipeline;
-          await previousPipeline.dispose();
-          retiringPipeline = null;
-          if (disposed) return;
-          const replacement = await buildPipeline(value);
-          if (disposed) { await replacement.dispose(); return; }
-          pipeline = replacement;
-        }
-        await warm(value);
-        if (disposed) return;
-        canvas.style.visibility = "";
-        publish("ready", value);
-        stageView?.invalidate({ input: false });
-        messages(change.dimension === "material" ? "Material variants changed; shader graph rebuilt and prewarmed."
-          : `Adaptive ${change.direction}: ${change.dimension} ${change.previous} -> ${change.value} (rendering budget only).`);
-      } catch (error) {
-        if (error.name !== "AbortError" && !disposed) onError(error);
-      } finally { changing = false; }
-    }
-    publish("ready");
-    stageView?.contextCreated?.();
-    stageView?.setVisible(true);
-    onReady?.();
     return {
       get renderer() { return handle?.renderer ?? null; },
-      backend: handle.backend, capabilities: handle.capabilities, resize,
+      backend: handle?.backend ?? "webgl2", capabilities: handle?.capabilities ?? null, resize,
       /** The element Scene3D listens on: the canvas, or a stable host that wraps it when a stage owns the canvas. */
       get element() { return host ?? canvasOf(); },
       get canvas() { return canvasOf(); },
       get shared() { return stageKind; },
       get stageView() { return stageView; },
       get pipeline() { return pipeline; },
-      get quality() { return governor.quality; },
-      suspend() { governor.resetWindow(); },
-      /** Hand the per-frame callback to the stage; without a stage the caller keeps its own loop. */
-      drive(onFrame) { if (stageView) stageView.drive(onFrame); return !!stageView; },
+      get quality() { return currentQuality(); },
+      get suspended() { return suspended; },
+      suspend() { governor?.resetWindow(); },
+      /** Hand the per-frame callback (it takes the frame timestamp) to the stage; without a stage the caller keeps its own loop. */
+      drive(onFrame) { if (stageView) stageView.drive((_dt, time) => onFrame(time)); return !!stageView; },
       invalidate(options) { if (!disposed) stageView?.invalidate(options); },
       setAnimated(value) { if (!disposed) stageView?.setAnimated(value); },
       setVisible(value) { if (!disposed) stageView?.setVisible(value); },
@@ -364,8 +350,58 @@ export async function initializeRenderSession({
       },
       dispose: disposeSession,
     };
+  }
+
+  /** WebGL2 pool: a scene that starts out of view while the budget is full gets no context until it is seen. */
+  function parkedSession() {
+    suspended = true;
+    ensureHost();
+    renderDiagnostics.update(diagnosticId, { phase: "suspended", backend: "webgl2", effects: [], quality });
+    onPhase?.("ready");
+    stageView.markSuspended();
+    stageView.setVisible(false);
+    onReady?.();
+    return buildApi();
+  }
+
+  try {
+    if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
+    if (stageKind === "webgl2") {
+      stageView = acquireStage({ backend: "webgl2" }).attachContext({ label: diagnosticId, onError, suspend: suspendGPU, resume: resumeGPU });
+      if (!(await stageView.acquireContext())) return parkedSession();
+    }
+    handle = await createHandle();
+    if (handle.backend === "static") {
+      publish("static");
+      return { backend: "static", capabilities: handle.capabilities, dispose };
+    }
+    try {
+      pipeline = await buildPipeline(quality);
+      await warm(quality);
+    } catch (error) {
+      if (error.name === "AbortError" || !handle.renderer.isWebGPURenderer) throw error;
+      messages(`Node pipeline compilation failed: ${error.message}. Retrying classic WebGL2 once.`);
+      await pipeline?.dispose();
+      pipeline = null;
+      await handle.dispose();
+      if (stageView?.detach && stageKind === "webgpu") { await stageView.detach(); stageView = null; stageKind = "webgl2"; }
+      handle = await createHandle("webgl2");
+      if (handle.backend === "static") { publish("static"); return { backend: "static", capabilities: handle.capabilities, dispose }; }
+      pipeline = await buildPipeline(quality);
+      await warm(quality);
+    }
+    abortIfNeeded(signal);
+    mountCanvas();
+    governor = makeGovernor();
+    publish("ready");
+    stageView?.contextCreated?.();
+    stageView?.setVisible(true);
+    onReady?.();
+    return buildApi();
   } catch (error) {
     await dispose();
     throw error;
+  } finally {
+    resolveReady();
   }
 }

@@ -169,3 +169,23 @@ test("context pool never evicts the requester, is idempotent, and validates", ()
   assert.equal(pool.liveCount, 0);
   assert.throws(() => pool.request("zzz"), /Unknown/);
 });
+
+test("context pool: a scene out of view never evicts one in view; it is denied until seen, or forced", () => {
+  const pool = createContextPool({ limit: 2 });
+  for (const id of ["a", "b", "c"]) pool.register(id);
+  pool.setVisible("a", true); pool.request("a");
+  pool.setVisible("b", true); pool.request("b");
+  assert.equal(pool.request("c"), null, "c is not visible and every candidate is");
+  assert.equal(pool.isLive("c"), false);
+  assert.deepEqual(pool.liveIds().sort(), ["a", "b"], "a denied request changes nothing");
+  assert.deepEqual(pool.request("c", { force: true }), ["a"], "forced requests still evict the least recently visible");
+  pool.release("c");
+  pool.setVisible("b", false);
+  assert.deepEqual(pool.request("c"), [], "a hidden live scene makes room without eviction of a visible one: free slot");
+});
+test("context pool: an out-of-view requester may evict out-of-view scenes", () => {
+  const pool = createContextPool({ limit: 1 });
+  pool.register("a"); pool.register("b");
+  pool.setVisible("a", true); pool.request("a"); pool.setVisible("a", false);
+  assert.deepEqual(pool.request("b"), ["a"]);
+});

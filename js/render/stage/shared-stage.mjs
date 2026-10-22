@@ -59,7 +59,7 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
   const views = new Map();
   const pool = isGPU ? null : createContextPool({ limit: maxContexts });
   let running = false, rafId = 0, loopFrames = 0, renderer = null, rendererHandle = null, rendererPromise = null;
-  let listening = false, nextViewId = 1, timestampCountdown = TIMESTAMP_EVERY_FRAMES, resolving = false;
+  let listening = false, acquireChain = Promise.resolve(), nextViewId = 1, timestampCountdown = TIMESTAMP_EVERY_FRAMES, resolving = false;
   const reducedQuery = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
   const scheduler = createFrameScheduler({
     now, budgetMs: globalThis.QGA_RENDER_OPTIONS?.frameBudgetMs ?? 8,
@@ -266,22 +266,32 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
       view.handle.setVisible(false);
       const result = publicView(view, {
         /** Reserve a context; resolves once the budget is free (other scenes may be suspended first). */
-        async acquireContext() {
-          const victims = pool.request(view.id);
-          for (const victimId of victims) {
-            const victim = views.get(victimId);
-            if (!victim) continue;
-            victim.live = false;
-            victim.refreshVisibility();
-            await victim.suspendFn?.();
-          }
+        acquireContext({ force = false } = {}) {
+          // One acquisition at a time: a view mid-build is never evicted by a second request that it is itself waiting on.
+          // Resolves true when a context is reserved, false when the request was denied (the view stays parked).
+          const run = acquireChain.then(async () => {
+            const victims = pool.request(view.id, { force });
+            if (victims === null) return false;
+            for (const victimId of victims) {
+              const victim = views.get(victimId);
+              if (!victim) continue;
+              victim.live = false;
+              victim.refreshVisibility();
+              await victim.suspendFn?.();
+            }
+            return true;
+          });
+          acquireChain = run.catch(() => {});
+          return run;
         },
+        /** The scene released its renderer (eviction or parked start): it must not be planned until resumed. */
+        markSuspended() { view.live = false; pool.release(view.id); view.refreshVisibility(); },
         contextCreated() { view.live = true; view.refreshVisibility(); view.handle.invalidate({ input: false }); wake(); },
         /** The scene's visible state changed while suspended: bring its context back. */
         async resumeIfNeeded() {
           if (view.live || !view.visible || view.resuming || !view.resumeFn) return;
           view.resuming = true;
-          try { await this.acquireContext(); await view.resumeFn(); this.contextCreated(); }
+          try { if (await this.acquireContext()) { await view.resumeFn(); this.contextCreated(); } }
           finally { view.resuming = false; }
         },
         releaseContext() { pool.release(view.id); view.live = false; view.refreshVisibility(); },

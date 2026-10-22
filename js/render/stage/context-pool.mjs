@@ -30,14 +30,21 @@ export function createContextPool({ limit = 4 } = {}) {
       e.visible = !!visible;
       if (e.visible) e.lastVisible = ++tick;
     },
-    /** Reserve a context for `id`. Returns the ids that must release theirs first. */
-    request(id) {
+    /**
+     * Reserve a context for `id`. Returns the ids that must release theirs first, or null when the request
+     * is denied: a scene that is not in view never evicts one that is (unless `force`); it waits until it is seen.
+     */
+    request(id, { force = false } = {}) {
       const e = entry(id);
       if (e.live) return Object.freeze([]);
       const victims = [];
       const candidates = [...entries.values()].filter((o) => o.live && o.id !== id)
         .sort((a, b) => Number(a.visible) - Number(b.visible) || a.lastVisible - b.lastVisible);
       let live = candidates.length + 1;
+      const chosen = [];
+      let remaining = live;
+      for (const c of candidates) { if (remaining <= limit) break; chosen.push(c); remaining -= 1; }
+      if (!force && !e.visible && chosen.some((c) => c.visible)) return null;
       while (live > limit && candidates.length) { victims.push(candidates.shift().id); live -= 1; }
       for (const v of victims) entries.get(v).live = false;
       e.live = true;

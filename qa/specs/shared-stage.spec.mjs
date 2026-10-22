@@ -53,6 +53,8 @@ const captureStats = (page) => page.evaluate(() => [...window.__qgaActiveScenes]
 
 test("webgl2: the QFT view keeps at most 4 live contexts and its static scenes draw nothing while idle", async ({ page, context }) => {
   await configure(context, { forceBackend: "webgl2", stage: "shared" });
+  // Reduced motion removes cinematic drift and the backdrop's animation, so a paused scene can truly go idle.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const errors = observe(page);
   await gotoReady(page, "/?view=qft&seed=42", READINESS);
   await settle(page, "webgl2", 2);
@@ -77,7 +79,7 @@ test("webgl2: the QFT view keeps at most 4 live contexts and its static scenes d
   expect(errors).toEqual([]);
 });
 
-test("webgl2: a context budget below the scene count snapshots, releases and later restores the least recently visible scene", async ({ page, context }) => {
+test("webgl2: a context budget below the scene count parks unseen scenes, then snapshots, releases and restores on demand", async ({ page, context }) => {
   await configure(context, { forceBackend: "webgl2", stage: "shared", maxContexts: 2 });
   const errors = observe(page);
   await gotoReady(page, "/?view=qft&seed=42", READINESS);
@@ -85,23 +87,22 @@ test("webgl2: a context budget below the scene count snapshots, releases and lat
   let s = await stage(page, "webgl2");
   expect(s.contextLimit).toBe(2);
   expect(s.renderers, "pooled WebGL2 contexts").toBeLessThanOrEqual(2);
-  const parked = s.views.filter((v) => !v.live);
-  expect(parked.length, "at least one scene gave its context back").toBeGreaterThanOrEqual(1);
-  await expect(page.locator("img[data-qga-snapshot]").first(), "a released scene shows its last frame").toBeAttached();
-  const snapshot = await page.evaluate(() => { const img = document.querySelector("img[data-qga-snapshot]"); return img ? { complete: img.complete, w: img.naturalWidth, h: img.naturalHeight } : null; });
-  expect(snapshot?.w).toBeGreaterThan(0);
+  const vacuum = () => stage(page, "webgl2").then((st) => st.views.find((v) => /Fourier modes/.test(v.label)));
+  expect((await vacuum()).live, "the scene below the fold has no context yet").toBe(false);
+  expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().find((e) => /Fourier modes/.test(e.label)).phase)).toBe("suspended");
 
-  // Bring a parked scene back into view: the pool must hand it a context and release another one.
-  const target = parked[0];
-  await page.evaluate((label) => {
-    const host = [...document.querySelectorAll(".s3d-stage")].find((el) => el.getAttribute("aria-label")?.startsWith(label.slice(0, 40)));
-    host?.scrollIntoView({ block: "center" });
-  }, target.label.replace(/-\d+$/, ""));
-  await expect.poll(async () => {
-    const now = await stage(page, "webgl2");
-    return { live: now.renderers, limitOk: now.renderers <= 2, restored: now.views.find((v) => v.id === target.id)?.live };
-  }, { timeout: 60_000 }).toMatchObject({ limitOk: true });
-  expect((await stage(page, "webgl2")).renderers).toBeLessThanOrEqual(2);
+  // Scroll it into view: the pool must give it a context by snapshotting and releasing another scene.
+  await page.evaluate(() => {
+    document.querySelector('.s3d-stage[aria-label*="Fourier modes"]')?.scrollIntoView({ block: "center" });
+  });
+  await expect.poll(async () => (await vacuum()).live, { timeout: 90_000 }).toBe(true);
+  await expect.poll(async () => (await phases(page)).every((e) => ["ready", "suspended"].includes(e.phase)), { timeout: 60_000 }).toBe(true);
+  s = await stage(page, "webgl2");
+  expect(s.renderers, "pooled WebGL2 contexts after the swap").toBeLessThanOrEqual(2);
+  expect(s.views.filter((v) => !v.live).length, "one scene gave its context back").toBeGreaterThanOrEqual(1);
+  await expect(page.locator("img[data-qga-snapshot]").first(), "the released scene shows its last frame").toBeAttached();
+  const snapshot = await page.evaluate(() => { const img = document.querySelector("img[data-qga-snapshot]"); return img ? { w: img.naturalWidth, h: img.naturalHeight } : null; });
+  expect(snapshot?.w).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
 
@@ -128,7 +129,7 @@ test("webgl2: captures are non-blank without preserveDrawingBuffer, with and wit
 
 test("webgpu: one renderer serves every pilot canvas, static scenes draw nothing, GPU time is measured", async ({ page, context }) => {
   await configure(context, { forceBackend: "webgpu", stage: "shared" });
-  await gotoReady(page, "about:blank", []).catch(() => {});
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/favicon.svg");
   const hasWebGPU = await page.evaluate(async () => !!(navigator.gpu && await navigator.gpu.requestAdapter().catch(() => null)));
   if (!hasWebGPU) {
