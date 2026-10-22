@@ -119,9 +119,15 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
                      dispose()         extra cleanup
      deps          rebuild triggers (detail level is added automatically)
      fallback      node rendered if WebGL/THREE unavailable or context lost
+     animated      true (default) | "motion" | false: when the scene needs frames on the shared stage. true: it evolves
+                   while playing. "motion": ambient motion that its own code freezes at motion 0 (it idles under
+                   reduced motion). false: it changes only on input. A build may return isAnimated() to report its own
+                   state instead (Kerr: until its accumulation converges); see js/render/stage/animation-policy.mjs.
+     invalidateKey any value; a change owes the scene one frame (e.g. a transport clock owned by the parent)
+     shared        false opts a scene out of the shared stage (it then keeps its own renderer)
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = false }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -141,7 +147,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
   // On a shared stage a static scene draws only when invalidated: React-side changes owe it a frame.
-  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d]);
+  useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d, invalidateKey]);
+  const animatedRef = useRef(animated); animatedRef.current = animated;
   useEffect(() => { setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
   // WebGL scene; the frame loop glides the orbit rig toward it instead.
@@ -317,7 +324,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
     const ctx = {
       THREE, scene, camera, get renderer() { return renderer; },
-      settings: settingsRef, motion,
+      settings: settingsRef, motion, playing: () => playingRef.current,
+      invalidate: () => session?.invalidate({ input: false }),
       label: makeLabel(false),
       annotation: makeLabel(true),
       glow: s3dGlow, line: s3dLine, grid: s3dGrid,
@@ -764,9 +772,12 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       }
       // A shared stage draws a static scene only when invalidated: keep ticking while anything can still
       // change (running simulation, inertia, easing, intro, a highlight, a drag, or cinematic drift).
-      session.setAnimated(playingRef.current || easing || orbit.introT > 0 || orbit.vTheta !== 0 || orbit.vPhi !== 0
-        || !!conceptPulse.active || ptr.down
-        || (mo > 0 && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic" && !paletteOpen));
+      const transient = easing || orbit.introT > 0 || orbit.vTheta !== 0 || orbit.vPhi !== 0 || !!conceptPulse.active || ptr.down
+        || (animatedRef.current !== false && mo > 0 && built.autoRotate !== false && settingsRef.current.vizMode === "cinematic" && !paletteOpen);
+      session.setAnimated(QGA_RENDER.resolveAnimated({
+        declared: animatedRef.current, playing: playingRef.current, motion: mo, transient,
+        builtAnimated: built.isAnimated ? built.isAnimated() : null,
+      }));
       renderFrame(rawDt, now, mo > 0 && playingRef.current, frameMs);
       }
       catch (error) { fail(error); }

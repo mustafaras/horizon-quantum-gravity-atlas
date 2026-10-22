@@ -53,6 +53,8 @@ export async function initializeRenderSession({
   const surface = () => handle.surface ?? handle.renderer;
   const canvasOf = () => handle?.canvas ?? handle?.renderer?.domElement ?? null;
   const activate = () => { if (stageView?.activate) stageView.activate(); };
+  // Async setup on the shared WebGPU renderer runs exclusively (see shared-stage.mjs); elsewhere it just runs.
+  const exclusive = (fn) => (stageView?.exclusive ? stageView.exclusive(fn) : fn());
   function resize() {
     if (disposed || suspended || !handle?.renderer) return;
     const [w, h] = dimensions();
@@ -276,20 +278,22 @@ export async function initializeRenderSession({
     const canvas = canvasOf();
     if (pipelineSwap) canvas.style.visibility = "hidden";
     try {
-      activate();
-      surface().setPixelRatio(value.maxDpr);
-      if (pipelineSwap) {
-        const previousPipeline = pipeline;
-        pipeline = null;
-        retiringPipeline = previousPipeline;
-        await previousPipeline.dispose();
-        retiringPipeline = null;
-        if (disposed) return;
-        const replacement = await buildPipeline(value);
-        if (disposed) { await replacement.dispose(); return; }
-        pipeline = replacement;
-      }
-      await warm(value);
+      await exclusive(async () => {
+        activate();
+        surface().setPixelRatio(value.maxDpr);
+        if (pipelineSwap) {
+          const previousPipeline = pipeline;
+          pipeline = null;
+          retiringPipeline = previousPipeline;
+          await previousPipeline.dispose();
+          retiringPipeline = null;
+          if (disposed) return;
+          const replacement = await buildPipeline(value);
+          if (disposed) { await replacement.dispose(); return; }
+          pipeline = replacement;
+        }
+        await warm(value);
+      });
       if (disposed) return;
       canvas.style.visibility = "";
       publish("ready", value);
@@ -343,6 +347,7 @@ export async function initializeRenderSession({
         activate();
         pipeline.render(delta);
         stageView?.markRendered();
+        renderDiagnostics.tick(diagnosticId);
         if (!sample) return;
         const result = governor.sample(frameMs, now, stageView?.gpuMs ?? null);
         if (now - fpsTime > 500 && result.fps) {
@@ -382,8 +387,10 @@ export async function initializeRenderSession({
       return { backend: "static", capabilities: handle.capabilities, dispose };
     }
     try {
-      pipeline = await buildPipeline(quality);
-      await warm(quality);
+      await exclusive(async () => {
+        pipeline = await buildPipeline(quality);
+        await warm(quality);
+      });
     } catch (error) {
       if (error.name === "AbortError" || !handle.renderer.isWebGPURenderer) throw error;
       messages(`Node pipeline compilation failed: ${error.message}. Retrying classic WebGL2 once.`);

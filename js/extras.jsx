@@ -288,7 +288,7 @@ function OverviewArena3D() {
   const focused = focusRef.current;
   return (
     <div className="ov-arena">
-      <Scene3D height={440} aria="Three-dimensional corridor of decade gates from the observable universe down to the Planck length; click a glowing gate to focus its scale"
+      <Scene3D animated height={440} aria="Three-dimensional corridor of decade gates from the observable universe down to the Planck length; click a glowing gate to focus its scale"
         initial={{ fov: 55, radius: 30, theta: 0.32, phi: 0.95, target: [0, 2.0, ARENA_RAMP_LEN * 0.52], minR: 10, maxR: 60 }}
         build={build} fallback={<OverviewEnergyLadder></OverviewEnergyLadder>}></Scene3D>
       <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>

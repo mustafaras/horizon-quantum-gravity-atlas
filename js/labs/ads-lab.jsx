@@ -42,7 +42,7 @@ function AdsLabSection({ compact = false } = {}) {
             wedge = {(lab.featured.span / (2 * Math.PI) * 100).toFixed(0)}% of the boundary</> : "—"}
         </div>
       </div>
-      <Scene3D height={compact ? 380 : 440}
+      <Scene3D animated="motion" height={compact ? 380 : 440}
         aria="Three-dimensional Poincaré disk: a glowing conformal boundary ring, hyperbolic geodesic grid, violet entanglement arcs, and a gold Ryu–Takayanagi minimal surface anchoring a magenta entanglement wedge"
         initial={{ radius: 10.5, theta: 0.62, phi: 1.35, minR: 4, maxR: 30, bloom: { strength: 0.8, radius: 0.55, threshold: 0.16 } }}
         build={build} deps={[links, region]}

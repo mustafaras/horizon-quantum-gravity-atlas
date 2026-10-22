@@ -347,7 +347,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       fabricMat.opacity = 0.16 + 0.08 * warp;
 
       // Motion on: the backdrop animates every frame. Motion off: it settles on one frame and idles.
-      session.setAnimated(mo > 0);
+      session.setAnimated(QGA_RENDER.resolveAnimated({ declared: "motion", playing: true, motion: mo }));
       renderFrame(rawDt, now, mo > 0, frameMs);
       }
       catch (error) { fail(error); }

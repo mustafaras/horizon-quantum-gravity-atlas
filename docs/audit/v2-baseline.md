@@ -60,6 +60,32 @@ Measured by S01 (`npm run perf:collect`, `npm run perf:audit`) on commit `9013fb
 | paper | 1 | 7 | 33.4 | 50 | null | null | 5182 | 10437 | 3764 | webgl2/classic |
 | compare | 1 | 7 | 50 | 116.7 | null | null | 5523 | 26767 | 4254 | webgl2/classic |
 
+## S05: shared stage as the default vs the legacy per-scene renderers
+
+Measured by S05 with `npm run perf:collect` on the same machine, desktop viewport, 5000 ms of rAF deltas per view, `?seed=42`. **legacy** is `?stage=legacy` (one renderer per scene, the S04 behaviour with the stage off); **default** is the shared stage. Raw data: `s05-webgl2-legacy.json`, `s05-webgl2-default.json`, `s05-webgpu-legacy.json`, `s05-webgpu-default.json`. Idle fps = frames drawn per second by all scenes of the view under reduced motion with every scene paused (counted by the sessions: `renderDiagnostics.tick`), over a 3 s window.
+
+SwiftShader on a shared CPU: frame times are pessimistic and noisy, so treat renderer, program and idle counts as the firm numbers and the time columns as same-machine comparisons only. First-frame differences of a few percent are noise.
+
+### WebGL2 (CI configuration, SwiftShader)
+
+| view | renderers legacy → default | programs | CPU p95 ms | first frame ms (change) | idle fps legacy → default |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| overview | 2 → 2 | 21 → 21 | 300 → 300 | 5594 → 5343 (-4.5 %) | 3.26 → 0 |
+| qft | 4 → 4 | 38 → 38 | 300.1 → 316.6 | 6408 → 5860 (-8.6 %) | 3.75 → 0 |
+| bh | 4 → 4 | 41 → 41 | 899.9 → 666.6 | 5725 → 6275 (+9.6 %) | 3.64 → 0 |
+
+### WebGPU (local, SwiftShader adapter)
+
+| view | renderers legacy → default | programs | CPU p95 ms | first frame ms (change) | idle fps legacy → default |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| overview | 2 → 1 | 19 → 15 | 216.8 → 250.1 | 7009 → 7206 (+2.8 %) | 4.65 → 0 |
+| qft | 4 → 1 | 36 → 22 | 283.4 → 233.3 | 9945 → 8461 (-14.9 %) | 5.33 → 0 |
+| bh | 4 → 1 | 36 → 16 | 2349.9 → 2133.2 | 8768 → 8495 (-3.1 %) | 3.33 → 0 |
+
+GPU frame time p95 (fixed reference probe, not the view's own scenes): legacy 136.693 ms, default 136.491 ms on the QFT view; unchanged within noise.
+
+**Targets.** QFT view on WebGPU: renderers 4 → 1 (met). Idle static views: 0 frames per second (met on WebGL2 and WebGPU; legacy draws 3–5 fps from the same paused scenes). `firstFrameMs` regression no more than 10 %: largest increase +9.6 % (`bh`, WebGL2), inside the SwiftShader run-to-run spread seen on S01/S04 repeats, and the QFT view improved on both backends. WebGL2 renderer counts do not fall: a WebGL context belongs to one canvas, so the pool keeps one per live scene (at most 4); what changes there is the idle cost and the context budget.
+
 ## Static audit
 
 Output of `npm run perf:audit` (deterministic; run twice and diffed).
