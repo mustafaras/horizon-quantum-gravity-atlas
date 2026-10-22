@@ -156,9 +156,10 @@ test("webgpu: one renderer serves every pilot canvas, static scenes draw nothing
   }
   const errors = observe(page);
   await gotoReady(page, "/?view=qft&seed=42", READINESS);
-  await settle(page, "webgpu", 3);
+  await settle(page, "webgpu", 4);
   const s = await stage(page, "webgpu");
   expect(s.renderers, "live WebGPU renderers").toBe(1);
+  expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), "every renderer on the page: the QFT view needs exactly one (S05 target, was 4)").toBe(1);
   expect(s.views.every((v) => v.live)).toBe(true);
   expect((await phases(page)).every((e) => e.backend === "webgpu")).toBe(true);
   if (gpu.timestamps) {
@@ -178,5 +179,71 @@ test("webgpu: one renderer serves every pilot canvas, static scenes draw nothing
     expect(after.views.find((x) => x.id === v.id).frames, `${v.label}: frames drawn during 2 s idle`).toBe(v.frames);
   }
   for (const st of await captureStats(page)) { expect(st.captured).toBe(true); expect(st.distinct).toBeGreaterThan(8); }
+  expect(errors).toEqual([]);
+});
+
+const totalFrames = (stages) => stages.flatMap((s) => s.views).reduce((sum, v) => sum + v.frames, 0);
+const allStages = (page) => page.evaluate(() => QGA_RENDER.stageDiagnostics.snapshot());
+
+test("default: the shared stage is on without any option, and ?stage=legacy gives every scene its own renderer", async ({ browser }) => {
+  for (const [name, url, expectStage] of [["default", "/?view=qft&seed=42", true], ["legacy", "/?view=qft&seed=42&stage=legacy", false]]) {
+    const context = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+    await context.addInitScript(() => { window.QGA_RENDER_OPTIONS = { softwareClamp: false, forceBackend: "webgl2" }; sessionStorage.setItem("horizon-intro", "1"); });
+    const page = await context.newPage();
+    const errors = observe(page);
+    await gotoReady(page, url, READINESS);
+    await expect.poll(async () => { const e = await phases(page); return e.length >= 4 && e.every((x) => ["ready", "suspended"].includes(x.phase)); }, { timeout: 120_000 }).toBe(true);
+    const stages = await allStages(page);
+    expect(stages.length > 0, `${name}: stage registered`).toBe(expectStage);
+    expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), `${name}: live renderers`).toBeLessThanOrEqual(4);
+    expect(errors, name).toEqual([]);
+    await context.close();
+  }
+});
+
+test("webgl2: under reduced motion a paused QFT view is fully idle: no view of the stage draws a frame", async ({ page, context }) => {
+  await configure(context, { forceBackend: "webgl2" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const errors = observe(page);
+  await gotoReady(page, "/?view=qft&seed=42", READINESS);
+  await settle(page, "webgl2", 3);
+  await page.getByRole("button", { name: "Pause simulation" }).first().click();
+  // Frames drawn by every view (backdrop, membrane, collision event, vacuum lab) stop growing.
+  let last = -1, still = 0;
+  await expect.poll(async () => { const n = totalFrames(await allStages(page)); still = n === last ? still + 1 : 0; last = n; return still; }, { timeout: 60_000, intervals: [700] }).toBeGreaterThanOrEqual(3);
+  const before = totalFrames(await allStages(page));
+  await page.waitForTimeout(2000);
+  expect(totalFrames(await allStages(page)) - before, "frames drawn by all views in 2 s idle").toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test("webgl2: the Kerr observatory draws until its accumulation converges, then idles", async ({ page, context }) => {
+  await configure(context, { forceBackend: "webgl2" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const errors = observe(page);
+  await gotoReady(page, "/?view=bh&seed=42", READINESS);
+  await settle(page, "webgl2", 2);
+  await expect.poll(() => page.evaluate(() => window.__qgaKerrRuntime?.converged === true), { timeout: 180_000 }).toBe(true);
+  const kerr = async () => (await allStages(page)).flatMap((st) => st.views).find((v) => /Ray-traced Kerr/.test(v.label));
+  await expect.poll(async () => (await kerr()).animated, { timeout: 30_000 }).toBe(false);
+  const before = (await kerr()).frames;
+  await page.waitForTimeout(2000);
+  expect((await kerr()).frames - before, "Kerr frames drawn in 2 s once converged").toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test("webgl2: the GW spacetime lattice is static while the transport is stopped", async ({ page, context }) => {
+  await configure(context, { forceBackend: "webgl2" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const errors = observe(page);
+  await gotoReady(page, "/?view=exp&seed=42", READINESS);
+  await settle(page, "webgl2", 2);
+  await page.evaluate(() => document.querySelector('.s3d-stage[aria-label*="spacetime lattice"]')?.scrollIntoView({ block: "center" }));
+  const lattice = async () => (await allStages(page)).flatMap((st) => st.views).find((v) => /spacetime lattice/.test(v.label));
+  await expect.poll(async () => { const v = await lattice(); return v?.visible && v.live; }, { timeout: 90_000 }).toBe(true);
+  await expect.poll(async () => (await lattice()).animated, { timeout: 30_000 }).toBe(false);
+  const before = (await lattice()).frames;
+  await page.waitForTimeout(2000);
+  expect((await lattice()).frames - before, "lattice frames drawn in 2 s with the transport stopped").toBe(0);
   expect(errors).toEqual([]);
 });

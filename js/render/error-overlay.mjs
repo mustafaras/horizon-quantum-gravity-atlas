@@ -21,6 +21,8 @@ export const renderDiagnostics = Object.freeze({
     const entry = entries.get(id);
     if (entry) this.update(id, { messages: [...entry.messages.slice(-15), String(message)] });
   },
+  /** Count one drawn frame for a scene without notifying listeners (read it through snapshot().frames). */
+  tick(id) { const entry = entries.get(id); if (entry) entry.frames = (entry.frames ?? 0) + 1; },
   remove(id) { entries.delete(id); notify(); },
   snapshot() { return [...entries.values()]; },
   subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },

@@ -347,6 +347,7 @@ export async function initializeRenderSession({
         activate();
         pipeline.render(delta);
         stageView?.markRendered();
+        renderDiagnostics.tick(diagnosticId);
         if (!sample) return;
         const result = governor.sample(frameMs, now, stageView?.gpuMs ?? null);
         if (now - fpsTime > 500 && result.fps) {

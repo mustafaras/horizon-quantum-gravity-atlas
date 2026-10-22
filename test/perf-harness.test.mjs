@@ -128,11 +128,24 @@ test("report tables render nulls explicitly and flag failed views", () => {
   const report = {
     config: { viewports: [{ name: "desktop", width: 1440, height: 900, deviceScaleFactor: 1 }] },
     results: [
-      { viewport: "desktop", view: "qft", ok: true, renderers: 4, programs: { total: 38 }, cpuFrameMs: { p50: 16.7, p95: 33.3 }, gpuFrameMs: null, firstFrameMs: 6316, jsBytes: 10240, babelMs: 4000, scenes: [{ backend: "webgl2", rendererPath: "classic" }] },
+      { viewport: "desktop", view: "qft", ok: true, renderers: 4, programs: { total: 38 }, cpuFrameMs: { p50: 16.7, p95: 33.3 }, gpuFrameMs: null, firstFrameMs: 6316, jsBytes: 10240, babelMs: 4000, idle: { frames: 2, seconds: 3, fps: 0.67 }, scenes: [{ backend: "webgl2", rendererPath: "classic" }] },
       { viewport: "desktop", view: "bh", ok: false, error: "scenes not ready" },
     ],
   };
   const text = formatReport(report);
-  assert.match(text, /\| qft \| 4 \| 38 \| 16\.7 \| 33\.3 \| null \| null \| 6316 \| 10 \| 4000 \| webgl2\/classic \|/);
+  assert.match(text, /\| qft \| 4 \| 38 \| 16\.7 \| 33\.3 \| null \| null \| 6316 \| 10 \| 4000 \| 0\.67 \| webgl2\/classic \|/);
   assert.match(text, /\| bh \| null .* ERROR: scenes not ready \|/);
+});
+
+test("renderDiagnostics.tick counts drawn frames per scene without notifying listeners", () => {
+  const id = renderDiagnostics.allocate("tick-test");
+  let notified = 0;
+  const off = renderDiagnostics.subscribe(() => { notified += 1; });
+  renderDiagnostics.tick(id); renderDiagnostics.tick(id); renderDiagnostics.tick(id);
+  assert.equal(notified, 0);
+  assert.equal(renderDiagnostics.snapshot().find((entry) => entry.id === id).frames, 3);
+  renderDiagnostics.update(id, { phase: "ready" });
+  assert.equal(renderDiagnostics.snapshot().find((entry) => entry.id === id).frames, 3, "an update keeps the count");
+  renderDiagnostics.tick("missing-id");
+  off(); renderDiagnostics.remove(id);
 });

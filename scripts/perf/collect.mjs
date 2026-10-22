@@ -2,7 +2,8 @@
 //
 //   node scripts/perf/collect.mjs [--out=docs/audit/v2-baseline.json] [--views=qft,bh]
 //        [--viewports=desktop,mobile] [--duration=5000] [--webgpu] [--launch-arg=…]
-//        [--render-option=stage=shared]   (repeatable; sets window.QGA_RENDER_OPTIONS before any page script)
+//        [--render-option=key=value]   (repeatable; sets window.QGA_RENDER_OPTIONS before any page script)
+//        [--url-suffix=&stage=legacy]  (appended to every view URL; the legacy per-scene renderers, for comparison)
 //
 // Serves this worktree with the QA static server, loads every view of
 // QGA_VIEWS at two viewports in a fresh browser context, waits until every
@@ -33,9 +34,10 @@ const READY_TIMEOUT_MS = 120_000;
 const STABLE_MS = 1500;
 const POLL_MS = 250;
 const GPU_PROBE_FRAMES = 120;
+const IDLE_WINDOW_MS = 3000;
 
 function parseArgs(argv) {
-  const options = { out: "docs/audit/v2-baseline.json", views: null, viewports: VIEWPORTS.map((v) => v.name), duration: 5000, webgpu: false, launchArgs: [], renderOptions: {} };
+  const options = { out: "docs/audit/v2-baseline.json", views: null, viewports: VIEWPORTS.map((v) => v.name), duration: 5000, webgpu: false, launchArgs: [], renderOptions: {}, urlSuffix: "" };
   for (const arg of argv) {
     const [flag, value] = arg.split(/=(.*)/s);
     if (flag === "--out") options.out = value;
@@ -44,6 +46,7 @@ function parseArgs(argv) {
     else if (flag === "--duration") options.duration = Number(value);
     else if (flag === "--webgpu") options.webgpu = true;
     else if (flag === "--launch-arg") options.launchArgs.push(value);
+    else if (flag === "--url-suffix") options.urlSuffix = value;
     else if (flag === "--render-option") {
       const [key, raw] = value.split(/=(.*)/s);
       if (!key || raw === undefined) throw new RangeError("--render-option needs key=value");
@@ -192,7 +195,7 @@ async function measureView(browser, baseUrl, viewport, view, options) {
     await cdp.send("Network.enable");
     const scripts = trackScriptBytes(cdp);
 
-    await page.goto(`${baseUrl}/?view=${view}&seed=42`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.goto(`${baseUrl}/?view=${view}&seed=42${options.urlSuffix}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await runReadiness(page, ["fonts", "network-idle", "view-mounted"], { timeoutMs: READY_TIMEOUT_MS });
     const scenes = await waitForScenes(page);
 
@@ -226,6 +229,7 @@ async function measureView(browser, baseUrl, viewport, view, options) {
       babelMs: marks.start === null || marks.end === null ? null : Number((marks.end - marks.start).toFixed(0)),
     });
     if (gpu.adapter) result.gpuAdapter = gpu.adapter;
+    result.idle = await measureIdle(browser, baseUrl, viewport, view, options).catch((error) => ({ error: String(error.message ?? error).split("\n")[0] }));
   } catch (error) {
     result.error = String(error.message ?? error).split("\n")[0];
   } finally {
@@ -233,6 +237,37 @@ async function measureView(browser, baseUrl, viewport, view, options) {
     await context.close();
   }
   return result;
+}
+
+// Idle cost: the same view under reduced motion with every scene paused, frames drawn per second by all scenes.
+// Counted by the sessions themselves (renderDiagnostics.tick), so it is comparable between the shared stage and
+// the legacy per-scene renderers: legacy keeps drawing a paused scene every frame, the stage draws nothing.
+async function measureIdle(browser, baseUrl, viewport, view, options) {
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: viewport.deviceScaleFactor,
+    colorScheme: "dark", reducedMotion: "reduce",
+  });
+  try {
+    await context.addInitScript(() => sessionStorage.setItem("horizon-intro", "1"));
+    if (Object.keys(options.renderOptions).length) await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { ...(window.QGA_RENDER_OPTIONS || {}), ...value }; }, options.renderOptions);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/?view=${view}&seed=42${options.urlSuffix}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await runReadiness(page, ["fonts", "network-idle", "view-mounted"], { timeoutMs: READY_TIMEOUT_MS });
+    await waitForScenes(page);
+    const paused = await page.evaluate(() => {
+      const buttons = [...document.querySelectorAll('button[aria-label="Pause simulation"]')];
+      buttons.forEach((button) => button.click());
+      return buttons.length;
+    });
+    await page.waitForTimeout(2000); // let in-flight frames and easing finish
+    const frames = () => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().reduce((sum, entry) => sum + (entry.frames ?? 0), 0));
+    const before = await frames();
+    const started = Date.now();
+    await page.waitForTimeout(IDLE_WINDOW_MS);
+    const drawn = (await frames()) - before;
+    const seconds = (Date.now() - started) / 1000;
+    return { pausedScenes: paused, frames: drawn, seconds: Number(seconds.toFixed(2)), fps: Number((drawn / seconds).toFixed(2)) };
+  } finally { await context.close(); }
 }
 
 async function describeEnvironment(browser, baseUrl, options) {
@@ -274,7 +309,7 @@ async function main() {
       date: new Date().toISOString().slice(0, 10),
       environment: await describeEnvironment(browser, server.baseUrl, options),
       config: {
-        durationMs: options.duration, renderOptions: options.renderOptions, gpuProbeFrames: GPU_PROBE_FRAMES, launchArgs: args, readyStableMs: STABLE_MS,
+        durationMs: options.duration, renderOptions: options.renderOptions, urlSuffix: options.urlSuffix, idleWindowMs: IDLE_WINDOW_MS, gpuProbeFrames: GPU_PROBE_FRAMES, launchArgs: args, readyStableMs: STABLE_MS,
         viewports: VIEWPORTS.filter((v) => options.viewports.includes(v.name)),
       },
       results: [],

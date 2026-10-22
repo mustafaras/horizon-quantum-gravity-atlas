@@ -1,8 +1,8 @@
 # HORIZON render performance contract
 
-Status: S04. This is the contract every scene, lab and renderer change is held to. Numbers marked **measured** come from `npm run perf:collect`; everything else is a rule the code enforces or a budget a test checks. Nothing here is a promise about hardware we have not measured.
+This is the contract every scene, lab and renderer change is held to. Numbers marked **measured** come from `npm run perf:collect`; everything else is a rule the code enforces or a budget a test checks. Nothing here is a promise about hardware we have not measured.
 
-The shared stage is **opt-in** in S04: `QGA_RENDER_OPTIONS.stage = "shared"` and a `shared` prop on the scene (the Atlas backdrop and the two QFT field scenes are the pilots). S05 migrates every scene and flips the default.
+Status: S05 (S04 introduced the stage). The shared stage is the **default**: every `<Scene3D>`, the Atlas backdrop, the Kerr observatory and the GW instrument draw through it. `?stage=legacy` (or `QGA_RENDER_OPTIONS.stage = "legacy"`) is the escape hatch back to one renderer per scene. It is kept for one release and is then removed together with the per-scene renderer path in `js/render/render-session.mjs`; a scene can also opt out of the stage with `<Scene3D shared={false}>`.
 
 ## 1. Renderer topology
 
@@ -11,7 +11,9 @@ The shared stage is **opt-in** in S04: `QGA_RENDER_OPTIONS.stage = "shared"` and
 | WebGPU | **One** `WebGPURenderer` per page. Each scene canvas is wrapped in a `CanvasTarget`; the renderer switches target per view (`setCanvasTarget`). One device, one pipeline cache, one shader cache. | `js/render/stage/shared-stage.mjs` |
 | WebGL2 | One renderer **per visible scene**, at most **4 live contexts** (`QGA_RENDER_OPTIONS.maxContexts`, default 4). A WebGL context belongs to exactly one canvas, so contexts cannot be shared. | `shared-stage.mjs` + `context-pool.mjs` |
 
-A scene that cannot join the shared WebGPU renderer (classic `ShaderMaterial` content, a shadow-casting light source, `forceBackend: "webgl2"`) falls back to the WebGL2 pool; a scene outside the shared stage keeps its own renderer exactly as before.
+**Asynchronous setup is exclusive.** On the shared WebGPU renderer a view's pipeline build, shader prewarm and pipeline swap run through `view.exclusive()`: one at a time, with the frame loop paused until they finish. Without it, a prewarm that awaits between "set my canvas target" and "draw" draws into whichever view the loop last activated (seen as validation errors on destroyed or doubly-used textures).
+
+A scene that cannot join the shared WebGPU renderer (classic `ShaderMaterial` content such as the Kerr WebGL2 GLSL path and the GR gravity well, a shadow-casting light source, `forceBackend: "webgl2"`) is granted a dedicated WebGL2 renderer through the pool; a scene outside the shared stage keeps its own renderer exactly as before.
 
 **WebGL2 context budget.**
 
@@ -32,7 +34,15 @@ A scene that cannot join the shared WebGPU renderer (classic `ShaderMaterial` co
 - **Reduced motion** → animated views draw at most **10 fps**, except while the user is interacting (any input `invalidate()` marks 300 ms of interaction).
 - The stage stops its loop when nothing has work and restarts on any state change. Any `input`, `change`, `click`, `keyup` or `pointerup` anywhere on the page invalidates every visible view once, so a paused scene still shows live parameter changes.
 
-A scene declares itself animated while anything can still change: a running simulation, inertia, camera easing, the intro, a highlight, a drag, or cinematic drift. Otherwise it is static.
+Every `<Scene3D>` declares `animated` (policy in `js/render/stage/animation-policy.mjs`, tested):
+
+| `animated` | Meaning | Draws frames |
+|---|---|---|
+| `true` | evolves while the simulation plays, with or without motion (a field integrating in time, a binary inspiral, orbiting bodies) | while playing |
+| `"motion"` | ambient or decorative motion that the scene's own code freezes when the motion factor is 0 (pulses, jitter, drift, dust) | while playing **and** motion > 0; under reduced motion it settles on one frame and idles |
+| `false` | changes only on input and `invalidate()` | on demand |
+
+A scene may report its own state with `isAnimated()` instead of the declaration: the **Kerr observatory** draws until its progressive accumulation converges (and while the WebGL2 disk plasma animates), then idles; the **GW spacetime lattice** draws while the transport or audio clock runs and gets one frame per scrub (`invalidateKey={playT}`); the Planck descent keeps drawing until its probe has eased onto its slider target. Transient motion (inertia, camera easing, the intro, a highlight, a drag, cinematic drift) always keeps a scene animated until it settles. Every parameter change reaches the scene as an `input`/`change`/`click`/`keyup` event or an explicit `invalidate()`.
 
 ## 3. Budgets per tier
 

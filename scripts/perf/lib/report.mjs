@@ -22,12 +22,12 @@ export function formatReport(report) {
     if (!rows.length) continue;
     out.push(`### ${viewport.name} (${viewport.width}×${viewport.height}, deviceScaleFactor ${viewport.deviceScaleFactor})`, "");
     out.push(...table(
-      ["view", "renderers", "programs", "CPU p50 ms", "CPU p95 ms", "GPU p50 ms", "GPU p95 ms", "first frame ms", "JS KiB", "Babel ms", "backends"],
+      ["view", "renderers", "programs", "CPU p50 ms", "CPU p95 ms", "GPU p50 ms", "GPU p95 ms", "first frame ms", "JS KiB", "Babel ms", "idle fps", "backends"],
       rows.map((r) => [
         r.view, cell(r.renderers), cell(r.programs?.total),
         stat(r.cpuFrameMs, "p50"), stat(r.cpuFrameMs, "p95"),
         stat(r.gpuFrameMs, "p50"), stat(r.gpuFrameMs, "p95"),
-        cell(r.firstFrameMs, 0), kib(r.jsBytes), cell(r.babelMs, 0),
+        cell(r.firstFrameMs, 0), kib(r.jsBytes), cell(r.babelMs, 0), cell(r.idle?.fps, 2),
         r.ok ? ([...new Set((r.scenes ?? []).map((s) => `${s.backend}/${s.rendererPath}`))].join(", ") || "no scenes") : `ERROR: ${r.error}`,
       ]),
     ), "");
