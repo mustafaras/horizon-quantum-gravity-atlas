@@ -53,13 +53,27 @@ test("legacy deep links, reload and back/forward preserve URL state and dispose 
     };
     window.cancelAnimationFrame = (id) => { pending.delete(id); cancel.call(window, id); };
     window.__qaPendingFrames = pending;
+    // Highest number of animation-frame callbacks pending at once over `ms`. A single instant is not a measurement:
+    // the shared stage runs one loop that legitimately stops when every scene is idle, so a lone sample can read 0 or 1.
+    window.__qaPeakPendingFrames = (ms = 1500) => new Promise((resolve) => {
+      let peak = pending.size;
+      const timer = setInterval(() => { peak = Math.max(peak, pending.size); }, 4);
+      setTimeout(() => { clearInterval(timer); resolve(peak); }, ms);
+    });
   });
   await gotoReady(page, "/?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2");
   const before = await page.evaluate(() => qgaReadState(location.search));
   await page.reload();
   await expect(page.locator(".s3d-canvas").first()).toBeVisible();
   expect(await page.evaluate(() => qgaReadState(location.search))).toEqual(before);
-  const initialFrames = await page.evaluate(() => window.__qaPendingFrames.size);
+  // The gr view mounts the backdrop and its scene; sample only once both exist and are ready (an empty list is "all ready").
+  await page.waitForFunction(() => {
+    const entries = QGA_RENDER.renderDiagnostics.snapshot();
+    return entries.length >= 2 && entries.every((entry) => ["ready", "suspended", "static"].includes(entry.phase));
+  }, null, { timeout: 90_000 });
+  const initialFrames = await page.evaluate(() => window.__qaPeakPendingFrames());
+  const initialRenderers = await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers());
+  const initialScenes = await page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().length);
   for (let i = 0; i < 3; i++) {
     const previous = await page.locator(".s3d-canvas").first().elementHandle();
     await page.getByRole("button", { name: /Black Holes/ }).first().click();
@@ -75,7 +89,12 @@ test("legacy deep links, reload and back/forward preserve URL state and dispose 
     await page.goBack();
     await expect(page).toHaveURL(/view=gr/);
   }
-  await expect.poll(() => page.evaluate(() => window.__qaPendingFrames.size)).toBeLessThanOrEqual(initialFrames);
+  // Leak check: no scene, renderer or animation loop is left behind. The stage draws only what has work, so the number of
+  // pending frames depends on what is in view (this spec runs under reduced motion); the bound that cannot be exceeded is
+  // the start state's own peak or one loop per initially live renderer, whichever is larger.
+  await expect.poll(() => page.evaluate(() => window.__qaPeakPendingFrames(600)), { timeout: 30_000 }).toBeLessThanOrEqual(Math.max(initialFrames, initialRenderers));
+  await expect.poll(() => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot().length), { timeout: 30_000 }).toBeLessThanOrEqual(initialScenes);
+  await expect.poll(() => page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), { timeout: 30_000 }).toBeLessThanOrEqual(initialRenderers);
   await expect(page.locator("#root > .shell")).toHaveCount(1);
   expect(observed).toEqual({ errors: [], failed: [] });
 });
