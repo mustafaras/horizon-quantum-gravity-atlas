@@ -154,7 +154,11 @@ test.describe("snapshots", () => {
     // The Kerr observatory's synchronous shader/geodesic work can outlast
     // the animation-settled window on load; canvas-nonblank is the honest
     // "scene is live" precondition for snapshot flows.
-    const errors = await gotoReady(page, "/?view=bh&bhm=1&bhs=0.9&seed=42",
+    // The gravity well reads the same bhSpin state key as the Kerr observatory but draws cheaply. The restore
+    // tween is frame-sampled and every sample re-draws the view on the main thread; the Kerr ray marcher needs
+    // ~0.7 s per frame on a software rasterizer, which collapses the 700 ms tween into its two end frames
+    // (measured: one 980 ms long task covered the whole tween) and says nothing about snapshot restore.
+    const errors = await gotoReady(page, "/?view=gr&bhm=1&bhs=0.9&seed=42",
       ["fonts", "network-idle", "view-mounted", "canvas-nonblank"]);
     await expect(page.locator(".s3d-canvas").first()).toBeVisible();
     // Save a snapshot of the Kerr a★=0.9 state.
