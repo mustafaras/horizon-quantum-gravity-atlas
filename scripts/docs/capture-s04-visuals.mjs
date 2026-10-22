@@ -3,7 +3,7 @@
 //   node scripts/docs/capture-s04-visuals.mjs [--out=docs/render/img/s04] [--webgpu] [--launch-arg=…]
 //
 // Serves this worktree with the QA static server and drives Chromium (WebGPU disabled as in CI unless --webgpu).
-// Every shot uses ?seed=42 and the QFT view. The static pair uses reduced motion so the scenes settle on one
+// Every shot uses ?seed=42, the QFT view and reduced motion (scenes settle on one frame, so a screenshot does not fight a software rasterizer). The static pair uses reduced motion so the scenes settle on one
 // deterministic frame; their pixel difference is printed and written next to the images.
 
 import { mkdir, writeFile } from "node:fs/promises";
@@ -30,7 +30,7 @@ const args = [...(options.webgpu ? [] : ["--disable-blink-features=WebGPU"]), ..
 const browser = await chromium.launch({ args, ...(process.env.QGA_CHROMIUM_PATH ? { executablePath: process.env.QGA_CHROMIUM_PATH } : {}) });
 const report = {};
 
-async function open({ renderOptions, reducedMotion = false, viewport = { width: 1280, height: 800 } }) {
+async function open({ renderOptions, reducedMotion = true, viewport = { width: 1280, height: 800 } }) {
   const context = await browser.newContext({ viewport, colorScheme: "dark", reducedMotion: reducedMotion ? "reduce" : "no-preference" });
   await context.addInitScript((value) => {
     window.QGA_RENDER_OPTIONS = { softwareClamp: false, ...value };
@@ -55,9 +55,11 @@ async function shot(page, name) {
 }
 const stageStats = (page) => page.evaluate(() => QGA_RENDER.stageDiagnostics.snapshot().map((s) => ({ kind: s.kind, renderers: s.renderers, contextLimit: s.contextLimit, views: s.views.map((v) => ({ label: v.label.slice(0, 48), live: v.live, visible: v.visible, frames: v.frames })) })));
 
-// 1 + 2: the same frame, stage off and on (reduced motion: static, deterministic)
+// 1 + 2: the same page, stage off and on (reduced motion: static). The backdrop starfield is unseeded
+// (pre-existing Math.random in atlas-stage.jsx), so two loads never match pixel for pixel; a second stage-off
+// load is the control that says how large the difference between two identical configurations already is.
 const pair = {};
-for (const [name, renderOptions] of [["off", { forceBackend: "webgl2" }], ["on", { forceBackend: "webgl2", stage: "shared" }]]) {
+for (const [name, renderOptions] of [["off", { forceBackend: "webgl2" }], ["off-control", { forceBackend: "webgl2" }], ["on", { forceBackend: "webgl2", stage: "shared" }]]) {
   const { context, page } = await open({ renderOptions, reducedMotion: true });
   pair[name] = await shot(page, `qft-static-stage-${name}.png`);
   report[`static-${name}`] = { liveRenderers: await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), stage: await stageStats(page) };
@@ -65,15 +67,15 @@ for (const [name, renderOptions] of [["off", { forceBackend: "webgl2" }], ["on",
 }
 {
   const { context, page } = await open({ renderOptions: {}, reducedMotion: true });
-  const stats = await page.evaluate(async ([a, b]) => {
-    const load = async (bytes) => { const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" })); const c = new OffscreenCanvas(bitmap.width, bitmap.height); const x = c.getContext("2d"); x.drawImage(bitmap, 0, 0); return x.getImageData(0, 0, bitmap.width, bitmap.height).data; };
-    const [da, db] = [await load(a), await load(b)];
+  const diff = (a, b) => page.evaluate(async ([x, y]) => {
+    const load = async (bytes) => { const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" })); const c = new OffscreenCanvas(bitmap.width, bitmap.height); const g = c.getContext("2d"); g.drawImage(bitmap, 0, 0); return g.getImageData(0, 0, bitmap.width, bitmap.height).data; };
+    const [da, db] = [await load(x), await load(y)];
     let sum = 0, changed = 0;
     for (let i = 0; i < da.length; i += 4) { const d = (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2])) / 3; sum += d; if (d > 8) changed++; }
-    return { pixels: da.length / 4, meanAbsDiff: sum / (da.length / 4), changedPixelsOver8of255: changed, changedShare: changed / (da.length / 4) };
-  }, [[...pair.off], [...pair.on]]);
-  report.staticDiff = stats;
-  console.log("[docs] stage off vs on, static frame:", JSON.stringify(stats));
+    return { pixels: da.length / 4, meanAbsDiff: Number((sum / (da.length / 4)).toFixed(3)), changedShare: Number((changed / (da.length / 4)).toFixed(4)) };
+  }, [[...a], [...b]]);
+  report.staticDiff = { "off vs off-control": await diff(pair.off, pair["off-control"]), "off vs on": await diff(pair.off, pair.on) };
+  console.log("[docs] static frame diffs:", JSON.stringify(report.staticDiff));
   await context.close();
 }
 
@@ -96,10 +98,12 @@ for (const [name, renderOptions] of [["off", { forceBackend: "webgl2" }], ["on",
 
 // 5: WebGPU, stage on: one renderer, a canvas target per scene
 if (options.webgpu) {
-  const { context, page } = await open({ renderOptions: { forceBackend: "webgpu", stage: "shared" } });
-  await shot(page, "qft-shared-webgpu.png");
-  report.sharedWebgpu = { liveRenderers: await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), stage: await stageStats(page) };
-  await context.close();
+  for (const [name, renderOptions, key] of [["off", { forceBackend: "webgpu" }, "webgpuOff"], ["shared", { forceBackend: "webgpu", stage: "shared" }, "sharedWebgpu"]]) {
+    const { context, page } = await open({ renderOptions });
+    await shot(page, name === "off" ? "qft-webgpu-stage-off.png" : "qft-shared-webgpu.png");
+    report[key] = { liveRenderers: await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), stage: await stageStats(page) };
+    await context.close();
+  }
 }
 
 // 6: Formula Core: one definition typeset with addressable terms
