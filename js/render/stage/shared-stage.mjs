@@ -32,9 +32,22 @@ const stages = new Map();
 const diagnostics = { snapshot: () => [...stages.values()].map((stage) => stage.stats()) };
 export const stageDiagnostics = diagnostics;
 
-/** True when the page opted in with QGA_RENDER_OPTIONS.stage = "shared". */
-export function sharedStageRequested(options = globalThis.QGA_RENDER_OPTIONS) {
-  return options?.stage === "shared";
+/**
+ * The shared stage is the default (S05). `QGA_RENDER_OPTIONS.stage` ("shared" | "legacy") wins, then `?stage=legacy`
+ * in the page URL, which is the one-release escape hatch back to a renderer per scene. The URL is read once, when
+ * this module loads, so later history changes cannot flip it mid-session.
+ */
+export function resolveStageMode({ options = null, search = "" } = {}) {
+  const explicit = options?.stage;
+  if (explicit === "shared" || explicit === "legacy") return explicit;
+  const fromUrl = new URLSearchParams(search).get("stage");
+  return fromUrl === "legacy" ? "legacy" : "shared";
+}
+const STAGE_URL_SEARCH = globalThis.location?.search ?? "";
+
+/** True unless the page asked for the legacy per-scene renderers. */
+export function sharedStageRequested(options = globalThis.QGA_RENDER_OPTIONS, search = STAGE_URL_SEARCH) {
+  return resolveStageMode({ options, search }) === "shared";
 }
 
 /** Whether the running page can host the single-renderer WebGPU stage. */
@@ -42,11 +55,13 @@ export function canUseWebGPUStage({ forceBackend = null, nodeCompatible = true, 
   return !!globalThis.navigator?.gpu && forceBackend !== "webgl2" && forceBackend !== "static" && nodeCompatible && !shadows;
 }
 
+function forgetStage(stage) { for (const [key, value] of stages) if (value === stage) stages.delete(key); }
+
 export function acquireStage({ backend = "webgpu", maxContexts = globalThis.QGA_RENDER_OPTIONS?.maxContexts ?? DEFAULT_MAX_CONTEXTS, now = () => performance.now(), requestFrame = null } = {}) {
   if (!["webgpu", "webgl2"].includes(backend)) throw new RangeError("stage backend must be webgpu or webgl2");
   const existing = stages.get(backend);
   if (existing) return existing;
-  const stage = createStage({ backend, maxContexts, now, requestFrame });
+  const stage = createStage({ backend, maxContexts, now, requestFrame, onEmpty: () => forgetStage(stage) });
   stages.set(backend, stage);
   return stage;
 }
@@ -54,12 +69,12 @@ export function acquireStage({ backend = "webgpu", maxContexts = globalThis.QGA_
 /** Test hook: forget every stage so a page (or test) can start from nothing. */
 export function resetStagesForTests() { stages.clear(); }
 
-function createStage({ backend, maxContexts, now, requestFrame }) {
+function createStage({ backend, maxContexts, now, requestFrame, onEmpty }) {
   const isGPU = backend === "webgpu";
   const views = new Map();
   const pool = isGPU ? null : createContextPool({ limit: maxContexts });
   let running = false, rafId = 0, loopFrames = 0, renderer = null, rendererHandle = null, rendererPromise = null;
-  let listening = false, acquireChain = Promise.resolve(), nextViewId = 1, timestampCountdown = TIMESTAMP_EVERY_FRAMES, resolving = false;
+  let listening = false, acquireChain = Promise.resolve(), exclusiveChain = Promise.resolve(), exclusiveCount = 0, nextViewId = 1, timestampCountdown = TIMESTAMP_EVERY_FRAMES, resolving = false;
   const reducedQuery = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
   const scheduler = createFrameScheduler({
     now, budgetMs: globalThis.QGA_RENDER_OPTIONS?.frameBudgetMs ?? 8,
@@ -116,6 +131,9 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
     const time = typeof timestamp === "number" ? timestamp : now();
     if (!isGPU && running) rafId = raf(frame);
     loopFrames += 1;
+    // A view's asynchronous setup (pipeline build, shader prewarm, pipeline swap) owns the renderer's canvas target
+    // between its awaits: no frame of any view may run until it is done (see runExclusive).
+    if (exclusiveCount > 0) return;
     const ids = scheduler.plan(time);
     let last = null;
     for (const id of ids) {
@@ -136,6 +154,18 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
     if (!scheduler.hasWork()) stopLoop();
   }
 
+  /**
+   * Run asynchronous GPU setup that must see a stable renderer: one at a time, with the frame loop paused while any
+   * runs or waits. Without this, a prewarm that awaits between "set the canvas target" and "draw" would draw into
+   * whichever view the loop last activated (validation errors on destroyed or doubly-used textures).
+   */
+  function runExclusive(fn) {
+    exclusiveCount += 1;
+    const run = exclusiveChain.then(fn);
+    exclusiveChain = run.then(() => {}, () => {}).then(() => { exclusiveCount -= 1; wake(); });
+    return run;
+  }
+
   async function ensureRenderer(rendererOptions, signal) {
     if (renderer) return rendererHandle;
     rendererPromise ??= (async () => {
@@ -150,7 +180,12 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
       return handle;
     })();
     try { return await rendererPromise; }
-    catch (error) { rendererPromise = null; throw error; }
+    catch (error) {
+      rendererPromise = null;
+      // A stage that never got a renderer and holds no view must not linger (no WebGPU: the page falls back to the pool).
+      if (views.size === 0) onEmpty?.();
+      throw error;
+    }
   }
 
   function broadcastError(error) { for (const view of [...views.values()]) view.onError?.(error); }
@@ -240,12 +275,14 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
         /** Activate this view's canvas target and draw it now (captures, session render()). */
         render: (dt = 0) => view.render(dt),
         activate() { renderer.setCanvasTarget(view.target); },
+        /** Run async setup with this view's target active and every other view's frames held back. */
+        exclusive(fn) { return runExclusive(() => { renderer.setCanvasTarget(view.target); return fn(); }); },
         async detach() {
           if (!views.has(view.id)) return;
           views.delete(view.id);
           view.handle.dispose();
           try { view.target.dispose(); } catch { /* target already released */ }
-          if (views.size === 0) { listenForInput(false); await releaseRenderer(); }
+          if (views.size === 0) { listenForInput(false); onEmpty?.(); await releaseRenderer(); }
         },
       });
       wake();
@@ -304,7 +341,7 @@ function createStage({ backend, maxContexts, now, requestFrame }) {
           view.handle.dispose();
           pool.release(view.id);
           pool.unregister(view.id);
-          if (views.size === 0) { listenForInput(false); stopLoop(); }
+          if (views.size === 0) { listenForInput(false); stopLoop(); onEmpty?.(); }
         },
       });
       // Becoming visible while suspended must resume; wrap setVisible once pool state is updated.

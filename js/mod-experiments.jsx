@@ -648,7 +648,7 @@ function GWInspiral3D() {
           format={(v) => v.toFixed(1)}></SliderRow>
         <button className="btn" onClick={restart}>Restart inspiral</button>
       </div>
-      <Scene3D height={430} shotSpace="exp-gw" aria="Three-dimensional binary inspiral radiating gravitational waves across a spacetime sheet"
+      <Scene3D animated="motion" height={430} shotSpace="exp-gw" aria="Three-dimensional binary inspiral radiating gravitational waves across a spacetime sheet"
         initial={{ radius: 12.5, theta: 0.5, phi: 1.02, minR: 7, maxR: 30, bloom: { strength: 0.9, radius: 0.55, threshold: 0.14 } }}
         build={build} fallback={<GWInspiral></GWInspiral>}></Scene3D>
       <div style={{ marginTop: 8 }}>
@@ -1365,6 +1365,8 @@ function GWAnalysisTheatre() {
   const GW = window.QGA_GW;
   const playTRef = useRef(0);
   playTRef.current = playT;
+  const transportPlayingRef = useRef(false);
+  transportPlayingRef.current = playing;
   const durationRef = useRef(duration);
   durationRef.current = duration;
   const instrumentRef = useRef({ signalTex: null, sigVersion: 0, duration: GW_GEN_DURATION, layout: null });
@@ -1532,6 +1534,9 @@ function GWAnalysisTheatre() {
     let appliedSig = -1;
     return {
       autoRotate: false,
+      // The lattice follows the transport clock (React state, advanced while playing) and the audio clock: it needs
+      // frames while either is running, and one frame per scrub (the parent passes playT as invalidateKey).
+      isAnimated: () => transportPlayingRef.current || (audioEnabledRef.current && !!sonRef.current?.stats().playing),
       recoverable: (error) => (runtime.recoverable ? runtime.recoverable(error) : false),
       update: () => {
         const renderer = ctx.renderer;
@@ -1708,7 +1713,7 @@ function GWAnalysisTheatre() {
             {" · the wave squeezes and stretches the grid as it travels outward — colors show direction, brightness shows strength; motion is amplified for visibility"}
           </span>
         </figcaption>
-        <Scene3D height={460} aria="Three-dimensional spacetime lattice deforming as the gravitational wave passes, driven by the same clock as the audio cursor"
+        <Scene3D animated={false} invalidateKey={playT} height={460} aria="Three-dimensional spacetime lattice deforming as the gravitational wave passes, driven by the same clock as the audio cursor"
           build={buildInstrument} deps={[]} cameraGoal={instrumentCameraGoal}
           overlay={<div className="gw-instr-hud">
             <div className="gw-instr-clock">

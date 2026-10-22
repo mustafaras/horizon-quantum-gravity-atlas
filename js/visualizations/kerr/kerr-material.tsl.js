@@ -468,6 +468,8 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
     latest = {
       backend: "webgpu", frames: step.frame + 1, resets: accumulator.resets,
       resolution: [width, height], budget, converged: step.converged, reducedMotion,
+      // The smooth-disk compute path has no time-dependent term: once converged it is static.
+      animated: false,
       // The Prompt 05 volumetric layer is served by the WebGL2 integrator only;
       // the compute path reports the gate so the status readout can name it.
       volume: { corona: false, jets: false, capable: false, reason: "webgpu" },

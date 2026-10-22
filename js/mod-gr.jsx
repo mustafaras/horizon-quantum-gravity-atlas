@@ -2103,7 +2103,7 @@ function CurvatureEngine3D() {
           <span className="chip-hint">plunge body — numerically integrated; captured at r = 3GM/c²</span>
         )}
       </div>
-      <Scene3D height={480} shotSpace="gr-curvature" aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
+      <Scene3D animated height={480} shotSpace="gr-curvature" aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
         initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         cameraGoal={cameraGoal}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>

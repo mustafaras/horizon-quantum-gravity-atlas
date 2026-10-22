@@ -585,6 +585,12 @@ function BlackHoleLab3D() {
     };
     return {
       autoRotate: false,
+      // Accumulating scene: frames are owed until the progressive sample count reaches the quality budget, and
+      // while the disk plasma animates (playing, motion on); after that the observatory is static.
+      isAnimated: () => {
+        const snap = runtime.snapshot();
+        return snap.converged !== true || (snap.animated === true && ctx.playing());
+      },
       renderCapabilities: { depth: false },
       applyRenderQuality: (quality) => { governorRef.current = quality.raySteps; },
       recoverable: (error) => runtime.recoverable ? runtime.recoverable(error) : false,
@@ -701,7 +707,7 @@ function BlackHoleLab3D() {
           ))}
         </div>
       </div>
-      <Scene3D height={460} shotSpace="bh-kerr" aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
+      <Scene3D animated height={460} shotSpace="bh-kerr" aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
         initial={{ ...kerrCameraGoal(atlasState.bhInclination, atlasState.bhObserverDistance, 0.35), fov: 40, minR: 12, maxR: 120 }}
         cameraGoal={cameraGoal}
         overlay={<KerrGeometryMap geometry={eased} exact={exactGeometry} layers={layers} open={mapOpen}
@@ -967,7 +973,7 @@ function HawkingComputeLab() {
           relative power {lab ? lab.relativePower.toExponential(2) : "—"} · display rate ×{lab ? lab.displayGain : "—"}
         </div>
       </div>
-      <Scene3D height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
+      <Scene3D animated="motion" height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
       initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.9, radius: 0.5, threshold: 0.12 } }}
       build={build} deps={[massSolar, spin, gain]}
       fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>

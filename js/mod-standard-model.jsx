@@ -263,7 +263,7 @@ function ParticleArchitecture3D() {
         <Toggle label="Higgs coupling overlay" checked={higgsOn} onChange={setHiggsOn}></Toggle>
         <Toggle label="gauge symmetry layers" checked={layersOn} onChange={setLayersOn}></Toggle>
       </div>
-      <Scene3D height={440} aria="Three-dimensional map of the seventeen Standard Model particles"
+      <Scene3D animated="motion" height={440} aria="Three-dimensional map of the seventeen Standard Model particles"
         initial={{ radius: 13.5, theta: 0.0, phi: 1.12, target: [0, 0.3, -0.8], minR: 6, maxR: 30 }}
         build={build}></Scene3D>
       {p ? (

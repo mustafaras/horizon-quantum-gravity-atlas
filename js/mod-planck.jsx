@@ -168,6 +168,9 @@ function ScaleLadder() {
     const latPos = lat.attributes.position;
 
     return {
+      // The probe eases toward its slider target one frame at a time: keep drawing until it arrives, then idle
+      // (the ambient shimmer only runs while playing with motion).
+      isAnimated: () => Math.abs(yOf(logRef.current) - probe.position.y) > 1e-3 || (ctx.playing() && ctx.motion() > 0),
       update: (t) => {
         const lg = logRef.current;
         probe.position.y += (yOf(lg) - probe.position.y) * 0.12;
@@ -222,7 +225,7 @@ function ScaleLadder() {
             ))}
           </span>
         </div>
-        <Scene3D height={540} aria="Three-dimensional descent from human scale to the Planck scale"
+        <Scene3D animated="motion" height={540} aria="Three-dimensional descent from human scale to the Planck scale"
           initial={{ radius: 15.5, theta: 0.32, phi: 1.2, target: [0, 0, 0], minR: 8, maxR: 34, bloom: { strength: 0.85, radius: 0.6, threshold: 0.14 } }}
           build={build} fallback={<PlanckFluctuationCanvas logRef={logRef}></PlanckFluctuationCanvas>}></Scene3D>
         <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
@@ -333,7 +336,7 @@ function SpinFoamLab() {
             <Eq tex="\sum"></Eq> area = {lab.config.totalArea.toFixed(2)} · <Eq tex="\sum"></Eq> volume = {lab.config.totalVolume.toFixed(2)}</> : "—"}
         </div>
       </div>
-      <Scene3D height={440}
+      <Scene3D animated="motion" height={440}
         aria="Three-dimensional spin network: a Schlegel-projected four-simplex with colored edge tubes, volume-weighted node spheres and translucent face membranes; foam mode ghosts the deterministic step history along an evolution axis"
         initial={{ radius: 9.5, theta: 0.7, phi: 1.25, minR: 4, maxR: 28, bloom: { strength: 0.75, radius: 0.55, threshold: 0.16 } }}
         build={build} deps={[jMax, mode, seed, stepIndex]}

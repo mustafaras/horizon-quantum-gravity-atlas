@@ -116,7 +116,7 @@ function TheoryConstellation3D() {
   const meta = QGA_THEORY_META[sel];
   return (
     <div className="viz-frame">
-      <Scene3D height={430} aria="Constellation of the major quantum gravity research programs; click a node to inspect it"
+      <Scene3D animated="motion" height={430} aria="Constellation of the major quantum gravity research programs; click a node to inspect it"
         initial={{ radius: 13, theta: 0.2, phi: 1.05, minR: 7, maxR: 28, bloom: { strength: 0.8, radius: 0.6, threshold: 0.16 } }} build={build}
         fallback={<div style={{ padding: "14px" }} className="small dim">The comparator below carries the full content of this scene.</div>}></Scene3D>
       {t ? (
