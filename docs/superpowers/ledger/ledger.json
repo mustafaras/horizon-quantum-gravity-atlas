@@ -307,21 +307,21 @@
       "id": "F-22",
       "title": "WebGL2 contexts always use preserveDrawingBuffer: true",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S04"
       ],
-      "closedIn": null
+      "closedIn": "4f1f8ba"
     },
     {
       "id": "F-23",
       "title": "Quality governor uses CPU frame time only; GPU timestamps unused",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S04"
       ],
-      "closedIn": null
+      "closedIn": "4f1f8ba"
     },
     {
       "id": "F-24",
@@ -493,20 +493,44 @@
         "F-22",
         "F-23"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "branch": "claude/ecstatic-pasteur-a6i8mp",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/52",
       "commits": [],
       "startedAt": "2026-10-22",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 595/596 pass, 1 skipped (596 total; test/frame-scheduler.test.mjs 14 tests incl. context pool, test/quality-governor.test.mjs +2 for gpuFrameMs)",
+          "npm run validate: passed; npm run perf:audit: runs",
+          "qa/specs/shared-stage.spec.mjs: webgl2 4/4 pass (budget 4: at most 4 live contexts and 0 frames idle; budget 2: park, snapshot, restore; budget 1: no deadlock, snapshot placeholder; captures non-blank with and without the stage); webgpu 1/1 pass locally (Chrome 145 SwiftShader WebGPU: one renderer, 0 frames idle, GPU time measured, captures non-blank), annotated and skipped where no adapter exists (CI)",
+          "qa/specs/formula-gpu.spec.mjs: webgl2 1/1 and webgpu 1/1 pass locally (closes the S03 gap: the webgpu case had never run)",
+          "qa:critical equivalent (smoke, esm-runtime, render-contracts) plus render-backends on Chromium 145: 35 pass, 4 fail, 3 skipped in the full run; each failure was re-run: esm-runtime \"non-WebGL\" passes alone (2/2), smoke \"bh\" passes alone and fails intermittently on unmodified main too, render-backends \"delayed initialization\" and \"context loss\" fail on unmodified main in this environment as well (D-019)",
+          "npm run perf:collect, stage off vs on (WebGL2, desktop): overview 2/2 renderers, qft 4/4 renderers; recorded in docs/audit/s04-stage-off.json and s04-stage-on.json",
+          "npm run perf:collect --webgpu, qft: stage off 4 renderers, stage on 2 renderers; docs/audit/s04-webgpu-stage-off.json and s04-webgpu-stage-on.json"
+        ],
+        "screenshots": [
+          "docs/render/img/s04/qft-static-stage-off.png",
+          "docs/render/img/s04/qft-static-stage-off-control.png",
+          "docs/render/img/s04/qft-static-stage-on.png",
+          "docs/render/img/s04/qft-shared-webgl2.png",
+          "docs/render/img/s04/qft-budget-1-snapshot-placeholder.png",
+          "docs/render/img/s04/qft-webgpu-stage-off.png",
+          "docs/render/img/s04/qft-shared-webgpu.png",
+          "docs/render/img/s04/formula-core-terms.png"
+        ],
+        "measurements": [
+          "WebGPU live renderers on the QFT view: 4 (stage off) -> 2 (stage on; 3 pilot scenes share 1, the collision scene is not a pilot yet; 1 after S05); programs 36 -> 34",
+          "WebGL2 live contexts on the QFT view: 4 both ways (3 pilots pooled + 1 unmigrated scene), at the 4-context budget; budget 2 and 1 hold: pooled contexts <= limit",
+          "Static scene frames drawn in 2 s idle after pause: 0 (WebGL2 and WebGPU), against continuous drawing before",
+          "WebGPU GPU render time resolved from timestamp-query on SwiftShader: about 110 ms p50 (perf probe, software rasterizer), well over the 8 ms desktop budget; the number is only meaningful on real GPUs",
+          "CPU rAF p50/p95 on SwiftShader, QFT desktop, stage off vs on: 316.7/383.4 ms vs 283.3/366.6 ms (WebGL2); 200/266.7 vs 233.4/300 ms (WebGPU); within run-to-run noise, not a claimed speedup",
+          "Static-frame pixel difference, mean absolute channel diff 0-255: stage off vs off-control 3.4-5.6, off vs on 3.3-5.6 over three runs (unseeded backdrop starfield makes loads differ); no difference attributable to the stage"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Shared stage is opt-in (QGA_RENDER_OPTIONS.stage = \"shared\" plus a shared prop); S05 migrates every scene."
     },
     {
       "id": "S05",
@@ -1403,6 +1427,55 @@
       "prompt": "S03",
       "decision": "to-tsl maps integer powers |n| <= 8 to multiplication chains, p/q = 1/2 to sqrt and 1/3 to cbrt (tsl.cbrt, not in the prompt list), other powers to tsl.pow. lt/gt used as values compile to select(cmp, 1, 0); select requires an lt/gt condition. The webgpu spec case is annotated and skipped when no adapter exists, so the webgl2 case is the CI gate. Float render targets were readable on SwiftShader, so the HalfFloat fallback was not needed. Locally the installed Playwright wants chromium 1208 but 1194 is installed; the run used executablePath with a throw-away config (not committed).",
       "rationale": "pow() of a negative base is undefined in GLSL/WGSL and x*x matches the JS evaluator; cbrt is exported by three.tsl.js r186; the rest keeps the semantics of the JS evaluator."
+    },
+    {
+      "id": "D-015",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "WebGPU is exercised locally with a Playwright Chromium 1208 (Chrome 145) downloaded to a scratch directory, launched headless-shell with --enable-unsafe-webgpu --use-webgpu-adapter=swiftshader --use-angle=swiftshader --enable-unsafe-swiftshader --enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan --disable-gpu-sandbox. The preinstalled Chromium 141 cannot run r186 WebGPU render targets (GPUTextureViewDescriptor.swizzle is a string in r186 but 141 expects a GPUTextureComponentSwizzle), and other flag sets fail on canvas presentation (\"A valid external Instance reference no longer exists\", reproduced with raw WebGPU, no three.js). CI keeps WebGPU disabled, so the webgpu specs run only where an adapter exists.",
+      "rationale": "S03 left the webgpu GPU case unrun; S04 needed a real CanvasTarget spike. Both now pass locally. Nothing under /opt/pw-browsers was changed."
+    },
+    {
+      "id": "D-016",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "Spike result: on r186 two canvases on one WebGPURenderer, one with the cinematic pipeline (bloom, DoF, grain) and one plain, both present correctly with no validation errors. Pipelines are not shared: each view builds its own pipeline while its CanvasTarget is active (the prompt allows this).",
+      "rationale": "CanvasTarget works on r186; the failure seen first was the Chromium 141 incompatibility in D-015, not CanvasTarget."
+    },
+    {
+      "id": "D-017",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "Shared stage scope: opt-in per page (QGA_RENDER_OPTIONS.stage = \"shared\") and per scene (shared prop); pilots are AtlasStage and the two QFT field scenes. A scene with classic ShaderMaterial content or a shadow-casting light, or forceBackend webgl2, does not join the WebGPU renderer (it falls back to the WebGL2 pool or its own renderer). On WebGL2 a scene created out of view while the budget is full is parked with no context, and a scene out of view never evicts one in view; context acquisition is serialised. A scene that has its own onFrame decides whether it draws; the stage draws only views without one.",
+      "rationale": "Shadows are renderer-wide state, so toggling it per view would recompile every frame. Parking and serialisation came from two defects found in testing: a victim evicted while still building crashed, and a redundant second acquisition deadlocked under a budget of 1 (regression test added)."
+    },
+    {
+      "id": "D-018",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "GPU time is resolved every 30 frames with renderer.resolveTimestampsAsync(\"render\") (ms of the last renderer frame) and attributed to the view drawn last in that frame: exact with one visible view, approximate with several. The governor judges a window on GPU time only when every sample in it has one (gpuSlowMs 8, gpuFastMs 4), otherwise on CPU time, with the unchanged hysteresis and cooldown. The perf harness gained --render-option=key=value.",
+      "rationale": "r186 has no per-view timestamp API. The numbers on SwiftShader (about 110 ms) are not representative of hardware."
+    },
+    {
+      "id": "D-019",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "Four browser tests failed in the full run on Chromium 145: esm-runtime \"non-WebGL devices\" (passes alone, 2/2), smoke \"bh\" (software-rasterizer timing, also fails intermittently on unmodified main with the same 12 s wait), render-backends \"delayed initialization plus rapid navigation\" and \"context loss\" (both fail on unmodified main in this environment). None was caused by this change, and no test was skipped or loosened. They were not re-verified on the CI-pinned Chromium.",
+      "rationale": "Compared against a worktree of main with the same config. CI runs the first three suites with a retry."
+    },
+    {
+      "id": "D-020",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "The static-frame screenshot pair cannot be byte-identical: js/atlas-stage.jsx fills the starfield with unseeded Math.random (existing code, F-18/randomness rule, not changed here). The visual documentation reports a stage-off control next to stage-off vs stage-on and states that the measurement shows no stage-caused difference, not that the output is identical.",
+      "rationale": "Honest evidence; seeding the backdrop is outside this prompt and would change pixels."
+    },
+    {
+      "id": "D-021",
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "decision": "F-21 stays open although the prompt lists it: the shared stage is opt-in and only three scenes use it, so most scenes still build their own renderer. S05 (which also lists F-21) closes it when every scene is migrated. F-22 and F-23 are closed: no WebGL context is created with preserveDrawingBuffer, and the governor accepts GPU time (used on shared WebGPU views).",
+      "rationale": "Closing F-21 now would overstate what S04 changed."
     }
   ],
   "log": [
@@ -1482,6 +1555,13 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "claimed",
       "detail": "S04 claimed on branch claude/ecstatic-pasteur-a6i8mp created from main 07c92df."
+    },
+    {
+      "date": "2026-10-22",
+      "prompt": "S04",
+      "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
+      "event": "review",
+      "detail": "Shared stage, frame scheduler, WebGL2 context pool, GPU-time governor input and non-preserved drawing buffer implemented behind QGA_RENDER_OPTIONS.stage; tests, specs, perf runs and visual documentation recorded. closedIn holds the PR code commit until the merge commit exists."
     }
   ]
 }
