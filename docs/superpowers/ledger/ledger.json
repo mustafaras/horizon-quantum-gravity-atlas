@@ -670,12 +670,12 @@
       "findings": [
         "F-27"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "branch": "claude/zealous-goldberg-fi73ya",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -1818,6 +1818,13 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "done",
       "detail": "PR #60 merged as 6e425f7f96e066e3f7fc46f0725237bb18f253ac; CI (browser QA + validate) green on the merged head."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "claim",
+      "detail": "S08 claimed on claude/zealous-goldberg-fi73ya from main 280e877."
     }
   ]
 }
