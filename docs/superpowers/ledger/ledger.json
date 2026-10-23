@@ -337,7 +337,7 @@
       "id": "F-25",
       "title": "GPU work split between ad hoc GLSL ShaderMaterials and TSL",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S07"
       ],
@@ -631,10 +631,10 @@
       "findings": [
         "F-25"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "branch": "claude/zealous-goldberg-fi73ya",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60",
       "commits": [],
       "startedAt": "2026-10-23",
       "completedAt": null,
@@ -656,7 +656,7 @@
         ]
       },
       "blockers": [],
-      "notes": "Closes F-25. Evidence filled in after the test runs."
+      "notes": "Closes F-25 pending merge."
     },
     {
       "id": "S08",
@@ -1802,6 +1802,13 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "tests",
       "detail": "Browser suites green locally; opening the PR."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "review",
+      "detail": "PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60 opened; F-25 closed pending merge (D-034 to D-037)."
     }
   ]
 }
