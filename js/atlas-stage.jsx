@@ -31,6 +31,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const [failed, setFailed] = useState(false);
   // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
   const classicLinesRef = useRef(false);
+  const classicReasonRef = useRef("");
   const [rebuildNonce, setRebuildNonce] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [phase, setPhase] = useState("initializing");
@@ -38,7 +39,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   useEffect(() => () => {
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
-  useEffect(() => { classicLinesRef.current = false; setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
+  useEffect(() => { classicLinesRef.current = false; classicReasonRef.current = ""; setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
   const targetRef = useRef(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview);
   targetRef.current = ATLAS_PALETTE[view] || ATLAS_PALETTE.overview;
   const motionRef = useRef(motion); motionRef.current = motion;
@@ -58,10 +59,12 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate("Atlas backdrop");
     diagnosticRef.current = diagnosticId;
+    if (classicLinesRef.current && classicReasonRef.current) QGA_RENDER.renderDiagnostics.message(diagnosticId, classicReasonRef.current);
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
       if (engravedKind === "node" && !classicLinesRef.current) {
         classicLinesRef.current = true;
+        classicReasonRef.current = `webgpu initialization/compile failed: ${QGA_RENDER.describeRenderError(error)}. Retrying classic WebGL2 once, on classic engraved lines.`;
         QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering backdrop on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
         stop();
         setRebuildNonce((n) => n + 1);

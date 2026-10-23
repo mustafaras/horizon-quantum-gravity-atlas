@@ -135,6 +135,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   const [rebuildNonce, setRebuildNonce] = useState(0);
   // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
   const classicLinesRef = useRef(false);
+  const classicReasonRef = useRef("");
   const [phase, setPhase] = useState("initializing");
   const [errorMessage, setErrorMessage] = useState("");
   const diagnosticRef = useRef(null);
@@ -151,7 +152,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   // (the Kerr observatory's spin, corona and jets, the Planck probe's scale), so a render owes one frame as well.
   useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d, invalidateKey, build]);
   const animatedRef = useRef(animated); animatedRef.current = animated;
-  useEffect(() => { classicLinesRef.current = false; setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
+  useEffect(() => { classicLinesRef.current = false; classicReasonRef.current = ""; setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
   // WebGL scene; the frame loop glides the orbit rig toward it instead.
   const goalRef = useRef(null);
@@ -172,12 +173,14 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate(aria || "Module scene");
     diagnosticRef.current = diagnosticId;
+    if (classicLinesRef.current && classicReasonRef.current) QGA_RENDER.renderDiagnostics.message(diagnosticId, classicReasonRef.current);
     setPhase("initializing");
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
       // Node lines cannot be drawn by the classic WebGLRenderer: if the node renderer failed, rebuild once on classic lines.
       if (engravedKind === "node" && !classicLinesRef.current) {
         classicLinesRef.current = true;
+        classicReasonRef.current = `webgpu initialization/compile failed: ${QGA_RENDER.describeRenderError(error)}. Retrying classic WebGL2 once, on classic engraved lines.`;
         QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering scene on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
         stop();
         setRebuildNonce((n) => n + 1);
