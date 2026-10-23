@@ -229,6 +229,11 @@ test("webgl2: the Kerr observatory draws until its accumulation converges, then 
   const before = (await kerr()).frames;
   await page.waitForTimeout(2000);
   expect((await kerr()).frames - before, "Kerr frames drawn in 2 s once converged").toBe(0);
+  // An idle, converged scene still owes a frame when React state it reads through refs changes (spin, corona,
+  // jets, exposure, disk model): without it the toggle never reaches the renderer.
+  await page.evaluate(() => { const state = window.QGA_READ_STATE(); window.QGA_WRITE_STATE({ ...state, bhCorona: false, bhJets: false }, { replace: true }); });
+  await expect.poll(() => page.evaluate(() => window.__qgaKerrRuntime?.volume?.corona), { timeout: 120_000 }).toBe(false);
+  await expect.poll(async () => (await kerr()).frames, { timeout: 30_000 }).toBeGreaterThan(before);
   expect(errors).toEqual([]);
 });
 

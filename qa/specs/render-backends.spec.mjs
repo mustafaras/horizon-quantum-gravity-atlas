@@ -26,8 +26,11 @@ function observe(page) {
   });
   return { errors, failures };
 }
+// Software rasterizers (CI SwiftShader) need over a minute to compile and prewarm the Black Holes scene, so the
+// readiness bounds sit well below the 300 s test ceiling but above that cost; a real deadlock still fails.
+const READY_MS = 200_000;
 const snapshots = (page) => page.evaluate(() => QGA_RENDER.renderDiagnostics.snapshot());
-async function ready(page, timeout = 60_000) {
+async function ready(page, timeout = READY_MS) {
   await expect.poll(async () => {
     const entries = await snapshots(page);
     if (!entries.length) return [{ phase: "no renderer diagnostics" }];
@@ -107,9 +110,14 @@ test("delayed initialization plus rapid navigation cancels stale scenes before r
   await expect(page.locator(".s3d-canvas")).toHaveCount(0);
   await page.getByRole("button", { name: /Black Holes/ }).first().click();
   await page.evaluate(() => window.__qaReleaseCompile());
-  await expect(page.locator(".s3d-canvas").first()).toBeVisible();
+  await expect(page.locator(".s3d-canvas").first()).toBeVisible({ timeout: READY_MS });
   await ready(page);
-  expect((await snapshots(page)).filter((entry) => entry.label !== "Atlas backdrop").length).toBe(1);
+  // Only the Black Holes scenes (Kerr observatory, Hawking lab, AdS disk) may be live, each exactly once: the
+  // gravity well that was initializing when the user navigated away must not have been revealed or kept.
+  const labels = (await snapshots(page)).filter((entry) => entry.label !== "Atlas backdrop").map((entry) => entry.label).sort();
+  expect(labels.filter((label) => /gravity well/i.test(label)), "stale gravity-well scene").toEqual([]);
+  expect(labels.map((label) => label.replace(/^(Ray-traced Kerr|Black hole horizon|Three-dimensional Poincar).*/, "$1")).sort())
+    .toEqual(["Black hole horizon", "Ray-traced Kerr", "Three-dimensional Poincar"]);
   expect(observed).toEqual({ errors: [], failures: [] });
 });
 
@@ -216,13 +224,18 @@ test("runtime budget changes resize real drawing buffers and reduce rendered poi
 test("context loss disposes rendering, preserves analytical content, and resize remains healthy beforehand", async ({ page, context }) => {
   await force(context, "webgl2");
   const observed = observe(page);
-  await gotoReady(page, "/?view=bh", RENDER_READINESS);
+  // The gravity well is the only 3D scene on this view; a view with several scenes would keep the others alive.
+  await gotoReady(page, "/?view=gr", RENDER_READINESS);
   await ready(page);
   await page.setViewportSize({ width: 1000, height: 720 });
-  await page.locator(".s3d-canvas").first().evaluate((canvas) => canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true })));
-  await expect(page.getByText("3D unavailable").first()).toBeVisible();
+  const before = await page.locator(".s3d-canvas").count();
+  expect(before).toBeGreaterThan(0);
+  // Under the shared stage `.s3d-canvas` is the view's host; the browser fires the event on the <canvas> itself.
+  await page.locator(".s3d-canvas").first().evaluate((host) => (host.querySelector("canvas") ?? host)
+    .dispatchEvent(new Event("webglcontextlost", { cancelable: true })));
+  await expect(page.getByText("3D unavailable").first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("alert").first()).toContainText("context lost");
-  await expect(page.locator(".s3d-canvas")).toHaveCount(0);
+  await expect(page.locator(".s3d-canvas")).toHaveCount(before - 1);
   expect(observed).toEqual({ errors: [], failures: [] });
 });
 

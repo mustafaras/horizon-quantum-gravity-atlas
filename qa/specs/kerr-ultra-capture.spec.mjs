@@ -19,6 +19,7 @@
 import { test, expect } from "playwright/test";
 import { gotoReady } from "./helpers.mjs";
 import { installDeterministicRandom } from "../lib/determinism.mjs";
+import { webgpuAdapterKind } from "../lib/webgpu-adapter.mjs";
 import { parsePngChunks } from "../../js/render/progressive-capture.mjs";
 
 const VIEWPORT = { width: 1440, height: 1000 };
@@ -36,6 +37,9 @@ const SMALL_SAMPLES = 4;
 const COMMIT = "qa-test-commit";
 
 test.describe.configure({ timeout: 300_000 });
+// A 2K ultra still costs ~18 s per sample on a software rasterizer, on top of the convergence wait: the two cases
+// that render 2K stills get an explicit larger budget instead of sharing the statistical tests' 300 s.
+const TWO_K_TIMEOUT_MS = 600_000;
 test.use({ viewport: VIEWPORT, contextOptions: { reducedMotion: "reduce" } });
 
 async function force(context, backend) {
@@ -158,6 +162,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
   });
 
   test("a 2K capture completes, decodes and embeds the metadata sidecar", async ({ page }) => {
+    test.setTimeout(TWO_K_TIMEOUT_MS);
     const problems = observe(page);
     await gotoReady(page, "/?view=bh&bhs=0.7", READINESS);
     await settled(page);
@@ -225,13 +230,18 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
     const problems = observe(page);
     await gotoReady(page, "/?view=bh", READINESS);
     await settled(page);
-    const error = await page.evaluate(async () => {
+    const error = await page.evaluate(async (small) => {
       const signal = { aborted: false };
-      const pending = window.__qgaKerrCapture({ preset: "2k", samples: 400, samplesPerChunk: 2, signal }).catch((err) => err);
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      signal.aborted = true;
+      // Cancel from the first progress report, i.e. after the first chunk of a 400-sample capture has been drawn.
+      // Cancellation stops submission between chunks but cannot recall chunks already queued on the GPU, so a
+      // timer would queue an amount that depends on machine speed (a software rasterizer needs minutes per 50
+      // samples before the next capture can run); the progress hook queues exactly one chunk everywhere.
+      const pending = window.__qgaKerrCapture({
+        ...small, samples: 400, samplesPerChunk: 2, signal,
+        onProgress: (progress) => { if (progress.stage === "accumulating") signal.aborted = true; },
+      }).catch((err) => err);
       return pending;
-    });
+    }, SMALL);
     expect(error.name).toBe("CaptureCancelledError");
     // Repeated captures after a cancellation still succeed (no leaked state).
     const again = await capture(page, { ...SMALL, samples: SMALL_SAMPLES, samplesPerChunk: SMALL_SAMPLES });
@@ -253,7 +263,9 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhCorona: false, bhJets: false }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    // The change reaches the runtime on the next redraw, which takes seconds on a software rasterizer; `settled`
+    // alone would still see the previous converged frame.
+    await expect.poll(async () => (await runtime(page))?.volume.corona, { timeout: 90_000 }).toBe(false);
     await settled(page);
     const off = await runtime(page);
     expect(off.volume.corona).toBe(false);
@@ -269,7 +281,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhSpin: 0, bhCorona: false, bhJets: true }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    await expect.poll(async () => (await runtime(page))?.volume.jets, { timeout: 90_000 }).toBe(true);
     await settled(page);
     const zeroSpin = await runtime(page);
     expect(zeroSpin.volume.jets).toBe(true);
@@ -279,7 +291,7 @@ test.describe("Kerr ultra-quality capture (WebGL2)", () => {
       const state = window.QGA_READ_STATE();
       window.QGA_WRITE_STATE({ ...state, bhSpin: 0, bhCorona: false, bhJets: false }, { replace: true });
     });
-    await page.waitForTimeout(500);
+    await expect.poll(async () => (await runtime(page))?.volume.jets, { timeout: 90_000 }).toBe(false);
     await settled(page);
     const zeroOff = await capture(page, { ...SMALL, samples: SMALL_SAMPLES, samplesPerChunk: SMALL_SAMPLES });
     const zeroOffStats = await pngStats(page, Buffer.from(zeroOff.pngBase64, "base64"));
@@ -325,6 +337,13 @@ test.describe("Kerr ultra-quality capture (WebGPU compute path)", () => {
       const page = await context.newPage();
       const problems = observe(page);
       await gotoReady(page, "/?view=bh&bhs=0.7&bhdm=page-thorne", READINESS);
+      // A software adapter (CI SwiftShader) is not native WebGPU: the Kerr WebGL context is lost on it and the
+      // scene never converges. The software-adapter contracts live in render-backends.spec.mjs.
+      const adapter = await webgpuAdapterKind(page);
+      if (adapter !== "native") {
+        testInfo.skip(true, `native WebGPU unavailable (adapter: ${adapter})`);
+        return;
+      }
       await settled(page);
       const info = await runtime(page);
       if (info?.backend !== "webgpu") {
