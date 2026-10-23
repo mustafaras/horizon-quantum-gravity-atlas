@@ -114,7 +114,7 @@ export function createParticleSystem(input) {
     });
   }
 
-  let steps = 0, clock = 0, ready = false;
+  let steps = 0, clock = 0, ready = false, owner = null;
   return {
     count, seed, buffers, uniforms, params, kernel, object: drawable?.object ?? null, points: drawable,
     get steps() { return steps; }, get time() { return clock; },
@@ -122,11 +122,12 @@ export function createParticleSystem(input) {
     init(renderer) {
       uniforms.dt.value = 0; uniforms.time.value = 0; uniforms.step.value = 0; uniforms.initPhase.value = 1;
       renderer.compute(kernel);
-      steps = 0; clock = 0; ready = true;
+      steps = 0; clock = 0; ready = true; owner = renderer;
     },
     /** One update of every particle by `dt` seconds (a fixed dt keeps runs identical). */
     step(renderer, dt) {
-      if (!ready) this.init(renderer);
+      // A new renderer (a WebGL2 context released and restored by the pool) holds none of the GPU state: seed again.
+      if (!ready || renderer !== owner) this.init(renderer);
       uniforms.dt.value = dt; uniforms.time.value = clock; uniforms.step.value = steps; uniforms.initPhase.value = 0;
       renderer.compute(kernel);
       steps += 1; clock += dt;

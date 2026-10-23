@@ -792,7 +792,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
       const dt = playingRef.current ? rawDt : 0;
       if (built.update) built.update(clockT, dt);
-      if (built.compute) built.compute(renderer, dt);
+      // GPU compute systems (S08) run on the session's live renderer: a WebGL2 pool eviction releases it (and a resume makes a new one),
+      // so it is read from the session every frame and nothing runs while the context is suspended.
+      if (built.compute && session.renderer && !session.suspended) built.compute(session.renderer, dt);
 
       // project labels
       const showLabels = settingsRef.current.labels3d !== false;

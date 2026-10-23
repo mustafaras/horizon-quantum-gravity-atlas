@@ -15,6 +15,9 @@ async function evidence(info, name, value) {
   await info.attach(name, { path: file, contentType: "application/json" });
 }
 
+// Scenes built from the TSL material kit (S07, S08) have no classic form: they run on the node renderer, on its WebGL2 backend here.
+const KIT_SCENE = /Atlas backdrop|gravity well|Hawking pair emission|renormalization-group flow field|collider event display|waterfall of a free quantum field/i;
+
 function observe(page) {
   const errors = [], failures = [];
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.stack || error.message}`));
@@ -52,14 +55,14 @@ for (const view of ["overview", "gr", "bh"]) {
     expect(entries.length).toBeGreaterThan(0);
     for (const entry of entries) {
       expect(entry.backend).toBe("webgl2");
-      // The gravity well is built from the TSL material kit (S07): with WebGL2 forced it runs on the node renderer's own WebGL2 backend.
-      expect(entry.capabilities.rendererPath).toBe(/gravity well/i.test(entry.label) ? "nodes" : "classic");
+      // With WebGL2 forced a kit scene runs on the node renderer's own WebGL2 backend; the rest use the classic renderer.
+      expect(entry.capabilities.rendererPath).toBe(KIT_SCENE.test(entry.label) ? "nodes" : "classic");
       expect(entry.effects.find((effect) => effect.name === "base-render").status).toBe("enabled");
       expect(entry.effects.find((effect) => effect.name === "tone-mapping").status).toBe("enabled");
       expect(entry.effects.find((effect) => effect.name === "ssgi").status).not.toBe("enabled");
     }
     if (view === "bh") {
-      const module = entries.find((entry) => entry.label !== "Atlas backdrop");
+      const module = entries.find((entry) => /Ray-traced Kerr/.test(entry.label));
       expect(module.effects.find((effect) => effect.name === "ao").status).toBe("unsupported");
       expect(module.effects.find((effect) => effect.name === "depth-of-field").status).toBe("unsupported");
     }
@@ -90,7 +93,7 @@ test("legacy GLSL compatibility overrides advertised GPU capability, never forci
   await ready(page);
   const modules = (await snapshots(page)).filter((entry) => entry.label !== "Atlas backdrop");
   expect(modules.some((entry) => entry.capabilities.unsupportedMaterials.includes("ShaderMaterial"))).toBe(true);
-  expect(modules.every((entry) => entry.backend === "webgl2" && entry.capabilities.rendererPath === "classic")).toBe(true);
+  expect(modules.every((entry) => entry.backend === "webgl2" && entry.capabilities.rendererPath === (KIT_SCENE.test(entry.label) ? "nodes" : "classic"))).toBe(true);
   expect(observed).toEqual({ errors: [], failures: [] });
 });
 
@@ -355,7 +358,7 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     await evidence(info, "initial-native-and-bounded-fallback-matrix", initialized);
     for (const entry of initialized.filter((entry) => entry.backend !== "webgpu")) {
       expect(entry.backend).toBe("webgl2");
-      expect(entry.messages.some((message) => /(?:webgpu initialization\/compile failed:|Node pipeline compilation failed:).*Retrying classic WebGL2 once/.test(message))).toBe(true);
+      expect(entry.messages.some((message) => /(?:webgpu initialization\/compile failed:|Node pipeline compilation failed:).*(?:Retrying classic WebGL2 once|Retrying on the node renderer's WebGL2 backend once)/.test(message))).toBe(true);
     }
     if (!initialized.some((entry) => entry.backend === "webgpu")) {
       const losses = await page.evaluate(() => window.__qaUnexpectedDeviceLosses);
