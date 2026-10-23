@@ -38,7 +38,7 @@ function resolveColor(three, color) {
 }
 
 /** Per-vertex colours multiply a white base; otherwise the base is the resolved token. */
-function baseColor(three, color) { return color === undefined ? new three.Color(1, 1, 1) : resolveColor(three, color); }
+function baseColor(three, color) { return color === undefined ? new three.Color().setScalar(1) : resolveColor(three, color); }
 
 /** Validate options once and return a frozen, fully defaulted copy. */
 export function normalizeEngravedOptions(options = {}) {
