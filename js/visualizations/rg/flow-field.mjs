@@ -16,7 +16,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
-  ConeGeometry, GridHelper, Group, IcosahedronGeometry, Line, LineBasicMaterial,
+  ConeGeometry, Group, IcosahedronGeometry,
   Mesh, MeshBasicMaterial, PlaneGeometry, Points, PointsMaterial,
   Sprite, SpriteMaterial, TubeGeometry, Vector3,
 } from "three";
@@ -39,14 +39,16 @@ function toScene(p) {
 
 export function createRgFlowFieldRuntime({
   model = "qcd", params = {}, seed = 42,
-  count = RG_FLOW_3D_DEFAULTS.streamlines,
+  count = RG_FLOW_3D_DEFAULTS.streamlines, engraved,
 } = {}) {
+  if (!engraved) throw new TypeError("createRgFlowFieldRuntime needs ctx.engraved (the scene's engraved line API)");
   const group = new Group();
   group.name = "rg-flow-field-3d";
   const UV_COLOR = tokenColor("rg-flow-uv");
   const IR_COLOR = tokenColor("rg-flow-ir");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
+  const trackLine = (line) => { track(line.geometry); track(line.material); return line; };
 
   const streamlines = seedStreamlines3d({ model, params, seed, count });
   const separatrices = separatrixCurves3d({ model, params });
@@ -54,10 +56,9 @@ export function createRgFlowFieldRuntime({
 
   // ---- dim reference grid at the IR floor ----
   {
-    const grid = track(new GridHelper(16, 16, TK.hex("pigment-blue-37"), TK.hex("pigment-blue-29")));
-    grid.material.transparent = true;
-    grid.material.opacity = 0.22;
-    grid.material.depthWrite = false;
+    const grid = trackLine(engraved.grid(16, 16, {
+      color: "pigment-blue-29", centerColor: "pigment-blue-37", opacity: 0.22, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration",
+    }));
     grid.position.y = (RG_FLOW_3D_DEFAULTS.tMin - 0.6) * SCALE.y;
     group.add(grid);
   }
@@ -70,12 +71,10 @@ export function createRgFlowFieldRuntime({
     const cum = [0];
     for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
     runs.push({ pts, cum, total: cum[cum.length - 1], dir: run.seed.direction >= 0 ? 1 : -1 });
-    const geo = track(new BufferGeometry().setFromPoints(pts));
-    const mat = track(new LineBasicMaterial({
-      color: run.seed.direction >= 0 ? UV_COLOR : IR_COLOR,
-      transparent: true, opacity: 0.34, blending: AdditiveBlending, depthWrite: false,
-    }));
-    group.add(new Line(geo, mat));
+    group.add(trackLine(engraved.line(pts, {
+      color: run.seed.direction >= 0 ? UV_COLOR : IR_COLOR, opacity: 0.34, additive: true,
+      widthPx: engraved.WIDTH_PX.hairline, layer: "model",
+    })));
     // arrowhead at the running end
     const end = pts[pts.length - 1];
     const prev = pts[Math.max(0, pts.length - 3)];
@@ -204,11 +203,9 @@ export function createRgFlowFieldRuntime({
       ];
       // explicit segment pairs: the WebGPU renderer does not draw LineLoop
       const loopPts = [...edgePts, edgePts[0]];
-      const edgeGeo = track(new BufferGeometry().setFromPoints(loopPts));
-      const edgeMat = track(new LineBasicMaterial({
-        color: TK.hex("pigment-red-71"), transparent: true, opacity: 0.55, blending: AdditiveBlending, depthWrite: false,
-      }));
-      group.add(new Line(edgeGeo, edgeMat));
+      group.add(trackLine(engraved.line(loopPts, {
+        color: "pigment-red-71", opacity: 0.55, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
+      })));
     }
   }
 

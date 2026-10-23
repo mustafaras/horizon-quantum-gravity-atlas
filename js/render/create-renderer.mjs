@@ -131,14 +131,17 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
 
 export function inspectSceneCompatibility(scene) {
   const unsupported = new Set();
+  let nodeOnly = false;
   scene?.traverse((object) => {
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     for (const material of materials) {
+      // Node-only materials (engraved Line2NodeMaterial lines) cannot be drawn by the classic WebGLRenderer.
+      if (material?.isLine2NodeMaterial) nodeOnly = true;
       if (material && !material.isNodeMaterial && !NODE_TYPES.has(material.type)) unsupported.add(material.type);
       if (material && Object.hasOwn(material, "onBeforeCompile")) unsupported.add("onBeforeCompile GLSL hook");
     }
   });
-  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported] });
+  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported], nodeOnly });
 }
 
 export async function createRenderer({
@@ -171,8 +174,9 @@ export async function createRenderer({
     return { renderer: null, backend: "static", capabilities: capabilities("static"), dispose: async () => {} };
   }
   if (hasWebGPU && !compatibility.nodeCompatible) report(`Classic WebGL2 required by ${compatibility.unsupported.join(", ") || "unclassified scene"}.`);
-  const attempts = hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2"
-    ? ["webgpu", "webgl2"] : ["webgl2"];
+  // A scene with node-only materials has no classic fallback; Scene3D rebuilds it on classic lines instead.
+  const attempts = compatibility.nodeOnly ? ["webgpu"]
+    : hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2" ? ["webgpu", "webgl2"] : ["webgl2"];
   for (const requested of attempts) {
     let renderer, deviceLease, initialization, releaseCensus = () => {};
     try {
@@ -262,7 +266,7 @@ export async function createRenderer({
         await deviceLease?.release();
       }
       if (error.name === "AbortError") throw error;
-      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" ? "Retrying classic WebGL2 once." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
+      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" && attempts.length > 1 ? "Retrying classic WebGL2 once." : requested === "webgpu" ? "This scene draws with node-only lines: it is rebuilt on classic engraved lines instead of retrying here." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
       // A canvas with an established WebGPU context cannot subsequently acquire WebGL2.
       if (requested === "webgpu" && canvas) canvas = canvas.cloneNode(false);
     }

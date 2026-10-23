@@ -26,7 +26,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color, Group,
-  LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial,
+  Mesh, MeshBasicMaterial,
   PlaneGeometry, Points, PointsMaterial, RingGeometry, Sprite, SpriteMaterial,
   SphereGeometry, TorusGeometry, TubeGeometry, Vector3, DoubleSide,
 } from "three";
@@ -56,8 +56,9 @@ const clamp01 = (x) => Math.max(0, Math.min(1, x));
 export function createHawkingLabRuntime({
   massSolar = HAWKING_LAB_DEFAULTS.massSolar, spin = 0,
   amplification = HAWKING_LAB_DEFAULTS.amplification, seed = 42,
-  camera = null,
+  camera = null, engraved,
 } = {}) {
+  if (!engraved) throw new TypeError("createHawkingLabRuntime needs ctx.engraved (the scene's engraved line API)");
   const lab = hawkingLabState({ massSolar, spin, amplification });
   const emission = sampleEmission({ massSolar, spin, seed, count: HAWKING_LAB_DEFAULTS.samples });
   const group = new Group();
@@ -67,6 +68,7 @@ export function createHawkingLabRuntime({
   const FALL_COLOR = tokenColor("emit-infall");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
+  const trackLine = (line) => { track(line.geometry); track(line.material); return line; };
 
   // ---- temperature colour: normalized log of T against a 10 solar-mass ref ----
   const tRef = referenceTemperatureK(); // shared model's own 10 solar, a*=0 value
@@ -192,13 +194,9 @@ export function createHawkingLabRuntime({
       spokePos.push(c * R_HORIZON * 1.12, 0, s * R_HORIZON * 1.12,
         c * R_HORIZON * 3.25, 0, s * R_HORIZON * 3.25);
     }
-    const spokeGeo = track(new BufferGeometry());
-    spokeGeo.setAttribute("position", new BufferAttribute(new Float32Array(spokePos), 3));
-    const spokeMat = track(new LineBasicMaterial({
-      color: TK.hex("pigment-blue-78"), transparent: true, opacity: 0.07,
-      blending: AdditiveBlending, depthWrite: false,
+    const spokes = trackLine(engraved.segments(spokePos, {
+      color: "pigment-blue-78", opacity: 0.07, additive: true, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration",
     }));
-    const spokes = new LineSegments(spokeGeo, spokeMat);
     spokes.frustumCulled = false;
     disk.add(spokes);
     group.add(disk);
@@ -239,13 +237,9 @@ export function createHawkingLabRuntime({
       const x = RAIL.x0 + a * (RAIL.x1 - RAIL.x0);
       tickPos.push(x, 0.05, RAIL.z, x, 0.34, RAIL.z);
     }
-    const tickGeo = track(new BufferGeometry());
-    tickGeo.setAttribute("position", new BufferAttribute(new Float32Array(tickPos), 3));
-    const tickMat = track(new LineBasicMaterial({
-      color: TK.hex("pigment-azure-64"), transparent: true, opacity: 0.5,
-      blending: AdditiveBlending, depthWrite: false,
+    const ticks = trackLine(engraved.segments(tickPos, {
+      color: "pigment-azure-64", opacity: 0.5, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
     }));
-    const ticks = new LineSegments(tickGeo, tickMat);
     ticks.frustumCulled = false;
     group.add(ticks);
 
@@ -272,20 +266,11 @@ export function createHawkingLabRuntime({
   marker.scale.setScalar(0.34);
   marker.position.copy(railPoint(markerA));
   group.add(marker);
-  const guideGeo = track(new BufferGeometry());
-  guideGeo.setAttribute("position", new BufferAttribute(new Float32Array(6), 3));
-  const guideMat = track(new LineBasicMaterial({
-    color: TK.hex("pigment-azure-85-c08"), transparent: true, opacity: 0.35,
-    blending: AdditiveBlending, depthWrite: false,
-  }));
-  const guide = new LineSegments(guideGeo, guideMat);
+  const guide = trackLine(engraved.segments(
+    [marker.position.x, 0.05, RAIL.z, marker.position.x, marker.position.y, RAIL.z],
+    { color: "pigment-azure-85-c08", opacity: 0.35, additive: true, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration" },
+  ));
   guide.frustumCulled = false;
-  {
-    const p = guideGeo.attributes.position.array;
-    p[0] = marker.position.x; p[1] = 0.05; p[2] = RAIL.z;
-    p[3] = marker.position.x; p[4] = marker.position.y; p[5] = RAIL.z;
-    guideGeo.attributes.position.needsUpdate = true;
-  }
   group.add(guide);
 
   // ---- emission field: deterministic schedule over the sampled directions ----
@@ -345,19 +330,16 @@ export function createHawkingLabRuntime({
 
   // ---- trails: one LineSegments per group, head bright -> tail dark ----
   const mkTrails = (rig, color) => {
-    const pos = new Float32Array(rig.length * 6);
-    const col = new Float32Array(rig.length * 6);
-    const geo = track(new BufferGeometry());
-    geo.setAttribute("position", new BufferAttribute(pos, 3));
-    geo.setAttribute("color", new BufferAttribute(col, 3));
-    const mat = track(new LineBasicMaterial({
-      vertexColors: true, transparent: true, opacity: 0.85,
-      blending: AdditiveBlending, depthWrite: false,
+    // An empty field (extremal spin: the emission vanishes) still needs one segment of storage; none is drawn.
+    const pos = new Float32Array(Math.max(1, rig.length) * 6);
+    const col = new Float32Array(Math.max(1, rig.length) * 6);
+    const lines = trackLine(engraved.segments(pos, {
+      colors: col, opacity: 0.85, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
     }));
-    const lines = new LineSegments(geo, mat);
+    if (rig.length === 0) engraved.setCount(lines, 0);
     lines.frustumCulled = false;
     group.add(lines);
-    return { geo, pos, col, color: new Color(color) };
+    return { lines, pos, col, color: new Color(color) };
   };
   const escapeTrails = mkTrails(escapeRig, hotColor);
   const fallTrails = mkTrails(fallRig, TK.hex("pigment-red-43"));
@@ -375,8 +357,7 @@ export function createHawkingLabRuntime({
       c[i * 6] = cc.r * a; c[i * 6 + 1] = cc.g * a; c[i * 6 + 2] = cc.b * a;
       c[i * 6 + 3] = 0; c[i * 6 + 4] = 0; c[i * 6 + 5] = 0;
     }
-    escapeTrails.geo.attributes.position.needsUpdate = true;
-    escapeTrails.geo.attributes.color.needsUpdate = true;
+    engraved.update(escapeTrails.lines, escapeTrails.pos, escapeTrails.col);
   }
 
   function writeFallTrails() {
@@ -392,8 +373,7 @@ export function createHawkingLabRuntime({
       col[i * 6] = cc.r * a; col[i * 6 + 1] = cc.g * a; col[i * 6 + 2] = cc.b * a;
       col[i * 6 + 3] = 0; col[i * 6 + 4] = 0; col[i * 6 + 5] = 0;
     }
-    fallTrails.geo.attributes.position.needsUpdate = true;
-    fallTrails.geo.attributes.color.needsUpdate = true;
+    engraved.update(fallTrails.lines, fallTrails.pos, fallTrails.col);
   }
 
   function sync({ time = 0, motion = 1 } = {}) {

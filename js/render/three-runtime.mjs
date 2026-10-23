@@ -2,9 +2,8 @@ import {
   AddEquation, AdditiveBlending, AmbientLight as CurrentAmbientLight, ArrowHelper, BoxGeometry,
   BufferAttribute, BufferGeometry, CanvasTexture, CircleGeometry, Color,
   ColorManagement, ConeGeometry, CustomBlending, CylinderGeometry,
-  DirectionalLight as CurrentDirectionalLight, DoubleSide, FogExp2, GridHelper,
-  Group, IcosahedronGeometry, Line, LineBasicMaterial, LineDashedMaterial,
-  LineSegments, LinearSRGBColorSpace, MathUtils, Mesh, MeshBasicMaterial,
+  DirectionalLight as CurrentDirectionalLight, DoubleSide, FogExp2,
+  Group, IcosahedronGeometry, LinearSRGBColorSpace, MathUtils, Mesh, MeshBasicMaterial,
   MeshStandardMaterial, OctahedronGeometry, OneFactor, PerspectiveCamera, PlaneGeometry,
   PointLight as CurrentPointLight, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster, REVISION, RingGeometry, Scene,
   ShaderMaterial, SphereGeometry, Sprite, SpriteMaterial, SrcAlphaFactor, TorusGeometry,
@@ -20,9 +19,10 @@ import { initializeRenderSession } from "./render-session.mjs";
 import { stageDiagnostics } from "./stage/shared-stage.mjs";
 import { resolveAnimated } from "./stage/animation-policy.mjs";
 import { renderDiagnostics, describeRenderError } from "./error-overlay.mjs";
+import { inspectSceneCompatibility } from "./create-renderer.mjs";
 import { softwareRendererClamp } from "./software-renderer.mjs";
 
-export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError, softwareRendererClamp, stageDiagnostics, resolveAnimated });
+export const renderRuntime = Object.freeze({ initializeRenderSession, inspectSceneCompatibility, renderDiagnostics, describeRenderError, softwareRendererClamp, stageDiagnostics, resolveAnimated });
 
 // Production scenes now use native linear-light color management and HDR output.
 ColorManagement.enabled = true;
@@ -136,8 +136,7 @@ export const threeCompatibility = Object.freeze({
   AdditiveBlending, AmbientLight, ArrowHelper, BoxGeometry, BufferAttribute,
   BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry,
   CylinderGeometry, DirectionalLight, DoubleSide, EffectComposer, FogExp2,
-  GammaCorrectionShader, GridHelper, Group, IcosahedronGeometry, Line,
-  LineBasicMaterial, LineDashedMaterial, LineSegments, MathUtils, Mesh,
+  GammaCorrectionShader, Group, IcosahedronGeometry, MathUtils, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, PerspectiveCamera,
   PlaneGeometry, PointLight, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster,
   RenderPass, REVISION, RingGeometry, Scene, ShaderMaterial, ShaderPass, SphereGeometry,

@@ -29,13 +29,17 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const mountRef = useRef(null);
   const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
+  // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
+  const classicLinesRef = useRef(false);
+  const classicReasonRef = useRef("");
+  const [rebuildNonce, setRebuildNonce] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [phase, setPhase] = useState("initializing");
   const diagnosticRef = useRef(null);
   useEffect(() => () => {
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
-  useEffect(() => { setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
+  useEffect(() => { classicLinesRef.current = false; classicReasonRef.current = ""; setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
   const targetRef = useRef(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview);
   targetRef.current = ATLAS_PALETTE[view] || ATLAS_PALETTE.overview;
   const motionRef = useRef(motion); motionRef.current = motion;
@@ -51,12 +55,21 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     if (!mount) return;
 
     const abort = new AbortController();
-    let alive = true, stop = () => {}, renderer, session;
+    let alive = true, stop = () => {}, renderer, session, engravedKind = null;
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate("Atlas backdrop");
     diagnosticRef.current = diagnosticId;
+    if (classicLinesRef.current && classicReasonRef.current) QGA_RENDER.renderDiagnostics.message(diagnosticId, classicReasonRef.current);
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
+      if (engravedKind === "node" && !classicLinesRef.current) {
+        classicLinesRef.current = true;
+        classicReasonRef.current = `webgpu initialization/compile failed: ${QGA_RENDER.describeRenderError(error)}. Retrying classic WebGL2 once, on classic engraved lines.`;
+        QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering backdrop on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
+        stop();
+        setRebuildNonce((n) => n + 1);
+        return;
+      }
       const message = QGA_RENDER.describeRenderError(error);
       QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
       QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
@@ -66,6 +79,9 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     };
     const start = async () => {
     const detail0 = detailRef.current;
+    const engraved = await QGA_ENGRAVED.prepare(settings, { recovery: classicLinesRef.current });
+    engravedKind = engraved.kind;
+    if (!alive) return;
     const scene = new THREE.Scene();
     let resourcesReleased = false, initPromise = null;
     stop = () => {
@@ -192,12 +208,9 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       if (i < GX - 1) { segIndex.push(idx(i, j), idx(i + 1, j)); }
       if (j < GZ - 1) { segIndex.push(idx(i, j), idx(i, j + 1)); }
     }
-    const fabricGeo = new THREE.BufferGeometry();
-    const fabricAttr = new THREE.BufferAttribute(fabricPos, 3);
-    fabricGeo.setAttribute("position", fabricAttr);
-    fabricGeo.setIndex(segIndex);
-    const fabricMat = new THREE.LineBasicMaterial({ color: colPrimary.getHex(), transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
-    const fabric = new THREE.LineSegments(fabricGeo, fabricMat);
+    const fabricFlat = engraved.expand(fabricPos, segIndex);
+    const fabric = engraved.segments(fabricFlat, { color: colPrimary, opacity: 0.2, additive: true, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration" });
+    fabric.frustumCulled = false;
     fabric.position.y = -20;
     fabric.rotation.x = 0.06;
     root.add(fabric);
@@ -206,7 +219,8 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       const x = -span / 2 + i * stepX, z = -span / 2 + j * stepZ, d = Math.hypot(x, z);
       fabricPos[idx(i, j) * 3 + 1] = (Math.sin(x * 0.06) * Math.cos(z * 0.05)) * 2.6 * warp - 6.0 * Math.exp(-d * d / 1600) * warp;
     }
-    fabricAttr.needsUpdate = true;
+    engraved.expand(fabricPos, segIndex, fabricFlat);
+    engraved.update(fabric, fabricFlat);
 
     camera.lookAt(0, 0, -10);
     initPromise = QGA_RENDER.initializeRenderSession({
@@ -274,7 +288,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
         hue = tg[0]; aShift = tg[1]; warp = tg[2]; neb = tg[3];
       }
       setCols();
-      fabricMat.color.copy(colPrimary);
+      fabric.material.color.copy(colPrimary);
 
       // camera parallax + slow cosmic drift. The per-frame ease below is
       // frame-count dependent, so under reduced motion the camera is placed
@@ -341,10 +355,11 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
           Math.sin(d * 0.05 - clk * 0.6) * 0.6
         ) : Math.sin(x * 0.06) * Math.cos(z * 0.05)) * amp
           - 6.0 * Math.exp(-d * d / 1600) * warp; // central gravitational dip
-        fabricAttr.array[idx(i, j) * 3 + 1] = y;
+        fabricPos[idx(i, j) * 3 + 1] = y;
       }
-      fabricAttr.needsUpdate = true;
-      fabricMat.opacity = 0.16 + 0.08 * warp;
+      engraved.expand(fabricPos, segIndex, fabricFlat);
+      engraved.update(fabric, fabricFlat);
+      engraved.setOpacity(fabric, 0.16 + 0.08 * warp);
 
       // Motion on: the backdrop animates every frame. Motion off: it settles on one frame and idles.
       session.setAnimated(QGA_RENDER.resolveAnimated({ declared: "motion", playing: true, motion: mo }));
@@ -375,7 +390,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       abort.abort();
       stop();
     };
-  }, [enabled, failed, detail, settings.motion, settings.vizMode, settings.renderBackend, settings.toneMapping]); // palette handled live
+  }, [enabled, failed, detail, settings.motion, settings.vizMode, settings.renderBackend, settings.toneMapping, rebuildNonce]); // palette handled live
 
   if (!enabled) return null;
   if (failed) {

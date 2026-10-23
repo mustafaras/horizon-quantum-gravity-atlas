@@ -1562,18 +1562,13 @@ function CurvatureEngine3D() {
     // ---------- gradient-fading trails with comet dust ----------
     const TRAIL_N = det === "low" ? 220 : 360;
     const mkTrail = (hex) => {
-      const g = new THREE.BufferGeometry();
-      const buf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
-      const cbuf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
-      g.setAttribute("position", buf);
-      g.setAttribute("color", cbuf);
-      g.setDrawRange(0, 0);
-      const l = new THREE.Line(g, new THREE.LineBasicMaterial({
-        vertexColors: true, transparent: true, opacity: 0.95,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      l.frustumCulled = false;
+      // The gravity well is a GLSL ShaderMaterial, so this scene runs on the classic renderer and its
+      // engraved lines are the classic ones (Scene3D classicLines); per-vertex colours fade each tail to black.
+      const l = ctx.engraved.stream(TRAIL_N, {
+        vertexColors: true, opacity: 0.95, additive: true, widthPx: ctx.engraved.WIDTH_PX.standard, layer: "model",
+      });
       scene.add(l);
+      const pos = new Float32Array(TRAIL_N * 3), col = new Float32Array(TRAIL_N * 3);
       let pts = null, pbuf = null, pcbuf = null, pn = 0;
       if (det !== "low") {
         pn = Math.floor(TRAIL_N / 6);
@@ -1590,15 +1585,15 @@ function CurvatureEngine3D() {
         pts.frustumCulled = false;
         scene.add(pts);
       }
-      return { buf, cbuf, g, l, pts, pbuf, pcbuf, pn, hex: new THREE.Color(hex) };
+      return { pos, col, l, pts, pbuf, pcbuf, pn, hex: new THREE.Color(hex) };
     };
     const writeTrail = (tr, list) => {
       const n = Math.min(list.length, TRAIL_N);
       for (let i = 0; i < n; i++) {
         const q = list[list.length - n + i];
-        tr.buf.setXYZ(i, q[0], q[1], q[2]);
+        tr.pos[i * 3] = q[0]; tr.pos[i * 3 + 1] = q[1]; tr.pos[i * 3 + 2] = q[2];
         const f = Math.pow(i / Math.max(n - 1, 1), 1.7);   // additive: black tail = fade-out
-        tr.cbuf.setXYZ(i, tr.hex.r * f, tr.hex.g * f, tr.hex.b * f);
+        tr.col[i * 3] = tr.hex.r * f; tr.col[i * 3 + 1] = tr.hex.g * f; tr.col[i * 3 + 2] = tr.hex.b * f;
         if (tr.pts && i % 6 === 0) {
           const j = i / 6;
           if (j < tr.pn) {
@@ -1607,8 +1602,7 @@ function CurvatureEngine3D() {
           }
         }
       }
-      tr.buf.needsUpdate = true; tr.cbuf.needsUpdate = true;
-      tr.g.setDrawRange(0, n);
+      ctx.engraved.setPoints(tr.l, tr.pos, n, tr.col);
       if (tr.pts) {
         tr.pbuf.needsUpdate = true; tr.pcbuf.needsUpdate = true;
         tr.pts.geometry.setDrawRange(0, Math.min(tr.pn, Math.ceil(n / 6)));
@@ -1732,6 +1726,12 @@ function CurvatureEngine3D() {
     });
 
     const force = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.4, QGA_TOKENS.hex("pigment-red-65"), 0.35, 0.2);
+    // ArrowHelper draws its shaft as a 1 px THREE.Line: swap in an engraved shaft (same unit-length +Y geometry,
+    // so ArrowHelper.setLength still scales it).
+    force.remove(force.line);
+    force.line.geometry.dispose(); force.line.material.dispose();
+    force.line = ctx.engraved.line([0, 0, 0, 0, 1, 0], { color: "pigment-red-65", widthPx: ctx.engraved.WIDTH_PX.standard, layer: "model" });
+    force.add(force.line);
     force.visible = false;
     scene.add(force);
 
@@ -2103,7 +2103,7 @@ function CurvatureEngine3D() {
           <span className="chip-hint">plunge body — numerically integrated; captured at r = 3GM/c²</span>
         )}
       </div>
-      <Scene3D animated height={480} shotSpace="gr-curvature" aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
+      <Scene3D animated classicLines height={480} shotSpace="gr-curvature" aria="Three-dimensional luminous gravity well with multi-body geodesic orbits, Lense–Thirring frame dragging, radiation-reaction inspiral, exact null-geodesic light bending, and an effective-potential panel"
         initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         cameraGoal={cameraGoal}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>
