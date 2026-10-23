@@ -54,3 +54,20 @@ test("JSX evaluation is owned only by the module bootstrap", () => {
   assert.equal(sources.filter((s) => s === "js/app.jsx").length, 1);
   for (const src of sources) assert.ok(fs.existsSync(path.join(root, src)), src);
 });
+
+test("the engraved-line addons are vendored with integrity metadata and reach the import graph through the backend loader", () => {
+  const metadata = JSON.parse(fs.readFileSync(path.join(root, "vendor/three/VERSION"), "utf8"));
+  const lines = [
+    "LineGeometry", "LineSegmentsGeometry", "LineMaterial", "LineSegments2", "Line2", "webgpu/LineSegments2", "webgpu/Line2",
+  ].map((name) => `examples/jsm/lines/${name}.js`);
+  for (const file of lines) {
+    assert.match(metadata.files[file] ?? "", /^[a-f0-9]{64}$/, file);
+    assert.ok(fs.existsSync(path.join(root, "vendor/three", file)), file);
+  }
+  // Only the pinned tarball's own sources: no edits, and a loader that names exactly these entry points.
+  const loader = fs.readFileSync(path.join(root, "js/visualizations/common/engraved-backend.mjs"), "utf8");
+  for (const entry of ["lines/Line2.js", "lines/LineSegments2.js", "lines/LineGeometry.js", "lines/LineSegmentsGeometry.js", "lines/LineMaterial.js", "lines/webgpu/Line2.js", "lines/webgpu/LineSegments2.js"]) {
+    assert.ok(loader.includes(`three/addons/${entry}`), entry);
+  }
+  assert.deepEqual(inspectThreeVendor(root), []);
+});

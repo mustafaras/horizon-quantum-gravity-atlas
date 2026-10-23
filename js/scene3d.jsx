@@ -70,6 +70,7 @@ function s3dGlow(color, scale = 1, opacity = 0.8) {
 // Engraved line (S06): constant-pixel-width, anti-aliased, dashable. `engraved` is the API bound to the scene's
 // backend (ctx.engraved); colour is a token name, a THREE.Color or a resolved hex from a palette function.
 const S3D_DASH = { size: 0.22, gap: 0.14 };
+const S3D_PICK_PX = 6;
 function s3dLine(points, color, opacity = 0.8, dashed = false, engraved = null) {
   if (!engraved) throw new Error("s3dLine needs the scene's engraved API (ctx.engraved)");
   return engraved.line(points, { color, opacity, widthPx: engraved.WIDTH_PX.standard, dash: dashed ? S3D_DASH : null });
@@ -475,6 +476,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
     const raycaster = new THREE.Raycaster();
     raycaster.params.Line = { threshold: 0.25 };
+    raycaster.params.Line2 = { threshold: S3D_PICK_PX }; // engraved lines pick within a few screen pixels
     const ndc = (e) => {
       const r = el.getBoundingClientRect();
       return new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -613,6 +615,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     // the active scene (per-frame NDC projection + depth-aware occlusion).
     const registryVector = new THREE.Vector3();
     const registryRay = new THREE.Raycaster();
+    registryRay.camera = camera; // engraved lines (Line2) raycast in screen space and need the camera
     const sceneHandle = Object.freeze({
       element: mount,
       cameraSpace: "orbit",

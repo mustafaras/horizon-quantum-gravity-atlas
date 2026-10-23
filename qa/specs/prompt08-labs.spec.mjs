@@ -51,6 +51,33 @@ test("Collider lab publishes synthetic fixture stats and switches channels", asy
   expect(errors()).toEqual([]);
 });
 
+test("Collider tracks are engraved lines that can still be picked with a click", async ({ page }) => {
+  const errors = await gotoReady(page, "/?view=sm&clc=h2gg&seed=42", LABS);
+  const section = page.locator('section:has-text("Collisions, computed")');
+  await section.scrollIntoViewIfNeeded();
+  await published(page, "__qgaColliderLab");
+  const mount = section.locator("[data-engraved-backend]").first();
+  // Wait for the event to be fully reconstructed (every track grown), then aim at the middle of the hardest one.
+  await expect.poll(() => mount.evaluate((element) => {
+    const lines = element.__qga.scene.children[0]?.children?.filter((child) => child.userData?.kind && child.isLineSegments2) ?? [];
+    return lines.length > 0 && lines.every((line) => line.geometry.instanceCount >= 20);
+  }), { timeout: 60_000 }).toBe(true);
+  const aim = await mount.evaluate((element) => {
+    const { scene, camera } = element.__qga;
+    const tracks = scene.children[0].children.filter((child) => child.userData?.kind && child.isLineSegments2);
+    const widest = tracks.reduce((best, line) => (line.userData.engraved.widthPx > best.userData.engraved.widthPx ? line : best));
+    const start = widest.geometry.attributes.instanceStart, mid = Math.floor(start.count / 2);
+    const point = new window.THREE.Vector3(start.getX(mid), start.getY(mid), start.getZ(mid)).applyMatrix4(widest.matrixWorld).project(camera);
+    const rect = element.querySelector(".s3d-canvas").getBoundingClientRect();
+    return { x: rect.left + (point.x + 1) / 2 * rect.width, y: rect.top + (1 - point.y) / 2 * rect.height, kind: widest.userData.kind, width: widest.userData.engraved.widthPx, count: tracks.length };
+  });
+  expect(aim.width, "the hardest track is the focal 2.5 px curve").toBe(2.5);
+  expect(aim.count).toBeGreaterThan(2);
+  await page.mouse.click(aim.x, aim.y);
+  await expect(section.locator(".s3d-detail")).toContainText(new RegExp(`${aim.kind} · pT`));
+  expect(errors()).toEqual([]);
+});
+
 test("Spin-foam lab publishes stats and switches modes", async ({ page }) => {
   const errors = await gotoReady(page, "/?view=planck&sfj=2&sfm=network", LABS);
   await page.locator('section:has-text("Spin networks and spin foam, computed")').scrollIntoViewIfNeeded();

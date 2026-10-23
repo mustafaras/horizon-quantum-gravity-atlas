@@ -266,7 +266,7 @@ export async function createRenderer({
         await deviceLease?.release();
       }
       if (error.name === "AbortError") throw error;
-      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" ? "Retrying classic WebGL2 once." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
+      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" && attempts.length > 1 ? "Retrying classic WebGL2 once." : requested === "webgpu" ? "This scene draws with node-only lines and has no classic fallback." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
       // A canvas with an established WebGPU context cannot subsequently acquire WebGL2.
       if (requested === "webgpu" && canvas) canvas = canvas.cloneNode(false);
     }

@@ -38,3 +38,21 @@ test("teardown races are classified as noise, real defects are not", () => {
   assert.equal(isTeardownNoise(""), false);
   assert.equal(isTeardownNoise(undefined), false);
 });
+
+test("engraved node lines make a scene node-only: it has no classic fallback attempt", async () => {
+  const lines = sceneWith({ type: "Line2NodeMaterial", isNodeMaterial: true, isLine2NodeMaterial: true });
+  const result = inspectSceneCompatibility(lines);
+  assert.equal(result.nodeCompatible, true);
+  assert.equal(result.nodeOnly, true);
+  assert.equal(inspectSceneCompatibility(sceneWith({ type: "MeshStandardMaterial" })).nodeOnly, false);
+  // A classic engraved line is a ShaderMaterial (LineMaterial): the scene is classic-only, never node.
+  const classic = inspectSceneCompatibility(sceneWith({ type: "LineMaterial", isShaderMaterial: true }));
+  assert.equal(classic.nodeCompatible, false);
+  assert.equal(classic.nodeOnly, false);
+  // With no WebGPU a node-only scene must fail visibly (Scene3D then rebuilds it on classic lines) instead of
+  // handing node materials to the classic WebGLRenderer.
+  const outcome = await createRenderer({ scene: lines, camera: {} });
+  assert.equal(outcome.backend, "static");
+  assert.ok(outcome.capabilities.diagnostics.some((message) => /webgpu initialization/i.test(message)), outcome.capabilities.diagnostics.join(" | "));
+  assert.ok(!outcome.capabilities.diagnostics.some((message) => /webgl2 initialization/i.test(message)), "no classic retry");
+});
