@@ -341,7 +341,7 @@
       "closedBy": [
         "S07"
       ],
-      "closedIn": "728f9c311a29b4c6da47c694c221761489e6c533"
+      "closedIn": "6e425f7f96e066e3f7fc46f0725237bb18f253ac"
     },
     {
       "id": "F-26",
@@ -631,13 +631,15 @@
       "findings": [
         "F-25"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "branch": "claude/zealous-goldberg-fi73ya",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60",
-      "commits": [],
+      "commits": [
+        "6e425f7f96e066e3f7fc46f0725237bb18f253ac"
+      ],
       "startedAt": "2026-10-23",
-      "completedAt": null,
+      "completedAt": "2026-10-23",
       "evidence": {
         "tests": [
           "npm test: 654/655 pass, 1 skipped (new: test/material-kit.test.mjs 10, test/curvature-sim.test.mjs 8, plus backend and compatibility cases)",
@@ -656,7 +658,7 @@
         ]
       },
       "blockers": [],
-      "notes": "Closes F-25 pending merge."
+      "notes": "Closes F-25."
     },
     {
       "id": "S08",
@@ -1809,6 +1811,13 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "review",
       "detail": "PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60 opened; F-25 closed pending merge (D-034 to D-037)."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "done",
+      "detail": "PR #60 merged as 6e425f7f96e066e3f7fc46f0725237bb18f253ac; CI (browser QA + validate) green on the merged head."
     }
   ]
 }
