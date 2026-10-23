@@ -44,6 +44,13 @@
     "examples/jsm/math/SimplexNoise.js": "4b1455617135e6b477de76244de07547d95570643379b72f4758e50161b06072",
     "examples/jsm/shaders/PoissonDenoiseShader.js": "61da074a9ad8b2139dd164c96b8b62c299f056ce06c216e1f707c5151d997602",
     "examples/jsm/shaders/GTAOShader.js": "cdea7be60452f61105375d2c18e4da2e8ce7b39a89246b1bb8fbf79319d58cfd",
-    "examples/jsm/tsl/display/DenoiseNode.js": "234928728ca53b5b37c096d1144359e11829ca6cd84c6fcdb99af3c5a2d88f7d"
+    "examples/jsm/tsl/display/DenoiseNode.js": "234928728ca53b5b37c096d1144359e11829ca6cd84c6fcdb99af3c5a2d88f7d",
+    "examples/jsm/lines/LineGeometry.js": "b7ec6b0011e3b09dc72e17cfd8e8945295cb2bc8c8aa9aa19e47119680bdad7e",
+    "examples/jsm/lines/LineSegmentsGeometry.js": "471f0a954a0c9c59d3d151392f424142a9164a722802f63b371971378a84a1b1",
+    "examples/jsm/lines/LineMaterial.js": "d4517001f9d7b3e885ea5baa930de0077351e885db52ef4565cde4c7dd17eb23",
+    "examples/jsm/lines/LineSegments2.js": "fcbc20f576e88343cea12131f49b7003d7ab44ede422fcb694e567456022f7a0",
+    "examples/jsm/lines/Line2.js": "69dd2120d4df14208796acf199f80a64d37e042cfa65dc2b98286694b2954194",
+    "examples/jsm/lines/webgpu/LineSegments2.js": "b9f84e92c97c23ebd6b9fe216b5a1946a2d4f965ef817a459afa7f38c25ca6d2",
+    "examples/jsm/lines/webgpu/Line2.js": "3169cb8dc3d5db876f59907851dfd5e50235585d7b4b8ff127823f9a54f7a56b"
   }
 }
