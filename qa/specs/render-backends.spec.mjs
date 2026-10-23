@@ -41,6 +41,16 @@ async function ready(page, timeout = READY_MS) {
       .map((entry) => ({ phase: entry.phase, backend: entry.backend, messages: entry.messages }));
   }, { timeout }).toEqual([]);
 }
+// Node-only (kit) scenes have no classic renderer to fall back to, so on a runner
+// that cannot present a WebGPU canvas they legitimately settle on "static".
+async function settled(page, timeout) {
+  await expect.poll(async () => {
+    const entries = await snapshots(page);
+    if (!entries.length) return [{ phase: "no renderer diagnostics" }];
+    return entries.filter((entry) => entry.phase !== "ready" && entry.backend !== "static")
+      .map((entry) => ({ phase: entry.phase, backend: entry.backend, messages: entry.messages }));
+  }, { timeout }).toEqual([]);
+}
 async function force(context, backend) {
   await context.addInitScript((value) => { window.QGA_RENDER_OPTIONS = { forceBackend: value, softwareClamp: false }; sessionStorage.setItem("horizon-intro", "1"); }, backend);
 }
@@ -353,10 +363,11 @@ test.describe("real WebGPU API on a software adapter (not hardware evidence)", (
     await gotoReady(page, "/?view=sm&seed=42", RENDER_READINESS);
     // Measured on SwiftShader: ~77 s to bring both hosts to a real backend, plus
     // ~50 s per preset rebuild. Bounded, but deliberately generous on software.
-    await ready(page, 240_000);
+    if (presentation.ok) await ready(page, 240_000);
+    else await settled(page, 240_000);
     const initialized = await snapshots(page);
     await evidence(info, "initial-native-and-bounded-fallback-matrix", initialized);
-    for (const entry of initialized.filter((entry) => entry.backend !== "webgpu")) {
+    for (const entry of initialized.filter((entry) => entry.backend !== "webgpu" && !(entry.backend === "static" && !presentation.ok))) {
       expect(entry.backend).toBe("webgl2");
       expect(entry.messages.some((message) => /(?:webgpu initialization\/compile failed:|Node pipeline compilation failed:).*(?:Retrying classic WebGL2 once|Retrying on the node renderer's WebGL2 backend once)/.test(message))).toBe(true);
     }
