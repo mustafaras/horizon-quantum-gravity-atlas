@@ -109,6 +109,9 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
                    annotation(text, posFn) (hidden by annotations toggle) }
                    Must return {} or:
                      update(t, dt)     per-frame; dt = 0 while paused
+                     prepare(renderer) async, once, after the renderer exists and before the first frame (compile and seed
+                                       GPU compute systems)
+                     compute(renderer, dt) per-frame, after update(): advance GPU compute systems
                      pickables: []     meshes for click-raycast
                      onPick(obj|null)  click result (obj.userData yours)
                      autoRotate: bool  default true (cinematic mode only)
@@ -391,6 +394,12 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     }
     sessionRef.current = session;
     renderer = session.renderer;
+    // A scene with GPU compute systems (S08) compiles and seeds them once the live node renderer exists, before the first frame.
+    if (built.prepare) {
+      try { await built.prepare(renderer); }
+      catch (error) { fail(error); return; }
+      if (!alive) return;
+    }
     session.element.className = "s3d-canvas";
     setPhase("ready");
     const releaseResources = stop;
@@ -783,6 +792,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
       const dt = playingRef.current ? rawDt : 0;
       if (built.update) built.update(clockT, dt);
+      if (built.compute) built.compute(renderer, dt);
 
       // project labels
       const showLabels = settingsRef.current.labels3d !== false;

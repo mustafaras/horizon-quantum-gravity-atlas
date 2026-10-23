@@ -25,11 +25,12 @@
  */
 
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color, Group,
-  Mesh, MeshBasicMaterial,
-  PlaneGeometry, Points, PointsMaterial, RingGeometry, Sprite, SpriteMaterial,
+  AdditiveBlending, CatmullRomCurve3, Color, Group, Mesh, MeshBasicMaterial,
+  PlaneGeometry, RingGeometry, Sprite, SpriteMaterial,
   SphereGeometry, TorusGeometry, TubeGeometry, Vector3, DoubleSide,
 } from "three";
+import { createHawkingPairs } from "./hawking-pairs.mjs";
+import { createDataPoints } from "../../render/materials/data-points.mjs";
 import {
   hawkingLabState, sampleEmission, referenceTemperatureK,
   HAWKING_LAB_DEFAULTS,
@@ -101,17 +102,13 @@ export function createHawkingLabRuntime({
       tmp.setHSL(0.55 + 0.12 * t, 0.35, 0.6 + 0.35 * rng());
       col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
     }
-    const starGeo = track(new BufferGeometry());
-    starGeo.setAttribute("position", new BufferAttribute(pos, 3));
-    starGeo.setAttribute("color", new BufferAttribute(col, 3));
-    const starMat = track(new PointsMaterial({
-      size: 0.55, sizeAttenuation: true, map: sharedGlowTexture(), vertexColors: true,
-      transparent: true, opacity: 0.85, depthWrite: false, blending: AdditiveBlending,
-    }));
-    const stars = new Points(starGeo, starMat);
-    stars.frustumCulled = false;
-    stars.renderOrder = 0;
-    group.add(stars);
+    // Points are one pixel on the node renderers: the stars are instanced sprites (js/render/materials/data-points.mjs).
+    const stars = createDataPoints({ positions: pos, colors: col, sizePx: 0.55, sizeAttenuation: true, profile: "soft", additive: true, opacity: 0.85 });
+    track(stars.material);
+    stars.object.frustumCulled = false;
+    stars.object.renderOrder = 0;
+    group.add(stars.object);
+
   }
 
   // ---- crisp photon-ring halo: billboarded ring texture hugging the rim ----
@@ -281,100 +278,12 @@ export function createHawkingLabRuntime({
     .slice(0, Math.min(40, Math.round(visible * 0.35)));
 
   const period = 6.5; // seconds per emission cycle (display pacing)
-  const spriteMats = [];
 
-  const makeSprite = (color, scale) => {
-    const m = track(new SpriteMaterial({
-      map: sharedGlowTexture(), color, transparent: true, opacity: 0.9,
-      blending: AdditiveBlending, depthWrite: false,
-    }));
-    spriteMats.push(m);
-    const s = new Sprite(m);
-    s.scale.setScalar(scale);
-    group.add(s);
-    return s;
-  };
-
-  const dirOf = (s, dip = 0) => new Vector3(
-    Math.cos(s.azimuth) * Math.sqrt(1 - s.cosPolar * s.cosPolar),
-    (dip ? -Math.abs(s.cosPolar) * 0.4 : s.cosPolar),
-    Math.sin(s.azimuth) * Math.sqrt(1 - s.cosPolar * s.cosPolar),
-  ).normalize();
-
-  // gentle azimuthal swirl so escaping paths curve elegantly
-  const swirlOf = (dir) => {
-    const t = new Vector3().crossVectors(dir, new Vector3(0, 1, 0));
-    if (t.lengthSq() < 1e-4) t.set(1, 0, 0);
-    return t.normalize().multiplyScalar(0.55);
-  };
-
-  const escapePath = (dir, swirl, local, energy) => {
-    const rad = R_HORIZON * 1.08 + local * (4.6 * pace + energy * 0.22);
-    return new Vector3()
-      .copy(dir).multiplyScalar(rad)
-      .addScaledVector(swirl, local * local);
-  };
-
-  const escapeRig = escaping.map((s, i) => {
-    const dir = dirOf(s);
-    return {
-      sprite: makeSprite(hotColor.clone(), 0.4 + 0.16 * s.energyOverT / 6),
-      dir, swirl: swirlOf(dir), energy: s.energyOverT,
-      t0: (i / Math.max(1, escaping.length)) * period,
-    };
-  });
-  const fallRig = falling.map((s, i) => ({
-    sprite: makeSprite(FALL_COLOR.clone(), 0.24),
-    dir: dirOf(s, true), t0: (i / Math.max(1, falling.length)) * period,
-  }));
-
-  // ---- trails: one LineSegments per group, head bright -> tail dark ----
-  const mkTrails = (rig, color) => {
-    // An empty field (extremal spin: the emission vanishes) still needs one segment of storage; none is drawn.
-    const pos = new Float32Array(Math.max(1, rig.length) * 6);
-    const col = new Float32Array(Math.max(1, rig.length) * 6);
-    const lines = trackLine(engraved.segments(pos, {
-      colors: col, opacity: 0.85, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
-    }));
-    if (rig.length === 0) engraved.setCount(lines, 0);
-    lines.frustumCulled = false;
-    group.add(lines);
-    return { lines, pos, col, color: new Color(color) };
-  };
-  const escapeTrails = mkTrails(escapeRig, hotColor);
-  const fallTrails = mkTrails(fallRig, TK.hex("pigment-red-43"));
-
-  function writeEscapeTrails(phase) {
-    for (let i = 0; i < escapeRig.length; i++) {
-      const r = escapeRig[i];
-      const local = ((phase - r.t0) / period + 1) % 1;
-      const head = escapePath(r.dir, r.swirl, local, r.energy);
-      const tail = escapePath(r.dir, r.swirl, Math.max(0, local - 0.13), r.energy);
-      const a = r.sprite.material.opacity;
-      const p = escapeTrails.pos, c = escapeTrails.col, cc = escapeTrails.color;
-      p[i * 6] = head.x; p[i * 6 + 1] = head.y; p[i * 6 + 2] = head.z;
-      p[i * 6 + 3] = tail.x; p[i * 6 + 4] = tail.y; p[i * 6 + 5] = tail.z;
-      c[i * 6] = cc.r * a; c[i * 6 + 1] = cc.g * a; c[i * 6 + 2] = cc.b * a;
-      c[i * 6 + 3] = 0; c[i * 6 + 4] = 0; c[i * 6 + 5] = 0;
-    }
-    engraved.update(escapeTrails.lines, escapeTrails.pos, escapeTrails.col);
-  }
-
-  function writeFallTrails() {
-    for (let i = 0; i < fallRig.length; i++) {
-      const r = fallRig[i];
-      const p = r.sprite.position, d = r.dir;
-      const a = r.sprite.material.opacity;
-      const pos = fallTrails.pos, col = fallTrails.col, cc = fallTrails.color;
-      pos[i * 6] = p.x; pos[i * 6 + 1] = p.y; pos[i * 6 + 2] = p.z;
-      pos[i * 6 + 3] = p.x + d.x * 0.32;
-      pos[i * 6 + 4] = p.y + d.y * 0.32;
-      pos[i * 6 + 5] = p.z + d.z * 0.32;
-      col[i * 6] = cc.r * a; col[i * 6 + 1] = cc.g * a; col[i * 6 + 2] = cc.b * a;
-      col[i * 6 + 3] = 0; col[i * 6 + 4] = 0; col[i * 6 + 5] = 0;
-    }
-    engraved.update(fallTrails.lines, fallTrails.pos, fallTrails.col);
-  }
+  // The pair field is a GPU particle system (S08): the heads and the tail dots of every escaping and infalling partner are positioned
+  // by one compute kernel from the shared timeline phase, drawn in one call, with nothing uploaded per frame (hawking-pairs.mjs).
+  const pairs = createHawkingPairs({ escaping, falling, hotColor, fallColor: FALL_COLOR, fallTailColor: tokenColor("pigment-red-43"), pace, fade: fieldFade });
+  pairs.object.renderOrder = 4;
+  group.add(pairs.object);
 
   function sync({ time = 0, motion = 1 } = {}) {
     // Reduced motion: freeze the emission cycle on a fixed phase so captures
@@ -382,43 +291,34 @@ export function createHawkingLabRuntime({
     const phase = motion === 0
       ? period * 0.42
       : ((Number(time) || 0) % period + period) % period;
-    for (const r of escapeRig) {
-      const local = ((phase - r.t0) / period + 1) % 1;
-      r.sprite.position.copy(escapePath(r.dir, r.swirl, local, r.energy));
-      r.sprite.material.opacity =
-        0.95 * Math.pow(Math.sin(Math.PI * Math.min(1, local)), 0.7) * fieldFade;
-    }
-    for (const r of fallRig) {
-      const local = ((phase - r.t0) / period + 1) % 1;
-      const rad = Math.max(R_HORIZON * 0.2, R_HORIZON * 2.2 - local * R_HORIZON * 1.9);
-      r.sprite.position.copy(r.dir).multiplyScalar(rad);
-      r.sprite.material.opacity =
-        0.75 * Math.pow(Math.sin(Math.PI * Math.min(1, local)), 0.7) * fieldFade;
-    }
-    writeEscapeTrails(phase);
-    writeFallTrails();
+    pairs.setPhase(phase / period);
     haloMat.opacity = (0.42 + 0.3 * heat) * (0.55 + 0.45 * fieldFade);
     ambMat.opacity = (0.07 + 0.09 * heat) * (0.5 + 0.5 * fieldFade);
     if (camera) for (const b of billboards) b.quaternion.copy(camera.quaternion);
   }
 
   function dispose() {
+    pairs.dispose();
     for (const d of disposables) d.dispose?.();
     group.removeFromParent?.();
   }
 
   return {
     mesh: group,
-    kind: "cpu-samples",
+    kind: "gpu-compute",
     stats: () => ({
-      kind: "cpu-samples",
-      particles: escapeRig.length + fallRig.length,
-      escaping: escapeRig.length,
+      kind: "gpu-compute",
+      particles: pairs.particles,
+      escaping: escaping.length,
       temperatureK: lab.temperatureK,
       extremal: lab.extremal,
       displayAmplification: lab.displayGain,
     }),
     sync,
+    /** One compute step of the pair field; Scene3D calls it every frame with the live node renderer. */
+    compute: (renderer, dt) => pairs.step(renderer, dt),
+    /** Compiles and runs the kernel once, before the first frame is drawn. */
+    prepare: (renderer) => pairs.init(renderer),
     dispose,
     recoverable: () => false,
   };

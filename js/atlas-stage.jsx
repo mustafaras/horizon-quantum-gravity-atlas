@@ -29,9 +29,6 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   const mountRef = useRef(null);
   const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
-  // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
-  const classicLinesRef = useRef(false);
-  const classicReasonRef = useRef("");
   const [rebuildNonce, setRebuildNonce] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [phase, setPhase] = useState("initializing");
@@ -39,7 +36,7 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
   useEffect(() => () => {
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
   }, []);
-  useEffect(() => { classicLinesRef.current = false; classicReasonRef.current = ""; setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
+  useEffect(() => { setFailed(false); }, [settings.renderBackend, detail, settings.vizMode, settings.motion, settings.toneMapping]);
   const targetRef = useRef(ATLAS_PALETTE[view] || ATLAS_PALETTE.overview);
   targetRef.current = ATLAS_PALETTE[view] || ATLAS_PALETTE.overview;
   const motionRef = useRef(motion); motionRef.current = motion;
@@ -55,21 +52,12 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     if (!mount) return;
 
     const abort = new AbortController();
-    let alive = true, stop = () => {}, renderer, session, engravedKind = null;
+    let alive = true, stop = () => {}, renderer, session;
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate("Atlas backdrop");
     diagnosticRef.current = diagnosticId;
-    if (classicLinesRef.current && classicReasonRef.current) QGA_RENDER.renderDiagnostics.message(diagnosticId, classicReasonRef.current);
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
-      if (engravedKind === "node" && !classicLinesRef.current) {
-        classicLinesRef.current = true;
-        classicReasonRef.current = `webgpu initialization/compile failed: ${QGA_RENDER.describeRenderError(error)}. Retrying classic WebGL2 once, on classic engraved lines.`;
-        QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering backdrop on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
-        stop();
-        setRebuildNonce((n) => n + 1);
-        return;
-      }
       const message = QGA_RENDER.describeRenderError(error);
       QGA_RENDER.renderDiagnostics.message(diagnosticId, message);
       QGA_RENDER.renderDiagnostics.update(diagnosticId, { phase: "static", backend: "static", effects: [] });
@@ -79,8 +67,10 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     };
     const start = async () => {
     const detail0 = detailRef.current;
-    const engraved = await QGA_ENGRAVED.prepare(settings, { recovery: classicLinesRef.current });
-    engravedKind = engraved.kind;
+    // The starfield is a material-kit sprite (S08), so the backdrop needs the node renderer (WebGPU, or its WebGL2 backend) and has no
+    // classic fallback: its engraved lines are the node ones.
+    const engraved = await QGA_ENGRAVED.prepare(settings, { requireNode: true });
+    const { createBackdropStars } = await QGA_BACKDROP.loadStars();
     if (!alive) return;
     const scene = new THREE.Scene();
     let resourcesReleased = false, initPromise = null;
@@ -121,37 +111,10 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     const N = detail0 === "low" ? 1400 : detail0 === "ultra" ? 4200 : 2600;
 
     // ---------- depth starfield ----------
-    const sPos = new Float32Array(N * 3);
-    const sCol = new Float32Array(N * 3);
-    const sBase = new Float32Array(N);   // base brightness
-    const sTw = new Float32Array(N);     // twinkle phase
-    const tmp = new THREE.Color();
-    for (let i = 0; i < N; i++) {
-      // shell distribution with a denser galactic band
-      const th = Math.random() * Math.PI * 2;
-      const band = Math.pow(Math.random(), 1.7);
-      const ph = Math.acos((2 * Math.random() - 1) * (0.5 + 0.5 * band));
-      const r = 40 + Math.random() * 120;
-      sPos[i * 3] = r * Math.sin(ph) * Math.cos(th);
-      sPos[i * 3 + 1] = (r * Math.cos(ph)) * 0.55;
-      sPos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th) - 40;
-      const warmish = Math.random();
-      tmp.setHSL(0.58 + warmish * 0.06, 0.25 + Math.random() * 0.3, 0.7 + Math.random() * 0.25);
-      sCol[i * 3] = tmp.r; sCol[i * 3 + 1] = tmp.g; sCol[i * 3 + 2] = tmp.b;
-      sBase[i] = 0.45 + Math.random() * 0.55;
-      sTw[i] = Math.random() * Math.PI * 2;
-    }
-    const starGeo = new THREE.BufferGeometry();
-    starGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
-    const sColAttr = new THREE.BufferAttribute(sCol, 3);
-    starGeo.setAttribute("color", sColAttr);
-    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
-      size: 1.35, vertexColors: true, transparent: true, opacity: 1.0,
-      sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      map: window.qgaGlowTexture ? qgaGlowTexture() : null,
-    }));
-    stars.frustumCulled = false;
-    root.add(stars);
+    // A static seeded buffer: the twinkle runs in the vertex stage from the time uniform, the palette tint is a uniform, and the CPU
+    // uploads nothing per frame (js/visualizations/atlas/backdrop-stars.mjs).
+    const starField = createBackdropStars({ count: N });
+    root.add(starField.object);
 
     // galactic core: large soft glows giving the scene a luminous heart
     let core = null, core2 = null, core3 = null;
@@ -309,21 +272,9 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
       camera.lookAt(0, 0, -10);
 
       // when the tab is hidden, draw a single static frame (never black) and skip heavy work
-      // twinkle a subset of stars
-      if (mo > 0) {
-        const cnt = Math.min(N, 700);
-        const off = (Math.floor(clk * 40) % Math.ceil(N / cnt)) * cnt;
-        for (let k = 0; k < cnt; k++) {
-          const i = (off + k) % N;
-          const tw = 0.6 + 0.4 * Math.sin(clk * 1.6 + sTw[i]);
-          const b = sBase[i] * tw;
-          // gently tint stars toward palette
-          sColAttr.array[i * 3] = sCol[i * 3] * (0.7 + 0.3 * b) + colPrimary.r * 0.06;
-          sColAttr.array[i * 3 + 1] = sCol[i * 3 + 1] * (0.7 + 0.3 * b) + colPrimary.g * 0.06;
-          sColAttr.array[i * 3 + 2] = sCol[i * 3 + 2] * (0.7 + 0.3 * b) + colPrimary.b * 0.06;
-        }
-        sColAttr.needsUpdate = true;
-      }
+      // twinkle: the time uniform drives it (0 under reduced motion: a still, byte-stable sky); tint the stars toward the palette
+      starField.uniforms.time.value = mo > 0 ? clk : 0;
+      starField.uniforms.tint.value.copy(colPrimary).multiplyScalar(0.06);
 
       // hero stars pulse + recolor
       for (const s of heroes) {

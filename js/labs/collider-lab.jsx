@@ -59,7 +59,7 @@ function ColliderLabSection({ compact = false, fallback = null } = {}) {
             E<sub>T</sub><sup>miss</sup> = {lab.metEt.toFixed(0)} GeV</> : "—"}
         </div>
       </div>
-      <Scene3D animated="motion" height={compact ? 400 : 460}
+      <Scene3D animated="motion" nodeKit height={compact ? 400 : 460}
         aria="Three-dimensional collider event display: two beams collide at the vertex, charged tracks curve in the tracker, calorimeter towers rise with transverse energy, jet cones mark hadronic clusters, and a dashed arrow shows missing transverse energy"
         initial={{ radius: 13, theta: 0.95, phi: 1.15, minR: 5, maxR: 34, bloom: { strength: 0.7, radius: 0.5, threshold: 0.18 } }}
         build={build} deps={[channel, seed]}

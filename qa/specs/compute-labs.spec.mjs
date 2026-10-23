@@ -22,6 +22,7 @@ test.describe("Compute labs (Prompt 07)", () => {
     await page.locator("text=Vacuum fluctuations, computed").scrollIntoViewIfNeeded();
     const first = await published(page, "__qgaQftLab");
     expect(first.kind).toBe("cpu-samples");
+    expect(first.particleKind).toBe("gpu-compute");   // the crest markers are a GPU particle system (S08); the surface is still a CPU mesh
     expect(first.cutoffK).toBe(14);
     expect(first.points).toBe(first.history * 160);
     // In-canvas status label for the effective free-field model.
@@ -48,7 +49,7 @@ test.describe("Compute labs (Prompt 07)", () => {
     const errors = await gotoReady(page, "/?view=bh&bhs=0", LABS);
     await page.locator("text=Hawking horizon lab").scrollIntoViewIfNeeded();
     const calm = await published(page, "__qgaHawkingLab");
-    expect(calm.kind).toBe("cpu-samples");
+    expect(calm.kind).toBe("gpu-compute");
     expect(calm.particles).toBeGreaterThan(0);
     expect(calm.temperatureK).toBeGreaterThan(0);
     // SCHEMATIC disclosure must be inside the canvas, not only in the caption.
@@ -67,7 +68,8 @@ test.describe("Compute labs (Prompt 07)", () => {
     const errors = await gotoReady(page, "/?view=rg", LABS);
     await page.locator("text=The flow field in three dimensions").scrollIntoViewIfNeeded();
     const field = await published(page, "__qgaRgFlow3d");
-    expect(field.kind).toBe("cpu-samples");
+    expect(field.kind).toBe("gpu-compute");
+    expect(field.flowParticles).toBeGreaterThan(10);
     expect(field.streamlines).toBeGreaterThan(10);
     expect(field.fixedPoints).toBeGreaterThanOrEqual(1);
     expect(field.terminatedAtValidity).toBeGreaterThanOrEqual(1);
@@ -87,7 +89,7 @@ test.describe("Compute labs (Prompt 07)", () => {
     await page.goto("/?view=bh", { waitUntil: "domcontentloaded" });
     await page.locator("text=Hawking horizon lab").scrollIntoViewIfNeeded();
     const bh = await published(page, "__qgaHawkingLab");
-    expect(bh.kind).toBe("cpu-samples");
+    expect(bh.kind).toBe("gpu-compute");
 
     await page.goto("/?view=rg", { waitUntil: "domcontentloaded" });
     await page.locator("text=The flow field in three dimensions").scrollIntoViewIfNeeded();
