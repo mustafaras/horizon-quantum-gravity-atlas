@@ -443,27 +443,23 @@ function GWInspiral3D() {
     // orbital trails: additive lines whose colour fades head → tail to black
     const TRAIL_N = 220;
     const mkTrail = (hex) => {
-      const g = new THREE.BufferGeometry();
-      const buf = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
-      const col = new THREE.BufferAttribute(new Float32Array(TRAIL_N * 3), 3);
-      g.setAttribute("position", buf); g.setAttribute("color", col); g.setDrawRange(0, 0);
-      const l = new THREE.Line(g, new THREE.LineBasicMaterial({
-        vertexColors: true, transparent: true, opacity: 0.9,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      l.frustumCulled = false; scene.add(l);
-      return { buf, col, g, l, base: new THREE.Color(hex) };
+      // The two inspiral trails are this scene's focal curves.
+      const l = ctx.engraved.stream(TRAIL_N, {
+        vertexColors: true, opacity: 0.9, additive: true, widthPx: ctx.engraved.WIDTH_PX.focal, layer: "model",
+      });
+      scene.add(l);
+      return { pos: new Float32Array(TRAIL_N * 3), col: new Float32Array(TRAIL_N * 3), l, base: new THREE.Color(hex) };
     };
     const t1 = mkTrail(QGA_TOKENS.hex("pigment-azure-83-c09")), t2 = mkTrail(QGA_TOKENS.hex("pigment-violet-78"));
     const writeTrail = (tr, list) => {
       const n = Math.min(list.length, TRAIL_N);
       for (let i = 0; i < n; i++) {
         const p = list[list.length - n + i];
-        tr.buf.setXYZ(i, p[0], p[1], p[2]);
+        tr.pos[i * 3] = p[0]; tr.pos[i * 3 + 1] = p[1]; tr.pos[i * 3 + 2] = p[2];
         const f = Math.pow(i / Math.max(1, n - 1), 2); // head bright, tail fades out
-        tr.col.setXYZ(i, tr.base.r * f, tr.base.g * f, tr.base.b * f);
+        tr.col[i * 3] = tr.base.r * f; tr.col[i * 3 + 1] = tr.base.g * f; tr.col[i * 3 + 2] = tr.base.b * f;
       }
-      tr.buf.needsUpdate = true; tr.col.needsUpdate = true; tr.g.setDrawRange(0, n);
+      ctx.engraved.setPoints(tr.l, tr.pos, n, tr.col);
     };
 
     // merger read-out: an expanding crisp ring + a brief compact core flash

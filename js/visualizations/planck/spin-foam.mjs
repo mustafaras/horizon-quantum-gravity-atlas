@@ -15,7 +15,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
-  DoubleSide, Group, Line, LineBasicMaterial, LineSegments,
+  DoubleSide, Group,
   Mesh, MeshBasicMaterial, Points, PointsMaterial, SphereGeometry,
   Sprite, SpriteMaterial, TubeGeometry, Vector3,
 } from "three";
@@ -36,8 +36,9 @@ export function createSpinFoamRuntime({
   seed = SPIN_FOAM_LAB_DEFAULTS.seed,
   step = 0,
   mode = "network",
-  camera = null,
+  camera = null, engraved,
 } = {}) {
+  if (!engraved) throw new TypeError("createSpinFoamRuntime needs ctx.engraved (the scene's engraved line API)");
   if (!SPIN_TOPOLOGIES.includes(topology)) {
     throw new TypeError(`unknown topology: ${topology}`);
   }
@@ -48,6 +49,7 @@ export function createSpinFoamRuntime({
   const GOLD = tokenColor("lab-gold");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
+  const trackLine = (line) => { track(line.geometry); track(line.material); return line; };
   const spinColor = (j) => {
     const f = lab.spectrum.length > 1
       ? (j - lab.spectrum[0].spin) / (lab.spectrum[lab.spectrum.length - 1].spin - lab.spectrum[0].spin)
@@ -157,9 +159,6 @@ export function createSpinFoamRuntime({
   if (mode === "foam") {
     const steps = lab.sequence.steps;
     const GAP = 1.15;
-    const sliceLineMat = track(new LineBasicMaterial({
-      color: TK.hex("pigment-blue-54"), transparent: true, opacity: 0.16, depthWrite: false,
-    }));
     const slicePositions = [];
     for (let s = 0; s < steps; s++) {
       const cfg = lab.sequence.configs[s];
@@ -169,9 +168,9 @@ export function createSpinFoamRuntime({
         slicePositions.push(a.x, a.y, a.z, b.x, b.y, b.z);
       }
     }
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(new Float32Array(slicePositions), 3));
-    const ls = new LineSegments(g, sliceLineMat);
+    const ls = trackLine(engraved.segments(slicePositions, {
+      color: "pigment-blue-54", opacity: 0.16, widthPx: engraved.WIDTH_PX.hairline, layer: "model",
+    }));
     ls.frustumCulled = false;
     group.add(ls);
 

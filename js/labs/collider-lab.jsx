@@ -16,7 +16,7 @@ function ColliderLabSection({ compact = false, fallback = null } = {}) {
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createColliderDisplayRuntime } = await LABS.loadColliderDisplay();
     ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02-h261"), 0.014);
-    const runtime = createColliderDisplayRuntime({ channel, seed, sqrtSGev: 13600, camera: ctx.camera });
+    const runtime = createColliderDisplayRuntime({ channel, seed, sqrtSGev: 13600, camera: ctx.camera, engraved: ctx.engraved });
     ctx.scene.add(runtime.mesh);
     ctx.label("SYNTHETIC FIXTURE · seeded kinematics — not a CERN observation",
       () => ({ x: -4.6, y: 3.6, z: -3.4 }), "s3d-strong");

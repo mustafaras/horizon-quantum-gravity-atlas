@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { prepareEngravedLines, resolveEngravedBackendKind, setEngravedBackend, engravedBackend } from "../js/visualizations/common/engraved-backend.mjs";
 import {
-  engravedLine, engravedSegments, engravedStream, setEngravedPoints, expandIndexedSegments, engravedFor, updateEngravedLine, setEngravedOpacity, setEngravedColor, setEngravedTokens,
+  engravedLine, engravedSegments, engravedStream, setEngravedPoints, setEngravedCount, expandIndexedSegments, engravedFor, updateEngravedLine, setEngravedOpacity, setEngravedColor, setEngravedTokens,
   normalizeEngravedOptions, flattenPoints, ENGRAVED_HALO_MAX, ENGRAVED_PAD_PX, ENGRAVED_WIDTH_PX, setEngravedWidth,
 } from "../js/visualizations/common/engraved-lines.mjs";
 
@@ -114,6 +114,27 @@ for (const hasWebGPU of [false, true]) {
     assert.throws(() => engravedLine(points(1), { color: "mock-blue" }), RangeError);
   });
 
+  test(`${label}: setEngravedCount replaces setDrawRange and updateEngravedLine rewrites colours in place`, async () => {
+    await prepareEngravedLines({ hasWebGPU });
+    const line = engravedLine(points(5), { colors: new Float32Array(15), halo: 0.1 });
+    setEngravedCount(line, 3);
+    assert.equal(line.geometry.instanceCount, 2);
+    assert.equal(line.children[0].geometry.instanceCount, 2, "the halo follows");
+    setEngravedCount(line, 99);
+    assert.equal(line.geometry.instanceCount, 4, "clamped to the segments that exist");
+    setEngravedCount(line, 0);
+    assert.equal(line.geometry.instanceCount, 0);
+    const colorBuffer = line.geometry.attributes.instanceColorStart.data;
+    const colorArray = colorBuffer.array;
+    updateEngravedLine(line, points(5), new Float32Array(15).fill(0.5));
+    assert.equal(colorBuffer.array, colorArray, "colours are written in place");
+    assert.equal(colorArray[0], 0.5);
+    const segments = engravedSegments(points(6), { colors: new Float32Array(18) });
+    setEngravedCount(segments, 4);
+    assert.equal(segments.geometry.instanceCount, 2);
+    assert.throws(() => setEngravedCount({}, 2), RangeError);
+  });
+
   test(`${label}: dash, per-vertex colours and opacity`, async () => {
     await prepareEngravedLines({ hasWebGPU });
     const dashed = engravedLine(points(4), { color: "mock-blue", dash: { size: 0.22, gap: 0.14 } });
@@ -221,3 +242,21 @@ test("the node material keeps the true width in a uniform and pads the quad", as
   assert.equal(line.material.engravedWidth.value, 2.5);
   assert.equal(line.material.linewidth, 2.5 + ENGRAVED_PAD_PX);
 });
+
+for (const hasWebGPU of [false, true]) {
+  test(`${hasWebGPU ? "node" : "classic"}: engravedGrid replaces GridHelper with centre-line colour`, async () => {
+    const backend = await prepareEngravedLines({ hasWebGPU });
+    const grid = engravedFor(backend).grid(16, 8, { color: "mock-blue", centerColor: "mock-red", opacity: 0.2 });
+    assert.equal(grid.isLineSegments2, true);
+    assert.equal(grid.geometry.attributes.instanceStart.count, 9 * 2, "(divisions + 1) lines in each direction");
+    const colors = grid.geometry.attributes.instanceColorStart.data.array;
+    const lineColor = (i) => [...colors.slice(i * 12, i * 12 + 3)];
+    assert.notDeepEqual(lineColor(4), lineColor(3), "line 4 of 8 is the centre line");
+    assert.deepEqual(lineColor(3), lineColor(5));
+    const plain = engravedFor(backend).grid(10, 4, { color: "mock-blue" });
+    assert.equal(plain.geometry.attributes.instanceColorStart, undefined, "one colour needs no vertex colours");
+    assert.equal(plain.material.color.getHex(), 0x336699);
+    assert.throws(() => engravedFor(backend).grid(0, 4, { color: "mock-blue" }), RangeError);
+    assert.throws(() => engravedFor(backend).grid(10, 1.5, { color: "mock-blue" }), RangeError);
+  });
+}

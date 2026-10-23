@@ -164,7 +164,7 @@ function build(points, rawOptions, segments, backend) {
     const geometry = new GeometryClass();
     const line = new backend[ClassName](geometry, makeMaterial(backend, opts, widthPx));
     geometry.setPositions(positions);
-    if (opts.colors) geometry.setColors(opts.colors);
+    if (opts.colors) geometry.setColors(Float32Array.from(opts.colors));
     if (opts.dash) line.computeLineDistances();
     line.renderOrder = renderOrder;
     if (backend.kind === "classic") trackPixelRatio(line);
@@ -197,17 +197,19 @@ export function engravedFor(backend) {
     line: (points, options) => engravedLine(points, options, backend),
     segments: (pairs, options) => engravedSegments(pairs, options, backend),
     stream: (capacity, options) => engravedStream(capacity, options, backend),
-    update: updateEngravedLine, setPoints: setEngravedPoints, expand: expandIndexedSegments,
+    grid: (size, divisions, options) => engravedGrid(size, divisions, options, backend),
+    update: updateEngravedLine, setPoints: setEngravedPoints, setCount: setEngravedCount, expand: expandIndexedSegments,
     setOpacity: setEngravedOpacity, setColor: setEngravedColor, setWidth: setEngravedWidth,
     WIDTH_PX: ENGRAVED_WIDTH_PX,
   });
 }
 
 /**
- * Rewrite the points of an engraved line. With the same point count the existing instance buffer is written
- * in place (no allocation); with a different count the geometry is rebuilt. Returns the line.
+ * Rewrite the points (and optionally the per-vertex colours, flat rgb per point) of an engraved line. With the
+ * same point count the existing instance buffers are written in place (no allocation); with a different count
+ * the geometry is rebuilt. Returns the line.
  */
-export function updateEngravedLine(line, points) {
+export function updateEngravedLine(line, points, colors = null) {
   const info = line?.userData?.engraved;
   if (!info) fail("updateEngravedLine needs a line made by engravedLine/engravedSegments");
   const flat = flattenPoints(points);
@@ -218,18 +220,49 @@ export function updateEngravedLine(line, points) {
     const start = geometry.attributes.instanceStart;
     const segmentCount = info.segments ? count / 2 : count - 1;
     if (start && start.data.count === segmentCount) {
-      const array = start.data.array;
-      if (info.segments) array.set(flat);
-      else for (let i = 0; i < segmentCount; i += 1) { array.set(flat.subarray(3 * i, 3 * i + 6), 6 * i); }
-      start.data.needsUpdate = true;
-      geometry.computeBoundingBox();
-      geometry.computeBoundingSphere();
+      writeSegmentData(start.data, flat, segmentCount, info.segments);
+      const colorStart = geometry.attributes.instanceColorStart;
+      if (colors && colorStart) { writeSegmentData(colorStart.data, colors, segmentCount, info.segments); }
+      if (target.frustumCulled) { geometry.computeBoundingBox(); geometry.computeBoundingSphere(); }
     } else {
       geometry.setPositions(flat);
+      if (colors) geometry.setColors(Float32Array.from(colors));
     }
     if (target.material.dashed) target.computeLineDistances();
   }
   return line;
+}
+
+/** Fill an instanced (start, end) interleaved buffer from flat per-point data; segments are already in pairs. */
+function writeSegmentData(buffer, flat, segmentCount, segments) {
+  if (segments) buffer.array.set(flat.subarray(0, 6 * segmentCount));
+  else for (let i = 0; i < segmentCount; i += 1) buffer.array.set(flat.subarray(3 * i, 3 * i + 6), 6 * i);
+  buffer.needsUpdate = true;
+}
+
+/**
+ * A square grid in the XZ plane, `size` wide with `divisions` cells, as engraved segments (the replacement for
+ * THREE.GridHelper). `centerColor` colours the two centre lines when it differs from `color`.
+ */
+export function engravedGrid(size, divisions, options = {}, backend = engravedBackend()) {
+  if (!(Number.isFinite(size) && size > 0) || !Number.isInteger(divisions) || divisions < 1) fail("a grid needs size > 0 and integer divisions >= 1");
+  const { color, centerColor = color, ...rest } = options;
+  const lines = divisions + 1, half = size / 2, step = size / divisions;
+  const positions = new Float32Array(lines * 12);
+  const tinted = centerColor !== color;
+  const colors = tinted ? new Float32Array(lines * 12) : null;
+  const base = resolveColor(backend.three, color), center = resolveColor(backend.three, centerColor);
+  for (let i = 0; i < lines; i += 1) {
+    const k = -half + i * step, at = i * 12;
+    positions.set([-half, 0, k, half, 0, k, k, 0, -half, k, 0, half], at);
+    if (colors) {
+      const c = i * 2 === divisions ? center : base;
+      for (let v = 0; v < 4; v += 1) colors.set([c.r, c.g, c.b], at + v * 3);
+    }
+  }
+  const grid = build(positions, { ...rest, color: tinted ? undefined : color, colors }, true, backend);
+  grid.frustumCulled = false;
+  return grid;
 }
 
 /**
@@ -247,6 +280,11 @@ export function engravedStream(capacity, options = {}, backend = engravedBackend
   return line;
 }
 
+/** Write points i and i + 1 of a flat xyz/rgb source as segment i of an instanced (start, end) buffer. */
+function copyPair(target, source, i) {
+  for (let k = 0; k < 6; k += 1) target[6 * i + k] = source[3 * i + k];
+}
+
 /**
  * Write the first `count` points (flat xyz) and optional per-point colours (flat rgb) into a stream or any line,
  * then show `count - 1` segments. No allocation. Counts above the capacity are clamped.
@@ -260,13 +298,29 @@ export function setEngravedPoints(line, flat, count, colors = null) {
   const segments = Math.max(0, n - 1);
   const start = geometry.attributes.instanceStart.data;
   const colorBuffer = colors ? geometry.attributes.instanceColorStart?.data : null;
+  // Typed arrays (flat or colours) copy by view; plain arrays are indexed. Either way nothing is allocated.
   for (let i = 0; i < segments; i += 1) {
-    start.array.set(flat.subarray(3 * i, 3 * i + 6), 6 * i);
-    if (colorBuffer) colorBuffer.array.set(colors.subarray(3 * i, 3 * i + 6), 6 * i);
+    copyPair(start.array, flat, i);
+    if (colorBuffer) copyPair(colorBuffer.array, colors, i);
   }
   start.needsUpdate = true;
   if (colorBuffer) colorBuffer.needsUpdate = true;
   geometry.instanceCount = segments;
+  return line;
+}
+
+/**
+ * Show only the first `pointCount` points of a polyline (or the first `pointCount / 2` segments of a segment set):
+ * the instanced replacement for BufferGeometry.setDrawRange(0, n). Allocation-free.
+ */
+export function setEngravedCount(line, pointCount) {
+  const info = line?.userData?.engraved;
+  if (!info) fail("setEngravedCount needs a line made by engravedLine/engravedSegments/engravedStream");
+  const available = line.geometry.attributes.instanceStart.data.count;
+  const wanted = info.segments ? Math.floor(pointCount / 2) : Math.max(0, Math.floor(pointCount) - 1);
+  const count = Math.max(0, Math.min(wanted, available));
+  line.geometry.instanceCount = count;
+  if (info.halo) info.halo.geometry.instanceCount = count;
   return line;
 }
 

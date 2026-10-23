@@ -603,14 +603,11 @@ function FeynmanCollision3D({ proc, procKey }) {
       );
       const glow = ctx.glow(hex, rad * 6.5, 0.9);
       scene.add(core); scene.add(glow);
-      const tg = new THREE.BufferGeometry();
-      const tbuf = new THREE.BufferAttribute(new Float32Array(TRAIL * 3), 3);
-      tg.setAttribute("position", tbuf); tg.setDrawRange(0, 0);
-      const tl = new THREE.Line(tg, new THREE.LineBasicMaterial({
-        color: hex, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      tl.frustumCulled = false; scene.add(tl);
-      return { core, glow, tbuf, tg, tl, hex, trail: [] };
+      const tl = ctx.engraved.stream(TRAIL, {
+        color: hex, opacity: 0.55, additive: true, widthPx: ctx.engraved.WIDTH_PX.standard, layer: "model",
+      });
+      scene.add(tl);
+      return { core, glow, tl, hex, trail: [] };
     };
     const setQ = (q, vec, vis) => {
       q.core.visible = q.glow.visible = vis;
@@ -623,8 +620,7 @@ function FeynmanCollision3D({ proc, procKey }) {
       q.trail.push(q.core.position.x, q.core.position.y, q.core.position.z);
       if (q.trail.length > TRAIL * 3) q.trail.splice(0, q.trail.length - TRAIL * 3);
       const n = q.trail.length / 3;
-      for (let i = 0; i < n; i++) q.tbuf.setXYZ(i, q.trail[i * 3], q.trail[i * 3 + 1], q.trail[i * 3 + 2]);
-      q.tbuf.needsUpdate = true; q.tg.setDrawRange(0, n);
+      ctx.engraved.setPoints(q.tl, q.trail, n);
     };
 
     const SPAN = 7.0, OFF = 2.6;
@@ -647,13 +643,13 @@ function FeynmanCollision3D({ proc, procKey }) {
 
     // mediator: animated wavy/straight glowing line + a travelling energy packet
     const medN = 46;
-    const medBuf = new THREE.BufferAttribute(new Float32Array((medN + 1) * 3), 3);
-    const medGeo = new THREE.BufferGeometry(); medGeo.setAttribute("position", medBuf);
+    const medFlat = new Float32Array((medN + 1) * 3);
     const medHex = isCompton ? QGA_TOKENS.hex("pigment-blue-87") : QGA_TOKENS.hex("pigment-amber-88-c12");
-    const medLine = new THREE.Line(medGeo, new THREE.LineBasicMaterial({
-      color: medHex, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false,
-    }));
-    medLine.frustumCulled = false; scene.add(medLine);
+    // The mediator is this scene's focal curve.
+    const medLine = ctx.engraved.stream(medN + 1, {
+      color: medHex, opacity: 0, additive: true, widthPx: ctx.engraved.WIDTH_PX.focal, layer: "model",
+    });
+    scene.add(medLine);
     const packet = ctx.glow(medHex, 0.9, 0); scene.add(packet);
 
     // collision flashes
@@ -675,7 +671,7 @@ function FeynmanCollision3D({ proc, procKey }) {
     let pp = 0.0;
 
     const setMed = (aArr, bArr, frac, amp, wavy, tphase, op) => {
-      medLine.material.opacity = op;
+      ctx.engraved.setOpacity(medLine, op);
       const a = new THREE.Vector3(...aArr), b = new THREE.Vector3(...bArr);
       const dir = new THREE.Vector3().subVectors(b, a);
       medMid.copy(a).addScaledVector(dir, 0.5).add(new THREE.Vector3(0, isT ? 0 : 0.5, 0));
@@ -683,16 +679,16 @@ function FeynmanCollision3D({ proc, procKey }) {
         const f = i / medN;
         const off = wavy ? Math.sin(f * Math.PI * 7 + tphase) * amp * Math.sin(f * Math.PI) : 0;
         V.copy(a).addScaledVector(dir, f).addScaledVector(perpZ, off);
-        medBuf.setXYZ(i, V.x, V.y, V.z);
+        medFlat[i * 3] = V.x; medFlat[i * 3 + 1] = V.y; medFlat[i * 3 + 2] = V.z;
       }
-      medBuf.needsUpdate = true;
+      ctx.engraved.setPoints(medLine, medFlat, medN + 1);
       // travelling packet rides the exchange
       packet.material.opacity = op > 0 ? 0.95 : 0;
       V.copy(a).addScaledVector(dir, frac);
       packet.position.copy(V);
       packet.scale.setScalar(0.9 + 0.5 * Math.sin(tphase));
     };
-    const hideMed = () => { medLine.material.opacity = 0; packet.material.opacity = 0; };
+    const hideMed = () => { ctx.engraved.setOpacity(medLine, 0); packet.material.opacity = 0; };
 
     return {
       autoRotate: true,

@@ -936,7 +936,7 @@ function HawkingComputeLab() {
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createHawkingLabRuntime } = await LABS.loadHawkingLab();
     ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02"), 0.011);
-    const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42, camera: ctx.camera });
+    const runtime = createHawkingLabRuntime({ massSolar, spin, amplification: gain, seed: 42, camera: ctx.camera, engraved: ctx.engraved });
     ctx.scene.add(runtime.mesh);
     const mA = Math.min(1, Math.abs(spin));
     const mKappa = lab ? lab.temperatureFactor : 1;

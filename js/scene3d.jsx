@@ -74,12 +74,9 @@ function s3dLine(points, color, opacity = 0.8, dashed = false, engraved = null) 
   if (!engraved) throw new Error("s3dLine needs the scene's engraved API (ctx.engraved)");
   return engraved.line(points, { color, opacity, widthPx: engraved.WIDTH_PX.standard, dash: dashed ? S3D_DASH : null });
 }
-function s3dGrid(size, divisions, color = QGA_TOKENS.hex("pigment-blue-35"), opacity = 0.35) {
-  const g = new THREE.GridHelper(size, divisions, color, color);
-  g.material.transparent = true;
-  g.material.opacity = opacity;
-  g.material.depthWrite = false;
-  return g;
+function s3dGrid(size, divisions, color = QGA_TOKENS.hex("pigment-blue-35"), opacity = 0.35, engraved = null) {
+  if (!engraved) throw new Error("s3dGrid needs the scene's engraved API (ctx.engraved)");
+  return engraved.grid(size, divisions, { color, opacity, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration" });
 }
 function s3dDispose(root) {
   root.traverse((o) => {
@@ -340,7 +337,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       invalidate: () => session?.invalidate({ input: false }),
       label: makeLabel(false),
       annotation: makeLabel(true),
-      glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: s3dGrid,
+      glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: (size, divisions, color, opacity) => s3dGrid(size, divisions, color, opacity, ctx.engraved),
       engraved: null,
       conceptTarget: (id, target) => {
         if (typeof id !== "string" || !id || !target || !target.object) {

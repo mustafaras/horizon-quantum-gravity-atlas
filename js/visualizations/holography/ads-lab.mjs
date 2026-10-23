@@ -14,7 +14,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
-  DoubleSide, Group, Line, LineBasicMaterial, LineSegments, Mesh,
+  DoubleSide, Group, Mesh,
   MeshBasicMaterial, Points, PointsMaterial, PlaneGeometry, SphereGeometry,
   Sprite, SpriteMaterial, TorusGeometry, TubeGeometry, Vector3,
 } from "three";
@@ -35,8 +35,9 @@ export function createAdsLabRuntime({
   regulator = ADS_LAB_DEFAULTS.regulator,
   centralCharge = ADS_LAB_DEFAULTS.centralCharge,
   seed = 42,
-  camera = null,
+  camera = null, engraved,
 } = {}) {
+  if (!engraved) throw new TypeError("createAdsLabRuntime needs ctx.engraved (the scene's engraved line API)");
   const lab = adsLabState({ links, region, regulator, centralCharge });
   const group = new Group();
   group.name = "ads-holography-lab";
@@ -44,6 +45,7 @@ export function createAdsLabRuntime({
   const MAGENTA = tokenColor("lab-magenta");
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
+  const trackLine = (line) => { track(line.geometry); track(line.material); return line; };
 
   // ---- seeded starfield (fixed shell, cool spread) ----
   {
@@ -85,46 +87,37 @@ export function createAdsLabRuntime({
   group.add(floor);
 
   // ---- hyperbolic grid: rings, spokes, weaving geodesic arcs (all tested) ----
-  const gridLineMat = track(new LineBasicMaterial({
-    color: TK.hex("pigment-blue-54"), transparent: true, opacity: 0.22, depthWrite: false,
-  }));
-  const arcLineMat = track(new LineBasicMaterial({
-    color: TK.hex("pigment-blue-60-c12"), transparent: true, opacity: 0.3, depthWrite: false,
-  }));
+  // One segment set per style: every ring and spoke is a pair list, every geodesic arc a chain of pairs, so the
+  // whole grid is two draw calls. Rings are closed by pairing the last point with the first (the WebGPU renderer
+  // does not draw LineLoop).
+  const ringPairs = [];
   for (const poly of lab.grid.ringPolys) {
-    const g = track(new BufferGeometry());
-    // LineSegments pairs, not LineLoop: the WebGPU renderer does not draw LineLoop.
-    const arr = new Float32Array(poly.length * 6);
     poly.forEach((p, i) => {
-      const v = to3(p);
-      const w = to3(poly[(i + 1) % poly.length]);
-      arr[i * 6] = v.x; arr[i * 6 + 1] = v.y; arr[i * 6 + 2] = v.z;
-      arr[i * 6 + 3] = w.x; arr[i * 6 + 4] = w.y; arr[i * 6 + 5] = w.z;
+      const v = to3(p), w = to3(poly[(i + 1) % poly.length]);
+      ringPairs.push(v.x, v.y, v.z, w.x, w.y, w.z);
     });
-    g.setAttribute("position", new BufferAttribute(arr, 3));
-    group.add(new LineSegments(g, gridLineMat));
   }
-  {
-    const segs = new Float32Array(lab.grid.spokeLines.length * 6);
-    lab.grid.spokeLines.forEach(([a, b], i) => {
-      const va = to3(a), vb = to3(b);
-      segs.set([va.x, va.y, va.z, vb.x, vb.y, vb.z], i * 6);
-    });
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(segs, 3));
-    const ls = new LineSegments(g, gridLineMat);
-    ls.frustumCulled = false;
-    group.add(ls);
+  for (const [a, b] of lab.grid.spokeLines) {
+    const va = to3(a), vb = to3(b);
+    ringPairs.push(va.x, va.y, va.z, vb.x, vb.y, vb.z);
   }
+  const arcPairs = [];
   for (const poly of lab.grid.arcPolys) {
-    const g = track(new BufferGeometry());
-    const arr = new Float32Array(poly.length * 3);
-    poly.forEach((p, i) => { const v = to3(p, 0.004); arr[i * 3] = v.x; arr[i * 3 + 1] = v.y; arr[i * 3 + 2] = v.z; });
-    g.setAttribute("position", new BufferAttribute(arr, 3));
-    const l = new Line(g, arcLineMat);
-    l.frustumCulled = false;
-    group.add(l);
+    for (let i = 0; i + 1 < poly.length; i++) {
+      const v = to3(poly[i], 0.004), w = to3(poly[i + 1], 0.004);
+      arcPairs.push(v.x, v.y, v.z, w.x, w.y, w.z);
+    }
   }
+  const gridLines = trackLine(engraved.segments(ringPairs, {
+    color: "pigment-blue-54", opacity: 0.22, widthPx: engraved.WIDTH_PX.hairline, layer: "model",
+  }));
+  gridLines.frustumCulled = false;
+  group.add(gridLines);
+  const arcLines = trackLine(engraved.segments(arcPairs, {
+    color: "pigment-blue-60-c12", opacity: 0.3, widthPx: engraved.WIDTH_PX.standard, layer: "model",
+  }));
+  arcLines.frustumCulled = false;
+  group.add(arcLines);
 
   // ---- conformal boundary: bright ring + partition nodes with glow ----
   const ringGeo = track(new TorusGeometry(S, 0.028, 10, 160));

@@ -49,13 +49,12 @@ function ParticleArchitecture3D() {
       if (i < FN - 1) fSeg.push(fidx(i, j), fidx(i + 1, j));
       if (j < FN - 1) fSeg.push(fidx(i, j), fidx(i, j + 1));
     }
-    const fGeo = new THREE.BufferGeometry();
-    const fAttr = new THREE.BufferAttribute(fPos, 3);
-    fGeo.setAttribute("position", fAttr);
-    fGeo.setIndex(fSeg);
-    const fMat = new THREE.LineBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-35"), transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, depthWrite: false });
-    const fieldFloor = new THREE.LineSegments(fGeo, fMat);
+    const engraved = ctx.engraved;
+    const fSegFlat = engraved.expand(fPos, fSeg);
+    const fieldFloor = engraved.segments(fSegFlat, { color: "pigment-blue-35", opacity: 0.26, additive: true, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration" });
+    fieldFloor.frustumCulled = false;
     fieldFloor.position.y = -3.4;
+    let floorHiggs = false;
     scene.add(fieldFloor);
 
     const nodes = [];
@@ -160,12 +159,9 @@ function ParticleArchitecture3D() {
         // colour each arc by the mediating boson (so the carrier is identifiable)
         const medCls = selIsBoson ? p.cls : (other ? other.cls : p.cls);
         const hex = SM3D_HEX[medCls] || SM3D_HEX[p.cls];
-        const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
-        const mat = new THREE.LineBasicMaterial({
-          color: hex, transparent: true, opacity: 0.45,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        });
-        linesGroup.add(new THREE.Line(geo, mat));
+        linesGroup.add(engraved.line(curve.getPoints(40), {
+          color: hex, opacity: 0.45, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
+        }));
         activeCurves.push({ curve, hex });
       }
     };
@@ -186,15 +182,19 @@ function ParticleArchitecture3D() {
         if (lastSel !== selRef.current) { lastSel = selRef.current; rebuildLines(lastSel); }
 
         // quantum-field substrate ripple (stronger / gold-tinted when the Higgs field is shown)
-        const fa = fAttr.array;
+        const fa = fPos;
         const famp = (higgsRef.current ? 0.34 : 0.2) * mo;
         for (let i = 0; i < FN; i++) for (let j = 0; j < FN; j++) {
           const x = -FSPAN / 2 + i * fstep, z = -FSPAN / 2 + j * fstep;
           fa[fidx(i, j) * 3 + 1] = (Math.sin(x * 0.5 + t * 0.9) * Math.cos(z * 0.4 - t * 0.7)) * famp;
         }
-        fAttr.needsUpdate = true;
-        fMat.color.setHex(higgsRef.current ? QGA_TOKENS.hex("pigment-amber-47") : QGA_TOKENS.hex("pigment-blue-35"));
-        fMat.opacity = 0.24 + (higgsRef.current ? 0.14 : 0);
+        engraved.expand(fPos, fSeg, fSegFlat);
+        engraved.update(fieldFloor, fSegFlat);
+        if (floorHiggs !== higgsRef.current) {
+          floorHiggs = higgsRef.current;
+          engraved.setColor(fieldFloor, floorHiggs ? "pigment-amber-47" : "pigment-blue-35");
+        }
+        engraved.setOpacity(fieldFloor, 0.24 + (higgsRef.current ? 0.14 : 0));
 
         // nodes: zero-point jitter + spin-correct motion
         for (const n of nodes) {

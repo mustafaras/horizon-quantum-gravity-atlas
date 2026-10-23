@@ -186,7 +186,7 @@ function OverviewArena3D() {
     floor.position.set(0, -0.02, ARENA_RAMP_LEN / 2 - 6);
     floor.renderOrder = -3;
     scene.add(floor);
-    const grid = s3dGrid(16, 16, QGA_TOKENS.hex("pigment-blue-35"), 0.16);
+    const grid = ctx.grid(16, 16, QGA_TOKENS.hex("pigment-blue-35"), 0.16);
     grid.geometry.rotateX(-Math.PI / 2);
     grid.position.set(0, 0.01, ARENA_RAMP_LEN / 2 - 6);
     grid.renderOrder = -2;
@@ -204,10 +204,9 @@ function OverviewArena3D() {
       const z = arenaZ(e);
       pushSeg(-6.2, z, 6.2, z, e % 10 === 0 ? cMajor : cTick);
     }
-    const railGeo = track(new THREE.BufferGeometry());
-    railGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(railPts), 3));
-    railGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(railColors), 3));
-    scene.add(new THREE.LineSegments(railGeo, track(new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55 }))));
+    scene.add(ctx.engraved.segments(railPts, {
+      colors: new Float32Array(railColors), opacity: 0.55, widthPx: ctx.engraved.WIDTH_PX.hairline, layer: "decoration",
+    }));
 
     // ---------- gates: one per scale stop ----------
     const gates = [];

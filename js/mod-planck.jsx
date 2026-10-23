@@ -294,7 +294,7 @@ function SpinFoamLab() {
     if (!LABS) throw new Error("Compute-lab module unavailable");
     const { createSpinFoamRuntime } = await LABS.loadSpinFoam();
     ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-11-c02"), 0.013);
-    const runtime = createSpinFoamRuntime({ topology, jMaxHalf: jMax, seed, step: stepIndex, mode, camera: ctx.camera });
+    const runtime = createSpinFoamRuntime({ topology, jMaxHalf: jMax, seed, step: stepIndex, mode, camera: ctx.camera, engraved: ctx.engraved });
     ctx.scene.add(runtime.mesh);
     ctx.label("CONJECTURAL · pedagogical spin network — geometry from area ∝ √(j(j+1)), no amplitudes computed",
       () => ({ x: -4.2, y: 3.3, z: -3.2 }), "s3d-strong");

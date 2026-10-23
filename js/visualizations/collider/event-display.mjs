@@ -15,8 +15,7 @@
 
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, Color,
-  ConeGeometry, CylinderGeometry, Group, InstancedMesh, Line, LineBasicMaterial,
-  LineDashedMaterial, Mesh, MeshBasicMaterial, Object3D, Points,
+  ConeGeometry, CylinderGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D, Points,
   PointsMaterial, SphereGeometry, Sprite, SpriteMaterial, Vector3,
 } from "three";
 import {
@@ -34,30 +33,33 @@ const TOWERS_PHI = 24;
 const TOWERS_ETA = 12;
 const ETA_MAX = 2.5;
 
-// Read when a display is built, so a theme change takes effect on the next build.
-const trackHex = () => ({
-  jet: TK.hex("pigment-cyan-80-c09"), bquark: TK.hex("pigment-azure-74-c11"), electron: TK.hex("pigment-blue-72"), positron: TK.hex("pigment-blue-72"),
-  muon: TK.hex("pigment-violet-72-c15"), antimuon: TK.hex("pigment-violet-72-c15"), photon: TK.hex("pigment-amber-79-c12"), neutrino: TK.hex("pigment-red-65"),
-});
+// Token names, resolved when each line is built, so a theme change takes effect on the next build.
+const TRACK_COLOR = {
+  jet: "pigment-cyan-80-c09", bquark: "pigment-azure-74-c11", electron: "pigment-blue-72", positron: "pigment-blue-72",
+  muon: "pigment-violet-72-c15", antimuon: "pigment-violet-72-c15", photon: "pigment-amber-79-c12", neutrino: "pigment-red-65",
+};
 const DASHED_KINDS = new Set(["photon", "neutrino"]);
+const TRACK_DASH = { size: 0.18, gap: 0.12 };
+const MET_DASH = { size: 0.2, gap: 0.14 };
 
 export function createColliderDisplayRuntime({
   channel = COLLIDER_LAB_DEFAULTS.channel,
   sqrtSGev = COLLIDER_LAB_DEFAULTS.sqrtSGev,
   coneR = COLLIDER_LAB_DEFAULTS.coneR,
   seed = 1,
-  camera = null,
+  camera = null, engraved,
 } = {}) {
+  if (!engraved) throw new TypeError("createColliderDisplayRuntime needs ctx.engraved (the scene's engraved line API)");
   if (!COLLIDER_CHANNELS.includes(channel)) {
     throw new TypeError(`unknown channel: ${channel}`);
   }
-  const TRACK_HEX = trackHex();
   const event = syntheticEvent({ channel, sqrtSGev, seed });
   const summary = eventSummary(event);
   const group = new Group();
   group.name = "collider-event-lab";
   const disposables = [];
   const track = (o) => { disposables.push(o); return o; };
+  const trackLine = (line) => { track(line.geometry); track(line.material); if (line.userData.engraved.halo) trackLine(line.userData.engraved.halo); return line; };
 
   // ---- barrel detector: wireframe cylinders + beam axis ----
   const layers = [[0.55, "tracker"], [0.68, "ECAL"], [0.82, "HCAL"], [1.0, "muon system"]];
@@ -73,13 +75,9 @@ export function createColliderDisplayRuntime({
     group.add(cyl);
   }
   {
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(new Float32Array([
-      0, 0, -LEN * 0.62, 0, 0, LEN * 0.62,
-    ]), 3));
-    const axis = new Line(g, track(new LineBasicMaterial({
-      color: TK.hex("ink-faint"), transparent: true, opacity: 0.4, depthWrite: false,
-    })));
+    const axis = trackLine(engraved.line([0, 0, -LEN * 0.62, 0, 0, LEN * 0.62], {
+      color: "ink-faint", opacity: 0.4, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration",
+    }));
     group.add(axis);
   }
 
@@ -111,6 +109,8 @@ export function createColliderDisplayRuntime({
   const NPT = 40;
   const visible = event.particles.filter((p) => p.visible);
   const trackLines = [];
+  // The hardest visible track is the scene's focal curve (2.5 px); the others are 1.25 px.
+  const hardest = visible.reduce((best, p, i) => (pT(p) > pT(visible[best]) ? i : best), 0);
   for (let idx = 0; idx < visible.length; idx++) {
     const p = visible[idx];
     const pt = Math.max(1e-3, pT(p));
@@ -127,25 +127,16 @@ export function createColliderDisplayRuntime({
       buf[i * 3 + 1] = Math.sin(phi + curve * f * 1.1) * rr;
       buf[i * 3 + 2] = eta * f * LEN * 0.42;
     }
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(buf, 3));
-    g.setDrawRange(0, 0);
-    const dashed = DASHED_KINDS.has(p.kind);
-    const mat = track(dashed
-      ? new LineDashedMaterial({
-        color: TRACK_HEX[p.kind] || TK.hex("pigment-blue-75-c05"), transparent: true, opacity: 0.95,
-        dashSize: 0.18, gapSize: 0.12, blending: AdditiveBlending, depthWrite: false,
-      })
-      : new LineBasicMaterial({
-        color: TRACK_HEX[p.kind] || TK.hex("pigment-blue-75-c05"), transparent: true, opacity: 0.95,
-        blending: AdditiveBlending, depthWrite: false,
-      }));
-    const line = new Line(g, mat);
-    if (dashed) line.computeLineDistances();
-    line.userData = { idx, kind: p.kind, info: `${p.kind} · pT ${pt.toFixed(1)} GeV · η ${eta.toFixed(2)} · φ ${phi.toFixed(2)}` };
+    const line = trackLine(engraved.line(buf, {
+      color: TRACK_COLOR[p.kind] || "pigment-blue-75-c05", opacity: 0.95, additive: true,
+      widthPx: idx === hardest ? engraved.WIDTH_PX.focal : engraved.WIDTH_PX.standard,
+      dash: DASHED_KINDS.has(p.kind) ? TRACK_DASH : null, layer: "model",
+    }));
+    engraved.setCount(line, 0);
+    Object.assign(line.userData, { idx, kind: p.kind, info: `${p.kind} · pT ${pt.toFixed(1)} GeV · η ${eta.toFixed(2)} · φ ${phi.toFixed(2)}` });
     line.frustumCulled = false;
     group.add(line);
-    trackLines.push({ line, g, points: NPT + 1 });
+    trackLines.push({ line, points: NPT + 1 });
   }
 
   // ---- calorimeter towers: InstancedMesh φ24 × η12, ET-weighted ----
@@ -225,16 +216,10 @@ export function createColliderDisplayRuntime({
     const phi = event.met.phi;
     const len = Math.min(1, event.met.et / 300) * R * 0.9 + R * 0.25;
     const dir = new Vector3(Math.cos(phi), Math.sin(phi), 0);
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(new Float32Array([
-      0, 0, 0, dir.x * len, dir.y * len, 0,
-    ]), 3));
-    const line = new Line(g, track(new LineDashedMaterial({
-      color: TK.hex("pigment-red-65"), transparent: true, opacity: 0.95, dashSize: 0.2, gapSize: 0.14,
-      depthWrite: false,
-    })));
-    line.computeLineDistances();
-    line.userData = { info: `missing E_T · ${event.met.et.toFixed(0)} GeV · φ ${phi.toFixed(2)}` };
+    const line = trackLine(engraved.line([0, 0, 0, dir.x * len, dir.y * len, 0], {
+      color: "pigment-red-65", opacity: 0.95, widthPx: engraved.WIDTH_PX.standard, dash: MET_DASH, layer: "model",
+    }));
+    Object.assign(line.userData, { info: `missing E_T · ${event.met.et.toFixed(0)} GeV · φ ${phi.toFixed(2)}` });
     group.add(line);
     const head = new Mesh(track(new ConeGeometry(0.14, 0.4, 10)),
       track(new MeshBasicMaterial({ color: TK.hex("pigment-red-65"), transparent: true, opacity: 0.95, depthWrite: false })));
@@ -282,7 +267,7 @@ export function createColliderDisplayRuntime({
     vFlash.scale.setScalar(1.2 + 5.5 * burst);
     vFlash.material.opacity = 0.12 + 0.75 * burst;
     const drawn = Math.max(2, Math.floor(grow * (NPT + 1)));
-    for (const tl of trackLines) tl.g.setDrawRange(0, drawn);
+    for (const tl of trackLines) engraved.setCount(tl.line, drawn);
     // towers rise with the tracks (no per-frame allocation: matrix rewrite only)
     if (grow < 1) {
       for (let i = 0; i < bins.length; i++) {
