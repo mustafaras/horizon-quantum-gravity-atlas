@@ -14,10 +14,12 @@
  */
 
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Color,
-  ConeGeometry, CylinderGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D, Points,
-  PointsMaterial, SphereGeometry, Sprite, SpriteMaterial, Vector3,
+  AdditiveBlending, Color, ConeGeometry, CylinderGeometry, Group, InstancedBufferAttribute, InstancedMesh, Mesh, MeshBasicMaterial, Object3D,
+  SphereGeometry, Sprite, SpriteMaterial, Vector3,
 } from "three";
+import { BufferAttributeNode, MeshBasicNodeMaterial } from "three/webgpu";
+import { dot, positionLocal, uniform } from "three/tsl";
+import { createDataPoints } from "../../render/materials/data-points.mjs";
 import {
   syntheticEvent, eventSummary, clusterJets, pT, pseudorapidity, azimuth,
   COLLIDER_LAB_DEFAULTS, COLLIDER_CHANNELS,
@@ -163,9 +165,22 @@ export function createColliderDisplayRuntime({
   }
   const maxBin = Math.max(1e-6, ...bins);
   const towerGeo = track(new ConeGeometry(0.16, 1, 4)); // 4-sided pyramid towers
-  const towerMat = track(new MeshBasicMaterial({
-    transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false,
-  }));
+  // The towers rise with the tracks in the vertex stage (S08): the instance matrices hold the final towers and never change; each
+  // vertex is scaled along its tower's axis, about the tower's base, by the `towerGrow` uniform. The CPU rewrote and re-uploaded
+  // every tower matrix each frame of the 1.2 s rise.
+  const towerGrow = uniform(1);
+  const towerBases = new Float32Array(bins.length * 3), towerAxes = new Float32Array(bins.length * 3);
+  const towerMat = track(new MeshBasicNodeMaterial({ transparent: true, opacity: 0.85, blending: AdditiveBlending, depthWrite: false, fog: false }));
+  const baseNode = new BufferAttributeNode(new InstancedBufferAttribute(towerBases, 3), "vec3");
+  const axisNode = new BufferAttributeNode(new InstancedBufferAttribute(towerAxes, 3), "vec3");
+  {
+    // positionLocal here is already instanced (NodeMaterial.setupPosition applies the instance matrix first)
+    const offset = positionLocal.sub(baseNode);
+    const along = dot(offset, axisNode);
+    towerMat.positionNode = baseNode.add(offset.sub(axisNode.mul(along))).add(axisNode.mul(along.mul(towerGrow)));
+    towerMat.userData.qgaNodeKit = true;
+    towerMat.userData.kit = "collider-towers";
+  }
   const towers = new InstancedMesh(towerGeo, towerMat, bins.length);
   towers.frustumCulled = false;
   const dummy = new Object3D();
@@ -186,9 +201,11 @@ export function createColliderDisplayRuntime({
     dummy.updateMatrix();
     towers.setMatrixAt(i, dummy.matrix);
     towers.setColorAt(i, coldC.clone().lerp(hotC, Math.min(1, f * 1.4)));
+    // base of the tower (the cone's bottom centre) and its outward axis, for the vertex-stage rise
+    const ax = Math.cos(phi), ay = Math.sin(phi), half = towerBase[i] / 2;
+    towerAxes[i * 3] = ax; towerAxes[i * 3 + 1] = ay;
+    towerBases[i * 3] = dummy.position.x - ax * half; towerBases[i * 3 + 1] = dummy.position.y - ay * half; towerBases[i * 3 + 2] = dummy.position.z;
   }
-  towers.instanceMatrix.needsUpdate = true;
-  if (towers.instanceColor) towers.instanceColor.needsUpdate = true;
   group.add(towers);
 
   // ---- jet cones: open wireframe cones along (φ, η) ----
@@ -238,14 +255,11 @@ export function createColliderDisplayRuntime({
       const s = Math.sqrt(1 - u * u);
       pos[i * 3] = r * s * Math.cos(th); pos[i * 3 + 1] = r * u; pos[i * 3 + 2] = r * s * Math.sin(th);
     }
-    const g = track(new BufferGeometry());
-    g.setAttribute("position", new BufferAttribute(pos, 3));
-    const dust = new Points(g, track(new PointsMaterial({
-      size: 0.3, sizeAttenuation: true, map: sharedGlowTexture(), color: TK.hex("pigment-blue-47"),
-      transparent: true, opacity: 0.4, depthWrite: false, blending: AdditiveBlending,
-    })));
-    dust.frustumCulled = false;
-    group.add(dust);
+    // Points are one pixel on the node renderers: the dust is instanced sprites.
+    const dust = createDataPoints({ positions: pos, color: TK.linear("pigment-blue-47"), sizePx: 0.3, sizeAttenuation: true, profile: "soft", additive: true, opacity: 0.4 });
+    track(dust.material);
+    dust.object.frustumCulled = false;
+    group.add(dust.object);
   }
 
   function sync({ time = 0, motion = 1 } = {}) {
@@ -268,22 +282,7 @@ export function createColliderDisplayRuntime({
     vFlash.material.opacity = 0.12 + 0.75 * burst;
     const drawn = Math.max(2, Math.floor(grow * (NPT + 1)));
     for (const tl of trackLines) engraved.setCount(tl.line, drawn);
-    // towers rise with the tracks (no per-frame allocation: matrix rewrite only)
-    if (grow < 1) {
-      for (let i = 0; i < bins.length; i++) {
-        if (towerBase[i] <= 0) continue;
-        const ie = Math.floor(i / TOWERS_PHI), ip = i % TOWERS_PHI;
-        const phi = ((ip + 0.5) / TOWERS_PHI) * 2 * Math.PI - Math.PI;
-        const eta = ((ie + 0.5) / TOWERS_ETA) * 2 * ETA_MAX - ETA_MAX;
-        const rad = R * 0.86;
-        dummy.position.set(Math.cos(phi) * rad, Math.sin(phi) * rad, eta * LEN * 0.19);
-        dummy.rotation.set(0, 0, phi - Math.PI / 2);
-        dummy.scale.set(1, towerBase[i] * grow, 1);
-        dummy.updateMatrix();
-        towers.setMatrixAt(i, dummy.matrix);
-      }
-      towers.instanceMatrix.needsUpdate = true;
-    }
+    towerGrow.value = grow;
   }
 
   function dispose() {

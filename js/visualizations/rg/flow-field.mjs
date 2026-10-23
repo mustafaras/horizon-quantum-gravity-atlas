@@ -4,7 +4,7 @@
  * Theory space rendered in three dimensions: x = coupling g, y = t = ln μ
  * (UV up, IR down), z = mass-like coupling r. Streamlines come from the
  * deterministic seeding in js/science/rg-flow-3d.mjs and carry flowing
- * glow-particles (cyan toward the UV, amber toward the IR); separatrices are
+ * glow-particles, a GPU particle system (cyan toward the UV, amber toward the IR); separatrices are
  * glowing gold tubes; fixed points pulse as wireframe icosahedra inside glow
  * halos; translucent gradient planes mark the perturbative-validity boundary
  * g = ±sqrt(4π) where streamlines visibly terminate. UV/IR direction is
@@ -15,11 +15,12 @@
  */
 
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color,
+  AdditiveBlending, CatmullRomCurve3, Color,
   ConeGeometry, Group, IcosahedronGeometry,
-  Mesh, MeshBasicMaterial, PlaneGeometry, Points, PointsMaterial,
+  Mesh, MeshBasicMaterial, PlaneGeometry,
   Sprite, SpriteMaterial, TubeGeometry, Vector3,
 } from "three";
+import { createFlowTracers } from "./flow-tracers.mjs";
 import {
   seedStreamlines3d, separatrixCurves3d, rgFlow3dFixedPoints,
   RG_FLOW_3D_DEFAULTS, RG_VALIDITY_G,
@@ -90,57 +91,12 @@ export function createRgFlowFieldRuntime({
     group.add(cone);
   }
 
-  // ---- flowing particles: one Points cloud over all streamlines ----
-  const flow = { pos: null, col: null, geo: null, items: [] };
-  {
-    for (const [ri, run] of runs.entries()) {
-      for (let k = 0; k < PARTICLES_PER_RUN; k++) {
-        flow.items.push({ run: ri, offset: (k + (ri % 3) * 0.17) / PARTICLES_PER_RUN });
-      }
-    }
-    flow.pos = new Float32Array(flow.items.length * 3);
-    flow.col = new Float32Array(flow.items.length * 3);
-    flow.geo = track(new BufferGeometry());
-    flow.geo.setAttribute("position", new BufferAttribute(flow.pos, 3));
-    flow.geo.setAttribute("color", new BufferAttribute(flow.col, 3));
-    const mat = track(new PointsMaterial({
-      size: 0.16, sizeAttenuation: true, map: sharedGlowTexture(), vertexColors: true,
-      transparent: true, opacity: 0.95, depthWrite: false, blending: AdditiveBlending,
-    }));
-    const cloud = new Points(flow.geo, mat);
-    cloud.frustumCulled = false;
-    group.add(cloud);
-  }
-  const tmpColor = new Color();
-  function sampleRun(run, u) {
-    const target = u * run.total;
-    let lo = 0, hi = run.cum.length - 1;
-    while (lo < hi - 1) {
-      const mid = (lo + hi) >> 1;
-      if (run.cum[mid] <= target) lo = mid; else hi = mid;
-    }
-    const seg = run.cum[hi] - run.cum[lo] || 1;
-    const f = (target - run.cum[lo]) / seg;
-    return run.pts[lo].clone().lerp(run.pts[hi], f);
-  }
-  function updateFlow(time, motion) {
-    for (let i = 0; i < flow.items.length; i++) {
-      const it = flow.items[i];
-      const run = runs[it.run];
-      const u = motion === 0
-        ? (it.offset + 0.35) % 1
-        : (it.offset + time * 0.055) % 1;
-      const p = sampleRun(run, u);
-      flow.pos[i * 3] = p.x; flow.pos[i * 3 + 1] = p.y; flow.pos[i * 3 + 2] = p.z;
-      // brighten mid-run, fade at both ends so particles appear/disappear smoothly
-      const a = Math.sin(u * Math.PI);
-      tmpColor.copy(run.dir === 1 ? UV_COLOR : IR_COLOR).multiplyScalar(0.35 + 0.85 * a);
-      flow.col[i * 3] = tmpColor.r; flow.col[i * 3 + 1] = tmpColor.g; flow.col[i * 3 + 2] = tmpColor.b;
-    }
-    flow.geo.attributes.position.needsUpdate = true;
-    flow.geo.attributes.color.needsUpdate = true;
-  }
-  updateFlow(0, 0);
+  // ---- flowing tracers: one GPU particle system over all streamlines (S08) ----
+  // The streamlines are resampled once into a table; the kernel walks each tracer along its run from the clock uniform, so nothing is
+  // rewritten or uploaded per frame (flow-tracers.mjs).
+  const tracers = createFlowTracers({ runs, uvColor: UV_COLOR, irColor: IR_COLOR });
+  tracers.object.visible = tracers.tracers > 0;
+  group.add(tracers.object);
 
   // ---- separatrices: glowing gold tubes (core + halo) ----
   for (const curve of separatrices) {
@@ -239,27 +195,32 @@ export function createRgFlowFieldRuntime({
       marker.scale.setScalar(pulse);
       halo.scale.setScalar(1.15 * (1 + 0.1 * Math.sin(clock * 2.2 + 0.6) * motion));
     }
-    updateFlow(clock, motion);
+    tracers.setClock(clock, motion);
   }
 
   function dispose() {
+    tracers.dispose();
     for (const d of disposables) d.dispose?.();
     group.removeFromParent?.();
   }
 
   return {
     mesh: group,
-    kind: "cpu-samples",
+    kind: "gpu-compute",
     stats: () => ({
-      kind: "cpu-samples",
+      kind: "gpu-compute",
       streamlines: streamlines.filter((r) => r.points.length > 1).length,
       separatrices: separatrices.filter((r) => r.points.length > 1).length,
       fixedPoints: fixedPoints.length,
-      flowParticles: flow.items.length,
+      flowParticles: tracers.tracers,
       terminatedAtValidity: streamlines.filter((r) => r.terminated === "validity-boundary").length,
       model: String(model),
     }),
     sync,
+    /** One compute step of the tracers; Scene3D calls it every frame with the live node renderer. */
+    compute: (renderer, dt) => tracers.step(renderer, dt),
+    /** Compiles and seeds the kernel once, before the first frame is drawn. */
+    prepare: (renderer) => tracers.init(renderer),
     dispose,
     recoverable: () => false,
   };

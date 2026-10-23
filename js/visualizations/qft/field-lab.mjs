@@ -27,8 +27,9 @@ import {
 } from "three";
 import {
   QFT_FIELD_DEFAULTS, buildFourierModes, sampleField, equalTimeCorrelation,
-  fluxTubeProfile, modeOccupation,
+  fluxTubeProfile,
 } from "../../science/qft-fields.mjs";
+import { createFieldPeaks } from "./field-peaks.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
 
@@ -237,20 +238,14 @@ export function createQftFieldLabRuntime({
   }
   group.add(tube);
 
-  // ---- particle interpretation sprites (slice peaks), soft glow ----
-  const particles = new Group();
-  particles.visible = false;
-  const spriteMat = new SpriteMaterial({
-    map: sharedGlowTexture(), color: TK.hex("pigment-white"), transparent: true,
-    opacity: 0.9, blending: AdditiveBlending, depthWrite: false,
-  });
-  const occ = modeOccupation(field);
-  for (let i = 0; i < Math.min(occ.count, 24); i++) {
-    const s = new Sprite(spriteMat);
-    s.scale.setScalar(0.55);
-    particles.add(s);
-  }
-  group.add(particles);
+  // ---- particle interpretation (slice crests): a GPU particle system (S08) ----
+  // One particle per interior sample point; the kernel evaluates the closed-form field from the mode table itself, so the CPU sets one
+  // uniform per frame and uploads nothing (field-peaks.mjs). The waterfall surface above is a mesh: it keeps its CPU ring buffer until
+  // the GPU lattice field theory (S14) replaces it.
+  const peaks = createFieldPeaks({ field, nx, color: new Color(TK.hex("pigment-white")) });
+  peaks.object.renderOrder = 3;
+  peaks.object.visible = false;
+  group.add(peaks.object);
 
   function setMode(next) {
     mode = next;
@@ -261,7 +256,7 @@ export function createQftFieldLabRuntime({
     glowMat.opacity = next === "field" ? 0.85 : 0.3;
   }
   setMode(mode);
-  particles.visible = showParticles;
+  peaks.object.visible = showParticles;
 
   function sync({ time = 0, motion = 1 } = {}) {
     // Advance the ring buffer deterministically with the shared timeline.
@@ -270,7 +265,7 @@ export function createQftFieldLabRuntime({
     const target = Math.floor(time / sliceDt);
     const current = Math.floor(simTime / sliceDt);
     if (motion === 0) {
-      if (particles.visible) markParticles();
+      peaks.setTime(simTime);
       return;
     }
     if (target < current - history) {
@@ -285,22 +280,8 @@ export function createQftFieldLabRuntime({
       head = (head + 1) % history;
       writeSlice(head, simTime);
     }
-    if (advance > 0 || particles.visible) rebuildSurface();
-    if (particles.visible) markParticles();
-  }
-
-  function markParticles() {
-    let slot = 0;
-    for (let i = 1; i < nx - 1 && slot < particles.children.length; i++) {
-      const h = phiBuf[head * nx + i];
-      const hl = phiBuf[head * nx + i - 1];
-      const hr = phiBuf[head * nx + i + 1];
-      if (h > hl && h > hr && h > 0.35) {
-        const sprite = particles.children[slot++];
-        sprite.position.set((i / (nx - 1)) * 2 * EXTENT_X - EXTENT_X, h * 1.6 + 0.4, EXTENT_Z);
-      }
-    }
-    for (; slot < particles.children.length; slot++) particles.children[slot].position.set(0, -999, 0);
+    if (advance > 0) rebuildSurface();
+    peaks.setTime(simTime);
   }
 
   function dispose() {
@@ -309,8 +290,7 @@ export function createQftFieldLabRuntime({
     corrTubeGeo.dispose(); corrTubeMat.dispose();
     corrHaloGeo.dispose(); corrHaloMat.dispose();
     tube.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
-    particles.traverse((o) => { if (o.material) o.material.dispose(); });
-    spriteMat.dispose();
+    peaks.dispose();
     group.removeFromParent?.();
   }
 
@@ -320,11 +300,16 @@ export function createQftFieldLabRuntime({
     stats: () => ({
       kind: "cpu-samples", points: total, history,
       modes: field.modes.length, cutoffK: field.cutoffK, mode,
-      particleInterpretation: particles.visible,
+      particleInterpretation: peaks.object.visible,
+      particleKind: "gpu-compute",
     }),
     setMode,
-    setParticles: (v) => { particles.visible = !!v; },
+    setParticles: (v) => { peaks.object.visible = !!v; },
     sync,
+    /** One compute step of the crest markers (only while shown); Scene3D calls it every frame with the live node renderer. */
+    compute: (renderer, dt) => { if (peaks.object.visible) peaks.step(renderer, dt); },
+    /** Compiles and seeds the kernel once, before the first frame is drawn. */
+    prepare: (renderer) => peaks.init(renderer),
     dispose,
     recoverable: () => false,
   };

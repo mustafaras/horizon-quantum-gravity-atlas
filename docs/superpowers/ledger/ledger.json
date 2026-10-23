@@ -670,20 +670,30 @@
       "findings": [
         "F-27"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "branch": "claude/zealous-goldberg-fi73ya",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/62",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 669/670 pass, 1 skipped (new: test/particles-cpu.test.mjs 15)",
+          "npm run validate: passed; npm run perf:audit: needsUpdate sites 38 -> 33, Math.random sites 27 -> 19, ShaderMaterial sites 8 (unchanged, D-035)",
+          "Browser, CI mode (Chromium 141 headless shell, no WebGPU adapter): compute-particles 3/3, compute-labs, prompt08-labs, material-kit, render-backends, shared-stage, smoke, esm-runtime, render-contracts, reduced-motion, motion, a11y, premium-interactions, engraved-lines, engraved-gr-fan, cinematic-navigation, state: 169 tests, the failures found were fixed (D-042: compute on a suspended session, prepare on a parked one; specs updated for the kit scenes) and the affected specs re-run green (16 pass, 1 skip; the command palette and spin-foam cases pass on their own re-run)",
+          "qa/specs/compute-particles.spec.mjs: GPU readback equals the CPU reference after 60 fixed steps (ballistic exact, Hawking positions 1e-6, tracers, crests), two systems with one seed bitwise identical, a re-initialised run equals a fresh one, 0 needsUpdate assignments over 40 frames, 97%+ of drawn particles at the CPU reference positions"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "needsUpdate = true sites: 38 -> 33 (atlas-stage 1, field-lab 3 (surface stays), flow-field 2, event-display 3 -> 1 one-off, mod-gr 0); Math.random sites 27 -> 19",
+          "Per-frame uploads of the migrated systems: atlas backdrop 700 colours/frame -> 0; Hawking per-frame sprite and trail writes -> 0; RG 2 attributes/frame -> 0; collider tower matrices 72/frame during the 1.2 s rise -> 0; QFT crest sprites -> 0",
+          "GPU vs CPU after 60 steps: reference system 0, Hawking positions 9.5e-7 (opacity 1.1e-4), RG tracers <= 1e-4, QFT crest mask exact (heights <= 1e-3)",
+          "p95 CPU frame (software rasteriser, desktop): overview 316.6 -> 350.0 ms, qft 350.0 -> 316.7, rg 333.4 -> 350.1, bh 766.5 -> 766.7, exp 283.3 -> 349.9 (noise, D-043)"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "F-27 stays open (D-041): the remaining sites are the QFT waterfall surface, engraved lines, and the mod-planck, mod-experiments, mod-qft and extras canvases."
     },
     {
       "id": "S09",
@@ -1641,6 +1651,48 @@
       "prompt": "S07",
       "decision": "Registered the compatibility lights (AmbientLight, DirectionalLight, PointLight of three-runtime.mjs) with every node renderer. They are subclasses and the node library looks a light node up by exact constructor, so every compatibility light was ignored (\"Light node not found\") and lit meshes rendered unlit on node renderers. Found when the GR scene moved to the node renderer. Also fixed in the move: two GR formula readouts read an undefined GR_BODIES, and the starfield and dust used Math.random (now seededRng; Math.random sites 35 -> 27). Visual changes of the GR scene (D-038): tone mapping now applies to the star, well and starfield (they bypassed it as ShaderMaterials), the well ramp uses design tokens, points are soft-disc sprites; the visual specs are local-only and were not refreshed here.",
       "rationale": "Correctness of the node path the S07 scene now depends on."
+    },
+    {
+      "id": "D-038",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "On the node renderer's WebGL2 backend (transform feedback) a kernel reads its own buffers through the variable it writes, so a read placed after an assignment sees the new value, and two kernels (init and update) over the same buffers do not stay in step with each other. The particle kit therefore runs init and update as ONE kernel selected by a uniform, copies the previous state into locals first, and assigns every buffer exactly once. init and update are builders that return the new state instead of assigning.",
+      "rationale": "Verified against r186 by the GPU-vs-CPU readback: with separate kernels or late reads a re-initialised run diverged by up to 4 units."
+    },
+    {
+      "id": "D-039",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "Each particle system's kernel carries a per-system serial constant that changes its source and not its maths. r186 caches a compiled program by source and the program keeps the attribute list of the first kernel that produced it, so on the WebGL2 backend a second system with identical source computed into the first system's buffers and left its own untouched; a lab re-mount would have drawn stale buffers.",
+      "rationale": "Found by the determinism test (a second system read back empty). Without it every rebuilt Hawking, RG, QFT or backdrop scene would break after its first mount."
+    },
+    {
+      "id": "D-040",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "Tolerances of the GPU-vs-CPU test: 1e-4 on positions, velocities, ages and attributes after 60 fixed steps (the prompt's bound; Hawking and tracer positions agree to 1e-6, the reference system exactly), 5e-4 on the Hawking opacity (pow(sin(.), 0.7)) and 1e-3 on the QFT crest heights (24 cosines of arguments up to ~100 rad); the crest mask matches exactly. The reference behaviour uses a normalised cube sample instead of sin and cos for its direction.",
+      "rationale": "sin, cos and pow are accurate to about 1e-4 on the software rasteriser CI runs; the bound is the platform's, not the algorithm's."
+    },
+    {
+      "id": "D-041",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "Scope of the migrations. Moved to GPU systems: atlas backdrop stars (static seeded buffer, vertex-stage twinkle), Hawking pair field (the engraved trail segments became tail dots of the same system), RG flow tracers (a resampled float table, two texel loads), QFT crest markers (the closed-form mode sum), collider towers (vertex-stage rise about each tower's base) and every THREE.Points left in those scenes (one pixel on both node backends). NOT moved: the QFT waterfall surface (a mesh with a CPU ring buffer; S14 replaces it with the GPU lattice), the GW lattice (its needsUpdate sites upload the signal once per signal, never per frame, and its WebGL2 twin already deforms in the vertex stage; S26 replaces it), engraved-lines.mjs and the mod-planck, mod-experiments, mod-qft and extras canvases (line and 2D upload paths outside the six listed systems). F-27 therefore stays open.",
+      "rationale": "Each of those is either not a particle system or is rewritten by a later prompt in the pack; moving it here would have duplicated that work. needsUpdate sites 38 -> 33."
+    },
+    {
+      "id": "D-042",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "Every scene holding a GPU system or kit material is a kit scene (Scene3D nodeKit): the atlas backdrop, the Hawking, RG, QFT and collider labs now run on the node renderer (WebGPU, or its WebGL2 backend), with the node engraved lines and no classic fallback. Scene3D gained prepare(renderer) and compute(renderer, dt); compute runs on the session's live renderer only, a scene parked by the WebGL2 pool is not prepared until it has one, and a system seeds itself again when the renderer changes.",
+      "rationale": "The three systems that reach the renderer through the session must survive pool eviction and restore; both defects were found by the shared-stage budget specs."
+    },
+    {
+      "id": "D-043",
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "decision": "Visual changes (visual baselines are local-only and were not refreshed): Hawking trails are dotted tails instead of engraved lines; the backdrop stars follow the shared glow profile and a slightly different twinkle (colour = base colour x (0.6 + 0.4 tw)); the QFT, collider, RG and Hawking scenes are now tone-mapped by the node pipeline; the QFT crest sprites show every crest rather than the first 24. Perf (docs/audit/s08-before.json vs s08-after.json, software rasteriser, desktop, p95 CPU frame ms): overview 316.6 -> 350.0, qft 350.0 -> 316.7, rg 333.4 -> 350.1, bh 766.5 -> 766.7, exp 283.3 -> 349.9: within the noise of a rasteriser-bound frame (quantised at ~16.7 ms steps); no hardware measurement was possible here.",
+      "rationale": "Recorded, not hidden: the prompt asks for p95 deltas per migrated view, and on this platform they are not distinguishable from noise."
     }
   ],
   "log": [
@@ -1818,6 +1870,20 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "done",
       "detail": "PR #60 merged as 6e425f7f96e066e3f7fc46f0725237bb18f253ac; CI (browser QA + validate) green on the merged head."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "claim",
+      "detail": "S08 claimed on claude/zealous-goldberg-fi73ya from main 280e877."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S08",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "review",
+      "detail": "Kit, five migrated systems and the specs done; D-038 to D-043; opening the PR. F-27 stays open (D-041). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/62."
     }
   ]
 }

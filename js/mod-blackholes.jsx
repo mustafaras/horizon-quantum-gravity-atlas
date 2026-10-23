@@ -955,6 +955,8 @@ function HawkingComputeLab() {
         runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
         window.__qgaHawkingLab = { kind: runtime.kind, ...runtime.stats() };
       },
+      prepare: (renderer) => runtime.prepare(renderer),
+      compute: (renderer, dt) => runtime.compute(renderer, dt),
       dispose: () => {
         runtime.dispose();
         delete window.__qgaHawkingLab;
@@ -973,7 +975,7 @@ function HawkingComputeLab() {
           relative power {lab ? lab.relativePower.toExponential(2) : "—"} · display rate ×{lab ? lab.displayGain : "—"}
         </div>
       </div>
-      <Scene3D animated="motion" height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
+      <Scene3D animated="motion" nodeKit height={420} aria="Black hole horizon with deterministic Hawking pair emission: partners escape outward coloured by temperature while others fall in; emission fades as spin approaches extremal"
       initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.9, radius: 0.5, threshold: 0.12 } }}
       build={build} deps={[massSolar, spin, gain]}
       fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>

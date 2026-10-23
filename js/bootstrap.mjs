@@ -28,6 +28,12 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Atlas backdrop starfield (S08): a static seeded sprite buffer with a vertex-stage twinkle; loads with the backdrop.
+    Object.defineProperty(window, "QGA_BACKDROP", {
+      value: Object.freeze({ loadStars: () => import("./visualizations/atlas/backdrop-stars.mjs") }),
+      configurable: true,
+    });
+
     // Curvature engine scene (S07): TSL materials on the material kit; the builder loads with the scene.
     const lensedSky = await import("./visualizations/gr/lensed-sky.mjs");
     Object.defineProperty(window, "QGA_GR", {

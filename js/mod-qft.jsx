@@ -1556,6 +1556,8 @@ function QftComputeLab() {
         runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
         window.__qgaQftLab = { kind: runtime.kind, mode, mass, ...runtime.stats() };
       },
+      prepare: (renderer) => runtime.prepare(renderer),
+      compute: (renderer, dt) => runtime.compute(renderer, dt),
       dispose: () => {
         runtime.dispose();
         delete window.__qgaQftLab;
@@ -1579,7 +1581,7 @@ function QftComputeLab() {
         <SliderRow label="mass m" min={0} max={3} step={0.05} value={mass}
         onChange={(v) => setState({ qftLabMass: v })} format={(v) => v.toFixed(2)}></SliderRow>
       </div>
-      <Scene3D animated="motion" height={420} aria="Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube"
+      <Scene3D animated="motion" nodeKit height={420} aria="Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube"
       initial={{ radius: 15.5, theta: 0.55, phi: 1.06, minR: 6, maxR: 34, bloom: { strength: 0.62, radius: 0.5, threshold: 0.2 } }}
       build={build} deps={[mode, mass, seed]}
       fallback={<div className="lab-fallback">The 3-D vacuum lab needs WebGL; the module numerics remain available via the export.</div>}></Scene3D>
