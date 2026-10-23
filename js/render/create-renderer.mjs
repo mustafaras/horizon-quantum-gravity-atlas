@@ -131,14 +131,17 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
 
 export function inspectSceneCompatibility(scene) {
   const unsupported = new Set();
+  let nodeOnly = false;
   scene?.traverse((object) => {
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     for (const material of materials) {
+      // Node-only materials (engraved Line2NodeMaterial lines) cannot be drawn by the classic WebGLRenderer.
+      if (material?.isLine2NodeMaterial) nodeOnly = true;
       if (material && !material.isNodeMaterial && !NODE_TYPES.has(material.type)) unsupported.add(material.type);
       if (material && Object.hasOwn(material, "onBeforeCompile")) unsupported.add("onBeforeCompile GLSL hook");
     }
   });
-  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported] });
+  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported], nodeOnly });
 }
 
 export async function createRenderer({
@@ -171,8 +174,9 @@ export async function createRenderer({
     return { renderer: null, backend: "static", capabilities: capabilities("static"), dispose: async () => {} };
   }
   if (hasWebGPU && !compatibility.nodeCompatible) report(`Classic WebGL2 required by ${compatibility.unsupported.join(", ") || "unclassified scene"}.`);
-  const attempts = hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2"
-    ? ["webgpu", "webgl2"] : ["webgl2"];
+  // A scene with node-only materials has no classic fallback; Scene3D rebuilds it on classic lines instead.
+  const attempts = compatibility.nodeOnly ? ["webgpu"]
+    : hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2" ? ["webgpu", "webgl2"] : ["webgl2"];
   for (const requested of attempts) {
     let renderer, deviceLease, initialization, releaseCensus = () => {};
     try {

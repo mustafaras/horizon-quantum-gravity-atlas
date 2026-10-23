@@ -40,12 +40,32 @@ async function loadNode() {
    * Line2NodeMaterial blends by sampling the opaque scene when `transparent` is set, and its blending is NoBlending.
    * Engraved lines use real framebuffer blending instead (so halos, additive glow and overlap with other
    * transparent objects are right), which means that sampling branch must not be built.
+   *
+   * The quad is ENGRAVED_PAD_PX wider than the line and the edge coverage is computed analytically from the
+   * distance to the centre line, so the edges are anti-aliased even where the target has no MSAA (the node
+   * renderer's WebGL2 backend, a post-processing scene pass with samples 0, the software renderer).
    */
+  const { uniform, uv, float, clamp, screenDPR, materialLineWidth, diffuseColor } = tsl;
   class EngravedLine2NodeMaterial extends Line2NodeMaterial {
+    constructor(parameters) {
+      super(parameters);
+      this.engravedWidth = uniform(1);
+    }
+
+    // The pipeline reads `alphaToCoverage` to enable alpha-to-coverage, which on top of real blending attenuates
+    // the edge twice (measured: 2.5 px reads 2.06 px on WebGPU). The shader keeps its own cap smoothing through
+    // `_useAlphaToCoverage`, so only the pipeline-facing accessor reports false.
+    get alphaToCoverage() { return false; }
+
+    set alphaToCoverage(value) { this._useAlphaToCoverage = value; }
+
     setupDiffuseColor(builder) {
       const transparent = this.transparent;
       this.transparent = false;
       try { super.setupDiffuseColor(builder); } finally { this.transparent = transparent; }
+      const halfQuad = materialLineWidth.mul(screenDPR).mul(0.5);
+      const halfLine = float(this.engravedWidth).mul(screenDPR).mul(0.5);
+      diffuseColor.a.mulAssign(clamp(halfLine.sub(uv().x.abs().mul(halfQuad)).add(0.5), 0, 1));
     }
   }
   return { kind: "node", Line2, LineSegments2, LineGeometry, LineSegmentsGeometry, NodeMaterial: EngravedLine2NodeMaterial, tsl, three: webgpu };
@@ -57,6 +77,16 @@ export async function prepareEngravedLines(options = {}) {
   if (!BACKENDS.has(kind)) BACKENDS.set(kind, kind === "node" ? loadNode() : loadClassic());
   current = await BACKENDS.get(kind);
   return current;
+}
+
+/**
+ * prepareEngravedLines() for a scene about to be built under the live atlas settings. The forced backend is
+ * resolved exactly as render-session.mjs does (page option first, then the settings tweak), so a scene and its
+ * renderer agree. `recovery` rebuilds on the classic lines after the node renderer failed.
+ */
+export function prepareEngravedLinesFor(settings = {}, { recovery = false } = {}) {
+  const forced = globalThis.QGA_RENDER_OPTIONS?.forceBackend ?? (settings.renderBackend === "auto" ? null : settings.renderBackend ?? null);
+  return prepareEngravedLines({ forceBackend: forced, recovery });
 }
 
 /** The backend chosen by the last prepareEngravedLines(); throws when a scene is built before it. */

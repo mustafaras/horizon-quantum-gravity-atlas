@@ -20,9 +20,10 @@ import { initializeRenderSession } from "./render-session.mjs";
 import { stageDiagnostics } from "./stage/shared-stage.mjs";
 import { resolveAnimated } from "./stage/animation-policy.mjs";
 import { renderDiagnostics, describeRenderError } from "./error-overlay.mjs";
+import { inspectSceneCompatibility } from "./create-renderer.mjs";
 import { softwareRendererClamp } from "./software-renderer.mjs";
 
-export const renderRuntime = Object.freeze({ initializeRenderSession, renderDiagnostics, describeRenderError, softwareRendererClamp, stageDiagnostics, resolveAnimated });
+export const renderRuntime = Object.freeze({ initializeRenderSession, inspectSceneCompatibility, renderDiagnostics, describeRenderError, softwareRendererClamp, stageDiagnostics, resolveAnimated });
 
 // Production scenes now use native linear-light color management and HDR output.
 ColorManagement.enabled = true;

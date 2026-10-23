@@ -5,7 +5,7 @@
 //   engravedLine(points, opts)        polyline through `points`
 //   engravedSegments(pairs, opts)     independent segments, consecutive point pairs
 //   updateEngravedLine(line, points)  rewrite the points in place when the count is unchanged
-//   setEngravedOpacity(line, value)   change opacity at run time (switches blending on or off)
+//   setEngravedOpacity(line, value)   change opacity at run time
 //
 // Colours come from a token name (resolved through the Figure/Design token layer) or an already resolved
 // THREE.Color / 0xRRGGBB number from a palette function; there is no colour literal in this module.
@@ -14,6 +14,8 @@ import * as designTokens from "../../design/tokens.mjs";
 
 export const ENGRAVED_WIDTH_PX = Object.freeze({ hairline: 1, standard: 1.25, focal: 2.5 });
 export const ENGRAVED_HALO_MAX = 0.12;
+/** The line quad is this many CSS px wider than the line so the analytic edge coverage has room to fade out. */
+export const ENGRAVED_PAD_PX = 1;
 export const ENGRAVED_HALO_WIDTH_FACTOR = 3;
 const LAYERS = new Set(["data", "model", "decoration"]);
 const HALO_RENDER_ORDER = -1;
@@ -69,20 +71,25 @@ export function flattenPoints(points, into = null) {
   return out;
 }
 
-function applyBlending(backend, material, opacity, additive) {
+/**
+ * Engraved lines always blend: the analytic edge coverage is an alpha, and without blending that alpha is dropped.
+ * They are transparent-sorted (drawn after the opaque meshes, still depth-tested) and never write depth.
+ */
+function applyBlending(backend, material, additive) {
   const { three } = backend;
-  const blended = opacity < 1 || additive;
-  material.transparent = blended;
-  material.depthWrite = !blended;
-  if (blended) {
-    if (backend.kind === "node") {
-      material.blending = three.CustomBlending;
-      material.blendEquation = three.AddEquation;
-      material.blendSrc = three.SrcAlphaFactor;
-      material.blendDst = additive ? three.OneFactor : three.OneMinusSrcAlphaFactor;
-    } else material.blending = additive ? three.AdditiveBlending : three.NormalBlending;
-  } else material.blending = backend.kind === "node" ? three.NoBlending : three.NormalBlending;
-  material.needsUpdate = true;
+  material.transparent = true;
+  material.depthWrite = false;
+  if (backend.kind === "node") {
+    // The factors three's own NormalBlending (non-premultiplied) and the atlas's additive override use, so the
+    // canvas alpha channel stays correct as well as the colour.
+    material.blending = three.CustomBlending;
+    material.blendEquation = three.AddEquation;
+    material.blendEquationAlpha = three.AddEquation;
+    material.blendSrc = three.SrcAlphaFactor;
+    material.blendDst = additive ? three.OneFactor : three.OneMinusSrcAlphaFactor;
+    material.blendSrcAlpha = additive ? three.SrcAlphaFactor : three.OneFactor;
+    material.blendDstAlpha = additive ? three.OneFactor : three.OneMinusSrcAlphaFactor;
+  } else material.blending = additive ? three.AdditiveBlending : three.NormalBlending;
 }
 
 function depthFadeNode(backend, [near, far]) {
@@ -91,43 +98,63 @@ function depthFadeNode(backend, [near, far]) {
   return float(1).sub(smoothstep(float(near), float(far), positionView.z.negate()));
 }
 
-function patchClassicDepthFade(material, [near, far]) {
+/**
+ * The classic LineMaterial gets the same analytic edge coverage as the node material, and the optional depth fade.
+ * The uniforms are shared objects, so a later width or pixel-ratio change reaches the compiled program.
+ */
+function patchClassic(material, widthPx, fade) {
+  const engravedWidth = { value: widthPx }, engravedDpr = { value: 1 };
+  material.userData.engravedWidth = engravedWidth;
+  material.userData.engravedDpr = engravedDpr;
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.engravedFade = { value: [near, far] };
+    shader.uniforms.engravedWidth = engravedWidth;
+    shader.uniforms.engravedDpr = engravedDpr;
+    shader.uniforms.engravedFade = { value: fade ?? [0, 1] };
     shader.vertexShader = shader.vertexShader
       .replace("void main() {", "varying float vEngravedDepth;\nvoid main() {")
       .replace("gl_Position = clip;", "vEngravedDepth = -( position.y < 0.5 ? start.z : end.z );\n\t\t\tgl_Position = clip;");
+    const coverage = "alpha *= clamp( engravedWidth * 0.5 * engravedDpr - abs( vUv.x ) * linewidth * 0.5 * engravedDpr + 0.5, 0.0, 1.0 );\n";
+    const fadeAlpha = fade ? "\t\t\talpha *= 1.0 - smoothstep( engravedFade.x, engravedFade.y, vEngravedDepth );\n" : "";
     shader.fragmentShader = shader.fragmentShader
-      .replace("void main() {", "varying float vEngravedDepth;\nuniform vec2 engravedFade;\nvoid main() {")
-      .replace("gl_FragColor = vec4( diffuseColor.rgb, alpha );",
-        "alpha *= 1.0 - smoothstep( engravedFade.x, engravedFade.y, vEngravedDepth );\n\t\t\tgl_FragColor = vec4( diffuseColor.rgb, alpha );");
+      .replace("void main() {", "varying float vEngravedDepth;\nuniform vec2 engravedFade;\nuniform float engravedWidth;\nuniform float engravedDpr;\nvoid main() {")
+      .replace("gl_FragColor = vec4( diffuseColor.rgb, alpha );", `${coverage}${fadeAlpha}\t\t\tgl_FragColor = vec4( diffuseColor.rgb, alpha );`);
   };
-  material.customProgramCacheKey = () => `engraved-fade-${near}-${far}`;
+  material.customProgramCacheKey = () => `engraved-${fade ? fade.join("-") : "plain"}`;
+}
+
+/** Keep the classic dpr uniform equal to the renderer's pixel ratio (the line resolution is in CSS pixels). */
+function trackPixelRatio(line) {
+  const base = line.onBeforeRender;
+  line.onBeforeRender = function onBeforeRender(renderer, ...rest) {
+    const dpr = this.material.userData.engravedDpr;
+    if (dpr) dpr.value = renderer.getPixelRatio();
+    return base.call(this, renderer, ...rest);
+  };
 }
 
 function makeMaterial(backend, options, widthPx) {
   const { three } = backend;
-  const common = { linewidth: widthPx, vertexColors: !!options.colors, dashed: !!options.dash };
+  const common = { linewidth: widthPx + ENGRAVED_PAD_PX, vertexColors: !!options.colors, dashed: !!options.dash };
   let material;
   if (backend.kind === "node") {
     material = new backend.NodeMaterial({ ...common, color: baseColor(three, options.color) });
     material.worldUnits = false;
+    material.engravedWidth.value = widthPx;
     if (options.dash) { material.dashSize = options.dash.size; material.gapSize = options.dash.gap; }
     if (options.depthFade) material.opacityNode = depthFadeNode(backend, options.depthFade);
   } else {
     material = new backend.LineMaterial({ ...common, color: baseColor(three, options.color) });
     material.worldUnits = false;
     if (options.dash) { material.dashSize = options.dash.size; material.gapSize = options.dash.gap; }
-    if (options.depthFade) patchClassicDepthFade(material, options.depthFade);
+    patchClassic(material, widthPx, options.depthFade);
   }
   material.opacity = options.opacity;
-  applyBlending(backend, material, options.opacity, options.additive);
+  applyBlending(backend, material, options.additive);
   return material;
 }
 
-function build(points, rawOptions, segments) {
+function build(points, rawOptions, segments, backend) {
   const options = normalizeEngravedOptions(rawOptions);
-  const backend = engravedBackend();
   const positions = flattenPoints(points);
   const count = positions.length / 3;
   if (segments ? count < 2 || count % 2 : count < 2) fail(segments ? "segments need an even number (>= 2) of points" : "a line needs at least 2 points");
@@ -140,7 +167,8 @@ function build(points, rawOptions, segments) {
     if (opts.colors) geometry.setColors(opts.colors);
     if (opts.dash) line.computeLineDistances();
     line.renderOrder = renderOrder;
-    line.userData.engraved = { layer: opts.layer, segments, widthPx };
+    if (backend.kind === "classic") trackPixelRatio(line);
+    line.userData.engraved = { layer: opts.layer, segments, widthPx, backend, additive: opts.additive };
     return line;
   };
   const line = make(options, options.widthPx, 0);
@@ -152,11 +180,28 @@ function build(points, rawOptions, segments) {
   return line;
 }
 
-/** A polyline of constant pixel width. `points` is Vector3[] or a flat xyz array (n >= 2). */
-export function engravedLine(points, options = {}) { return build(points, options, false); }
+/**
+ * A polyline of constant pixel width. `points` is Vector3[] or a flat xyz array (n >= 2). The backend is the one
+ * chosen by the last prepareEngravedLines() unless `backend` is given (engravedFor binds it per scene).
+ */
+export function engravedLine(points, options = {}, backend = engravedBackend()) { return build(points, options, false, backend); }
 
 /** Independent segments: consecutive point pairs (a0, b0, a1, b1, ...). */
-export function engravedSegments(pairs, options = {}) { return build(pairs, options, true); }
+export function engravedSegments(pairs, options = {}, backend = engravedBackend()) { return build(pairs, options, true, backend); }
+
+/** The API bound to one backend, so a scene keeps its lines consistent while other scenes prepare theirs. */
+export function engravedFor(backend) {
+  if (!backend?.kind) fail("engravedFor needs the backend returned by prepareEngravedLines()");
+  return Object.freeze({
+    kind: backend.kind,
+    line: (points, options) => engravedLine(points, options, backend),
+    segments: (pairs, options) => engravedSegments(pairs, options, backend),
+    stream: (capacity, options) => engravedStream(capacity, options, backend),
+    update: updateEngravedLine, setPoints: setEngravedPoints, expand: expandIndexedSegments,
+    setOpacity: setEngravedOpacity, setColor: setEngravedColor, setWidth: setEngravedWidth,
+    WIDTH_PX: ENGRAVED_WIDTH_PX,
+  });
+}
 
 /**
  * Rewrite the points of an engraved line. With the same point count the existing instance buffer is written
@@ -187,20 +232,79 @@ export function updateEngravedLine(line, points) {
   return line;
 }
 
-/** Change opacity at run time. Blending is switched on below 1 and off at 1 (halos keep their own opacity). */
+/**
+ * A polyline with a fixed capacity whose visible length changes every frame (orbit trails, travelling packets).
+ * It starts empty; fill it with setEngravedPoints(). `vertexColors: true` reserves per-point colours.
+ */
+export function engravedStream(capacity, options = {}, backend = engravedBackend()) {
+  if (!Number.isInteger(capacity) || capacity < 2) fail("a stream needs an integer capacity >= 2");
+  const { dash, halo, vertexColors, colors: ignored, ...rest } = options;
+  if (dash || halo) fail("streams are solid and have no halo");
+  const line = build(new Float32Array(capacity * 3), { ...rest, colors: vertexColors ? new Float32Array(capacity * 3) : null }, false, backend);
+  line.geometry.instanceCount = 0;
+  line.frustumCulled = false;
+  line.userData.engraved.capacity = capacity;
+  return line;
+}
+
+/**
+ * Write the first `count` points (flat xyz) and optional per-point colours (flat rgb) into a stream or any line,
+ * then show `count - 1` segments. No allocation. Counts above the capacity are clamped.
+ */
+export function setEngravedPoints(line, flat, count, colors = null) {
+  const info = line?.userData?.engraved;
+  if (!info) fail("setEngravedPoints needs a line made by engravedLine/engravedStream");
+  const geometry = line.geometry;
+  const capacity = geometry.attributes.instanceStart.data.count + 1;
+  const n = Math.max(0, Math.min(count | 0, capacity));
+  const segments = Math.max(0, n - 1);
+  const start = geometry.attributes.instanceStart.data;
+  const colorBuffer = colors ? geometry.attributes.instanceColorStart?.data : null;
+  for (let i = 0; i < segments; i += 1) {
+    start.array.set(flat.subarray(3 * i, 3 * i + 6), 6 * i);
+    if (colorBuffer) colorBuffer.array.set(colors.subarray(3 * i, 3 * i + 6), 6 * i);
+  }
+  start.needsUpdate = true;
+  if (colorBuffer) colorBuffer.needsUpdate = true;
+  geometry.instanceCount = segments;
+  return line;
+}
+
+/** Expand an indexed line list (BufferGeometry position + index) into consecutive pairs, optionally in place. */
+export function expandIndexedSegments(positions, indices, into = null) {
+  const out = into ?? new Float32Array(indices.length * 3);
+  if (out.length !== indices.length * 3) fail("expandIndexedSegments: output length must be 3 * index count");
+  for (let i = 0; i < indices.length; i += 1) {
+    const at = 3 * indices[i];
+    out[3 * i] = positions[at]; out[3 * i + 1] = positions[at + 1]; out[3 * i + 2] = positions[at + 2];
+  }
+  return out;
+}
+
+/** Change the line width (CSS px) at run time, e.g. to emphasise a selected curve. A halo keeps its 3x ratio. */
+export function setEngravedWidth(line, widthPx) {
+  if (!(Number.isFinite(widthPx) && widthPx > 0 && widthPx <= 16)) fail(`widthPx must be in (0, 16], got ${widthPx}`);
+  const apply = (target, px) => {
+    target.material.linewidth = px + ENGRAVED_PAD_PX;
+    if (target.material.engravedWidth) target.material.engravedWidth.value = px;
+    else if (target.material.userData.engravedWidth) target.material.userData.engravedWidth.value = px;
+    target.userData.engraved.widthPx = px;
+  };
+  apply(line, widthPx);
+  if (line.userData.engraved.halo) apply(line.userData.engraved.halo, widthPx * ENGRAVED_HALO_WIDTH_FACTOR);
+  return line;
+}
+
+/** Change opacity at run time (halos keep their own opacity). */
 export function setEngravedOpacity(line, opacity) {
   if (!(Number.isFinite(opacity) && opacity >= 0 && opacity <= 1)) fail(`opacity must be in [0, 1], got ${opacity}`);
-  const material = line.material;
-  const wasBlended = material.transparent;
-  material.opacity = opacity;
-  if ((opacity < 1) !== wasBlended) applyBlending(engravedBackend(), material, opacity, false);
+  line.material.opacity = opacity;
   return line;
 }
 
 /** Re-resolve a line's colour (token name, THREE.Color or 0xRRGGBB), e.g. after a theme change. */
 export function setEngravedColor(line, color) {
-  const backend = engravedBackend();
-  const value = resolveColor(backend.three, color);
+  const value = resolveColor(line.userData.engraved.backend.three, color);
   line.material.color.copy(value);
   return line;
 }

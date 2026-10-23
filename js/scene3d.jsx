@@ -67,14 +67,12 @@ function s3dGlow(color, scale = 1, opacity = 0.8) {
   s.scale.setScalar(scale);
   return s;
 }
-function s3dLine(points, color, opacity = 0.8, dashed = false) {
-  const geo = new THREE.BufferGeometry().setFromPoints(points);
-  const mat = dashed
-    ? new THREE.LineDashedMaterial({ color, transparent: true, opacity, dashSize: 0.22, gapSize: 0.14 })
-    : new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-  const line = new THREE.Line(geo, mat);
-  if (dashed) line.computeLineDistances();
-  return line;
+// Engraved line (S06): constant-pixel-width, anti-aliased, dashable. `engraved` is the API bound to the scene's
+// backend (ctx.engraved); colour is a token name, a THREE.Color or a resolved hex from a palette function.
+const S3D_DASH = { size: 0.22, gap: 0.14 };
+function s3dLine(points, color, opacity = 0.8, dashed = false, engraved = null) {
+  if (!engraved) throw new Error("s3dLine needs the scene's engraved API (ctx.engraved)");
+  return engraved.line(points, { color, opacity, widthPx: engraved.WIDTH_PX.standard, dash: dashed ? S3D_DASH : null });
 }
 function s3dGrid(size, divisions, color = QGA_TOKENS.hex("pigment-blue-35"), opacity = 0.35) {
   const g = new THREE.GridHelper(size, divisions, color, color);
@@ -124,10 +122,12 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
                    reduced motion). false: it changes only on input. A build may return isAnimated() to report its own
                    state instead (Kerr: until its accumulation converges); see js/render/stage/animation-policy.mjs.
      invalidateKey any value; a change owes the scene one frame (e.g. a transport clock owned by the parent)
+     classicLines  true when the scene holds a classic-only material (ShaderMaterial); its engraved lines then
+                   use the classic LineMaterial from the first build instead of after an automatic rebuild
      shared        false opts a scene out of the shared stage (it then keeps its own renderer)
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -135,6 +135,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [rebuildNonce, setRebuildNonce] = useState(0);
+  // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
+  const classicLinesRef = useRef(false);
   const [phase, setPhase] = useState("initializing");
   const [errorMessage, setErrorMessage] = useState("");
   const diagnosticRef = useRef(null);
@@ -151,7 +153,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   // (the Kerr observatory's spin, corona and jets, the Planck probe's scale), so a render owes one frame as well.
   useEffect(() => { sessionRef.current?.invalidate({ input: false }); }, [playing, full, cameraGoal, settings.labels3d, settings.annotations3d, invalidateKey, build]);
   const animatedRef = useRef(animated); animatedRef.current = animated;
-  useEffect(() => { setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
+  useEffect(() => { classicLinesRef.current = false; setFailed(false); }, [settings.renderBackend, settings.detail3d, settings.vizMode, settings.motion, settings.toneMapping]);
   // Eased camera-preset target. Held in a ref so changing it never rebuilds the
   // WebGL scene; the frame loop glides the orbit rig toward it instead.
   const goalRef = useRef(null);
@@ -168,13 +170,21 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const mount = mountRef.current;
     if (!mount) return;
     const abort = new AbortController();
-    let alive = true, stop = () => {}, renderer, session, scene, built = {}, recovered = false;
+    let alive = true, stop = () => {}, renderer, session, scene, built = {}, recovered = false, engravedKind = null;
     if (diagnosticRef.current) QGA_RENDER.renderDiagnostics.remove(diagnosticRef.current);
     const diagnosticId = QGA_RENDER.renderDiagnostics.allocate(aria || "Module scene");
     diagnosticRef.current = diagnosticId;
     setPhase("initializing");
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
+      // Node lines cannot be drawn by the classic WebGLRenderer: if the node renderer failed, rebuild once on classic lines.
+      if (engravedKind === "node" && !classicLinesRef.current) {
+        classicLinesRef.current = true;
+        QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering scene on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
+        stop();
+        setRebuildNonce((n) => n + 1);
+        return;
+      }
       // A scene may declare one automatic recovery (e.g. rebuild on a different material backend).
       if (!recovered && built.recoverable && built.recoverable(error)) {
         recovered = true;
@@ -330,7 +340,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       invalidate: () => session?.invalidate({ input: false }),
       label: makeLabel(false),
       annotation: makeLabel(true),
-      glow: s3dGlow, line: s3dLine, grid: s3dGrid,
+      glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: s3dGrid,
+      engraved: null,
       conceptTarget: (id, target) => {
         if (typeof id !== "string" || !id || !target || !target.object) {
           throw new TypeError("conceptTarget(id, { object, readout? }) requires an id and an object");
@@ -340,8 +351,19 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       },
     };
 
+    ctx.engraved = await QGA_ENGRAVED.prepare(settingsRef.current, { recovery: classicLines || classicLinesRef.current });
+    engravedKind = ctx.engraved.kind;
+    mount.dataset.engravedBackend = engravedKind;
     built = (await build(ctx)) || {};
     if (!alive) { if (built.dispose) built.dispose(); s3dDispose(scene); labelLayer.remove(); return; }
+    // A scene holding a classic-only material (a GLSL ShaderMaterial) is drawn by the classic WebGLRenderer, which cannot
+    // draw node lines: rebuild it once on the classic engraved lines. Scenes known to be classic pass classicLines.
+    if (engravedKind === "node" && !QGA_RENDER.inspectSceneCompatibility(scene).nodeCompatible) {
+      classicLinesRef.current = true;
+      stop();
+      setRebuildNonce((n) => n + 1);
+      return;
+    }
     camera.position.set(
       target.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
       target.y + orbit.radius * Math.cos(orbit.phi),

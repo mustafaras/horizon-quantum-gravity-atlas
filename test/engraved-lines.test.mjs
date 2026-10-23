@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { prepareEngravedLines, resolveEngravedBackendKind, setEngravedBackend, engravedBackend } from "../js/visualizations/common/engraved-backend.mjs";
 import {
-  engravedLine, engravedSegments, updateEngravedLine, setEngravedOpacity, setEngravedColor, setEngravedTokens,
-  normalizeEngravedOptions, flattenPoints, ENGRAVED_HALO_MAX, ENGRAVED_WIDTH_PX,
+  engravedLine, engravedSegments, engravedStream, setEngravedPoints, expandIndexedSegments, engravedFor, updateEngravedLine, setEngravedOpacity, setEngravedColor, setEngravedTokens,
+  normalizeEngravedOptions, flattenPoints, ENGRAVED_HALO_MAX, ENGRAVED_PAD_PX, ENGRAVED_WIDTH_PX, setEngravedWidth,
 } from "../js/visualizations/common/engraved-lines.mjs";
 
 const MOCK_TOKENS = { hex: (name) => ({ "mock-blue": 0x336699, "mock-red": 0xcc3322 })[name] };
@@ -59,15 +59,17 @@ for (const hasWebGPU of [false, true]) {
     assert.equal(backend.kind, hasWebGPU ? "node" : "classic");
     const line = engravedLine(points(4), { color: "mock-blue", widthPx: ENGRAVED_WIDTH_PX.focal, layer: "data" });
     assert.equal(line.isLine2, true);
-    assert.equal(line.material.linewidth, 2.5);
+    assert.equal(line.material.linewidth, 2.5 + ENGRAVED_PAD_PX, "the quad is padded for the analytic edge coverage");
+    assert.equal(line.userData.engraved.widthPx, 2.5);
     assert.equal(line.material.color.getHex(), 0x336699);
     assert.equal(line.userData.engraved.layer, "data");
     assert.equal(line.children.length, 0);
-    assert.equal(line.material.transparent, false);
+    assert.equal(line.material.transparent, true, "engraved lines always blend: the edge coverage is an alpha");
+    assert.equal(line.material.depthWrite, false);
 
     const haloed = engravedLine(points(4), { color: "mock-blue", widthPx: 2, halo: 0.1 });
     const [halo] = haloed.children;
-    assert.equal(halo.material.linewidth, 2 * 3);
+    assert.equal(halo.material.linewidth, 2 * 3 + ENGRAVED_PAD_PX);
     assert.equal(halo.material.opacity, 0.1);
     assert.ok(halo.renderOrder < haloed.renderOrder, "the halo is drawn first");
     assert.equal(halo.material.transparent, true);
@@ -112,7 +114,7 @@ for (const hasWebGPU of [false, true]) {
     assert.throws(() => engravedLine(points(1), { color: "mock-blue" }), RangeError);
   });
 
-  test(`${label}: dash, per-vertex colours and opacity switching`, async () => {
+  test(`${label}: dash, per-vertex colours and opacity`, async () => {
     await prepareEngravedLines({ hasWebGPU });
     const dashed = engravedLine(points(4), { color: "mock-blue", dash: { size: 0.22, gap: 0.14 } });
     assert.equal(dashed.material.dashed, true);
@@ -123,9 +125,9 @@ for (const hasWebGPU of [false, true]) {
     const faded = engravedLine(points(3), { color: "mock-blue", opacity: 0.5 });
     assert.equal(faded.material.transparent, true);
     setEngravedOpacity(faded, 1);
-    assert.equal(faded.material.transparent, false);
-    setEngravedOpacity(faded, 0.25);
+    assert.equal(faded.material.opacity, 1);
     assert.equal(faded.material.transparent, true);
+    setEngravedOpacity(faded, 0.25);
     assert.equal(faded.material.opacity, 0.25);
     assert.throws(() => setEngravedOpacity(faded, 2), RangeError);
     setEngravedColor(faded, "mock-red");
@@ -142,6 +144,49 @@ for (const hasWebGPU of [false, true]) {
   });
 }
 
+for (const hasWebGPU of [false, true]) {
+  test(`${hasWebGPU ? "node" : "classic"}: a stream shows count - 1 segments without reallocating`, async () => {
+    const backend = await prepareEngravedLines({ hasWebGPU });
+    const stream = engravedStream(6, { color: "mock-blue", vertexColors: true, opacity: 0.5, additive: true }, backend);
+    assert.equal(stream.geometry.instanceCount, 0);
+    assert.equal(stream.frustumCulled, false);
+    assert.equal(stream.material.transparent, true);
+    const start = stream.geometry.attributes.instanceStart.data;
+    const array = start.array;
+    const flat = new Float32Array([0, 0, 0, 1, 0, 0, 2, 1, 0, 3, 1, 0, 4, 2, 0, 5, 2, 0]);
+    const colors = new Float32Array(18).fill(0.25);
+    setEngravedPoints(stream, flat, 4, colors);
+    assert.equal(stream.geometry.instanceCount, 3);
+    assert.equal(start.array, array);
+    assert.deepEqual([...array.slice(0, 12)], [0, 0, 0, 1, 0, 0, 1, 0, 0, 2, 1, 0]);
+    assert.equal(stream.geometry.attributes.instanceColorStart.data.array[0], 0.25);
+    setEngravedPoints(stream, flat, 99, colors);
+    assert.equal(stream.geometry.instanceCount, 5, "counts above the capacity are clamped");
+    setEngravedPoints(stream, flat, 1);
+    assert.equal(stream.geometry.instanceCount, 0, "one point draws nothing");
+    assert.throws(() => engravedStream(1, { color: "mock-blue" }, backend), RangeError);
+    assert.throws(() => engravedStream(4, { color: "mock-blue", dash: { size: 1, gap: 1 } }, backend), RangeError);
+    assert.throws(() => setEngravedPoints({}, flat, 2), RangeError);
+  });
+
+  test(`${hasWebGPU ? "node" : "classic"}: engravedFor binds lines to one backend`, async () => {
+    const bound = engravedFor(await prepareEngravedLines({ hasWebGPU }));
+    await prepareEngravedLines({ hasWebGPU: !hasWebGPU });
+    const line = bound.line(points(3), { color: "mock-blue" });
+    assert.equal(line.userData.engraved.backend.kind, hasWebGPU ? "node" : "classic", "later prepare() calls do not rebind it");
+    assert.equal(bound.kind, hasWebGPU ? "node" : "classic");
+    assert.throws(() => engravedFor(null), RangeError);
+  });
+}
+
+test("expandIndexedSegments turns an indexed line list into consecutive pairs", () => {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 1, 1, 0]);
+  assert.deepEqual([...expandIndexedSegments(positions, [0, 1, 1, 2])], [0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0]);
+  const into = new Float32Array(12);
+  assert.equal(expandIndexedSegments(positions, [0, 1, 1, 2], into), into);
+  assert.throws(() => expandIndexedSegments(positions, [0, 1], new Float32Array(3)), RangeError);
+});
+
 test("the classic depth fade patches the vendored shader strings it relies on", async () => {
   await prepareEngravedLines({ hasWebGPU: false });
   const line = engravedLine(points(3), { color: "mock-blue", depthFade: [2, 9] });
@@ -151,4 +196,28 @@ test("the classic depth fade patches the vendored shader strings it relies on", 
   assert.match(shader.vertexShader, /vEngravedDepth = -\( position\.y < 0\.5 \? start\.z : end\.z \)/);
   assert.match(shader.fragmentShader, /alpha \*= 1\.0 - smoothstep\( engravedFade\.x, engravedFade\.y, vEngravedDepth \)/);
   assert.deepEqual(shader.uniforms.engravedFade.value, [2, 9]);
+});
+
+test("the classic shader gets analytic edge coverage with the true width, and widths can change", async () => {
+  await prepareEngravedLines({ hasWebGPU: false });
+  const line = engravedLine(points(3), { color: "mock-blue", widthPx: 2, halo: 0.1 });
+  const shader = { uniforms: {}, vertexShader: line.material.vertexShader, fragmentShader: line.material.fragmentShader };
+  line.material.onBeforeCompile(shader);
+  assert.match(shader.fragmentShader, /alpha \*= clamp\( engravedWidth \* 0\.5 \* engravedDpr - abs\( vUv\.x \) \* linewidth/);
+  assert.doesNotMatch(shader.fragmentShader, /engravedFade\.x, engravedFade\.y, vEngravedDepth \)/);
+  assert.equal(shader.uniforms.engravedWidth.value, 2);
+  setEngravedWidth(line, 2.5);
+  assert.equal(shader.uniforms.engravedWidth.value, 2.5, "the shader uniform object is shared");
+  assert.equal(line.material.linewidth, 2.5 + ENGRAVED_PAD_PX);
+  assert.equal(line.children[0].material.linewidth, 7.5 + ENGRAVED_PAD_PX, "the halo keeps its 3x ratio");
+  assert.throws(() => setEngravedWidth(line, 0), RangeError);
+});
+
+test("the node material keeps the true width in a uniform and pads the quad", async () => {
+  await prepareEngravedLines({ hasWebGPU: true });
+  const line = engravedLine(points(3), { color: "mock-blue", widthPx: 1.25 });
+  assert.equal(line.material.engravedWidth.value, 1.25);
+  setEngravedWidth(line, 2.5);
+  assert.equal(line.material.engravedWidth.value, 2.5);
+  assert.equal(line.material.linewidth, 2.5 + ENGRAVED_PAD_PX);
 });

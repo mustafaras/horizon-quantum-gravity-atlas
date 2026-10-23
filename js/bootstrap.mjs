@@ -140,6 +140,17 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Engraved lines (S06): constant-pixel-width lines; the backend is chosen per scene build (D-028).
+    const engravedBackend = await import("./visualizations/common/engraved-backend.mjs");
+    const engraved = await import("./visualizations/common/engraved-lines.mjs");
+    Object.defineProperty(window, "QGA_ENGRAVED", {
+      value: Object.freeze({
+        // Resolves to the API bound to the backend chosen for this scene build (see engravedFor).
+        prepare: async (settings, options) => engraved.engravedFor(await engravedBackend.prepareEngravedLinesFor(settings, options)),
+      }),
+      configurable: true,
+    });
+
     // Formula Core (S03): one definition per equation, compiled to JS, KaTeX and TSL.
     // Pass the "three/tsl" namespace to compileTSL; the formula modules never import three.
     const { library: formulaLibrary } = await import("./formula/library/index.mjs");
