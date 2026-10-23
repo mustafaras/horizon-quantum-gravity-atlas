@@ -168,11 +168,13 @@ export function createSpinFoamRuntime({
         slicePositions.push(a.x, a.y, a.z, b.x, b.y, b.z);
       }
     }
-    const ls = trackLine(engraved.segments(slicePositions, {
-      color: "pigment-blue-54", opacity: 0.16, widthPx: engraved.WIDTH_PX.hairline, layer: "model",
-    }));
-    ls.frustumCulled = false;
-    group.add(ls);
+    if (slicePositions.length >= 6) {
+      const ls = trackLine(engraved.segments(slicePositions, {
+        color: "pigment-blue-54", opacity: 0.16, widthPx: engraved.WIDTH_PX.hairline, layer: "model",
+      }));
+      ls.frustumCulled = false;
+      group.add(ls);
+    }
 
     // every node of every slice as one InstancedMesh of glow points
     const count = steps * lab.config.nodes.length;

@@ -330,11 +330,13 @@ export function createHawkingLabRuntime({
 
   // ---- trails: one LineSegments per group, head bright -> tail dark ----
   const mkTrails = (rig, color) => {
-    const pos = new Float32Array(rig.length * 6);
-    const col = new Float32Array(rig.length * 6);
+    // An empty field (extremal spin: the emission vanishes) still needs one segment of storage; none is drawn.
+    const pos = new Float32Array(Math.max(1, rig.length) * 6);
+    const col = new Float32Array(Math.max(1, rig.length) * 6);
     const lines = trackLine(engraved.segments(pos, {
       colors: col, opacity: 0.85, additive: true, widthPx: engraved.WIDTH_PX.standard, layer: "model",
     }));
+    if (rig.length === 0) engraved.setCount(lines, 0);
     lines.frustumCulled = false;
     group.add(lines);
     return { lines, pos, col, color: new Color(color) };

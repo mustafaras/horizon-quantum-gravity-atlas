@@ -52,7 +52,7 @@ test("Collider lab publishes synthetic fixture stats and switches channels", asy
 });
 
 test("Collider tracks are engraved lines that can still be picked with a click", async ({ page }) => {
-  const errors = await gotoReady(page, "/?view=sm&clc=h2gg&seed=42", LABS);
+  const errors = await gotoReady(page, "/?view=sm&clc=ttbar&seed=42", LABS);
   const section = page.locator('section:has-text("Collisions, computed")');
   await section.scrollIntoViewIfNeeded();
   await published(page, "__qgaColliderLab");
