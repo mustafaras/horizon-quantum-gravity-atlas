@@ -670,13 +670,15 @@
       "findings": [
         "F-27"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "branch": "claude/zealous-goldberg-fi73ya",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/62",
-      "commits": [],
+      "commits": [
+        "9d189a46923cc1696f47bb713af8ec52c45a9998"
+      ],
       "startedAt": "2026-10-23",
-      "completedAt": null,
+      "completedAt": "2026-10-23",
       "evidence": {
         "tests": [
           "npm test: 669/670 pass, 1 skipped (new: test/particles-cpu.test.mjs 15)",
