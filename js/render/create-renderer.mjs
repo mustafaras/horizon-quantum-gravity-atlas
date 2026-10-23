@@ -224,7 +224,8 @@ export async function createRenderer({
           ...(nodeWebGL2 ? { forceWebGL: true } : { device: deviceLease.device, trackTimestamp }),
         });
         releaseCensus = retainRenderer(renderer);
-        renderer.onDeviceLost = (info) => onDeviceLost(new Error(`GPU device lost: ${info.message || info.reason}`));
+        // The WebGL2 backend reports a lost WebGL context through the same callback: name it as the context loss it is.
+        renderer.onDeviceLost = (info) => onDeviceLost(new Error(nodeWebGL2 ? `Graphics context lost: ${info.message || info.reason}` : `GPU device lost: ${info.message || info.reason}`));
         renderer.onError = (info) => onDeviceLost(new Error(`GPU ${info.type}: ${info.message}`));
         report("WebGPU renderer created; awaiting init().");
         initialization = renderer.init();
