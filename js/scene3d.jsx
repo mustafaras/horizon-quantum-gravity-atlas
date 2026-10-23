@@ -351,6 +351,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     ctx.engraved = await QGA_ENGRAVED.prepare(settingsRef.current, { recovery: classicLines || classicLinesRef.current });
     engravedKind = ctx.engraved.kind;
     mount.dataset.engravedBackend = engravedKind;
+    // QA hook (like window.__qgaKerrRuntime): lets the browser suite inspect the live scene without touching React.
+    mount.__qga = { scene, camera, engraved: ctx.engraved };
     built = (await build(ctx)) || {};
     if (!alive) { if (built.dispose) built.dispose(); s3dDispose(scene); labelLayer.remove(); return; }
     // A scene holding a classic-only material (a GLSL ShaderMaterial) is drawn by the classic WebGLRenderer, which cannot
