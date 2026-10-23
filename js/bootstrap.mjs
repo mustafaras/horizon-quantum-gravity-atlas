@@ -28,6 +28,16 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Curvature engine scene (S07): TSL materials on the material kit; the builder loads with the scene.
+    const lensedSky = await import("./visualizations/gr/lensed-sky.mjs");
+    Object.defineProperty(window, "QGA_GR", {
+      value: Object.freeze({
+        lensedSky: Object.freeze({ ...lensedSky }),
+        loadCurvatureEngine: () => import("./visualizations/gr/curvature-engine.mjs"),
+      }),
+      configurable: true,
+    });
+
     // Gravitational-wave instrument (Prompt 06): DSP/polarization science,
     // sonification, and the visualization contract. The 3-D runtimes (WebGPU
     // compute / WebGL2) load lazily with the scene.

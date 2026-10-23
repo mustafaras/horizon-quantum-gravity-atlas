@@ -74,6 +74,20 @@ export async function quiesceRendererQueue(renderer, timeoutMs = 2000) {
   } finally { clearTimeout(timer); }
 }
 
+/**
+ * The compatibility lights (js/render/three-runtime.mjs wraps AmbientLight, DirectionalLight and PointLight to keep the r147
+ * constructor signatures) are subclasses, and the node renderer looks a light's node class up by its exact constructor. Without
+ * this registration every compatibility light is ignored ("Light node not found") and lit meshes render unlit.
+ */
+async function registerCompatibilityLights(renderer) {
+  const compat = globalThis.THREE;
+  if (!compat || !renderer?.library?.lightNodes) return;
+  const { AmbientLightNode, DirectionalLightNode, PointLightNode } = await import("three/webgpu");
+  for (const [LightNode, Light] of [[AmbientLightNode, compat.AmbientLight], [DirectionalLightNode, compat.DirectionalLight], [PointLightNode, compat.PointLight]]) {
+    if (Light && !renderer.library.lightNodes.has(Light)) renderer.library.addLight(LightNode, Light);
+  }
+}
+
 function initializeGPU(operation) {
   const result = gpuInitializationQueue.then(operation);
   gpuInitializationQueue = result.then(() => undefined, () => undefined);
@@ -131,17 +145,19 @@ async function acquireGPUDevice({ signal, powerPreference, onError }) {
 
 export function inspectSceneCompatibility(scene) {
   const unsupported = new Set();
-  let nodeOnly = false;
+  let nodeOnly = false, kit = false;
   scene?.traverse((object) => {
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     for (const material of materials) {
-      // Node-only materials (engraved Line2NodeMaterial lines) cannot be drawn by the classic WebGLRenderer.
+      // Node-only materials (engraved Line2NodeMaterial lines, TSL kit materials flagged userData.qgaNodeKit) cannot be
+      // drawn by the classic WebGLRenderer.
+      if (material?.userData?.qgaNodeKit === true) kit = nodeOnly = true;
       if (material?.isLine2NodeMaterial) nodeOnly = true;
       if (material && !material.isNodeMaterial && !NODE_TYPES.has(material.type)) unsupported.add(material.type);
       if (material && Object.hasOwn(material, "onBeforeCompile")) unsupported.add("onBeforeCompile GLSL hook");
     }
   });
-  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported], nodeOnly });
+  return Object.freeze({ nodeCompatible: !!scene && unsupported.size === 0, unsupported: [...unsupported], nodeOnly, kit });
 }
 
 export async function createRenderer({
@@ -174,15 +190,23 @@ export async function createRenderer({
     return { renderer: null, backend: "static", capabilities: capabilities("static"), dispose: async () => {} };
   }
   if (hasWebGPU && !compatibility.nodeCompatible) report(`Classic WebGL2 required by ${compatibility.unsupported.join(", ") || "unclassified scene"}.`);
-  // A scene with node-only materials has no classic fallback; Scene3D rebuilds it on classic lines instead.
-  const attempts = compatibility.nodeOnly ? ["webgpu"]
-    : hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2" ? ["webgpu", "webgl2"] : ["webgl2"];
+  // A scene with node-only materials has no classic fallback. Engraved node lines alone are only chosen when WebGPU exists, and a
+  // failed WebGPU renderer there rebuilds the scene on classic lines (Scene3D). A scene built from the TSL material kit (S07, D-034)
+  // has no classic form at all: when WebGPU is absent, unavailable (no adapter) or WebGL2 is forced, it is drawn by the node
+  // renderer's own WebGL2 backend ("node-webgl2"). The shared WebGPU stage (forceBackend "webgpu") wants WebGPU or nothing.
+  const attempts = compatibility.kit
+    ? hasWebGPU && forceBackend !== "webgl2" ? (forceBackend === "webgpu" ? ["webgpu"] : ["webgpu", "node-webgl2"]) : ["node-webgl2"]
+    : compatibility.nodeOnly ? ["webgpu"]
+      : hasWebGPU && compatibility.nodeCompatible && forceBackend !== "webgl2" ? ["webgpu", "webgl2"] : ["webgl2"];
   for (const requested of attempts) {
     let renderer, deviceLease, initialization, releaseCensus = () => {};
     try {
       abortIfNeeded(signal);
-      if (requested === "webgpu") {
-        report("Initializing WebGPU; awaiting adapter and device.");
+      if (requested === "webgpu" || requested === "node-webgl2") {
+        const nodeWebGL2 = requested === "node-webgl2";
+        report(nodeWebGL2
+          ? "Initializing the node renderer on its WebGL2 backend (no WebGPU, or WebGL2 forced, and the scene holds node materials)."
+          : "Initializing WebGPU; awaiting adapter and device.");
         const { WebGPURenderer } = await import("three/webgpu");
         report("WebGPU module loaded; creating renderer.");
         await initializeGPU(async () => {
@@ -193,8 +217,12 @@ export async function createRenderer({
           try { await awaitInitialization(readiness, { signal, label: "Document readiness for WebGPU" }); }
           finally { window.removeEventListener("load", loaded); }
         }
-        deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost });
-        renderer = new WebGPURenderer({ canvas, alpha, antialias, powerPreference, device: deviceLease.device, trackTimestamp });
+        // The WebGL2 node backend has no GPUDevice to lease, validate or time.
+        if (!nodeWebGL2) deviceLease = await acquireGPUDevice({ signal, powerPreference, onError: onDeviceLost });
+        renderer = new WebGPURenderer({
+          canvas, alpha, antialias, powerPreference,
+          ...(nodeWebGL2 ? { forceWebGL: true } : { device: deviceLease.device, trackTimestamp }),
+        });
         releaseCensus = retainRenderer(renderer);
         renderer.onDeviceLost = (info) => onDeviceLost(new Error(`GPU device lost: ${info.message || info.reason}`));
         renderer.onError = (info) => onDeviceLost(new Error(`GPU ${info.type}: ${info.message}`));
@@ -203,8 +231,9 @@ export async function createRenderer({
         await awaitInitialization(initialization, { signal, label: "WebGPU renderer initialization",
           onLateResult: () => { void renderer.dispose().catch((error) => report(`Late GPU cleanup failed: ${error.message}`)); },
         });
+        await registerCompatibilityLights(renderer);
         if (renderer.backend.isWebGPUBackend) await attachWebGPUValidation(renderer);
-        deviceLease.routeErrors();
+        deviceLease?.routeErrors();
         });
         report("Node renderer initialization completed; compiling current scene shaders.");
       } else {
@@ -266,7 +295,7 @@ export async function createRenderer({
         await deviceLease?.release();
       }
       if (error.name === "AbortError") throw error;
-      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" && attempts.length > 1 ? "Retrying classic WebGL2 once." : requested === "webgpu" ? "This scene draws with node-only lines: it is rebuilt on classic engraved lines instead of retrying here." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
+      report(`${requested} initialization/compile failed: ${error.message}. ${requested === "webgpu" && attempts.length > 1 ? (compatibility.kit ? "Retrying on the node renderer's WebGL2 backend once." : "Retrying classic WebGL2 once.") : requested === "webgpu" ? "This scene draws with node-only lines: it is rebuilt on classic engraved lines instead of retrying here." : "Use a WebGL2-enabled browser or enable hardware acceleration; analytical content is still available."}`);
       // A canvas with an established WebGPU context cannot subsequently acquire WebGL2.
       if (requested === "webgpu" && canvas) canvas = canvas.cloneNode(false);
     }

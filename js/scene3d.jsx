@@ -120,12 +120,14 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
                    reduced motion). false: it changes only on input. A build may return isAnimated() to report its own
                    state instead (Kerr: until its accumulation converges); see js/render/stage/animation-policy.mjs.
      invalidateKey any value; a change owes the scene one frame (e.g. a transport clock owned by the parent)
+     nodeKit       true when the scene is built from TSL node materials (the S07 material kit): it needs the node
+                   renderer, on WebGPU or on its WebGL2 backend, and has no classic fallback
      classicLines  true when the scene holds a classic-only material (ShaderMaterial); its engraved lines then
                    use the classic LineMaterial from the first build instead of after an automatic rebuild
      shared        false opts a scene out of the shared stage (it then keeps its own renderer)
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false, nodeKit = false }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -178,7 +180,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const fail = (error) => {
       if (!alive || error.name === "AbortError") return;
       // Node lines cannot be drawn by the classic WebGLRenderer: if the node renderer failed, rebuild once on classic lines.
-      if (engravedKind === "node" && !classicLinesRef.current) {
+      if (engravedKind === "node" && !classicLinesRef.current && !nodeKit) {
         classicLinesRef.current = true;
         classicReasonRef.current = `webgpu initialization/compile failed: ${QGA_RENDER.describeRenderError(error)}. Retrying classic WebGL2 once, on classic engraved lines.`;
         QGA_RENDER.renderDiagnostics.message(diagnosticId, `Recovering scene on classic engraved lines: ${QGA_RENDER.describeRenderError(error)}`);
@@ -352,7 +354,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       },
     };
 
-    ctx.engraved = await QGA_ENGRAVED.prepare(settingsRef.current, { recovery: classicLines || classicLinesRef.current });
+    ctx.engraved = await QGA_ENGRAVED.prepare(settingsRef.current, { recovery: classicLines || classicLinesRef.current, requireNode: nodeKit });
     engravedKind = ctx.engraved.kind;
     mount.dataset.engravedBackend = engravedKind;
     // QA hook (like window.__qgaKerrRuntime): lets the browser suite inspect the live scene without touching React.

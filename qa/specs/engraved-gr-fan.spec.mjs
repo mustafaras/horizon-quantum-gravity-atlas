@@ -1,6 +1,6 @@
-// Engraved lines on the real GR scene (S06, closes F-24): the gravity-well scene holds a classic-only ShaderMaterial,
-// so its lensing fan is drawn by the classic WebGLRenderer with the classic engraved lines (D-028). This measures the
-// line width through the page's own render pipeline at DPR 1 and DPR 2.
+// Engraved lines on the real GR scene (S06, closes F-24; S07 moves the scene to TSL): the gravity-well scene is built from node
+// materials, so it runs on the node renderer (its WebGL2 backend where there is no WebGPU adapter) with the node engraved
+// lines (D-034). This measures the line width through the page's own render pipeline at DPR 1 and DPR 2.
 //
 // The fan rays carry per-vertex fades, so their width cannot be read off the fan itself. The scene is therefore
 // emptied and probe lines, made by the same engraved-line API the fan uses (the scene's ctx.engraved) and drawn by the
@@ -111,7 +111,7 @@ for (const dpr of [1, 2]) {
         });
         return { ...counts, backend: document.querySelector("[data-engraved-backend]").dataset.engravedBackend };
       });
-      expect(inventory.backend).toBe("classic");
+      expect(inventory.backend).toBe("node");
       expect(inventory.hairline, "no THREE.Line left in the GR scene").toBe(0);
       expect(inventory.engraved, "the lensing fan is engraved lines").toBeGreaterThan(3);
 

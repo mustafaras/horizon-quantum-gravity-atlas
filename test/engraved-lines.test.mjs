@@ -21,6 +21,14 @@ test("backend kind follows the renderer the scene can reach", () => {
   assert.throws(() => resolveEngravedBackendKind({ forceBackend: "vulkan" }), RangeError);
 });
 
+test("a node-material scene keeps node lines on every backend it can reach, and has no classic recovery (S07)", () => {
+  assert.equal(resolveEngravedBackendKind({ hasWebGPU: false, requireNode: true }), "node");
+  assert.equal(resolveEngravedBackendKind({ hasWebGPU: true, forceBackend: "webgl2", requireNode: true }), "node");
+  assert.equal(resolveEngravedBackendKind({ hasWebGPU: true, recovery: true, requireNode: true }), "node");
+  assert.equal(resolveEngravedBackendKind({ hasWebGPU: true, forceBackend: "static", requireNode: true }), "classic");
+  assert.throws(() => resolveEngravedBackendKind({ forceBackend: "vulkan", requireNode: true }), RangeError);
+});
+
 test("using a line before a backend is selected fails loudly", () => {
   setEngravedBackend(null);
   assert.throws(() => engravedBackend(), /prepareEngravedLines/);

@@ -52,7 +52,8 @@ for (const view of ["overview", "gr", "bh"]) {
     expect(entries.length).toBeGreaterThan(0);
     for (const entry of entries) {
       expect(entry.backend).toBe("webgl2");
-      expect(entry.capabilities.rendererPath).toBe("classic");
+      // The gravity well is built from the TSL material kit (S07): with WebGL2 forced it runs on the node renderer's own WebGL2 backend.
+      expect(entry.capabilities.rendererPath).toBe(/gravity well/i.test(entry.label) ? "nodes" : "classic");
       expect(entry.effects.find((effect) => effect.name === "base-render").status).toBe("enabled");
       expect(entry.effects.find((effect) => effect.name === "tone-mapping").status).toBe("enabled");
       expect(entry.effects.find((effect) => effect.name === "ssgi").status).not.toBe("enabled");
@@ -84,7 +85,8 @@ test("legacy GLSL compatibility overrides advertised GPU capability, never forci
     sessionStorage.setItem("horizon-intro", "1");
   });
   const observed = observe(page);
-  await gotoReady(page, "/?view=gr", RENDER_READINESS);
+  // The Kerr observatory is the one remaining GLSL scene (its WebGL2 integrator); the gravity well is a TSL node scene since S07.
+  await gotoReady(page, "/?view=bh", RENDER_READINESS);
   await ready(page);
   const modules = (await snapshots(page)).filter((entry) => entry.label !== "Atlas backdrop");
   expect(modules.some((entry) => entry.capabilities.unsupportedMaterials.includes("ShaderMaterial"))).toBe(true);

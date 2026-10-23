@@ -6,7 +6,7 @@ import {
   Group, IcosahedronGeometry, LinearSRGBColorSpace, MathUtils, Mesh, MeshBasicMaterial,
   MeshStandardMaterial, OctahedronGeometry, OneFactor, PerspectiveCamera, PlaneGeometry,
   PointLight as CurrentPointLight, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster, REVISION, RingGeometry, Scene,
-  ShaderMaterial, SphereGeometry, Sprite, SpriteMaterial, SrcAlphaFactor, TorusGeometry,
+  SphereGeometry, Sprite, SpriteMaterial, SrcAlphaFactor, TorusGeometry,
   TorusKnotGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderTarget,
   WebGLRenderer as CurrentWebGLRenderer,
 } from "three";
@@ -139,7 +139,7 @@ export const threeCompatibility = Object.freeze({
   GammaCorrectionShader, Group, IcosahedronGeometry, MathUtils, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, PerspectiveCamera,
   PlaneGeometry, PointLight, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster,
-  RenderPass, REVISION, RingGeometry, Scene, ShaderMaterial, ShaderPass, SphereGeometry,
+  RenderPass, REVISION, RingGeometry, Scene, ShaderPass, SphereGeometry,
   Sprite, SpriteMaterial, TorusGeometry, TorusKnotGeometry, UnrealBloomPass,
   Vector2, Vector3, WebGLRenderer,
 });
