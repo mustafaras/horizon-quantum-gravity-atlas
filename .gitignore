@@ -24,3 +24,8 @@ qa/playwright-report/
 # logs
 npm-debug.log*
 yarn-error.log*
+
+# Playwright output
+playwright-report/
+qa/test-results/
+qa/output/
