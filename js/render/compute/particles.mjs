@@ -22,6 +22,7 @@ import { STEP_STRIDE, streamBase } from "./particles-cpu.mjs";
 import { createDataPoints } from "../materials/data-points.mjs";
 
 export const PARTICLE_WORKGROUP = 64;
+let serial = 0;
 export const PARTICLE_BUFFERS = Object.freeze(["position", "velocity", "age", "attr"]);
 
 /** Validated options with defaults. */
@@ -81,6 +82,7 @@ export function createParticleSystem(input) {
     return { i: instanceIndex, seed, dt: uniforms.dt, time: uniforms.time, step: uniforms.step, params, rand, randStep, ...state };
   };
   if (options.initial) for (const [name, array] of Object.entries(options.initial)) buffers[name].value.array.set(array);
+  const systemSerial = ++serial;
   const kernel = Fn(() => {
     const ctx = context();
     const fresh = options.init ? options.init(ctx) : null, next = options.update(ctx);
@@ -94,7 +96,10 @@ export function createParticleSystem(input) {
     previous.position.assign(pick("position", vec4));
     previous.velocity.assign(pick("velocity", vec4));
     previous.attr.assign(pick("attr", vec4));
-    previous.age.assign(pick("age", float));
+    // Each system's kernel source must be unique. r186 caches the compiled program by its source and the program keeps the attribute
+    // list of the first kernel that produced it, so on the WebGL2 backend (transform feedback) a second system with identical source
+    // would compute into the first system's buffers and leave its own untouched. The serial is a constant that changes the source and not the maths.
+    previous.age.assign(pick("age", float).add(float(systemSerial).mul(0)));
     Return();
   })().compute(count, [PARTICLE_WORKGROUP]);
 
