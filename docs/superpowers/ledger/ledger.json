@@ -331,7 +331,7 @@
       "closedBy": [
         "S06"
       ],
-      "closedIn": "f3f39e0440d0f56c933d5aecd17f64878292f881"
+      "closedIn": "b30eea9adad740d44f6f02ef3682f55fa67aa951"
     },
     {
       "id": "F-25",
@@ -584,13 +584,15 @@
       "findings": [
         "F-24"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Mustafa Raşit (Claude Code, Windows)",
       "branch": "claude/s06-engraved-lines-local",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/57",
-      "commits": [],
+      "commits": [
+        "b30eea9adad740d44f6f02ef3682f55fa67aa951"
+      ],
       "startedAt": "2026-10-23",
-      "completedAt": null,
+      "completedAt": "2026-10-23",
       "evidence": {
         "tests": [
           "npm test: 634/635 pass, 1 skipped (test/engraved-lines.test.mjs 28 tests, three-vendor +1, renderer-compatibility +1)",
@@ -1732,6 +1734,13 @@
       "agent": "local: Mustafa Raşit (Claude Code, Windows)",
       "event": "review",
       "detail": "PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/57 opened; engraved lines on both backends (D-028 to D-033), widths measured on classic, node WebGL2, node WebGPU and the real GR scene; F-24 closed pending merge."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "agent": "local: Mustafa Raşit (Claude Code, Windows)",
+      "event": "done",
+      "detail": "PR #57 merged as b30eea9adad740d44f6f02ef3682f55fa67aa951; CI (browser QA + validate) green on the merged head."
     }
   ]
 }
