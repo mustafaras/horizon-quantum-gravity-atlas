@@ -252,8 +252,12 @@ function createStage({ backend, maxContexts, now, requestFrame, onEmpty }) {
     async attach({ canvas, scene, camera, pipelineFactory = null, animated = false, onFrame = null, onError = null, priority = 0, label, id, rendererOptions = {}, signal } = {}) {
       if (!isGPU) throw new StageUnavailableError("attach() is for the WebGPU stage; WebGL2 views use attachContext()");
       if (!canvas) throw new TypeError("attach requires a canvas");
-      const handle = await ensureRenderer({ ...rendererOptions, scene: rendererOptions.scene ?? scene, camera: rendererOptions.camera ?? camera, onDeviceLost: (error) => { broadcastError(error); rendererOptions.onDeviceLost?.(error); } }, signal);
+      // Everything asynchronous comes first and the view is registered in the same turn the renderer resolves: a view
+      // that is not registered yet is invisible to detach(), so another view leaving in a gap here would release the
+      // renderer this one is about to use ("Cannot read properties of null (reading 'setCanvasTarget')" when every
+      // scene is rebuilt at once, e.g. on a render-preset change).
       const { CanvasTarget } = await import("three/webgpu");
+      const handle = await ensureRenderer({ ...rendererOptions, scene: rendererOptions.scene ?? scene, camera: rendererOptions.camera ?? camera, onDeviceLost: (error) => { broadcastError(error); rendererOptions.onDeviceLost?.(error); } }, signal);
       const view = makeView({ id, label, animated, priority, onFrame, onError });
       const target = new CanvasTarget(canvas);
       view.target = target; view.canvas = canvas;
