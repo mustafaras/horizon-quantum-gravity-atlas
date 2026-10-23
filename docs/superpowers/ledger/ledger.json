@@ -639,7 +639,12 @@
       "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 654/655 pass, 1 skipped (new: test/material-kit.test.mjs 10, test/curvature-sim.test.mjs 8, plus backend and compatibility cases)",
+          "npm run validate: passed; npm run perf:audit: ShaderMaterial sites 13 -> 8 (Kerr 6, GW twin 2, D-035)",
+          "Browser, CI mode (Chromium 141 headless shell, no WebGPU adapter): render-backends, engraved-gr-fan (DPR 1 and 2), esm-runtime, render-contracts, shared-stage, engraved-lines, material-kit: 44 pass, 7 skipped (native-WebGPU cases need an adapter); the one failure (context-loss message on the node WebGL2 backend) was fixed and passes",
+          "Browser, CI mode: smoke, premium-interactions, reduced-motion, cinematic-navigation, state: 35/35 pass"
+        ],
         "screenshots": [],
         "measurements": [
           "perf:audit ShaderMaterial sites 13 -> 8 (remaining: kerr-material.mjs 6, gw-runtime.mjs 2, D-035)",
@@ -1790,6 +1795,13 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "in_progress",
       "detail": "Material kit, node-webgl2 renderer path, GR port and extraction done; D-034 to D-037; running the browser suites."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "tests",
+      "detail": "Browser suites green locally; opening the PR."
     }
   ]
 }
