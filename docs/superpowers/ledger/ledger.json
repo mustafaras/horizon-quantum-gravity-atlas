@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-22",
+  "updated": "2026-10-23",
   "statuses": [
     "todo",
     "claimed",
@@ -584,12 +584,12 @@
       "findings": [
         "F-24"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Mustafa Raşit (Claude Code, Windows)",
+      "branch": "claude/s06-engraved-lines-local",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -1528,6 +1528,13 @@
       "prompt": "S05",
       "decision": "The full local browser suite was not completed: a run of all 207 tests was cut off after about 108 (hours on a software rasterizer, 7 to 9 failures under load, including a11y tests that passed 25/25 when re-run alone), and the owner asked for shorter runs. Locally verified: unit tests, the shared-stage spec (webgl2 and webgpu), formula-gpu, a 9-view mount scan on both backends, and the perf comparison. The full suite, including visual baselines (none refreshed), was dispatched on the PR head as workflow run 161. The PR's own CI only runs the critical subset (qa:critical, green). On the owner's instruction the PR was merged while run 161 was still running; its result is checked after merge and any failure caused by S05 is fixed in a follow-up PR, not skipped.",
       "rationale": "Acceptance asks for the full qa:test suite on the new default. The PR CI is not that gate; stated here instead of claimed."
+    },
+    {
+      "id": "D-027",
+      "date": "2026-10-23",
+      "prompt": "S05",
+      "decision": "Follow-up to S05 (PR #56, merge 2796bf29a2802ac275edc13c6544f2607ea8c2e7): the full browser suite failures left open by D-026 are fixed; the full suite run is 166 success. Scene3D build-closure invalidation: a React render owes the shared-stage scene one frame. Native WebGPU Kerr tests are skipped on the CI SwiftShader adapter (qa/lib/webgpu-adapter.mjs).",
+      "rationale": "Closes the verification gap D-026 recorded; the skips are adapter-capability skips, not refreshed baselines."
     }
   ],
   "log": [
@@ -1642,6 +1649,20 @@
       "agent": "https://claude.ai/code/session_01RvCsN5TM1yzm2yuu1aT2AE",
       "event": "done",
       "detail": "PR #54 merged as 930012e4d32cc6115c39fb832aaeb332eb3e45a3; full-suite run 161 pending at merge time."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S05",
+      "agent": "local: Mustafa Raşit (Claude Code, Windows)",
+      "event": "note",
+      "detail": "S05 full browser suite failures fixed by PR #56 (merge 2796bf29a2802ac275edc13c6544f2607ea8c2e7); full suite run 166 success. Recorded as D-027."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "agent": "local: Mustafa Raşit (Claude Code, Windows)",
+      "event": "claimed",
+      "detail": "S06 claimed on branch claude/s06-engraved-lines-local created from main 2796bf2."
     }
   ]
 }
