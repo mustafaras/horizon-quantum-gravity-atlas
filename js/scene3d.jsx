@@ -395,7 +395,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     sessionRef.current = session;
     renderer = session.renderer;
     // A scene with GPU compute systems (S08) compiles and seeds them once the live node renderer exists, before the first frame.
-    if (built.prepare) {
+    // A scene parked by the WebGL2 pool has no renderer yet: its systems seed themselves on the first compute step after it gets one.
+    if (built.prepare && renderer) {
       try { await built.prepare(renderer); }
       catch (error) { fail(error); return; }
       if (!alive) return;
