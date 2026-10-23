@@ -337,11 +337,11 @@
       "id": "F-25",
       "title": "GPU work split between ad hoc GLSL ShaderMaterials and TSL",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S07"
       ],
-      "closedIn": null
+      "closedIn": "728f9c311a29b4c6da47c694c221761489e6c533"
     },
     {
       "id": "F-26",
@@ -631,20 +631,32 @@
       "findings": [
         "F-25"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "branch": "claude/zealous-goldberg-fi73ya",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 654/655 pass, 1 skipped (new: test/material-kit.test.mjs 10, test/curvature-sim.test.mjs 8, plus backend and compatibility cases)",
+          "npm run validate: passed; npm run perf:audit: ShaderMaterial sites 13 -> 8 (Kerr 6, GW twin 2, D-035)",
+          "Browser, CI mode (Chromium 141 headless shell, no WebGPU adapter): render-backends, engraved-gr-fan (DPR 1 and 2), esm-runtime, render-contracts, shared-stage, engraved-lines, material-kit: 44 pass, 7 skipped (native-WebGPU cases need an adapter); the one failure (context-loss message on the node WebGL2 backend) was fixed and passes",
+          "Browser, CI mode: smoke, premium-interactions, reduced-motion, cinematic-navigation, state: 35/35 pass"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "perf:audit ShaderMaterial sites 13 -> 8 (remaining: kerr-material.mjs 6, gw-runtime.mjs 2, D-035)",
+          "js/mod-gr.jsx 2408 -> 1511 lines (-897, required >= 800); new files all < 600 lines",
+          "perf:audit Math.random sites 35 -> 27; needsUpdate sites 37 -> 38 (4 per-frame sites removed from mod-gr, 4 one-off texture/attribute uploads added in the kit)",
+          "Grid line width, requested 2 px: measured 2.0 px (coverage 0.25/0.75/0.75/0.25) on the node WebGL2 backend (tolerance 0.5)",
+          "Blackbody 6500 K pixel equals the table colour within 3/255; heatmap ends equal viridis entries 0 and 255 within 4/255; 20 discs of 12 px cover their area within 3%",
+          "GR scene renderers: classic WebGLRenderer -> node renderer (webgl2 backend in CI, webgpu with an adapter); ShaderMaterial in the GR scene 3 -> 0"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Closes F-25 pending merge."
     },
     {
       "id": "S08",
@@ -1599,6 +1611,34 @@
       "prompt": "S06",
       "decision": "Environment: the repository had no .gitattributes, so core.autocrlf=true checked vendor/three and the prompt files out as CRLF and failed test/three-vendor.test.mjs and test/plan-ledger.test.mjs on Windows before any change. A .gitattributes (* text=auto eol=lf, binaries listed) was added and the tree renormalised (no content change in the index). The pinned Playwright Chromium (v1208, Chrome 145) was installed locally to run the suite as CI does.",
       "rationale": "The base was red locally for a reason unrelated to S06; without it the vendor integrity hashes of the new addons could not be checked on Windows."
+    },
+    {
+      "id": "D-034",
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "decision": "Kit scenes run on the node renderer on every backend. The prompt assumed CI draws node scenes on the node renderer's WebGL2 backend; create-renderer.mjs used the classic WebGLRenderer whenever navigator.gpu was absent or no adapter existed (the same gap as D-028). createRenderer now attempts \"node-webgl2\" (WebGPURenderer({ forceWebGL: true })) for a scene holding a kit material (userData.qgaNodeKit): after WebGPU when an adapter exists, instead of it when WebGPU is absent or WebGL2 is forced, never the classic renderer; the shared stage (forceBackend \"webgpu\") still takes WebGPU or nothing. Scene3D gained nodeKit (node engraved lines through requireNode, no classic recovery). Scenes whose only node-only content is engraved lines keep their D-028 classic recovery.",
+      "rationale": "Without it a node-material GR scene cannot be drawn at all on browsers without WebGPU, which is where CI runs."
+    },
+    {
+      "id": "D-035",
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "decision": "Acceptance \"no ShaderMaterial outside kerr-material.mjs\" is met except js/visualizations/gw/gw-runtime.mjs (2 sites): the WebGL2 twin of the WebGPU compute lattice of the GW instrument. perf:audit ShaderMaterial sites 13 -> 8 (mod-gr.jsx 3 and the three-runtime.mjs compatibility export 2 removed); test/material-kit.test.mjs pins the allowlist to those two files.",
+      "rationale": "The step list names the mod-gr.jsx sites; S26 (\"a GPU spacetime field\") replaces the GW lattice and its twin. Porting it here would widen S07 into the GW instrument and its audio-synchronised tests."
+    },
+    {
+      "id": "D-036",
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "decision": "The blackbody table holds blackbodyToSrgb(T).linearRgb, the peak-normalised linear triple that function returns, not a unit-luminance triple; brightness is the radiance factor. The table is half float (DataUtils.toHalfFloat) so linear filtering works on every backend without OES_texture_float_linear; the 1e-6 equality is asserted on the float32 table, the texture is within 1e-3 of it.",
+      "rationale": "One definition of the colour on CPU and GPU: the test compares against the existing function rather than a second normalisation."
+    },
+    {
+      "id": "D-037",
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "decision": "Registered the compatibility lights (AmbientLight, DirectionalLight, PointLight of three-runtime.mjs) with every node renderer. They are subclasses and the node library looks a light node up by exact constructor, so every compatibility light was ignored (\"Light node not found\") and lit meshes rendered unlit on node renderers. Found when the GR scene moved to the node renderer. Also fixed in the move: two GR formula readouts read an undefined GR_BODIES, and the starfield and dust used Math.random (now seededRng; Math.random sites 35 -> 27). Visual changes of the GR scene (D-038): tone mapping now applies to the star, well and starfield (they bypassed it as ShaderMaterials), the well ramp uses design tokens, points are soft-disc sprites; the visual specs are local-only and were not refreshed here.",
+      "rationale": "Correctness of the node path the S07 scene now depends on."
     }
   ],
   "log": [
@@ -1741,6 +1781,34 @@
       "agent": "local: Mustafa Raşit (Claude Code, Windows)",
       "event": "done",
       "detail": "PR #57 merged as b30eea9adad740d44f6f02ef3682f55fa67aa951; CI (browser QA + validate) green on the merged head."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "claim",
+      "detail": "S07 claimed on claude/zealous-goldberg-fi73ya from main 62fec4e."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "in_progress",
+      "detail": "Material kit, node-webgl2 renderer path, GR port and extraction done; D-034 to D-037; running the browser suites."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "tests",
+      "detail": "Browser suites green locally; opening the PR."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S07",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "review",
+      "detail": "PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/60 opened; F-25 closed pending merge (D-034 to D-037)."
     }
   ]
 }

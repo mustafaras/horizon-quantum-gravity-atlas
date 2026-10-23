@@ -25,12 +25,12 @@ Scenes get the API as `ctx.engraved` (bound to the backend chosen for that scene
 
 ## Two backends (D-028)
 
-The scene is built before its renderer exists, and a scene holding a `ShaderMaterial` can never use the node renderer, so the line implementation is chosen **before the build**, in `engraved-backend.mjs`:
+The scene is built before its renderer exists, and a scene holding a `ShaderMaterial` can never use the node renderer (and a scene of node materials can never use the classic one), so the line implementation is chosen **before the build**, in `engraved-backend.mjs`:
 
 | Backend | Implementation | Used when |
 |---|---|---|
-| `node` | `lines/webgpu/Line2` + `Line2NodeMaterial` (TSL) | the node renderer can be reached: `navigator.gpu` exists and nothing forces WebGL2. Runs on WebGPU and on the node renderer's WebGL2 backend |
-| `classic` | `lines/Line2` + `LineMaterial` | no `navigator.gpu`, `forceBackend: "webgl2"`, a scene with a classic-only material (the GR gravity well; the Kerr observatory), or a recovery rebuild |
+| `node` | `lines/webgpu/Line2` + `Line2NodeMaterial` (TSL) | the node renderer can be reached: `navigator.gpu` exists and nothing forces WebGL2, or the scene is built from the TSL material kit (`Scene3D nodeKit`, S07: the GR gravity well), which uses the node renderer on every backend. Runs on WebGPU and on the node renderer's WebGL2 backend |
+| `classic` | `lines/Line2` + `LineMaterial` | no `navigator.gpu`, `forceBackend: "webgl2"`, a scene with a classic-only material (the Kerr observatory), or a recovery rebuild (never for a `nodeKit` scene, which has no classic form) |
 
 `Scene3D` selects with `QGA_ENGRAVED.prepare(settings)` before `build(ctx)`, and rebuilds **once** on classic lines when (a) the node renderer failed, or (b) the built scene is not node-compatible (`classicLines` skips the first build for known classic scenes). `createRenderer` gives a scene with node-only materials no classic retry. `three/webgpu` (2.2 MB) is only loaded when the node backend is selected. All sources are the unmodified files of the pinned three 0.186.1 tarball (SHA-256 in `vendor/three/VERSION`).
 

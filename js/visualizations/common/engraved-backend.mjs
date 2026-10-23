@@ -13,9 +13,15 @@
 const BACKENDS = new Map();
 let current = null;
 
-/** Mirrors create-renderer.mjs: the node renderer is attempted exactly when WebGPU exists and nothing forces WebGL2. */
-export function resolveEngravedBackendKind({ hasWebGPU = !!globalThis.navigator?.gpu, forceBackend = null, recovery = false } = {}) {
+/**
+ * Mirrors create-renderer.mjs: the node renderer is attempted exactly when WebGPU exists and nothing forces WebGL2,
+ * or when the scene needs it (`requireNode`: it holds node materials, so it has no classic fallback).
+ */
+export function resolveEngravedBackendKind({ hasWebGPU = !!globalThis.navigator?.gpu, forceBackend = null, recovery = false, requireNode = false } = {}) {
   if (![null, "auto", "webgpu", "webgl2", "static"].includes(forceBackend)) throw new RangeError(`Invalid forceBackend: ${forceBackend}`);
+  // A scene built from the TSL material kit (S07) holds node materials, which only the node renderer can draw:
+  // without WebGPU, or with WebGL2 forced, that is the node renderer's own WebGL2 backend (create-renderer.mjs).
+  if (requireNode) return forceBackend === "static" ? "classic" : "node";
   if (recovery || !hasWebGPU || forceBackend === "webgl2" || forceBackend === "static") return "classic";
   return "node";
 }
@@ -82,11 +88,12 @@ export async function prepareEngravedLines(options = {}) {
 /**
  * prepareEngravedLines() for a scene about to be built under the live atlas settings. The forced backend is
  * resolved exactly as render-session.mjs does (page option first, then the settings tweak), so a scene and its
- * renderer agree. `recovery` rebuilds on the classic lines after the node renderer failed.
+ * renderer agree. `recovery` rebuilds on the classic lines after the node renderer failed; `requireNode` keeps a
+ * node-material scene on the node lines (it has no classic fallback, so `recovery` does not apply to it).
  */
-export function prepareEngravedLinesFor(settings = {}, { recovery = false } = {}) {
+export function prepareEngravedLinesFor(settings = {}, { recovery = false, requireNode = false } = {}) {
   const forced = globalThis.QGA_RENDER_OPTIONS?.forceBackend ?? (settings.renderBackend === "auto" ? null : settings.renderBackend ?? null);
-  return prepareEngravedLines({ forceBackend: forced, recovery });
+  return prepareEngravedLines({ forceBackend: forced, recovery, requireNode });
 }
 
 /** The backend chosen by the last prepareEngravedLines(); throws when a scene is built before it. */

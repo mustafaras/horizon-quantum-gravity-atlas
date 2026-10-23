@@ -13,7 +13,7 @@ Status: S05 (S04 introduced the stage). The shared stage is the **default**: eve
 
 **Asynchronous setup is exclusive.** On the shared WebGPU renderer a view's pipeline build, shader prewarm and pipeline swap run through `view.exclusive()`: one at a time, with the frame loop paused until they finish. Without it, a prewarm that awaits between "set my canvas target" and "draw" draws into whichever view the loop last activated (seen as validation errors on destroyed or doubly-used textures).
 
-A scene that cannot join the shared WebGPU renderer (classic `ShaderMaterial` content such as the Kerr WebGL2 GLSL path and the GR gravity well, a shadow-casting light source, `forceBackend: "webgl2"`) is granted a dedicated WebGL2 renderer through the pool; a scene outside the shared stage keeps its own renderer exactly as before.
+A scene that cannot join the shared WebGPU renderer (classic `ShaderMaterial` content such as the Kerr WebGL2 GLSL path, a shadow-casting light source, `forceBackend: "webgl2"`, or no WebGPU adapter) is granted a dedicated WebGL2 renderer through the pool, which is the classic `WebGLRenderer` for classic content and the node renderer on its WebGL2 backend for a scene built from the TSL material kit (the GR gravity well since S07); a scene outside the shared stage keeps its own renderer exactly as before.
 
 **WebGL2 context budget.**
 

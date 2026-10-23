@@ -56,3 +56,23 @@ test("engraved node lines make a scene node-only: it has no classic fallback att
   assert.ok(outcome.capabilities.diagnostics.some((message) => /webgpu initialization/i.test(message)), outcome.capabilities.diagnostics.join(" | "));
   assert.ok(!outcome.capabilities.diagnostics.some((message) => /webgl2 initialization/i.test(message)), "no classic retry");
 });
+
+test("a scene built from the TSL material kit is node-only, and without WebGPU it attempts the node renderer's WebGL2 backend, never the classic one (S07)", async () => {
+  const kit = sceneWith({ type: "MeshBasicNodeMaterial", isNodeMaterial: true, userData: { qgaNodeKit: true } });
+  const result = inspectSceneCompatibility(kit);
+  assert.equal(result.nodeCompatible, true);
+  assert.equal(result.nodeOnly, true);
+  assert.equal(result.kit, true);
+  const lines = inspectSceneCompatibility(sceneWith({ type: "Line2NodeMaterial", isNodeMaterial: true, isLine2NodeMaterial: true }));
+  assert.equal(lines.kit, false, "engraved node lines alone are not a kit scene: they keep their classic recovery");
+  // No navigator.gpu here: the one attempt is "node-webgl2". It cannot construct in Node (no canvas), so it fails visibly.
+  const outcome = await createRenderer({ scene: kit, camera: {} });
+  assert.equal(outcome.backend, "static");
+  const diagnostics = outcome.capabilities.diagnostics.join(" | ");
+  assert.match(diagnostics, /node renderer on its WebGL2 backend/i, diagnostics);
+  assert.match(diagnostics, /node-webgl2 initialization\/compile failed/i, diagnostics);
+  assert.ok(!/webgl2 initialization/i.test(diagnostics.replace(/node-webgl2 initialization/gi, "")), "no classic retry");
+  // WebGL2 forced is the same attempt, not a classic one.
+  const forced = await createRenderer({ scene: kit, camera: {}, forceBackend: "webgl2" });
+  assert.match(forced.capabilities.diagnostics.join(" | "), /node renderer on its WebGL2 backend/i);
+});
