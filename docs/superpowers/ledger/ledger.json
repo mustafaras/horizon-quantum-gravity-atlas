@@ -327,7 +327,7 @@
       "id": "F-24",
       "title": "Geometry drawn with 1 px THREE.Line hairlines (20+ sites); no width control",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S06"
       ],
@@ -584,17 +584,37 @@
       "findings": [
         "F-24"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "local: Mustafa Raşit (Claude Code, Windows)",
       "branch": "claude/s06-engraved-lines-local",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/57",
       "commits": [],
       "startedAt": "2026-10-23",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 634/635 pass, 1 skipped (test/engraved-lines.test.mjs 28 tests, three-vendor +1, renderer-compatibility +1)",
+          "npm run validate: passed; npm run perf:audit: new THREE.Line( sites 12 -> 0, LineBasicMaterial sites 28 -> 1 (the create-renderer NODE_TYPES name, no product code)",
+          "npm run qa:critical (CI mode, pinned Chromium 145): 25/25 pass",
+          "qa/specs/engraved-lines.spec.mjs + engraved-gr-fan.spec.mjs: 12 pass, 5 skipped in CI mode (the node-WebGPU width cases need an adapter; they pass on the local software adapter, see measurements)",
+          "qa/specs/render-backends.spec.mjs 'real WebGPU API on a software adapter' on local Chrome 145 + SwiftShader: pass (all presets stay on webgpu); it skips in this Windows headless shell",
+          "Full browser suite in CI mode (221 tests without the native WebGPU case): 182 pass, 35 skipped, 4 failed. Two were S06: the collider pick test (test bug, 2 particles; fixed) and compute-labs Hawking lab (an empty trail field threw; fixed; prompt08-labs + compute-labs 10/10). Two fail identically on unmodified main on this machine (a11y skip link; kerr native-WebGPU compute path) and are not S06",
+          "Visual specs (local, not run on CI): 19/29 pass on the branch before refresh, 22/29 on unmodified main; five S06 baselines refreshed, the two page-scope ones re-verified stable on a second run (D-032)"
+        ],
+        "screenshots": [
+          "qa/baselines/bh-kerr-hero.png",
+          "qa/baselines/bh-mobile-lab.png",
+          "qa/baselines/exp-collider-event.png",
+          "qa/baselines/qft-feynman-collision.png",
+          "qa/baselines/rg-flow-field-3d.png"
+        ],
+        "measurements": [
+          "Engraved line width, cross-section integral, 1.25 px at DPR 1 / 2: classic 1.247 / 1.251, node WebGL2 1.247 / 1.251, node WebGPU 1.247 / 1.251; 2.5 px: classic 2.376 / 2.498, node WebGL2 2.502 / 2.498, node WebGPU 2.376 / 2.498 (bound +-0.5 px)",
+          "Real GR scene, page pipeline with tone mapping and sRGB, calibrated opacity ladder, lines at 0/30/60 deg: DPR 1 1.25 -> 1.250/1.300/1.300 and 2.5 -> 2.500/2.565/2.565; DPR 2 1.25 -> 1.250/1.278/1.278 and 2.5 -> 2.500/2.444/2.444 (max error 0.065 px vs bound 0.5 px)",
+          "Opacity response of the node line equals the classic line: 0.10/0.25/0.50/0.75 -> 0.102/0.251/0.502/0.749 (it read 0.114/0.31/0.671/0.922 before the alpha blend factors were set)",
+          "Hairline THREE.Line/LineSegments objects in the GR scene: 0, with more than 3 engraved fan and trail lines (qa/specs/engraved-gr-fan.spec.mjs)",
+          "THREE.Line sites 12 -> 0, LineBasicMaterial sites 28 -> 1 (perf:audit); 7 vendored addon files with sha256 in vendor/three/VERSION"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1535,6 +1555,48 @@
       "prompt": "S05",
       "decision": "Follow-up to S05 (PR #56, merge 2796bf29a2802ac275edc13c6544f2607ea8c2e7): the full browser suite failures left open by D-026 are fixed; the full suite run is 166 success. Scene3D build-closure invalidation: a React render owes the shared-stage scene one frame. Native WebGPU Kerr tests are skipped on the CI SwiftShader adapter (qa/lib/webgpu-adapter.mjs).",
       "rationale": "Closes the verification gap D-026 recorded; the skips are adapter-capability skips, not refreshed baselines."
+    },
+    {
+      "id": "D-028",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Two line backends instead of the node path alone: the node Line2 (lines/webgpu/Line2 + Line2NodeMaterial) and the classic Line2 (lines/Line2 + LineMaterial) are both vendored from the pinned three 0.186.1 tarball. engravedLine picks per scene build, before the scene is built: node when navigator.gpu exists and nothing forces WebGL2, classic otherwise, for scenes holding a ShaderMaterial (GR gravity well, Kerr) and for a recovery rebuild after the node renderer failed. The prompt assumed CI runs the node renderer's WebGL2 backend; the code (create-renderer.mjs) draws every scene with the classic WebGLRenderer when navigator.gpu is absent, and Line2NodeMaterial cannot run there. Option 1 of the owner's recommendation; the owner then told the agent to resolve the open points itself.",
+      "rationale": "Zero THREE.Line is only reachable with a classic implementation. Scenes are built before their renderer, and a LineMaterial (ShaderMaterial) makes a scene classic-only, so the choice cannot wait for the renderer."
+    },
+    {
+      "id": "D-029",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Engraved lines always blend and carry analytic edge coverage. Line2NodeMaterial is NoBlending and fakes transparency by sampling the opaque scene; engraved lines use framebuffer blending with three's own factors (non-premultiplied alpha, additive as SrcAlpha/One), transparent-sorted, no depth write. The quad is 1 CSS px wider than the line and edge coverage is computed from the distance to the centre line on both backends; the pipeline-facing alphaToCoverage of the node material is off (it attenuated the edge twice: 2.5 px read 2.06 px). depthFade is a TSL opacityNode on the node backend and a patch of the vendored LineMaterial shader strings (onBeforeCompile) on the classic one.",
+      "rationale": "The node WebGL2 backend, a pipeline scene pass with samples 0 and the software renderer have no MSAA, so edges were aliased and widths quantised; measured widths now agree with the request to 0.13 px (0.065 px on the real GR scene)."
+    },
+    {
+      "id": "D-030",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Scope of the migration. All 29 THREE.Line/LineSegments/LineBasicMaterial sites are engraved lines; GridHelper (s3dGrid, RG grid) became engravedGrid and the ArrowHelper shaft in the GR scene was swapped for an engraved shaft; Line, LineBasicMaterial, LineDashedMaterial, LineSegments and GridHelper left the THREE compatibility export (NODE_TYPES keeps the line material names). Focal curves of 2.5 px: the hardest collider track, the QFT mediator line and the two merger trails. The other scenes have no single focal line: their focal curve is a tube mesh (AdS Ryu-Takayanagi geodesic, RG separatrices, Hawking temperature rail), which scales with zoom and stays a mesh, so every line there is 1 or 1.25 px. The GR strong-field annuli stay filled meshes as the existing comment explains. Picking uses raycaster.params.Line2 = 6 px; the annotation occlusion ray is given its camera.",
+      "rationale": "The prompt lists only the THREE.Line sites; hairline helpers were the remaining 1 px lines in the same scenes. Tubes are geometry, not hairlines."
+    },
+    {
+      "id": "D-031",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Fixed a shared-stage race (S05 code, js/render/stage/shared-stage.mjs attach): the view was registered after an await, so when every scene was rebuilt at once (a render-preset change) another view's detach released the renderer and attach threw 'Cannot read properties of null (reading setCanvasTarget)'. Found because the native WebGPU preset test (qa/specs/render-backends.spec.mjs, the CI step 'real WebGPU API on a software adapter') showed scenes silently falling back to WebGL2 after capture to cinematic once engraved-line setup changed the timing. Also: an empty Hawking trail field (extremal spin) and an empty foam slice set no longer throw.",
+      "rationale": "A latent bug of S05 made visible by S06; fixing it is required for the S06 acceptance and benefits main."
+    },
+    {
+      "id": "D-032",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Visual baselines: only the five captures that pass on unmodified main and fail on this branch were refreshed (bh-kerr-hero, bh-mobile-lab, exp-collider-event, qft-feynman-collision, rg-flow-field-3d). Seven more captures (approaches-theory-constellation, planck-scale-foam, qft-vacuum-lab, symbols-atlas, whitepaper, gr-causal-lab-simultaneity, planck-spin-foam-lab) already fail on unmodified main on this Windows machine (font and platform drift) and were not refreshed; the share of the engraved backdrop grid in them cannot be isolated here. The two page-scope baselines were regenerated with the spec's own --update-snapshots, because qa/capture.mjs does not hide the cinema bar that the spec hides. Visual specs are skipped on CI (QGA_QA_VISUAL).",
+      "rationale": "Never refresh a baseline just to make a test pass; platform drift is not a line change."
+    },
+    {
+      "id": "D-033",
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "decision": "Environment: the repository had no .gitattributes, so core.autocrlf=true checked vendor/three and the prompt files out as CRLF and failed test/three-vendor.test.mjs and test/plan-ledger.test.mjs on Windows before any change. A .gitattributes (* text=auto eol=lf, binaries listed) was added and the tree renormalised (no content change in the index). The pinned Playwright Chromium (v1208, Chrome 145) was installed locally to run the suite as CI does.",
+      "rationale": "The base was red locally for a reason unrelated to S06; without it the vendor integrity hashes of the new addons could not be checked on Windows."
     }
   ],
   "log": [
@@ -1663,6 +1725,13 @@
       "agent": "local: Mustafa Raşit (Claude Code, Windows)",
       "event": "claimed",
       "detail": "S06 claimed on branch claude/s06-engraved-lines-local created from main 2796bf2."
+    },
+    {
+      "date": "2026-10-23",
+      "prompt": "S06",
+      "agent": "local: Mustafa Raşit (Claude Code, Windows)",
+      "event": "review",
+      "detail": "PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/57 opened; engraved lines on both backends (D-028 to D-033), widths measured on classic, node WebGL2, node WebGPU and the real GR scene; F-24 closed pending merge."
     }
   ]
 }
