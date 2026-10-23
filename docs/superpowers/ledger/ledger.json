@@ -670,10 +670,10 @@
       "findings": [
         "F-27"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "branch": "claude/zealous-goldberg-fi73ya",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/62",
       "commits": [],
       "startedAt": "2026-10-23",
       "completedAt": null,
@@ -1883,7 +1883,7 @@
       "prompt": "S08",
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "review",
-      "detail": "Kit, five migrated systems and the specs done; D-038 to D-043; opening the PR. F-27 stays open (D-041)."
+      "detail": "Kit, five migrated systems and the specs done; D-038 to D-043; opening the PR. F-27 stays open (D-041). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/62."
     }
   ]
 }
