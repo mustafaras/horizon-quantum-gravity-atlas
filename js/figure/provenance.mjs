@@ -7,14 +7,24 @@ import { REF } from "../science/references.mjs";
 const { PDG, HAWKING, PAGE } = REF;
 
 export const FIGURE_PROVENANCE = Object.freeze({
-  "sm-neutrino-oscillation": {
-    model: "Two-flavour vacuum neutrino oscillation P = sin^2(2 theta) sin^2(1.27 dm2 L/E)",
+  "sm-neutrino-flavour-vacuum": {
+    model: "Three-flavour vacuum oscillation P(alpha -> beta) = |<beta| exp(-i H L) |alpha>|^2 with H = U diag(0, dm21, dm31) U^dagger / (2E), for the NuFIT 6.0 best fit of the chosen ordering",
     status: "established",
-    assumptions: ["Two-flavour approximation of the three-flavour PMNS mixing", "Vacuum propagation; matter effects are neglected", "Defaults are the atmospheric values dm2_32 ~ 2.5e-3 eV^2 and sin^2 2 theta_23 ~ 0.98"],
-    validity: ["L/E from 0 to 1200 km/GeV", "Muon-neutrino survival and tau appearance only"],
-    numericalMethod: "Closed form sampled at 301 points; no fitting",
-    references: [PDG],
-    layers: [{ name: "Survival and appearance probabilities", class: "model" }, { name: "T2K baseline marker", class: "data" }],
+    assumptions: ["Plane-wave, single-energy neutrinos: no flux, cross-section or detector response, so the curves are probabilities and not event rates", "Three active flavours with the PDG parametrisation of the PMNS matrix; no sterile neutrinos, no non-standard interactions", "Parameters are the NuFIT 6.0 best fit (IC24 with SK-atmospheric data) with the delta_CP and ordering set by the controls; the 1 sigma uncertainties of the fit are not drawn", "Antineutrinos use U* in place of U"],
+    validity: ["Vacuum: the baseline is short enough, or the density low enough, that matter effects are negligible", "Energies and baselines of accelerator and reactor experiments (0.002 to 10 GeV, up to 13000 km)"],
+    numericalMethod: "Exact matrix exponential from the analytic eigendecomposition of the Hermitian 3 x 3 Hamiltonian (js/science/neutrino.mjs); rows and columns of the probability matrix sum to 1 within 1e-12",
+    references: [REF.NUFIT_6, REF.MNS_1962, REF.PDG],
+    layers: [{ name: "Stacked flavour probabilities", class: "model" }, { name: "Experiment design point", class: "data" }],
+    seed: "none: closed form",
+  },
+  "sm-neutrino-flavour-matter": {
+    model: "The same three-flavour calculation with the constant-density matter potential V = sqrt(2) G_F N_e on the electron entry of H (V -> -V for antineutrinos), N_e = rho Y_e / m_u",
+    status: "effective",
+    assumptions: ["Constant density along the whole path with Y_e = 0.5: a stand-in for the Earth's crust, not a density profile (the mantle and core are not modelled)", "The density of an experiment preset is the value its source quotes: 2.6 (T2K), 2.84 (NOvA), 2.8482 (DUNE) and 3 (JUNO) g/cm^3", "Same neutrino parameters and approximations as the vacuum figure; the vacuum result is ghosted at 30 per cent"],
+    validity: ["Constant-density approximation of a crust path; the resonance of the 1-3 sector sits near 10 GeV in the crust, above the energy of the presets", "Matter-induced CP asymmetry is real here and is distinct from the delta_CP asymmetry"],
+    numericalMethod: "Exact matrix exponential of the Hamiltonian with the matter term (js/science/neutrino.mjs); the resonance energy dm31 cos(2 theta13) / (2 sqrt(2) G_F N_e) is checked against the maximum of P(mu -> e) in a constant-density scan",
+    references: [REF.NUFIT_6, REF.WOLFENSTEIN, REF.BARGER_1980, REF.PDG],
+    layers: [{ name: "Stacked flavour probabilities in matter", class: "model" }, { name: "Vacuum ghost", class: "model" }, { name: "Experiment design point", class: "data" }],
     seed: "none: closed form",
   },
   "sm-higgs-potential": {

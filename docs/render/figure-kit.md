@@ -25,15 +25,15 @@ Pure modules import in Node without a DOM; `test/figure-*.test.mjs` cover them.
 ```js
 import { figure, axis, line, points, rule } from "../spec.mjs";
 
-export function neutrinoOscillationSpec({ dm2, s22t }) {
+export function twoFlavourSpec({ dm2, s22t }) {
   const le = grid(0, 1200, 300);                       // plots/sample.mjs
   return figure({
-    id: "sm-neutrino-oscillation", title: "Neutrino oscillation probability",
-    status: "established", provenanceId: "sm-neutrino-oscillation", height: 230,
+    id: "sm-two-flavour", title: "Two-flavour oscillation probability",
+    status: "established", provenanceId: "sm-two-flavour", height: 230,
     x: axis({ scale: { type: "linear", domain: [0, 1200] }, label: { tex: "L/E" }, unit: "km/GeV" }),
     y: axis({ scale: { type: "linear", domain: [0, 1] }, label: { text: "probability" } }),
     marks: [
-      line({ x: le, y: survival, layer: "model", focal: true, color: "pigment-azure-80", label: { tex: "P(\\nu_\\mu\\to\\nu_\\mu)" } }),
+      line({ x: le, y: survival, layer: "model", focal: true, color: "accent", label: { tex: "P(\\nu_\\mu\\to\\nu_\\mu)" } }),
       rule({ axis: "x", value: 490, layer: "data", text: { text: "T2K" } }),
     ],
   });
@@ -41,7 +41,7 @@ export function neutrinoOscillationSpec({ dm2, s22t }) {
 ```
 
 ```jsx
-const spec = useMemo(() => QGA_FIGURE.plots.sm.neutrinoOscillationSpec({ dm2, s22t }), [dm2, s22t]);
+const spec = useMemo(() => QGA_FIGURE.plots.sm.twoFlavourSpec({ dm2, s22t }), [dm2, s22t]);
 return <Figure spec={spec}>caption</Figure>;
 ```
 
@@ -70,7 +70,7 @@ Ticks are nice 1-2-5 numbers inside the domain; log axes label decades as 10^n a
 
 | Figure id | Where | Marks |
 |---|---|---|
-| `sm-neutrino-oscillation`, `sm-higgs-potential` | `mod-standard-model.jsx` | model lines, T2K rule, vacuum points and callout |
+| `sm-neutrino-flavour` (S12, `plots/neutrino.mjs`), `sm-higgs-potential` | `labs/neutrino-lab.jsx`, `mod-standard-model.jsx` | model lines, T2K rule, vacuum points and callout |
 | `bh-hawking-spectrum`, `bh-page-curve`, `bh-kerr-radii` | `mod-blackholes.jsx` | emitter line and band; two curves and a rule; nested circles |
 | `gr-effective-potential`, `gr-null-geodesics`, `gr-lensed-sky` | `mod-gr.jsx` | GR and Newtonian curves with turning points and a live marker; rays and circles; ring chrome over the rendered sky |
 | `rg-scale-trajectory`, `rg-beta-function` | `mod-gauge-rg.jsx` | trajectory, fixed-point rules, selected-scale marker; beta curve with phase-line triangles |

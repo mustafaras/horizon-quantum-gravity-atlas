@@ -245,7 +245,6 @@
   --pigment-azure-81: #7ec8ff;
   --pigment-azure-80-c11: #78c8ff;
   --pigment-azure-80-c10: #8fc2ff;
-  --pigment-azure-80: oklch(0.8 0.12 235);
   --pigment-azure-80-c13: oklch(0.8 0.13 235);
   --pigment-azure-77: #7fb8ff;
   --pigment-azure-76: #5ab9ff;
@@ -339,6 +338,5 @@
   --pigment-violet-59: #785aff;
   --pigment-violet-57: #785adc;
   /* magenta */
-  --pigment-magenta-78: oklch(0.78 0.14 320);
   /* @pigments:end */
 }

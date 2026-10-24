@@ -332,3 +332,59 @@ test("defaultParams returns radians, a signed Delta m^2_31 and the requested var
   assert.throws(() => defaultParams("XX"), /ordering/);
   assert.throws(() => defaultParams("NO", "nope"), /variant/);
 });
+
+/* ---------- Formula Core: the two-flavour limit and the matter potential ---------- */
+import { library } from "../js/formula/library/index.mjs";
+
+test("the two-flavour formula is the theta13 = 0, dm21 = 0 limit of the exact calculation", () => {
+  const f = library.twoFlavourOscillation;
+  const p = { ...NO, theta13: 0, dm21: 0 };
+  for (const [E, L] of [[0.6, 295], [2.5, 1300], [1, 500]]) {
+    const exact = oscillationProbabilities({ E_GeV: E, L_km: L, params: p })[1][2];
+    assert.ok(Math.abs(f.evaluate({ theta: p.theta23, dm2: p.dm31, L, E }) - exact) < 1e-9, `E=${E} L=${L}`);
+  }
+  assert.equal(f.status, "established");
+  assert.equal(f.constants.k, PHASE_KM_PER_GEV);
+  assert.match(f.tex, /\\sin/);
+});
+
+test("the matter potential formula gives V = sqrt(2) G_F N_e in joules, equal to matterPotentialEv", () => {
+  const f = library.matterPotential;
+  const Ne = electronDensityPerCm3({ rhoGcm3: 2.6, Ye: 0.5 }) * 1e6; // m^-3
+  const joules = f.evaluate({ Ne });
+  const ev = matterPotentialEv({ rhoGcm3: 2.6, Ye: 0.5 });
+  assert.ok(Math.abs(joules / 1.602176634e-19 / ev - 1) < 1e-9, `${joules / 1.602176634e-19} eV vs ${ev} eV`);
+  assert.equal(f.status, "established");
+  assert.equal(f.dimString.length > 0, true);
+});
+
+/* ---------- curves for the flavour ribbon ---------- */
+import { flavourCurves } from "../js/science/neutrino.mjs";
+
+test("flavourCurves over energy at fixed baseline are the probability matrix column by column", () => {
+  const c = flavourCurves({ initial: 1, mode: "energy", range: [0.2, 2], fixed: 295, samples: 60, params: NO, rhoGcm3: 2.6 });
+  assert.equal(c.x.length, 61);
+  assert.equal(c.x[0], 0.2); assert.ok(Math.abs(c.x.at(-1) - 2) < 1e-12);
+  for (const i of [0, 17, 60]) {
+    const P = oscillationProbabilities({ E_GeV: c.x[i], L_km: 295, params: NO, rhoGcm3: 2.6 });
+    for (const b of FLAVOURS) assert.ok(Math.abs(c.P[b][i] - P[1][b]) < 1e-15);
+    assert.ok(Math.abs(c.P[0][i] + c.P[1][i] + c.P[2][i] - 1) < 1e-12);
+  }
+});
+
+test("flavourCurves over L/E at fixed energy put L = (L/E) E and follow the antineutrino channel", () => {
+  const c = flavourCurves({ initial: 0, mode: "baseline", range: [0, 600], fixed: 0.004, samples: 30, params: NO, rhoGcm3: 0, antineutrino: true });
+  const i = 12;
+  const P = oscillationProbabilities({ E_GeV: 0.004, L_km: c.x[i] * 0.004, params: NO, rhoGcm3: 0, antineutrino: true });
+  for (const b of FLAVOURS) assert.ok(Math.abs(c.P[b][i] - P[0][b]) < 1e-15);
+  assert.equal(c.P[0][0], 1); // L = 0
+});
+
+test("flavourCurves rejects a bad flavour, mode, range or sample count", () => {
+  const base = { initial: 1, mode: "energy", range: [0.2, 2], fixed: 295, params: NO };
+  assert.throws(() => flavourCurves({ ...base, initial: 3 }), /initial/);
+  assert.throws(() => flavourCurves({ ...base, mode: "x" }), /mode/);
+  assert.throws(() => flavourCurves({ ...base, range: [2, 0.2] }), /range/);
+  assert.throws(() => flavourCurves({ ...base, samples: 1 }), /samples/);
+  assert.throws(() => flavourCurves({ ...base, fixed: 0 }), /fixed/);
+});

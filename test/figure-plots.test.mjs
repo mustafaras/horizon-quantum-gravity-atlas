@@ -10,6 +10,8 @@ import { registerFigureProvenance, FIGURE_PROVENANCE } from "../js/figure/proven
 import { getVisualizationProvenance } from "../js/science/provenance.mjs";
 import { hasReferenceIdentifier } from "../js/science/references.mjs";
 import { parseXml } from "./support/xml.mjs";
+import { flavourCurves } from "../js/science/neutrino.mjs";
+import { defaultParams } from "../js/science/data/nufit.mjs";
 import { grNullTrajectory, grPhotonSphereRadius, grCriticalImpactParameter } from "../js/physics.mjs";
 
 const T = buildTokens(parseTokensCss(fs.readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8")));
@@ -27,9 +29,16 @@ const rays = [0.55, 0.995, 1.005, 1.7].map((f) => {
   return { f, captured: t.captured, windings: t.windings, points: t.points };
 });
 
+const nuNO = defaultParams("NO"), nuIO = defaultParams("IO");
+
 const cases = {
-  neutrino: () => plots.sm.neutrinoOscillationSpec({ dm2: 2.5e-3, s22t: 0.98 }),
-  neutrinoFlat: () => plots.sm.neutrinoOscillationSpec({ dm2: 0.5e-3, s22t: 0 }),
+  neutrinoVacuum: () => plots.neutrino.flavourRibbonSpec({
+    curves: flavourCurves({ initial: 1, mode: "energy", range: [0.1, 2], fixed: 295, params: nuNO }), mode: "energy", channel: 0, initial: 1,
+    antineutrino: false, matter: false, marker: { x: 0.6, text: "T2K" } }),
+  neutrinoMatter: () => plots.neutrino.flavourRibbonSpec({
+    curves: flavourCurves({ initial: 1, mode: "baseline", range: [0, 1200], fixed: 2.5, params: nuIO, rhoGcm3: 2.85, antineutrino: true }),
+    ghost: flavourCurves({ initial: 1, mode: "baseline", range: [0, 1200], fixed: 2.5, params: nuIO, rhoGcm3: 0, antineutrino: true }),
+    mode: "baseline", channel: 2, initial: 1, antineutrino: true, matter: true }),
   higgsBroken: () => plots.sm.higgsPotentialSpec({ mu2: -1 }),
   higgsSymmetric: () => plots.sm.higgsPotentialSpec({ mu2: 0.6 }),
   hawking: () => plots.bh.hawkingSpectrumSpec({ logM: 3, tempFactor: 1 }),
@@ -94,10 +103,16 @@ test("every provenance entry is complete and every figure status is a scientific
 });
 
 test("plots reproduce the physics: values are the functions' own outputs", () => {
-  const f = plots.sm.neutrinoOscillationSpec({ dm2: 2.5e-3, s22t: 0.98 });
-  const line = f.marks[0];
-  const i = 120;
-  assert.ok(Math.abs(line.y[i] - (1 - 0.98 * Math.sin(1.27 * 2.5e-3 * line.x[i]) ** 2)) < 1e-12);
+  const f = cases.neutrinoVacuum();
+  const bands = f.marks.filter((m) => m.type === "band");
+  assert.equal(bands.length, 3);
+  const i = 100;
+  const exact = flavourCurves({ initial: 1, mode: "energy", range: [0.1, 2], fixed: 295, params: nuNO });
+  assert.ok(Math.abs(bands[0].y1[i] - exact.P[0][i]) < 1e-15);
+  assert.ok(Math.abs(bands[1].y1[i] - (exact.P[0][i] + exact.P[1][i])) < 1e-15);
+  assert.ok(Math.abs(bands[2].y1[i] - 1) < 1e-12);
+  assert.equal(f.status, "established");
+  assert.equal(cases.neutrinoMatter().status, "effective");
   const page = plots.bh.pageCurveSpec().marks[1];
   assert.equal(Math.max(...page.y), 0.85);
   assert.equal(page.y[0], 0); assert.equal(page.y.at(-1), 0);

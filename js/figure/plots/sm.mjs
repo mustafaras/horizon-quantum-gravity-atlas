@@ -1,31 +1,7 @@
-// Standard Model plots: two-flavour neutrino oscillation and the radial slice of the Higgs potential.
+// Standard Model plots: the radial slice of the Higgs potential. The neutrino figure is plots/neutrino.mjs.
 
 import { figure, axis, line, points, rule, callout } from "../spec.mjs";
 import { grid, evaluate } from "./sample.mjs";
-
-export const LE_MAX = 1200; // L/E in km/GeV
-export const T2K_LE = 490;  // L = 295 km, E ~ 0.6 GeV
-
-/** P(nu_mu -> nu_mu) and P(nu_mu -> nu_tau) against L/E: 1 - sin^2 2theta sin^2(1.27 dm2 L/E). */
-export function neutrinoOscillationSpec({ dm2, s22t, height = 230 }) {
-  const le = grid(0, LE_MAX, 300);
-  const arg = (x) => 1.27 * dm2 * x;
-  const clamp01 = (v) => Math.max(0, Math.min(1, v));
-  const survival = evaluate(le, (x) => clamp01(1 - s22t * Math.pow(Math.sin(arg(x)), 2)));
-  const appearance = evaluate(le, (x) => clamp01(s22t * Math.pow(Math.sin(arg(x)), 2)));
-  return figure({
-    id: "sm-neutrino-oscillation", title: "Neutrino oscillation probability", status: "established",
-    provenanceId: "sm-neutrino-oscillation", height,
-    x: axis({ scale: { type: "linear", domain: [0, LE_MAX] }, label: { tex: "L/E" }, unit: "km/GeV" }),
-    y: axis({ scale: { type: "linear", domain: [0, 1] }, label: { text: "probability" } }),
-    marks: [
-      line({ x: le, y: survival, layer: "model", focal: true, color: "pigment-azure-80", label: { tex: "P(\\nu_\\mu\\to\\nu_\\mu)\\ \\text{survival}" } }),
-      line({ x: le, y: appearance, layer: "model", color: "pigment-magenta-78", label: { tex: "P(\\nu_\\mu\\to\\nu_\\tau)\\ \\text{appearance}" } }),
-      rule({ axis: "x", value: T2K_LE, layer: "data", color: "pigment-amber-79-c12", text: { text: "T2K" } }),
-    ],
-    summary: "Defaults are the measured atmospheric values; the dashed line marks the T2K baseline.",
-  });
-}
 
 export const HIGGS_LAMBDA = 1;
 export const higgsPotential = (phi, mu2, lambda = HIGGS_LAMBDA) => mu2 * phi * phi + lambda * phi * phi * phi * phi;

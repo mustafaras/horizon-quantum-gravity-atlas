@@ -915,6 +915,70 @@
         "maxDiffPixelRatio": 0.02,
         "note": "Seeded 3-D Scene3D render of a deterministic graph; 2% for rasterization."
       }
+    },
+    {
+      "id": "sm-neutrino-lab",
+      "file": "docs/screenshots/29-neutrino-flavour-lab.png",
+      "description": "Neutrino lab: the flavour ribbon (stacked electron, muon and tau probabilities) for a muon neutrino at the T2K baseline in matter, with the vacuum ghost, the delta_CP dial and the experiment presets.",
+      "viewport": {
+        "width": 1600,
+        "height": 2000,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Canvas figure and SVG dial; 2% for font rasterization."
+      },
+      "view": "sm",
+      "url": "?view=sm&seed=42",
+      "scope": "element",
+      "target": ".nu-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled",
+        {
+          "selector": ".nu-lab",
+          "text": "matter potential V"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Exact three-flavour oscillation in constant-density matter at the NuFIT 6.0 best fit (T2K, normal ordering, delta_CP 212 degrees); probabilities for single-energy neutrinos, not event rates.",
+      "readme": false
+    },
+    {
+      "id": "sm-neutrino-lab-mobile",
+      "file": "docs/screenshots/30-neutrino-flavour-lab-mobile.png",
+      "description": "Mobile neutrino lab: the flavour ribbon at 390 px with its legend and status label.",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Canvas figure and SVG dial on mobile; 2% for font rasterization."
+      },
+      "view": "sm",
+      "url": "?view=sm&seed=42",
+      "scope": "element",
+      "target": ".nu-lab .fig",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled",
+        {
+          "selector": ".nu-lab",
+          "text": "matter potential V"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Exact three-flavour oscillation in constant-density matter at the NuFIT 6.0 best fit (T2K, normal ordering, delta_CP 212 degrees); probabilities for single-energy neutrinos, not event rates.",
+      "readme": false
     }
   ]
 }

@@ -191,6 +191,19 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Neutrino lab (S12): the three-flavour calculation and the NuFIT 6.0 data behind js/labs/neutrino-lab.jsx.
+    const neutrino = await import("./science/neutrino.mjs");
+    const nufit = await import("./science/data/nufit.mjs");
+    Object.defineProperty(window, "QGA_NEUTRINO", {
+      value: Object.freeze({
+        flavourCurves: neutrino.flavourCurves, oscillationProbabilities: neutrino.oscillationProbabilities,
+        matterPotentialEv: neutrino.matterPotentialEv, resonanceEnergyGeV: neutrino.resonanceEnergyGeV,
+        defaultParams: nufit.defaultParams, NUFIT: nufit.NUFIT, NUFIT_SOURCE: nufit.NUFIT_SOURCE,
+        EXPERIMENTS: nufit.EXPERIMENTS, DEFAULT_VARIANT: nufit.DEFAULT_VARIANT,
+      }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

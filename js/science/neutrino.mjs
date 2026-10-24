@@ -138,3 +138,28 @@ export function oscillationProbabilities({ E_GeV, L_km, params, rhoGcm3 = 0, Ye 
   const S = expMinusIHt(hamiltonian({ E_GeV, params, rhoGcm3, Ye, antineutrino }), L_km / HBAR_C_EV_KM);
   return Object.freeze([0, 1, 2].map((alpha) => Object.freeze([0, 1, 2].map((beta) => cabs2(S[beta][alpha])))));
 }
+
+/**
+ * The probabilities P(initial -> e, mu, tau) along one axis, for the flavour ribbon. `mode: "energy"` sweeps E over
+ * `range` (GeV) at the baseline `fixed` (km); `mode: "baseline"` sweeps L/E over `range` (km/GeV) at the energy `fixed`
+ * (GeV), so L = (L/E) E. Returns `{ x, P }` with P[beta][i] = P(initial -> beta) at x[i].
+ */
+export function flavourCurves({ initial, mode, range, fixed, samples = 240, params, rhoGcm3 = 0, Ye = 0.5, antineutrino = false }) {
+  if (![0, 1, 2].includes(initial)) throw new RangeError(`initial must be 0, 1 or 2 (e, mu, tau), got ${initial}`);
+  if (mode !== "energy" && mode !== "baseline") throw new RangeError(`mode must be "energy" or "baseline", got ${mode}`);
+  if (!Array.isArray(range) || range.length !== 2 || !(finite(range[0], "range[0]") < finite(range[1], "range[1]"))) {
+    throw new RangeError(`range must be [low, high] with low < high, got ${JSON.stringify(range)}`);
+  }
+  positive(fixed, "fixed");
+  if (!Number.isInteger(samples) || samples < 2) throw new RangeError(`samples must be an integer of at least 2, got ${samples}`);
+  const x = new Array(samples + 1);
+  const P = [new Array(samples + 1), new Array(samples + 1), new Array(samples + 1)];
+  for (let i = 0; i <= samples; i += 1) {
+    x[i] = range[0] + ((range[1] - range[0]) * i) / samples;
+    const E_GeV = mode === "energy" ? x[i] : fixed;
+    const L_km = mode === "energy" ? fixed : x[i] * fixed;
+    const row = oscillationProbabilities({ E_GeV, L_km, params, rhoGcm3, Ye, antineutrino })[initial];
+    for (let b = 0; b < 3; b += 1) P[b][i] = row[b];
+  }
+  return { x, P };
+}
