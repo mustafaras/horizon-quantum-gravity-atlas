@@ -28,6 +28,7 @@ const EXPECTED_ORDER = [
   "styles/modules/workbench.css",
   "styles/modules/cinematic.css",
   "styles/rg-flow.css",
+  "styles/figure.css",
 ];
 
 test("index.html links the stylesheets in cascade order and every file exists", () => {

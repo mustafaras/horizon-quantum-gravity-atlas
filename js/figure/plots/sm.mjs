@@ -50,7 +50,7 @@ export function higgsPotentialSpec({ mu2, height = 260 }) {
       line({ x: phi, y: v, layer: "model", color: "pigment-amber-80", label: { tex: "V=\\mu^2\\phi^2+\\lambda\\phi^4" } }),
       points({ x: broken ? [vev, -vev] : [0], y: broken ? [vac, vac] : [vac], layer: "model", focal: true, color: "pigment-cyan-78", radius: 5, label: "vacuum" }),
       callout({ x: broken ? vev : 0, y: vac, layer: "model", color: "pigment-cyan-78", dx: broken ? -24 : 40, dy: broken ? -64 : -56,
-        text: { tex: broken ? "\\langle\\phi\\rangle=v\\neq 0\\ \\text{(symmetry broken)}" : "\\langle\\phi\\rangle=0\\ \\text{(symmetric vacuum)}" } }),
+        text: { tex: broken ? "\\langle\\phi\\rangle=v\\neq 0" : "\\langle\\phi\\rangle=0" } }),
     ],
     summary: broken ? "Broken phase: two degenerate minima at plus and minus the vacuum expectation value." : "Unbroken phase: a single minimum at the origin.",
   });

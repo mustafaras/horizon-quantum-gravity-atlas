@@ -1,7 +1,7 @@
 // SVG renderer: paints a scene (scene.mjs) to an SVG string, for S32 export and for tests.
 // Colours resolve through the same design tokens as the canvas renderer.
 
-import { css as tokenCss } from "../design/tokens.mjs";
+import { css as tokenCss, rgb255 } from "../design/tokens.mjs";
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const n = (v) => Number(v.toFixed(2));
@@ -19,9 +19,10 @@ function imageRects(p) {
     while (c < p.cols) {
       const o = (r * p.cols + c) * 4;
       const key = `${p.data[o]},${p.data[o + 1]},${p.data[o + 2]}`;
+      const fill = rgb255(p.data[o], p.data[o + 1], p.data[o + 2]);
       let e = c + 1;
       while (e < p.cols) { const q = (r * p.cols + e) * 4; if (`${p.data[q]},${p.data[q + 1]},${p.data[q + 2]}` !== key) break; e++; }
-      out.push(`<rect x="${n(p.x + c * cw)}" y="${n(p.y + r * ch)}" width="${n((e - c) * cw + 0.4)}" height="${n(ch + 0.4)}" fill="rgb(${key})"/>`);
+      out.push(`<rect x="${n(p.x + c * cw)}" y="${n(p.y + r * ch)}" width="${n((e - c) * cw + 0.4)}" height="${n(ch + 0.4)}" fill="${fill}"/>`);
       c = e;
     }
   }

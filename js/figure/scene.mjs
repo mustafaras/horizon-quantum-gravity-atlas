@@ -150,6 +150,10 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
   const text = (o) => {
     if (o.role === "region" || o.role === "rule" || o.role === "callout") {
       let box = boxOf(o);
+      // Keep the label inside the plot; one wider than the plot is left to the summary and the legend.
+      if (box.w > plot.w - 4) return;
+      if (box.x + box.w > plot.x + plot.w - 2) { o.x -= box.x + box.w - (plot.x + plot.w - 2); box = boxOf(o); }
+      if (box.x < plot.x + 2) { o.x += plot.x + 2 - box.x; box = boxOf(o); }
       for (let tries = 0; tries < 8 && placed.some((p) => hit(box, p)); tries++) {
         o.y += o.base === "bottom" ? -(box.h + 2) : box.h + 2;
         box = boxOf(o);

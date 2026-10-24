@@ -86,7 +86,7 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
   const domain = Math.max(4, Math.ceil(widest));
   const readout = exact || geometry;
   const spec = useMemo(() => window.QGA_FIGURE.plots.bh.kerrRadiiSpec({
-    rings: visible.map((curve) => ({ radius: curve.read(geometry), color: curve.token, dash: curve.dash, width: curve.width, label: curve.label, focal: curve.key === "horizon" })),
+    rings: visible.map((curve) => ({ radius: curve.read(geometry), color: curve.token, dash: curve.dash, width: curve.width, label: curve.label.replace("₊", "+"), focal: curve.key === "horizon" })),
     domain, spin: readout.a,
   }), [geometry, layers, domain, readout.a]); // eslint-disable-line
 

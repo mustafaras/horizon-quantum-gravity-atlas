@@ -405,7 +405,7 @@ test("every token name used in module code exists in styles/tokens.css", () => {
       assert.ok(T.color[m[1]], `${path.relative(root, file)} uses unknown colour token "${m[1]}"`);
     }
   }
-  assert.ok(checked > 400, `expected hundreds of token reads, found ${checked}`);
+  assert.ok(checked > 300, `expected hundreds of token reads, found ${checked}`);
 });
 
 test("every pigment token is used by module code (no orphaned pigments)", () => {

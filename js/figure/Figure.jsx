@@ -61,6 +61,8 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
   useEffect(() => {
     if (!scene || !cvRef.current) return;
     const ctx = F.prepareCanvas(cvRef.current, scene.width, scene.height);
+    // Diagnostics for qa/specs/figure-kit.spec.mjs: the resolved scene of each mounted figure.
+    (window.QGA_FIGURE_SCENES ||= new Map()).set(spec.id, scene);
     if (backdrop) backdrop(ctx, scene.plot);
     F.drawScene(ctx, scene, { fonts, scratch: scratch.current });
   }, [scene, fonts, theme, backdropKey]); // eslint-disable-line
@@ -105,7 +107,7 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
 
   const cx = scene && cursor !== null ? scene.sx.map(focal.x[cursor]) : null;
   const cy = scene && cursor !== null ? scene.sy.map(focal.y[cursor]) : null;
-  const readout = readoutOverride != null ? readoutOverride : cursor !== null
+  const readout = readoutOverride ? readoutOverride : cursor !== null
     ? `${focal.label}: ${spec.x.label ? spec.x.label.plain : "x"} = ${FIG_FORMAT(focal.x[cursor])}, ${spec.y.label ? spec.y.label.plain : "y"} = ${FIG_FORMAT(focal.y[cursor])}`
     : "";
 
