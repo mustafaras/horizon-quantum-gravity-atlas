@@ -694,7 +694,6 @@ function InvariantMassLab() {
   const [total, setTotal] = useState(0);
   const [pSig, setPSig] = useState(0.16);
   const pSigRef = useRef(pSig); pSigRef.current = pSig;
-  const cvRef = useRef(null);
 
   const fire = (n) => {
     setBins((prev) => {
@@ -709,54 +708,9 @@ function InvariantMassLab() {
   };
   const reset = () => { setBins(new Array(IM_BINS).fill(0)); setTotal(0); };
 
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = cv.clientWidth, h = 300;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 46, padR = 14, padT = 16, padB = 34;
-    const plotW = w - padL - padR, plotH = h - padT - padB;
-    const maxC = Math.max(8, ...bins);
-    const X = (i) => padL + (i / IM_BINS) * plotW;
-    const Y = (c) => padT + plotH * (1 - c / maxC);
-    // axes
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.25); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke();
-    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.textAlign = "center";
-    for (let gx = IM_MIN; gx <= IM_MAX; gx += 10) {
-      const px = padL + ((gx - IM_MIN) / (IM_MAX - IM_MIN)) * plotW;
-      ctx.fillText(gx, px, padT + plotH + 16);
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08); ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
-    }
-    ctx.fillText("dielectron invariant mass  m(e⁺e⁻)  [GeV]", padL + plotW / 2, h - 4);
-    ctx.save(); ctx.translate(13, padT + plotH / 2); ctx.rotate(-Math.PI / 2);
-    ctx.fillText("events / " + IM_BW.toFixed(1) + " GeV", 0, 0); ctx.restore();
-    ctx.textAlign = "left";
-    // Z marker
-    const zx = padL + ((MZ - IM_MIN) / (IM_MAX - IM_MIN)) * plotW;
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.4); ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(zx, padT); ctx.lineTo(zx, padT + plotH); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("Z⁰  91.19 GeV", zx + 5, padT + 12);
-    // bars
-    for (let i = 0; i < IM_BINS; i++) {
-      const c = bins[i]; if (c === 0) continue;
-      const x = X(i), bw = (plotW / IM_BINS) - 1.5, y = Y(c);
-      const inZ = (IM_MIN + i * IM_BW) > 86 && (IM_MIN + i * IM_BW) < 96;
-      ctx.fillStyle = inZ ? QGA_TOKENS.css("pigment-azure-80-c13") : QGA_TOKENS.alpha("pigment-azure-60", 0.7);
-      ctx.fillRect(x, y, bw, padT + plotH - y);
-    }
-    // Poisson error bars
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-91", 0.5); ctx.lineWidth = 1;
-    for (let i = 0; i < IM_BINS; i++) {
-      const c = bins[i]; if (c === 0) continue;
-      const x = X(i) + ((plotW / IM_BINS) - 1.5) / 2, err = Math.sqrt(c);
-      ctx.beginPath(); ctx.moveTo(x, Y(c + err)); ctx.lineTo(x, Y(Math.max(0, c - err))); ctx.stroke();
-    }
-  }, [bins]);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.gw.invariantMassSpec({
+    bins, imMin: IM_MIN, imMax: IM_MAX, binWidth: IM_BW, mZ: MZ,
+  }), [bins]);
 
   // crude significance: signal vs background in the Z window
   const zLo = Math.floor((86 - IM_MIN) / IM_BW), zHi = Math.ceil((96 - IM_MIN) / IM_BW);
@@ -776,8 +730,7 @@ function InvariantMassLab() {
           format={(v) => (v * 100).toFixed(0) + "%"}></SliderRow>
         <button className="btn" onClick={reset}>Reset</button>
       </div>
-      <canvas ref={cvRef} style={{ width: "100%", height: 300, display: "block" }}
-        aria-label="Histogram of dielectron invariant mass; the Z boson resonance peak emerges from continuum background as collisions accumulate"></canvas>
+      <Figure spec={spec}></Figure>
       <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
         <div className="readout"><div className="readout-label">total collisions</div>
           <div className="readout-value">{total.toLocaleString("en-US")}</div></div>
@@ -806,54 +759,11 @@ const GW_GEN_RATE = 512, GW_GEN_DURATION = 4, GW_GEN_MERGER = 3.4;
 const GW_H1L1_DELAY = 0.007; // illustrative H1→L1 light-travel offset across the ~3000 km baseline
 const GW_GEN_M1 = 36, GW_GEN_M2 = 29; // GW150914-like teaching binary (M☉)
 
-/* Brand spectrogram ramp: night → deep blue → cyan → amber → white. */
-const GW_COLORMAP = [
-  [0.0, [7, 11, 19]], [0.32, [14, 42, 74]], [0.55, [22, 107, 140]],
-  [0.75, [70, 212, 224]], [0.9, [255, 189, 102]], [1.0, [255, 255, 255]],
-];
-function gwColormap(t) {
-  const x = Math.min(1, Math.max(0, t));
-  for (let i = 1; i < GW_COLORMAP.length; i++) {
-    if (x <= GW_COLORMAP[i][0]) {
-      const [t0, c0] = GW_COLORMAP[i - 1], [t1, c1] = GW_COLORMAP[i];
-      const f = (x - t0) / (t1 - t0);
-      return [c0[0] + (c1[0] - c0[0]) * f, c0[1] + (c1[1] - c0[1]) * f, c0[2] + (c1[2] - c0[2]) * f];
-    }
-  }
-  return GW_COLORMAP[GW_COLORMAP.length - 1][1];
-}
-
-function gwSetupCanvas(cv, height) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const w = cv.clientWidth, h = height || cv.clientHeight;
-  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-  }
-  const ctx = cv.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, w, h };
-}
-
-/* Strain scope: dual-detector generated traces with phase ribbon, or a single
-   GWOSC observation trace with GPS axis. */
-function useFontsReady() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let live = true;
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => { if (live) setReady(true); });
-    }
-    return () => { live = false; };
-  }, []);
-  return ready;
-}
-
+/* Strain panel: dual-detector generated traces with phase bands, or a single GWOSC
+   observation trace; both are Figure Kit figures (js/figure/plots/gw.mjs). */
 function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub }) {
-  const cvRef = useRef(null);
   const [hover, setHover] = useState(null);
-  const fontsReady = useFontsReady();
   const prm = usePRM();
-  const PADL = 46, PADR = 12;
   const duration = mode === "real" && realData ? realData.duration : GW_GEN_DURATION;
   /* Eased vertical scale: the trace normalisation glides between signals
      instead of snapping when the source changes. Bounded rAF — it stops as
@@ -882,185 +792,35 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [targetAmax, prm]);
-  const toTime = (e) => {
-    const r = cvRef.current.getBoundingClientRect();
-    const pw = r.width - PADL - PADR;
-    return Math.min(1, Math.max(0, (e.clientX - r.left - PADL) / pw)) * duration;
-  };
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv) return;
-    const { ctx, w, h } = gwSetupCanvas(cv, 220);
-    ctx.clearRect(0, 0, w, h);
-    const padL = PADL, padR = PADR, padT = 26, padB = 34;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    const mid = padT + ph / 2;
-    ctx.font = QGA_TOKENS.monoPx(9.5);
-    // frame + grid
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.lineWidth = 1;
-    ctx.strokeRect(padL, padT, pw, ph);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
-    for (let i = 1; i < 4; i++) {
-      const y = padT + (ph * i) / 4;
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  const spec = useMemo(() => window.QGA_FIGURE.plots.gw.strainSpec({
+    mode: mode === "real" ? "real" : "generated", h1: genH1, l1: genL1, real: realData, playT, amax,
+  }), [mode, genH1, genL1, realData, playT, amax]);
+  const ready = (mode === "generated" && genH1) || (mode === "real" && realData);
+  const clampT = (x) => Math.min(duration, Math.max(0, x));
+  let readout = "";
+  if (hover != null && ready) {
+    const src = mode === "real" ? realData : genH1;
+    const n = src.samples.length;
+    const hi = Math.max(0, Math.min(n - 1, Math.round((hover / duration) * (n - 1))));
+    if (mode === "real") readout = "GPS " + (realData.start + hover).toFixed(2) + " · h " + realData.samples[hi].toFixed(2);
+    else {
+      const fHz = genH1.freqTrack ? genH1.freqTrack[hi] : 0;
+      readout = "t " + hover.toFixed(2) + " s · h " + genH1.samples[hi].toFixed(2) + (fHz > 0 ? " · f " + fHz.toFixed(0) + " Hz" : "");
     }
-    ctx.beginPath(); ctx.moveTo(padL, mid); ctx.lineTo(padL + pw, mid);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.16); ctx.stroke();
-    const tracePath = (samples, amax, upto) => {
-      const n = samples.length;
-      const end = upto == null ? n : Math.max(2, Math.min(n, upto));
-      ctx.beginPath();
-      for (let i = 0; i < end; i++) {
-        const x = padL + (i / (n - 1)) * pw;
-        const y = mid - (samples[i] / amax) * ph * 0.44;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-    };
-    const drawTrace = (samples, color, glow, upto) => {
-      ctx.strokeStyle = color; ctx.lineWidth = 1.3;
-      ctx.shadowColor = glow ? color : "transparent"; ctx.shadowBlur = glow ? 6 : 0;
-      tracePath(samples, amax, upto);
-      ctx.stroke(); ctx.shadowBlur = 0;
-      return amax;
-    };
-    const drawHead = (samples, amax, upto, color) => {
-      const n = samples.length;
-      const i = Math.max(0, Math.min(n - 1, upto - 1));
-      const x = padL + (i / (n - 1)) * pw;
-      const y = mid - (samples[i] / amax) * ph * 0.44;
-      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
-      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 2 * Math.PI); ctx.fill();
-      ctx.shadowBlur = 0;
-    };
-    const frac = Math.min(1, Math.max(0, playT / duration));
-    const hasData = (mode === "generated" && genH1) || (mode === "real" && realData);
-    if (mode === "generated" && genH1) {
-      const n = genH1.samples.length;
-      const upto = Math.round(frac * (n - 1)) + 1;
-      const tMerge = genH1.mergerIndex / genH1.sampleRate;
-      const X = (t) => padL + (t / genH1.duration) * pw;
-      // phase ribbon: inspiral → merger → ringdown
-      const ribY = padT + ph + 8, ribH = 7;
-      const m0 = X(Math.max(0, tMerge - 0.12)), m1 = X(tMerge + 0.02);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.28); ctx.fillRect(padL, ribY, m0 - padL, ribH);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.55); ctx.fillRect(m0, ribY, m1 - m0, ribH);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-violet-73", 0.35); ctx.fillRect(m1, ribY, padL + pw - m1, ribH);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.75);
-      ctx.fillText("INSPIRAL", padL + 6, ribY + ribH + 11);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.9); ctx.fillText("MERGER", m0 - 8, ribY + ribH + 11);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-violet-73", 0.85); ctx.fillText("RINGDOWN", Math.min(m1 + 6, padL + pw - 66), ribY + ribH + 11);
-      // merger marker
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.5); ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.moveTo(X(tMerge), padT); ctx.lineTo(X(tMerge), padT + ph); ctx.stroke();
-      ctx.setLineDash([]);
-      // ghost of the full signal, then the live revealed portion
-      drawTrace(genL1.samples, QGA_TOKENS.alpha("pigment-orange-84-c13", 0.16), false);
-      drawTrace(genH1.samples, QGA_TOKENS.alpha("pigment-azure-76", 0.16), false);
-      drawTrace(genL1.samples, QGA_TOKENS.alpha("pigment-orange-84-c13", 0.75), false, upto);
-      const amaxH1 = drawTrace(genH1.samples, QGA_TOKENS.alpha("pigment-azure-76", 0.95), true, upto);
-      // leading-edge reveal glow: a soft gradient at the draw-in front
-      if (frac < 1) {
-        const ex = padL + frac * pw;
-        const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
-        g.addColorStop(0, QGA_TOKENS.alpha("pigment-azure-76", 0));
-        g.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-76", 0.18));
-        ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
-      }
-      if (frac < 1) drawHead(genH1.samples, amaxH1, upto, QGA_TOKENS.css("pigment-azure-87"));
-      // merger flash, decaying after the playhead crosses coalescence
-      if (playT >= tMerge) {
-        const flash = Math.max(0, 1 - (playT - tMerge) / 0.45);
-        if (flash > 0) {
-          const g = ctx.createRadialGradient(X(tMerge), mid, 0, X(tMerge), mid, 110);
-          g.addColorStop(0, QGA_TOKENS.alpha("pigment-orange-88", (0.5 * flash).toFixed(3)));
-          g.addColorStop(1, QGA_TOKENS.alpha("pigment-orange-88", 0));
-          ctx.fillStyle = g; ctx.fillRect(padL, padT, pw, ph);
-        }
-      }
-      // axis labels
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-      for (let t = 0; t <= genH1.duration; t++) ctx.fillText(t.toFixed(0) + "s", X(t) - 6, padT + ph + 30);
-      ctx.fillText("h(t) · normalized", 8, padT + 10);
-      // legend
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.95); ctx.fillRect(padL + pw - 196, 8, 14, 3);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.85); ctx.fillText("H1 Hanford", padL + pw - 178, 13);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-orange-84-c13", 0.85); ctx.fillRect(padL + pw - 104, 8, 14, 3);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-81", 0.85); ctx.fillText("L1 +7 ms", padL + pw - 86, 13);
-      // hover crosshair with live readout
-      if (hover != null) {
-        const hi = Math.max(0, Math.min(n - 1, Math.round((hover / genH1.duration) * (n - 1))));
-        const hx = X(hover);
-        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93-c03", 0.35); ctx.setLineDash([3, 4]);
-        ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
-        ctx.setLineDash([]);
-        const fHz = genH1.freqTrack ? genH1.freqTrack[hi] : 0;
-        const txt = "t " + hover.toFixed(2) + " s · h " + genH1.samples[hi].toFixed(2) + (fHz > 0 ? " · f " + fHz.toFixed(0) + " Hz" : "");
-        const tw = ctx.measureText(txt).width + 14;
-        const bx = Math.min(hx + 8, padL + pw - tw - 4);
-        ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-15", 0.92); ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-76", 0.4);
-        ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
-        ctx.fillStyle = QGA_TOKENS.alpha("pigment-azure-91-c04", 0.95); ctx.fillText(txt, bx + 7, padT + 18);
-      }
-    } else if (mode === "real" && realData) {
-      const n = realData.samples.length;
-      const upto = Math.round(frac * (n - 1)) + 1;
-      drawTrace(realData.samples, QGA_TOKENS.alpha("accent-2", 0.16), false);
-      const amax = drawTrace(realData.samples, QGA_TOKENS.alpha("accent-2", 0.95), true, upto);
-      if (frac < 1) {
-        const ex = padL + frac * pw;
-        const g = ctx.createLinearGradient(ex - 30, 0, ex, 0);
-        g.addColorStop(0, QGA_TOKENS.alpha("accent-2", 0));
-        g.addColorStop(1, QGA_TOKENS.alpha("accent-2", 0.18));
-        ctx.fillStyle = g; ctx.fillRect(ex - 30, padT, 30, ph);
-      }
-      if (frac < 1) drawHead(realData.samples, amax, upto, QGA_TOKENS.css("pigment-cyan-91-c08"));
-      const effRate = realData.samples.length / realData.duration;
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-      ctx.fillText("GPS " + realData.start.toFixed(0), padL, padT + ph + 30);
-      ctx.textAlign = "right";
-      ctx.fillText("GPS " + (realData.start + realData.duration).toFixed(0), padL + pw, padT + ph + 30);
-      ctx.fillText(realData.samples.length + " pts · " + effRate.toFixed(0) + " Hz effective", padL + pw, padT + 12);
-      ctx.textAlign = "left";
-      ctx.fillText("h(t) · calibrated strain, normalized", 8, padT + 10);
-      if (hover != null) {
-        const hi = Math.max(0, Math.min(n - 1, Math.round((hover / realData.duration) * (n - 1))));
-        const hx = padL + (hover / realData.duration) * pw;
-        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-93-c03", 0.35); ctx.setLineDash([3, 4]);
-        ctx.beginPath(); ctx.moveTo(hx, padT); ctx.lineTo(hx, padT + ph); ctx.stroke();
-        ctx.setLineDash([]);
-        const txt = "GPS " + (realData.start + hover).toFixed(2) + " · h " + realData.samples[hi].toFixed(2);
-        const tw = ctx.measureText(txt).width + 14;
-        const bx = Math.min(hx + 8, padL + pw - tw - 4);
-        ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-15", 0.92); ctx.strokeStyle = QGA_TOKENS.alpha("accent-2", 0.4);
-        ctx.fillRect(bx, padT + 6, tw, 18); ctx.strokeRect(bx, padT + 6, tw, 18);
-        ctx.fillStyle = QGA_TOKENS.alpha("pigment-cyan-94", 0.95); ctx.fillText(txt, bx + 7, padT + 18);
-      }
-    } else {
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
-      ctx.fillText(mode === "real" ? "Awaiting GWOSC observation — load or check network." : "Preparing seeded waveform…", padL + 10, mid);
-    }
-    // playhead
-    if (hasData && frac > 0) {
-      const px = padL + frac * pw;
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.55); ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(px, padT - 4); ctx.lineTo(px, padT + ph); ctx.stroke();
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.8);
-      ctx.beginPath(); ctx.moveTo(px - 4, padT - 4); ctx.lineTo(px + 4, padT - 4); ctx.lineTo(px, padT + 2); ctx.closePath(); ctx.fill();
-    }
-  }, [mode, genH1, genL1, realData, detector, fontsReady, playT, hover, duration, amax]);
+  }
+  if (!ready) {
+    return (
+      <figure className="gw-panel">
+        <figcaption><span className="gw-panel-title">STRAIN h(t)</span></figcaption>
+        <p className="dim" style={{ padding: "24px 12px" }}>{mode === "real" ? "Awaiting GWOSC observation — load or check network." : "Preparing seeded waveform…"}</p>
+      </figure>
+    );
+  }
   return (
-    <figure className="gw-panel">
-      <figcaption>
-        <span className="gw-panel-title">STRAIN h(t)</span>
-        {mode === "generated"
-          ? <span className="badge badge-effective">GENERATED · SEEDED</span>
-          : <span className="badge badge-established">OBSERVATION · GWOSC</span>}
-      </figcaption>
-      <canvas ref={cvRef} style={{ width: "100%", height: 220, display: "block", touchAction: "none" }}
-        aria-label="Gravitational-wave strain versus time; drag to scrub the playhead"
-        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onScrub(toTime(e)); }}
-        onPointerMove={(e) => { if (e.buttons & 1) onScrub(toTime(e)); else setHover(toTime(e)); }}
-        onPointerLeave={() => setHover(null)}></canvas>
-    </figure>
+    <div className="gw-panel">
+      <Figure spec={spec} readout={readout} onHover={(x) => setHover(x == null ? null : clampT(x))}
+        onScrub={(x) => onScrub(clampT(x))}></Figure>
+    </div>
   );
 }
 
@@ -1068,103 +828,17 @@ function GWStrainPanel({ mode, genH1, genL1, realData, detector, playT, onScrub 
    Pre-renders to an offscreen canvas; the live draw reveals frames up to the
    shared playhead and overlays the analytic frequency track when available. */
 function GWSpectrogramPanel({ samples, sampleRate, windowSize, hopSize, label, note, playT, duration, freqTrack }) {
-  const cvRef = useRef(null);
-  const fontsReady = useFontsReady();
-  const spec = useMemo(() => {
+  const stft = useMemo(() => {
     if (!samples || samples.length < windowSize * 2) return null;
     return window.QGA_PHYSICS.stftSpectrogram(samples, { sampleRate, windowSize, hopSize });
   }, [samples, sampleRate, windowSize, hopSize]);
-  const off = useMemo(() => {
-    if (!spec) return null;
-    const img = new ImageData(spec.frames, spec.bins);
-    const floor = spec.maxDb - 46;
-    for (let f = 0; f < spec.frames; f++) {
-      for (let b = 0; b < spec.bins; b++) {
-        const db = spec.magnitudes[f * spec.bins + b];
-        const t = Math.min(1, Math.max(0, (db - floor) / (spec.maxDb - floor)));
-        const [r, g, bl] = gwColormap(t);
-        // b = 0 (DC) at the bottom of the panel
-        const px = (spec.bins - 1 - b) * spec.frames + f;
-        img.data[px * 4] = r; img.data[px * 4 + 1] = g; img.data[px * 4 + 2] = bl; img.data[px * 4 + 3] = 255;
-      }
-    }
-    const c = document.createElement("canvas");
-    c.width = spec.frames; c.height = spec.bins;
-    c.getContext("2d").putImageData(img, 0, 0);
-    return c;
-  }, [spec]);
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv || !spec || !off) return;
-    const { ctx, w, h } = gwSetupCanvas(cv, 190);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 46, padR = 66, padT = 12, padB = 26;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    const frac = Math.min(1, Math.max(0, playT / duration));
-    // ghost of the full map, then the live revealed portion
-    ctx.imageSmoothingEnabled = true;
-    ctx.globalAlpha = 0.2;
-    ctx.drawImage(off, padL, padT, pw, ph);
-    ctx.globalAlpha = 1;
-    const srcW = frac * spec.frames;
-    if (srcW > 0.5) ctx.drawImage(off, 0, 0, srcW, spec.bins, padL, padT, frac * pw, ph);
-    // analytic chirp track, drawn only up to the playhead
-    if (freqTrack && frac > 0) {
-      const n = freqTrack.length;
-      const upto = Math.round(frac * (n - 1));
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-white", 0.85); ctx.lineWidth = 1.2;
-      ctx.shadowColor = QGA_TOKENS.alpha("accent-2", 0.9); ctx.shadowBlur = 5;
-      ctx.beginPath();
-      let started = false;
-      for (let i = 0; i <= upto; i += 4) {
-        const f = freqTrack[i];
-        if (f <= 0) continue;
-        const x = padL + (i / (n - 1)) * pw;
-        const y = padT + ph - Math.min(1, f / spec.nyquist) * ph;
-        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
-      }
-      ctx.stroke(); ctx.shadowBlur = 0;
-    }
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.strokeRect(padL, padT, pw, ph);
-    // playhead
-    if (frac > 0) {
-      const px = padL + frac * pw;
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-grey-96-c02", 0.55); ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + ph); ctx.stroke();
-    }
-    // frequency axis (linear, up to Nyquist)
-    ctx.font = QGA_TOKENS.monoPx(9.5); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.65);
-    const ny = spec.nyquist;
-    const ticks = ny >= 200 ? [32, 64, 128, 192, 256].filter((f) => f <= ny) : [ny / 4, ny / 2, (3 * ny) / 4];
-    for (const f of ticks) {
-      const y = padT + ph - (f / ny) * ph;
-      ctx.fillText(f.toFixed(0), 12, y + 3);
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08);
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
-    }
-    ctx.fillText("Hz", 12, padT - 2);
-    const t0 = spec.times[0], t1 = spec.times[spec.times.length - 1];
-    ctx.fillText(label + " · " + t0.toFixed(1) + "–" + t1.toFixed(1) + " s window", padL, h - 8);
-    // colormap legend
-    const lgX = padL + pw + 10, lgW = 12;
-    for (let i = 0; i < ph; i++) {
-      const [r, g, b] = gwColormap(1 - i / ph);
-      ctx.fillStyle = QGA_TOKENS.rgb255(r, g, b);
-      ctx.fillRect(lgX, padT + i, lgW, 1.5);
-    }
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.65);
-    ctx.fillText(spec.maxDb.toFixed(0), lgX + lgW + 4, padT + 8);
-    ctx.fillText((spec.maxDb - 46).toFixed(0), lgX + lgW + 4, padT + ph);
-    ctx.fillText("dB", lgX + 2, padT + ph + 12);
-  }, [spec, off, label, fontsReady, playT, duration, freqTrack]);
+  const spec = useMemo(() => (stft ? window.QGA_FIGURE.plots.gw.spectrogramSpec({ spec: stft, playT, duration, freqTrack, label }) : null),
+    [stft, playT, duration, freqTrack, label]);
+  if (!spec) return null;
   return (
-    <figure className="gw-panel">
-      <figcaption>
-        <span className="gw-panel-title">TIME–FREQUENCY</span>
-        <span className="gw-panel-note">{note}</span>
-      </figcaption>
-      <canvas ref={cvRef} style={{ width: "100%", height: 190, display: "block" }}
-        aria-label="Short-time Fourier transform spectrogram of the displayed strain"></canvas>
-    </figure>
+    <div className="gw-panel">
+      <Figure spec={spec}><span className="dim">{note}</span></Figure>
+    </div>
   );
 }
 

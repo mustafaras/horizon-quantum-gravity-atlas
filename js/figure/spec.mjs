@@ -71,10 +71,11 @@ export function axis({ scale, label = null, unit, ticks, decade } = {}) {
 
 const BUILT = new WeakSet();
 
-function mark(type, fields, { layer, focal = false, label, color = "accent", id }) {
+function mark(type, fields, { layer, focal = false, label, color = "accent", id, opacity = 1 }) {
+  need(opacity >= 0 && opacity <= 1, "opacity must be in [0, 1]");
   need(LAYERS.includes(layer), `${type} mark needs layer "data" or "model" (got ${JSON.stringify(layer)})`);
   need(typeof focal === "boolean", "focal must be boolean");
-  const built = { type, layer, focal, label: label == null ? null : resolveLabel(label), color, id: id ?? null, ...fields };
+  const built = { type, layer, focal, label: label == null ? null : resolveLabel(label), color, id: id ?? null, alpha: opacity, ...fields };
   BUILT.add(built);
   return built;
 }
@@ -89,9 +90,9 @@ export const step = (o) => {
 };
 export const band = (o) => {
   checkSeries("band.x", o.x); checkSeries("band.y0", o.y0, o.x.length); checkSeries("band.y1", o.y1, o.x.length);
-  const opacity = o.opacity ?? 0.16;
-  need(opacity > 0 && opacity <= BAND_MAX_OPACITY, `band opacity must be in (0, ${BAND_MAX_OPACITY}] (art direction)`);
-  return mark("band", { x: o.x, y0: o.y0, y1: o.y1, opacity }, o);
+  const fill = o.fill ?? 0.16;
+  need(fill > 0 && fill <= BAND_MAX_OPACITY, `band fill opacity must be in (0, ${BAND_MAX_OPACITY}] (art direction)`);
+  return mark("band", { x: o.x, y0: o.y0, y1: o.y1, opacity: fill }, { ...o, opacity: 1 });
 };
 export const points = (o) => {
   checkSeries("points.x", o.x); checkSeries("points.y", o.y, o.x.length);
@@ -100,7 +101,10 @@ export const points = (o) => {
     need(Array.isArray(o[key]) && o[key].length === 2, `points.${key} is [lower[], upper[]] (asymmetric)`);
     checkSeries(`points.${key}[0]`, o[key][0], o.x.length); checkSeries(`points.${key}[1]`, o[key][1], o.x.length);
   }
-  return mark("points", { x: o.x, y: o.y, yErr: o.yErr ?? null, xErr: o.xErr ?? null, radius: o.radius ?? 3 }, o);
+  const shapes = ["circle", "triangle-up", "triangle-down"];
+  const shape = o.shape ?? "circle";
+  for (const sh of Array.isArray(shape) ? shape : [shape]) need(shapes.includes(sh), `points.shape must be one of ${shapes.join(", ")}`);
+  return mark("points", { x: o.x, y: o.y, yErr: o.yErr ?? null, xErr: o.xErr ?? null, radius: o.radius ?? 3, shape }, o);
 };
 export const heatmap = (o) => {
   need(Array.isArray(o.z) && o.z.length > 0 && isNumArray(o.z[0]), "heatmap.z is rows (y) of columns (x)");
@@ -121,7 +125,8 @@ export const callout = (o) => {
 };
 export const region = (o) => {
   need(o.x || o.y, "region needs x and/or y extents");
-  return mark("region", { x: o.x ?? null, y: o.y ?? null, text: resolveLabel(o.text) }, o);
+  need(o.style === undefined || o.style === "hatch" || o.style === "fill", "region.style is hatch or fill");
+  return mark("region", { x: o.x ?? null, y: o.y ?? null, text: resolveLabel(o.text), style: o.style ?? "hatch" }, o);
 };
 
 /**
@@ -129,7 +134,7 @@ export const region = (o) => {
  * At most one mark is focal; every mark has a layer; status is a scientific status label.
  */
 export function figure(spec) {
-  const { id, title, status, provenanceId, x, y, marks = [], legend = true, caption = "", height, summary } = spec ?? {};
+  const { id, title, status, provenanceId, x, y, marks = [], legend = true, caption = "", height, summary, aspect = null, maxPlotWidth = null } = spec ?? {};
   need(typeof id === "string" && id, "figure.id is required");
   need(typeof title === "string" && title, `${id}: title is required`);
   need(SCIENTIFIC_STATUS_LABELS.includes(status), `${id}: status must be one of ${SCIENTIFIC_STATUS_LABELS.join(", ")}`);
@@ -140,5 +145,6 @@ export function figure(spec) {
   const focal = marks.filter((m) => m.focal);
   need(focal.length <= 1, `${id}: ${focal.length} focal marks; the grammar allows one`);
   need(typeof legend === "boolean", `${id}: legend is true (one entry per labelled mark) or false`);
-  return Object.freeze({ id, title, status, provenanceId, x, y, marks: Object.freeze(marks), legend, caption, height: height ?? 240, summary: summary ?? null });
+  need(aspect === null || aspect > 0, `${id}: aspect must be positive`);
+  return Object.freeze({ id, title, status, provenanceId, x, y, marks: Object.freeze(marks), legend, caption, height: height ?? 240, summary: summary ?? null, aspect, maxPlotWidth });
 }

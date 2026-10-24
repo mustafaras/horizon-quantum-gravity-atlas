@@ -23,7 +23,7 @@ export function hawkingSpectrumSpec({ logM, tempFactor, height = 150 }) {
     x: axis({ scale: { type: "linear", domain: [0, HAWKING_X_MAX] }, label: { text: "photon energy (arb.)" } }),
     y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { text: "flux (arb.)" } }),
     marks: [
-      band({ x, y0: y.map(() => 0), y1: y, layer: "model", color: "pigment-orange-78", opacity: 0.16 }),
+      band({ x, y0: y.map(() => 0), y1: y, layer: "model", color: "pigment-orange-78", fill: 0.16 }),
       line({ x, y, layer: "model", focal: true, emitter: true, color: "pigment-orange-85", label: { tex: "x^3/(e^{x/T}-1)" } }),
     ],
     summary: "Illustrative blackbody shape; the peak moves with the mass and spin sliders, the absolute scale is not physical.",
@@ -46,5 +46,26 @@ export function pageCurveSpec({ height = 150 } = {}) {
       rule({ axis: "x", value: 0.5, layer: "model", color: "pigment-amber-79-c12", text: { text: "Page time" } }),
     ],
     summary: "Unitary evaporation: the radiation entropy rises until the Page time and then falls back to zero.",
+  });
+}
+
+const ring = (r, n = 121) => {
+  const x = [], y = [];
+  for (let i = 0; i <= n; i++) { const a = (i / n) * 2 * Math.PI; x.push(r * Math.cos(a)); y.push(r * Math.sin(a)); }
+  return { x, y };
+};
+
+/**
+ * Nested Kerr coordinate radii in the equatorial plane, in units of GM/c^2 (Boyer-Lindquist radii, not
+ * image-plane distances). `rings` are `{ radius, color, dash, width, label }`; the horizon is focal.
+ */
+export function kerrRadiiSpec({ rings, domain, spin, height = 220 }) {
+  const marks = rings.map((r) => line({ ...ring(r.radius), layer: "model", color: r.color, dash: r.dash || null, width: r.width, focal: !!r.focal, label: r.label }));
+  return figure({
+    id: "bh-kerr-radii", title: "Kerr radii, equatorial plane", status: "effective", provenanceId: "bh-kerr-radii", height, aspect: 1, maxPlotWidth: 300, legend: false,
+    x: axis({ scale: { type: "linear", domain: [-domain, domain] }, label: { tex: "x" }, unit: "GM/c^2" }),
+    y: axis({ scale: { type: "linear", domain: [-domain, domain] }, label: { tex: "y" }, unit: "GM/c^2" }),
+    marks,
+    summary: `Nested Kerr radii for a* = ${spin.toFixed(2)}: horizon, ergosurface, photon orbits and ISCO, prograde and retrograde, plotted to ${domain} GM/c^2.`,
   });
 }

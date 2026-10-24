@@ -37,8 +37,10 @@ export function layoutLegend(entries, maxWidth, measure, font) {
  *   xTicks, yTicks  label strings
  *   xLabel, yLabel  `{ plain, tex? }` or null
  *   legend          array of entries or null (laid out under the plot)
+ *   aspect          plot width / height; the plot is then sized from its width and `height` is derived
+ *   maxPlotWidth    upper bound of the plot width (with aspect)
  */
-export function solveLayout({ width, height, measure, font, xTicks = [], yTicks = [], xLabel = null, yLabel = null, legend = null }) {
+export function solveLayout({ width, height, measure, font, xTicks = [], yTicks = [], xLabel = null, yLabel = null, legend = null, aspect = null, maxPlotWidth = Infinity }) {
   if (!(width > 0) || !(height > 0)) throw new RangeError(`layout: invalid size ${width}x${height}`);
   const lineH = Math.ceil(parseFloat(/([\d.]+)px/.exec(font)?.[1] ?? "12") * 1.35);
   const yTickW = yTicks.length ? Math.max(...yTicks.map((t) => Math.ceil(measure(t, font)))) : 0;
@@ -48,13 +50,14 @@ export function solveLayout({ width, height, measure, font, xTicks = [], yTicks 
   const yLabelW = yLabel ? TITLE_LINE : 0;
   const left = Math.max(EDGE_PAD + yLabelW + (yLabelW ? 4 : 0) + yTickW + TICK_GAP + TICK_LENGTH, EDGE_PAD + xFirstHalf);
   const right = Math.max(EDGE_PAD, xLastHalf + 2);
-  let plotW = Math.max(MIN_PLOT, width - left - right);
+  let plotW = Math.min(maxPlotWidth, Math.max(MIN_PLOT, width - left - right));
 
   const top = EDGE_PAD + Math.ceil(lineH / 2);
   const legendBox = legend && legend.length ? layoutLegend(legend, Math.max(MIN_PLOT, width - 2 * EDGE_PAD), measure, font) : { rows: [], height: 0 };
   const xAxisH = TICK_LENGTH + TICK_GAP + lineH + (xLabel ? TITLE_LINE + 2 : 0);
   const bottom = xAxisH + (legendBox.height ? legendBox.height + 6 : 0) + EDGE_PAD;
-  const plotH = Math.max(MIN_PLOT / 2, height - top - bottom);
+  const plotH = aspect ? plotW / aspect : Math.max(MIN_PLOT / 2, height - top - bottom);
+  if (aspect) height = Math.ceil(top + plotH + bottom);
 
   return {
     width, height, lineH,

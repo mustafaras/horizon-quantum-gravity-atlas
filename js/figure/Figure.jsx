@@ -7,7 +7,9 @@
 // Optional controlled interaction (the RG scale plot, the strain scrubber):
 //   onHover(x | null)  pointer position in data x; onSelect(x)  click or tap in data x;
 //   onNudge(dir, big)  arrow keys / Home (-Infinity) / End (+Infinity) instead of the built-in crosshair;
-//   slider             { min, max, now, text } turns the plot into role="slider".
+//   backdrop(ctx, plot) paints under the scene (a rendered image) and backdropKey redraws it;
+//   onScrub(x)         press and drag (capture) in data x; the strain panels seek with it;
+//   slider             { min, max, now, text } turns the plot into role="slider"; readout replaces the crosshair text.
 
 const FIG_FORMAT = (v) => (Number.isFinite(v) ? Number(v.toPrecision(4)).toString() : "n/a");
 
@@ -25,7 +27,7 @@ function useFigureMeasure() {
   return { measure, version };
 }
 
-function Figure({ spec, children, className = "", onHover, onSelect, onNudge, slider, extra }) {
+function Figure({ spec, children, className = "", onHover, onSelect, onNudge, slider, extra, readout: readoutOverride, onScrub, backdrop, backdropKey }) {
   const F = window.QGA_FIGURE;
   const wrapRef = useRef(null);
   const cvRef = useRef(null);
@@ -59,8 +61,9 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
   useEffect(() => {
     if (!scene || !cvRef.current) return;
     const ctx = F.prepareCanvas(cvRef.current, scene.width, scene.height);
+    if (backdrop) backdrop(ctx, scene.plot);
     F.drawScene(ctx, scene, { fonts, scratch: scratch.current });
-  }, [scene, fonts, theme]);
+  }, [scene, fonts, theme, backdropKey]); // eslint-disable-line
 
   const summary = useMemo(() => F.figureSummary(spec), [spec]);
   const table = useMemo(() => (tableOpen ? F.dataTable(spec) : null), [spec, tableOpen]);
@@ -93,7 +96,8 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
   const onPointer = (e) => {
     if (!scene) return;
     if (onHover) onHover(dataX(e));
-    if (!focal || onNudge) return;
+    if (onScrub && (e.buttons & 1)) onScrub(dataX(e));
+    if (!focal || onNudge || onHover) return;
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
     if (x < scene.plot.x || x > scene.plot.x + scene.plot.w) return;
     setCursor(F.nearestIndex(focal.x, scene.sx.invert(x)));
@@ -101,7 +105,7 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
 
   const cx = scene && cursor !== null ? scene.sx.map(focal.x[cursor]) : null;
   const cy = scene && cursor !== null ? scene.sy.map(focal.y[cursor]) : null;
-  const readout = cursor !== null
+  const readout = readoutOverride != null ? readoutOverride : cursor !== null
     ? `${focal.label}: ${spec.x.label ? spec.x.label.plain : "x"} = ${FIG_FORMAT(focal.x[cursor])}, ${spec.y.label ? spec.y.label.plain : "y"} = ${FIG_FORMAT(focal.y[cursor])}`
     : "";
 
@@ -113,15 +117,16 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
         <span id={uid + "-title"} className="fig-title">{spec.title}</span>
         <Badge kind={spec.status}></Badge>
       </div>
-      <div ref={wrapRef} className="fig-plot" style={{ height: spec.height }} tabIndex={0}
+      <div ref={wrapRef} className="fig-plot" style={{ height: scene ? scene.height : spec.height }} tabIndex={0}
         role={slider ? "slider" : "group"} aria-roledescription={slider ? undefined : "plot"}
         aria-label={spec.title + ". Arrow keys move along the data, Home and End jump to the ends."}
         aria-valuemin={slider && slider.min} aria-valuemax={slider && slider.max} aria-valuenow={slider && slider.now}
         aria-valuetext={slider && slider.text}
         aria-describedby={uid + "-summary"} onKeyDown={onKeyDown} onPointerMove={onPointer}
         onClick={(e) => { if (onSelect && scene) onSelect(dataX(e)); }}
+        onPointerDown={(e) => { if (onScrub && scene) { e.currentTarget.setPointerCapture(e.pointerId); onScrub(dataX(e)); } }}
         onPointerLeave={() => { setCursor(null); if (onHover) onHover(null); }} onBlur={() => setCursor(null)}>
-        <canvas ref={cvRef} className="fig-canvas" style={{ width: width || "100%", height: spec.height }}></canvas>
+        <canvas ref={cvRef} className="fig-canvas" style={{ width: width || "100%", height: scene ? scene.height : spec.height }}></canvas>
         {scene ? <FigureTex items={scene.overlays}></FigureTex> : null}
         {extra && scene ? extra(scene) : null}
         {cx !== null && Number.isFinite(cx) && Number.isFinite(cy) ? (

@@ -72,24 +72,23 @@ function kerrCameraGoal(inclinationDeg, distance, theta = 0.35) {
 }
 
 const KERR_CURVES = [
-  { key: "isco", sense: "retro", color: QGA_TOKENS.css("pigment-violet-72-c17"), dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
-  { key: "isco", sense: "pro", color: QGA_TOKENS.css("accent"), dash: "", width: 1.9, label: "ISCO prograde", read: (g) => g.rIsco },
-  { key: "photon", sense: "retro", color: QGA_TOKENS.css("signal-warm"), dash: "3 4", width: 1.1, label: "Photon retrograde", read: (g) => g.rPhotonRetrograde },
-  { key: "photon", sense: "pro", color: QGA_TOKENS.css("pigment-orange-89"), dash: "", width: 1.9, label: "Photon prograde", read: (g) => g.rPhoton },
-  { key: "ergo", sense: "", color: QGA_TOKENS.css("accent-2"), dash: "", width: 1.6, label: "Ergosurface (eq.)", read: (g) => g.rErgoEquator, fill: QGA_TOKENS.alpha("accent-2", 0.07) },
-  { key: "horizon", sense: "", color: QGA_TOKENS.css("signal-danger"), dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: QGA_TOKENS.alpha("pigment-grey-13", 0.97) },
+  { key: "isco", sense: "retro", token: "pigment-violet-72-c17", color: QGA_TOKENS.css("pigment-violet-72-c17"), dash: "5 4", width: 1.2, label: "ISCO retrograde", read: (g) => g.rIscoRetrograde },
+  { key: "isco", sense: "pro", token: "accent", color: QGA_TOKENS.css("accent"), dash: "", width: 1.9, label: "ISCO prograde", read: (g) => g.rIsco },
+  { key: "photon", sense: "retro", token: "signal-warm", color: QGA_TOKENS.css("signal-warm"), dash: "3 4", width: 1.1, label: "Photon retrograde", read: (g) => g.rPhotonRetrograde },
+  { key: "photon", sense: "pro", token: "pigment-orange-89", color: QGA_TOKENS.css("pigment-orange-89"), dash: "", width: 1.9, label: "Photon prograde", read: (g) => g.rPhoton },
+  { key: "ergo", sense: "", token: "accent-2", color: QGA_TOKENS.css("accent-2"), dash: "", width: 1.6, label: "Ergosurface (eq.)", read: (g) => g.rErgoEquator, fill: QGA_TOKENS.alpha("accent-2", 0.07) },
+  { key: "horizon", sense: "", token: "signal-danger", color: QGA_TOKENS.css("signal-danger"), dash: "", width: 2.3, label: "Outer horizon r₊", read: (g) => g.rPlus, fill: QGA_TOKENS.alpha("pigment-grey-13", 0.97) },
 ];
 
 function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, motion }) {
-  const cx = 100, cy = 100, span = 76;
   const visible = KERR_CURVES.filter((curve) => layers[curve.key]);
   const widest = visible.reduce((acc, curve) => Math.max(acc, curve.read(geometry)), 2);
   const domain = Math.max(4, Math.ceil(widest));
-  const px = (radius) => span * radius / domain;
-  const tickStep = domain > 12 ? 4 : domain > 6 ? 2 : 1;
-  const ticks = [];
-  for (let r = tickStep; r <= domain; r += tickStep) ticks.push(r);
   const readout = exact || geometry;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.kerrRadiiSpec({
+    rings: visible.map((curve) => ({ radius: curve.read(geometry), color: curve.token, dash: curve.dash, width: curve.width, label: curve.label, focal: curve.key === "horizon" })),
+    domain, spin: readout.a,
+  }), [geometry, layers, domain, readout.a]); // eslint-disable-line
 
   if (!open) {
     return (
@@ -101,71 +100,13 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
   }
 
   return (
-    <figure className={"kerr-map" + (settling ? " settling" : "") + (motion ? " live" : "")}
-      aria-label="Exact Kerr equatorial coordinate-radius figure">
-      <figcaption className="kerr-map-head">
-        <span className="kerr-map-ident">
-          <span className="kerr-map-id">FIG.1</span>
-          <span className="kerr-map-title">Kerr radii</span>
-        </span>
-        <span className="kerr-map-head-tools">
-          <span className="kerr-map-unit">R / r<sub>g</sub></span>
-          <button type="button" className="kerr-map-close" aria-label="Hide Kerr radii map"
-            aria-expanded="true" onClick={onToggle}>Hide</button>
-        </span>
-      </figcaption>
-      <svg viewBox="0 0 240 208" role="img"
-        aria-label={"Nested Kerr radii in units of GM over c squared, plotted to " + domain + " GM/c²"}>
-        <defs>
-          <radialGradient id="kerr-scope-field" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-azure-26")} stopOpacity="0.42"></stop>
-            <stop offset="68%" stopColor={QGA_TOKENS.css("pigment-blue-18-c03-h259")} stopOpacity="0.18"></stop>
-            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-grey-12")} stopOpacity="0"></stop>
-          </radialGradient>
-          <linearGradient id="kerr-sweep-fade" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={QGA_TOKENS.css("accent")} stopOpacity="0"></stop>
-            <stop offset="100%" stopColor={QGA_TOKENS.css("accent")} stopOpacity="0.5"></stop>
-          </linearGradient>
-        </defs>
-        <circle cx={cx} cy={cy} r={span} fill="url(#kerr-scope-field)"
-          stroke={QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18)} strokeWidth="0.7"></circle>
-        <line x1={cx - span - 10} y1={cy} x2={cx + span + 10} y2={cy} className="kerr-axis"></line>
-        <line x1={cx} y1={cy - span - 10} x2={cx} y2={cy + span + 10} className="kerr-axis"></line>
-        <text x="2" y={cy - span - 8} className="kerr-scope-label">RETROGRADE</text>
-        <text x="238" y={cy + span + 14} className="kerr-scope-label kerr-scope-label-end">PROGRADE</text>
-        {ticks.map((r) => (
-          <g key={r}>
-            <line x1={cx + px(r)} y1={cy - 3} x2={cx + px(r)} y2={cy + 3} className="kerr-tick"></line>
-            <text x={cx + px(r)} y={cy + 13} className="kerr-tick-label">{r}</text>
-          </g>
-        ))}
-        <g className="kerr-sweep" aria-hidden="true">
-          <line x1={cx} y1={cy} x2={cx + span} y2={cy} stroke="url(#kerr-sweep-fade)" strokeWidth="1.1"></line>
-        </g>
-        {visible.map((curve, index) => (
-          <circle key={index} cx={cx} cy={cy} r={px(curve.read(geometry))}
-            className={"kerr-ring kerr-ring-" + curve.key + (curve.sense ? " kerr-ring-" + curve.sense : "")}
-            fill={curve.fill || "none"} stroke={curve.color} strokeWidth={curve.width}
-            strokeDasharray={curve.dash}></circle>
-        ))}
-        <circle cx={cx} cy={cy} r="1.8" fill={QGA_TOKENS.css("ink")}></circle>
-        <g className="kerr-spin-mark">
-          <path d={"M " + (cx + 56) + " " + (cy - 72) + " a 46 46 0 0 1 26 22"} fill="none"
-            stroke={QGA_TOKENS.alpha("pigment-grey-97", 0.5)} strokeWidth="1.1"></path>
-          <path d={"M " + (cx + 82) + " " + (cy - 50) + " l -6 -1 l 1 6"} fill="none"
-            stroke={QGA_TOKENS.alpha("pigment-grey-97", 0.5)} strokeWidth="1.1"></path>
-          <text x={cx + 50} y={cy - 78} className="kerr-tick-label">a★ {readout.a.toFixed(2)}</text>
-        </g>
-        <line x1={cx - span} y1={cy + span + 24} x2={cx - span + px(tickStep)} y2={cy + span + 24}
-          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1.3"></line>
-        <line x1={cx - span} y1={cy + span + 20} x2={cx - span} y2={cy + span + 28}
-          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1"></line>
-        <line x1={cx - span + px(tickStep)} y1={cy + span + 20} x2={cx - span + px(tickStep)} y2={cy + span + 28}
-          stroke={QGA_TOKENS.alpha("pigment-blue-89-c03", 0.6)} strokeWidth="1"></line>
-        <text x={cx - span + px(tickStep) + 24} y={cy + span + 27} className="kerr-tick-label">
-          {tickStep} GM/c²
-        </text>
-      </svg>
+    <div className={"kerr-map" + (settling ? " settling" : "") + (motion ? " live" : "")}>
+      <div className="kerr-map-head">
+        <span className="kerr-map-unit">R / r<sub>g</sub> · a★ {readout.a.toFixed(2)}</span>
+        <button type="button" className="kerr-map-close" aria-label="Hide Kerr radii map"
+          aria-expanded="true" onClick={onToggle}>Hide</button>
+      </div>
+      <Figure spec={spec}></Figure>
       <table className="kerr-map-legend">
         <tbody>
           {visible.map((curve, index) => (
@@ -183,7 +124,7 @@ function KerrGeometryMap({ geometry, exact, layers, open, onToggle, settling, mo
         </tbody>
       </table>
       <p className="kerr-map-note">Boyer–Lindquist coordinate radii, exact Kerr · not image-plane distances</p>
-    </figure>
+    </div>
   );
 }
 

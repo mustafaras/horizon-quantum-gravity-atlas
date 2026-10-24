@@ -31,7 +31,7 @@ function thin(positions, widths, gap = 8) {
 
 function axisTicks(def, scale, measure, font, pixels, vertical) {
   const logAxis = def.scale.type === "log";
-  const count = vertical ? Math.max(2, Math.min(8, Math.floor(pixels / 34))) : Math.max(2, Math.min(9, Math.floor(pixels / 64)));
+  const count = vertical ? Math.max(3, Math.min(8, Math.floor(pixels / 28))) : Math.max(2, Math.min(9, Math.floor(pixels / 64)));
   let values = def.ticks ? [...def.ticks] : scale.ticks(count);
   if (values.length === 0) values = linearTicks(def.scale.domain[0], def.scale.domain[1], count);
   const labels = formatTicks(values, { decade: logAxis && def.decade });
@@ -40,8 +40,24 @@ function axisTicks(def, scale, measure, font, pixels, vertical) {
 }
 
 function colorRamp(name) {
-  if (name === "diverging") { const d = diverging(current()); return (t) => d.sample(2 * t - 1); }
-  return (t) => sampleSequential(name, t);
+  const sample = name === "diverging" ? ((d) => (t) => d.sample(2 * t - 1))(diverging(current())) : (t) => sampleSequential(name, t);
+  // 256-entry byte table: heat maps redraw every animation frame, so no per-cell allocation.
+  const lut = new Uint8ClampedArray(256 * 3);
+  for (let i = 0; i < 256; i++) { const c = sample(i / 255); lut[i * 3] = byte(c[0]); lut[i * 3 + 1] = byte(c[1]); lut[i * 3 + 2] = byte(c[2]); }
+  const ramp = (t) => { const i = Math.round(clamp01(t) * 255) * 3; return [lut[i], lut[i + 1], lut[i + 2]]; };
+  ramp.lut = lut;
+  return ramp;
+}
+
+function colorbar(m, zDomain) {
+  const rows = 32;
+  const ramp = colorRamp(m.palette);
+  const data = new Uint8ClampedArray(rows * 4);
+  for (let r = 0; r < rows; r++) {
+    const rgb = ramp(1 - r / (rows - 1)); // top is the high end
+    data[r * 4] = rgb[0]; data[r * 4 + 1] = rgb[1]; data[r * 4 + 2] = rgb[2]; data[r * 4 + 3] = 255;
+  }
+  return { rows, data, zDomain };
 }
 
 function heatImage(m, sx, sy) {
@@ -50,14 +66,15 @@ function heatImage(m, sx, sy) {
   if (!m.zDomain) for (const row of m.z) for (const v of row) { if (v < lo) lo = v; if (v > hi) hi = v; }
   if (m.palette === "diverging" && !m.zDomain) { const a = Math.max(Math.abs(lo), Math.abs(hi)); lo = -a; hi = a; }
   const span = hi - lo || 1;
-  const ramp = colorRamp(m.palette);
+  const lut = colorRamp(m.palette).lut;
   const data = new Uint8ClampedArray(rows * cols * 4);
+  const flip = sy.map(m.y[0]) > sy.map(m.y[1]); // z[0] is the row at y[0]: the bottom unless the axis is reversed
   for (let r = 0; r < rows; r++) {
-    const out = (rows - 1 - r) * cols; // z[0] is the lowest y row; image row 0 is the top
+    const out = (flip ? rows - 1 - r : r) * cols;
     for (let c = 0; c < cols; c++) {
-      const rgb = ramp(clamp01((m.z[r][c] - lo) / span));
+      const li = Math.round(clamp01((m.z[r][c] - lo) / span) * 255) * 3;
       const o = (out + c) * 4;
-      data[o] = byte(rgb[0]); data[o + 1] = byte(rgb[1]); data[o + 2] = byte(rgb[2]); data[o + 3] = 255;
+      data[o] = lut[li]; data[o + 1] = lut[li + 1]; data[o + 2] = lut[li + 2]; data[o + 3] = 255;
     }
   }
   const x0 = sx.map(m.x[0]), x1 = sx.map(m.x[1]), y0 = sy.map(m.y[0]), y1 = sy.map(m.y[1]);
@@ -98,7 +115,8 @@ export function legendEntries(spec) {
  * @param spec     figure() result
  * @param opts     { width, height, measure, fonts: { tick, label } }
  */
-export function buildScene(spec, { width, height = spec.height, measure, fonts }) {
+export function buildScene(spec, { width, height: requestedHeight = spec.height, measure, fonts }) {
+  let height = requestedHeight;
   const tickFont = fonts.tick, labelFont = fonts.label;
   const tickPx = parsePx(tickFont);
   const legend = legendEntries(spec);
@@ -109,25 +127,55 @@ export function buildScene(spec, { width, height = spec.height, measure, fonts }
     return { xt: axisTicks(xDef, sx, measure, tickFont, plotW, false), yt: axisTicks(yDef, sy, measure, tickFont, plotH, true) };
   };
   const solve = (t) => solveLayout({ width, height, measure, font: tickFont, xTicks: t.xt.labels, yTicks: t.yt.labels,
-    xLabel: xDef.label, yLabel: yDef.label, legend });
+    xLabel: xDef.label, yLabel: yDef.label, legend, aspect: spec.aspect, maxPlotWidth: spec.maxPlotWidth ?? Infinity });
   let layout = solve(pass(Math.max(60, width - 56), Math.max(60, height - 70)));
   let t = pass(layout.plot.w, layout.plot.h);
   layout = solve(t);
   t = pass(layout.plot.w, layout.plot.h);
   const { plot } = layout;
+  height = layout.height;
 
   const sx = makeScale(xDef.scale, [plot.x, plot.x + plot.w]);
   const sy = makeScale(yDef.scale, [plot.y + plot.h, plot.y]);
   const prims = [], texts = [], overlays = [];
-  const text = (o) => { texts.push(o); if (o.tex) overlays.push(o); };
+  // Annotation labels (rules, regions, callouts) are nudged apart so none overlap another.
+  const placed = [];
+  const boxOf = (o) => {
+    const w = Math.ceil(measure(o.text, tickFont) * (o.tex ? 1.15 : 1)), h = Math.ceil(o.size * 1.35);
+    const x = o.align === "left" ? o.x : o.align === "right" ? o.x - w : o.x - w / 2;
+    const y = o.base === "top" ? o.y : o.base === "bottom" ? o.y - h : o.y - h / 2;
+    return { x, y, w, h };
+  };
+  const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const text = (o) => {
+    if (o.role === "region" || o.role === "rule" || o.role === "callout") {
+      let box = boxOf(o);
+      for (let tries = 0; tries < 8 && placed.some((p) => hit(box, p)); tries++) {
+        o.y += o.base === "bottom" ? -(box.h + 2) : box.h + 2;
+        box = boxOf(o);
+      }
+      placed.push(box);
+    }
+    texts.push(o);
+    if (o.tex) overlays.push(o);
+  };
 
   // ---- under-layers: heatmaps and regions
   spec.marks.forEach((m, i) => {
-    if (m.type === "heatmap") prims.push({ ...heatImage(m, sx, sy), mark: i });
+    if (m.type === "heatmap") {
+      const img = { ...heatImage(m, sx, sy), mark: i };
+      prims.push(img);
+      const bar = colorbar(m, img.zDomain);
+      const bx = plot.x + plot.w - 14, by = plot.y + 8;
+      prims.push({ k: "rect", x: bx - 46, y: by - 6, w: 58, h: 68, c: "surface-0", a: 0.8, role: "colorbar" });
+      prims.push({ k: "image", x: bx, y: by, w: 8, h: 56, cols: 1, rows: bar.rows, data: bar.data, role: "colorbar", mark: i });
+      text({ x: bx - 4, y: by, text: formatTicks([img.zDomain[1]])[0], align: "right", base: "middle", c: "ink-dim", a: 1, size: tickPx, role: "colorbar" });
+      text({ x: bx - 4, y: by + 56, text: formatTicks([img.zDomain[0]])[0], align: "right", base: "middle", c: "ink-dim", a: 1, size: tickPx, role: "colorbar" });
+    }
     if (m.type === "region") {
       const x0 = m.x ? sx.map(m.x[0]) : plot.x, x1 = m.x ? sx.map(m.x[1]) : plot.x + plot.w;
       const y0 = m.y ? sy.map(m.y[0]) : plot.y + plot.h, y1 = m.y ? sy.map(m.y[1]) : plot.y;
-      const r = { k: "hatch", x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0), c: m.color, a: 0.22, mark: i };
+      const r = { k: m.style === "fill" ? "rect" : "hatch", x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0), c: m.color, a: m.style === "fill" ? 0.14 : 0.22, mark: i, role: "region" };
       prims.push(r);
       if (m.text) text({ x: r.x + 6, y: r.y + 4, text: m.text.plain, tex: m.text.tex, align: "left", base: "top", c: "ink-dim", a: 1, size: tickPx, role: "region" });
     }
@@ -154,7 +202,7 @@ export function buildScene(spec, { width, height = spec.height, measure, fonts }
 
   // ---- marks
   const focalIndex = spec.marks.findIndex((m) => m.focal);
-  const level = (i) => (focalIndex < 0 || i === focalIndex ? 1 : 0.72); // one ink level below the focal mark
+  const level = (i) => (focalIndex < 0 || i === focalIndex ? 1 : 0.72) * spec.marks[i].alpha; // one ink level below the focal mark
   spec.marks.forEach((m, i) => {
     const a = level(i);
     if (m.type === "band") {
@@ -170,7 +218,11 @@ export function buildScene(spec, { width, height = spec.height, measure, fonts }
         if (!Number.isFinite(px) || !Number.isFinite(py)) return;
         if (m.yErr) prims.push({ k: "line", pts: [[px, sy.map(m.y[j] - m.yErr[0][j])], [px, sy.map(m.y[j] + m.yErr[1][j])]], c: m.color, a, w: 1.2, mark: i, role: "err" });
         if (m.xErr) prims.push({ k: "line", pts: [[sx.map(xv - m.xErr[0][j]), py], [sx.map(xv + m.xErr[1][j]), py]], c: m.color, a, w: 1.2, mark: i, role: "err" });
-        prims.push({ k: "circle", x: px, y: py, r: m.radius, c: m.color, a, mark: i });
+        const sh = Array.isArray(m.shape) ? m.shape[j] : m.shape;
+        const r = m.radius;
+        if (sh === "triangle-up") prims.push({ k: "poly", pts: [[px - r, py + r * 0.8], [px, py - r], [px + r, py + r * 0.8]], c: m.color, a, mark: i });
+        else if (sh === "triangle-down") prims.push({ k: "poly", pts: [[px - r, py - r * 0.8], [px, py + r], [px + r, py - r * 0.8]], c: m.color, a, mark: i });
+        else prims.push({ k: "circle", x: px, y: py, r, c: m.color, a, mark: i });
       });
     } else if (m.type === "rule") {
       const v = (m.axis === "x" ? sx : sy).map(m.value);

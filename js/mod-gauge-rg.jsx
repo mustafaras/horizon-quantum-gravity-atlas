@@ -125,96 +125,31 @@ function rgModelEquation(state) {
 }
 
 function RGScalePlot({ state, points, fixedPoints, currentPoint, hoverLog, setHoverLog, setCurrent, settling }) {
-  const width = 720, height = 350, left = 58, right = 18, top = 26, bottom = 48;
-  const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const yMax = Math.min(4, Math.max(1.25, RG_G_LIMIT * 1.04,
     ...points.map((point) => point.g * 1.08), ...fixedPoints.map((point) => point.g * 1.12)));
-  const x = (logMu) => left + ((logMu - state.rgLogMin) / (state.rgLogMax - state.rgLogMin)) * plotWidth;
-  const y = (g) => top + (1 - g / yMax) * plotHeight;
-  const path = points.map((point, index) => {
-    const logMu = state.rgMu0 + point.t / RG_LN10;
-    return (index ? "L" : "M") + x(logMu).toFixed(2) + "," + y(point.g).toFixed(2);
-  }).join(" ");
-  const xTicks = Array.from({ length: 7 }, (_, index) =>
-    state.rgLogMin + ((state.rgLogMax - state.rgLogMin) * index) / 6);
-  const yTicks = Array.from({ length: 5 }, (_, index) => (yMax * index) / 4);
   const markerLog = hoverLog == null ? state.rgCurrent : hoverLog;
-  const markerT = (markerLog - state.rgMu0) * RG_LN10;
-  const marker = rgSample(points, markerT);
-  const choose = (event) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const local = Math.max(0, Math.min(plotWidth, ((event.clientX - bounds.left) / bounds.width) * width - left));
-    return state.rgLogMin + (local / plotWidth) * (state.rgLogMax - state.rgLogMin);
-  };
-  const nudge = (delta) => setCurrent(Math.max(state.rgLogMin, Math.min(state.rgLogMax, state.rgCurrent + delta)));
+  const marker = rgSample(points, (markerLog - state.rgMu0) * RG_LN10);
+  const status = RG_PRESETS[rgActivePresetId(state)].badge;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.rg.scaleTrajectorySpec({
+    points, fixedPoints, logMin: state.rgLogMin, logMax: state.rgLogMax, mu0: state.rgMu0, ln10: RG_LN10,
+    gLimit: RG_G_LIMIT, yMax, markerLog, markerG: marker ? marker.g : NaN, status,
+  }), [points, fixedPoints, state.rgLogMin, state.rgLogMax, state.rgMu0, yMax, markerLog, status]); // eslint-disable-line
+  const clamp = (v) => Math.max(state.rgLogMin, Math.min(state.rgLogMax, v));
   return (
     <div className={"rg-plot rg-scale-plot" + (settling ? " settling" : "")}>
       <header><span>RG·A / scale trajectory</span><strong>g(μ) versus log<sub>10</sub> μ</strong></header>
       <p className="rg-mobile-gesture-note">Swipe the chart horizontally; use the current-scale control above to select μ.</p>
-      <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Running coupling graph">
-        <rect className="rg-plot-bg" x={left} y={top} width={plotWidth} height={plotHeight}></rect>
-        {xTicks.map((tick) => <g key={"x" + tick}>
-          <line className="rg-grid" x1={x(tick)} x2={x(tick)} y1={top} y2={top + plotHeight}></line>
-          <text className="rg-axis-label" x={x(tick)} y={height - 20}>{tick.toFixed(1)}</text>
-        </g>)}
-        {yTicks.map((tick) => <g key={"y" + tick}>
-          <line className="rg-grid" x1={left} x2={left + plotWidth} y1={y(tick)} y2={y(tick)}></line>
-          <text className="rg-axis-label rg-y-label" x={left - 9} y={y(tick) + 3}>{tick.toFixed(2)}</text>
-        </g>)}
-        <text className="rg-axis-title" x={left + plotWidth} y={height - 5}>log₁₀(μ / GeV) → UV</text>
-        <text className="rg-axis-title rg-axis-title-y" x={14} y={top + 8}>g</text>
-        <line className="rg-reference" x1={x(state.rgMu0)} x2={x(state.rgMu0)} y1={top} y2={top + plotHeight}></line>
-        <text className="rg-reference-label" x={x(state.rgMu0) + 5} y={top + 13}>μ₀</text>
-        {y(RG_G_LIMIT) >= top ? <g>
-          <line className="rg-validity-boundary" x1={left} x2={left + plotWidth} y1={y(RG_G_LIMIT)} y2={y(RG_G_LIMIT)}></line>
-          <text className="rg-boundary-label" x={left + 6} y={y(RG_G_LIMIT) - 6}>α = 1 display boundary</text>
-        </g> : null}
-        {fixedPoints.map((point) => <g key={"fp" + point.g}>
-          <line className="rg-fixed-line" x1={left} x2={left + plotWidth} y1={y(point.g)} y2={y(point.g)}></line>
-          <circle className={"rg-fixed-dot " + (point.stability === "UV-attractive" ? "uv" : point.stability === "IR-attractive" ? "ir" : "marginal")}
-            cx={left + plotWidth - 7} cy={y(point.g)} r="4.5"></circle>
-        </g>)}
-        <path className="rg-flow-shadow" d={path}></path>
-        <path className="rg-flow-path" d={path}></path>
-        <path className="rg-flow-tracer" d={path}></path>
-        {points.filter((point) => point.boundary).map((point) => {
-          const logMu = state.rgMu0 + point.t / RG_LN10;
-          return <g key={"boundary" + point.t}>
-            <circle className="rg-termination" cx={x(logMu)} cy={y(point.g)} r="6"></circle>
-            <text className="rg-termination-label" x={x(logMu)} y={y(point.g) - 12}>terminated</text>
-          </g>;
-        })}
-        <line className="rg-current-line" x1={x(markerLog)} x2={x(markerLog)} y1={top} y2={top + plotHeight}></line>
-        {marker ? <g className="rg-current-point">
-          <circle cx={x(markerLog)} cy={y(marker.g)} r="7"></circle>
-          <circle className="rg-current-core" cx={x(markerLog)} cy={y(marker.g)} r="2.5"></circle>
-        </g> : null}
-        <rect className="rg-hit-surface" x={left} y={top} width={plotWidth} height={plotHeight}
-          tabIndex="0" role="slider" aria-label="Current logarithmic energy scale"
-          aria-valuemin={state.rgLogMin} aria-valuemax={state.rgLogMax} aria-valuenow={state.rgCurrent}
-          aria-valuetext={`log10 mu ${state.rgCurrent.toFixed(2)}, or 10 to the ${state.rgCurrent.toFixed(2)} GeV`}
-          onPointerMove={(event) => setHoverLog(choose(event))} onPointerLeave={() => setHoverLog(null)}
-          onClick={(event) => setCurrent(choose(event))}
-          onKeyDown={(event) => {
-            const step = event.shiftKey ? 1 : 0.1;
-            if (event.key === "ArrowRight" || event.key === "ArrowUp") { event.preventDefault(); nudge(step); }
-            else if (event.key === "ArrowLeft" || event.key === "ArrowDown") { event.preventDefault(); nudge(-step); }
-            else if (event.key === "Home") { event.preventDefault(); setCurrent(state.rgLogMin); }
-            else if (event.key === "End") { event.preventDefault(); setCurrent(state.rgLogMax); }
-          }}></rect>
-        <g className="rg-hover-readout" transform={`translate(${Math.min(width - 180, Math.max(left + 8, x(markerLog) + 10))},${top + 10})`}>
-          <rect width="166" height="42" rx="3"></rect>
-          <text x="9" y="16">log₁₀ μ = {markerLog.toFixed(3)}</text>
-          <text x="9" y="32">{marker ? `g = ${marker.g.toFixed(5)}` : "outside valid domain"}</text>
-        </g>
-      </svg>
+      <Figure spec={spec}
+        slider={{ min: state.rgLogMin, max: state.rgLogMax, now: state.rgCurrent,
+          text: `log10 mu ${state.rgCurrent.toFixed(2)}, or 10 to the ${state.rgCurrent.toFixed(2)} GeV` }}
+        readout={`log₁₀ μ = ${markerLog.toFixed(3)} · ${marker ? `g = ${marker.g.toFixed(5)}` : "outside valid domain"}`}
+        onHover={setHoverLog} onSelect={(x) => setCurrent(clamp(x))}
+        onNudge={(dir, big) => setCurrent(dir === Infinity ? state.rgLogMax : dir === -Infinity ? state.rgLogMin : clamp(state.rgCurrent + dir * (big ? 1 : 0.1)))}></Figure>
     </div>
   );
 }
 
 function RGBetaPlot({ state, fixedPoints, currentPoint }) {
-  const width = 330, height = 350, left = 28, right = 24, top = 26, bottom = 48;
-  const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const yMax = Math.max(1.25, RG_G_LIMIT * 1.04, ...fixedPoints.map((point) => point.g * 1.15));
   const parameters = rgParameters(state);
   const samples = Array.from({ length: 151 }, (_, index) => {
@@ -222,40 +157,15 @@ function RGBetaPlot({ state, fixedPoints, currentPoint }) {
     return { g, beta: window.QGA_PHYSICS.rgBeta(state.rgModel, g, parameters) };
   }).filter((point) => Number.isFinite(point.beta));
   const betaMax = Math.max(0.05, ...samples.map((point) => Math.abs(point.beta))) * 1.1;
-  const x = (beta) => left + ((beta + betaMax) / (2 * betaMax)) * plotWidth;
-  const y = (g) => top + (1 - g / yMax) * plotHeight;
-  const path = samples.map((point, index) => (index ? "L" : "M") + x(point.beta).toFixed(2) + "," + y(point.g).toFixed(2)).join(" ");
-  const arrows = Array.from({ length: 8 }, (_, index) => ((index + 0.5) * yMax) / 8);
+  const status = RG_PRESETS[rgActivePresetId(state)].badge;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.rg.betaFunctionSpec({
+    samples, fixedPoints, yMax, betaMax, status,
+    currentPoint: currentPoint ? { g: currentPoint.g, beta: currentPoint.beta } : null,
+  }), [state.rgModel, state.rgNf, state.rgA, state.rgB, state.rgGStar, fixedPoints, currentPoint, status]); // eslint-disable-line
   return (
     <div className="rg-plot rg-beta-plot">
       <header><span>RG·B / phase line</span><strong>β(g) and fixed points</strong></header>
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Beta function and phase-line landscape">
-        <rect className="rg-plot-bg" x={left} y={top} width={plotWidth} height={plotHeight}></rect>
-        <line className="rg-grid" x1={x(0)} x2={x(0)} y1={top} y2={top + plotHeight}></line>
-        <line className="rg-grid" x1={left} x2={left + plotWidth} y1={y(0)} y2={y(0)}></line>
-        <text className="rg-axis-label" x={x(-betaMax)} y={height - 20}>{(-betaMax).toFixed(2)}</text>
-        <text className="rg-axis-label" x={x(0)} y={height - 20}>β = 0</text>
-        <text className="rg-axis-label" x={x(betaMax)} y={height - 20}>{betaMax.toFixed(2)}</text>
-        <text className="rg-axis-title" x={left + plotWidth} y={height - 5}>β(g)</text>
-        <path className="rg-beta-shadow" d={path}></path>
-        <path className="rg-beta-path" d={path}></path>
-        {arrows.map((g) => {
-          const beta = window.QGA_PHYSICS.rgBeta(state.rgModel, g, parameters);
-          const direction = beta > 1e-8 ? -1 : beta < -1e-8 ? 1 : 0;
-          return <path key={g} className="rg-phase-arrow"
-            d={direction ? `M${x(0) - 5},${y(g) - direction * 4} L${x(0)},${y(g) + direction * 5} L${x(0) + 5},${y(g) - direction * 4} Z` : ""}></path>;
-        })}
-        {fixedPoints.map((point) => <g key={point.g} className="rg-fp-group">
-          <circle className={"rg-fixed-dot " + (point.stability === "UV-attractive" ? "uv" : point.stability === "IR-attractive" ? "ir" : "marginal")}
-            cx={x(0)} cy={y(point.g)} r="6"></circle>
-          <text className="rg-fp-label" x={x(0) + 10} y={y(point.g) - 8}>g* {point.g.toFixed(3)}</text>
-          <text className="rg-fp-label rg-fp-slope" x={x(0) + 10} y={y(point.g) + 8}>β′ {point.derivative.toFixed(3)}</text>
-        </g>)}
-        {currentPoint ? <g className="rg-beta-current">
-          <line x1={x(0)} x2={x(currentPoint.beta)} y1={y(currentPoint.g)} y2={y(currentPoint.g)}></line>
-          <circle cx={x(currentPoint.beta)} cy={y(currentPoint.g)} r="4"></circle>
-        </g> : null}
-      </svg>
+      <Figure spec={spec}></Figure>
     </div>
   );
 }

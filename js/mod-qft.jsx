@@ -357,45 +357,8 @@ function FieldLab3D() {
 
 /* ---------- dispersion relation ω(k) for the field lab (ties mass → mass gap) ---------- */
 function DispersionPlot({ mass }) {
-  const cvRef = useRef(null);
-  useEffect(() => {
-    const cv = cvRef.current;if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = cv.clientWidth,h = 150;
-    cv.width = w * dpr;cv.height = h * dpr;
-    const ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 40,padR = 12,padT = 18,padB = 26;
-    const pw = w - padL - padR,ph = h - padT - padB;
-    // sim constants: ω² = c²k² + m_eff² with c² = 30, m_eff = 3m
-    const C = Math.sqrt(30),kmax = 2.2,m0 = 3 * mass;
-    const wmax = Math.sqrt(C * C * kmax * kmax + 9 * 9); // fixed y-scale (m up to 3 → m0=9)
-    const X = (k) => padL + k / kmax * pw;
-    const Y = (om) => padT + ph * (1 - om / wmax);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);ctx.lineWidth = 1;
-    ctx.beginPath();ctx.moveTo(padL, padT);ctx.lineTo(padL, padT + ph);ctx.lineTo(padL + pw, padT + ph);ctx.stroke();
-    ctx.font = QGA_TOKENS.monoPx(10);ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("dispersion  ω(k)", padL, 12);
-    // massless light cone ω = c k (dashed)
-    ctx.setLineDash([4, 4]);ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.4);
-    ctx.beginPath();ctx.moveTo(X(0), Y(0));ctx.lineTo(X(kmax), Y(C * kmax));ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);ctx.fillText("ω = ck (massless)", X(kmax) - 118, Y(C * kmax) + 2);
-    // massive branch ω = √(c²k² + m²)
-    ctx.strokeStyle = QGA_TOKENS.css("pigment-cyan-80");ctx.lineWidth = 2;
-    ctx.shadowColor = QGA_TOKENS.css("pigment-cyan-80");ctx.shadowBlur = 7;ctx.beginPath();
-    for (let i = 0; i <= 120; i++) {const k = i / 120 * kmax,om = Math.sqrt(C * C * k * k + m0 * m0);if (i === 0) ctx.moveTo(X(k), Y(om));else ctx.lineTo(X(k), Y(om));}
-    ctx.stroke();ctx.shadowBlur = 0;
-    // mass gap marker
-    ctx.fillStyle = QGA_TOKENS.css("pigment-amber-85");
-    ctx.beginPath();ctx.arc(X(0), Y(m0), 3.5, 0, Math.PI * 2);ctx.fill();
-    ctx.fillText("mass gap ω₀ = mc²", X(0) + 8, Y(m0) + (m0 > wmax * 0.6 ? 14 : -6));
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);ctx.fillText("wavenumber k →", padL + pw - 96, padT + ph + 16);
-  }, [mass]);
-  return <div className="viz-frame" style={{ padding: 6, marginTop: 6 }}>
-    <canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
-    aria-label="Dispersion relation: angular frequency versus wavenumber, showing the mass gap"></canvas>
-  </div>;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.qft.dispersionSpec({ mass }), [mass]);
+  return <div style={{ marginTop: 6 }}><Figure spec={spec}></Figure></div>;
 }
 
 /* ---------- Feynman diagram builder ---------- */
@@ -1041,229 +1004,28 @@ function QFTScatterCanvas({ process, cosTheta, photonX, tau, fontsReady }) {
 /* Spacetime picture: the two incoming packets converge along the beam axis,
    meet at τ = 0.5, and the outgoing pair recedes with longitudinal speed
    cos θ. The fringe pattern is the superposition of the two carrier waves. */
-function QFTWaterfall({ cosTheta, tau, fontsReady }) {
-  const COLS = 220,ROWS = 130;
-  const off = useMemo(() => {
-    const cv = document.createElement("canvas");
-    cv.width = COLS;cv.height = ROWS;
-    const octx = cv.getContext("2d");
-    const img = octx.createImageData(COLS, ROWS);
-    const sigma = 0.15,k = 30;
-    const ct = Math.cos(Math.acos(Math.max(-1, Math.min(1, cosTheta))));
-    for (let j = 0; j < ROWS; j++) {
-      const t = j / (ROWS - 1);
-      const f = t <= 0.5 ? 1 - t / 0.5 : (t - 0.5) / 0.5 * ct;
-      const a = -f,b = f;
-      for (let i = 0; i < COLS; i++) {
-        const x = -1 + 2 * i / (COLS - 1);
-        const da = x - a,db = x - b;
-        const v = Math.exp(-(da * da) / (sigma * sigma)) * Math.cos(k * da) +
-        Math.exp(-(db * db) / (sigma * sigma)) * Math.cos(k * db);
-        const p = (j * COLS + i) * 4;
-        if (v >= 0) {img.data[p] = 255;img.data[p + 1] = 186;img.data[p + 2] = 92;} else
-        {img.data[p] = 88;img.data[p + 1] = 198;img.data[p + 2] = 255;}
-        img.data[p + 3] = Math.round(255 * Math.min(1, Math.abs(v) * 0.7));
-      }
-    }
-    octx.putImageData(img, 0, 0);
-    return cv;
-  }, [cosTheta]);
-
-  const ref = useQFTCanvas((ctx, w, h) => {
-    const padL = 40,padR = 12,padT = 16,padB = 26;
-    const pw = w - padL - padR,ph = h - padT - padB;
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-grey-13", 0.85);
-    ctx.fillRect(padL, padT, pw, ph);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(off, padL, padT, pw, ph);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padL, padT, pw, ph);
-
-    ctx.setLineDash([3, 4]);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.30);
-    ctx.beginPath();ctx.moveTo(padL + pw / 2, padT);ctx.lineTo(padL + pw / 2, padT + ph);ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22);
-    for (let i = 0; i <= 4; i++) {
-      const ty = padT + ph * i / 4;
-      ctx.beginPath();ctx.moveTo(padL - 4, ty);ctx.lineTo(padL, ty);ctx.stroke();
-    }
-
-    const cbW = 7,cbH = 34,cbX = padL + pw - cbW - 6,cbY = padT + 6;
-    const cbg = ctx.createLinearGradient(0, cbY, 0, cbY + cbH);
-    cbg.addColorStop(0, QGA_TOKENS.alpha("pigment-orange-84", 0.9));
-    cbg.addColorStop(0.5, QGA_TOKENS.alpha("pigment-blue-17", 0.92));
-    cbg.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-79", 0.9));
-    ctx.fillStyle = cbg;ctx.fillRect(cbX, cbY, cbW, cbH);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.28);ctx.lineWidth = 1;
-    ctx.strokeRect(cbX, cbY, cbW, cbH);
-    ctx.font = QGA_TOKENS.monoPx(8);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("+", cbX - 7, cbY + 7);
-    ctx.fillText("−", cbX - 7, cbY + cbH - 1);
-
-    const py = padT + ph * Math.min(1, Math.max(0, tau));
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.85);
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();ctx.moveTo(padL, py);ctx.lineTo(padL + pw, py);ctx.stroke();
-
-    ctx.font = QGA_TOKENS.monoPx(9.5);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("−1", padL, h - 8);
-    ctx.fillText("0", padL + pw / 2 - 3, h - 8);
-    ctx.fillText("+1", padL + pw - 12, h - 8);
-    ctx.fillText("τ", 12, padT + 10);
-    ctx.fillText("1", 12, padT + ph);
-  }, [off, tau, fontsReady]);
-  return (
-    <canvas ref={ref} className="qft-waterfall"
-    aria-label="Spacetime picture: two wave packets converging, interacting and receding along the beam axis"></canvas>);
-
+function QFTWaterfall({ cosTheta, tau }) {
+  const spec = useMemo(() => window.QGA_FIGURE.plots.qft.waterfallSpec({ cosTheta, tau }), [cosTheta, tau]);
+  return <Figure spec={spec}></Figure>;
 }
 
 /* Angular distribution, normalised to its 90° value. The y axis is clipped at
    min(20, max) so the t-channel forward pole stays on screen. */
-function QFTAngularPlot({ process, cosTheta, photonX, fontsReady }) {
-  const ref = useQFTCanvas((ctx, w, h) => {
-    const padL = 46,padR = 14,padT = 16,padB = 30;
-    const pw = w - padL - padR,ph = h - padT - padB;
-    const shape = (c) => window.QGA_PHYSICS.angularDistribution({ process: process.id, cosTheta: c, photonX });
-    const s90 = shape(0) || 1;
-    const N = 240;
-    const ratios = [];
-    let maxRatio = 0;
-    for (let i = 0; i <= N; i++) {
-      const r = shape(-1 + 2 * i / N) / s90;
-      ratios.push(r);
-      if (r > maxRatio) maxRatio = r;
-    }
-    const yMax = Math.min(20, maxRatio);
-    const X = (c) => padL + (c + 1) / 2 * pw;
-    const Y = (r) => padT + ph - Math.min(r, yMax) / yMax * ph;
-
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padL, padT, pw, ph);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
-    for (let i = 1; i < 4; i++) {
-      const y = padT + ph * i / 4;
-      ctx.beginPath();ctx.moveTo(padL, y);ctx.lineTo(padL + pw, y);ctx.stroke();
-      const x = padL + pw * i / 4;
-      ctx.beginPath();ctx.moveTo(x, padT);ctx.lineTo(x, padT + ph);ctx.stroke();
-    }
-    ctx.setLineDash([3, 4]);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.35);
-    ctx.beginPath();ctx.moveTo(padL, Y(1));ctx.lineTo(padL + pw, Y(1));ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    for (let i = 0; i <= N; i++) {
-      const x = X(-1 + 2 * i / N),y = Y(ratios[i]);
-      if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
-    }
-    ctx.save();
-    ctx.shadowColor = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.55);
-    ctx.shadowBlur = 8;
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.95);
-    ctx.lineWidth = 1.8;
-    ctx.stroke();
-    ctx.restore();
-
-    const cNow = Math.max(-1, Math.min(1, cosTheta));
-    const mx = X(cNow),my = Y(shape(cNow) / s90);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.5);
-    ctx.lineWidth = 1;
-    ctx.beginPath();ctx.moveTo(mx, padT);ctx.lineTo(mx, padT + ph);ctx.stroke();
-    ctx.save();
-    ctx.shadowColor = QGA_TOKENS.alpha("pigment-amber-89", 0.8);
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = QGA_TOKENS.css("pigment-amber-89");
-    ctx.beginPath();ctx.arc(mx, my, 3.4, 0, Math.PI * 2);ctx.fill();
-    ctx.restore();
-
-    ctx.font = QGA_TOKENS.monoPx(9.5);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("−1", padL - 4, h - 10);
-    ctx.fillText("0", padL + pw / 2 - 3, h - 10);
-    ctx.fillText("+1", padL + pw - 10, h - 10);
-    ctx.fillText(yMax.toFixed(1) + "×", 6, padT + 8);
-    ctx.fillText("0", 6, padT + ph);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.42);
-    ctx.fillText("cos θ", padL + pw / 2 - 14, h - 1);
-  }, [process.id, cosTheta, photonX, fontsReady]);
-  return (
-    <canvas ref={ref} className="qft-angular"
-    aria-label="Angular differential cross-section normalised to its 90 degree value"></canvas>);
-
+function QFTAngularPlot({ process, cosTheta, photonX }) {
+  const spec = useMemo(() => window.QGA_FIGURE.plots.qft.angularSpec({ process, cosTheta, photonX }), [process.id, cosTheta, photonX]);
+  return <Figure spec={spec}></Figure>;
 }
 
 /* Two-panel energy scan: the photon 1/s cross-section on a log axis, and the
    Z⁰ Breit–Wigner shape on a linear axis zoomed to ±3Γ. */
-function QFTResonancePlot({ sqrtS, fontsReady }) {
-  const ref = useQFTCanvas((ctx, w, h) => {
-    const gap = 22,padT = 16,padB = 30;
-    const pw = (w - gap) / 2,ph = h - padT - padB;
-    const M_Z = window.QGA_PHYSICS.M_Z,G_Z = window.QGA_PHYSICS.GAMMA_Z;
-    const panel = (x0, xMin, xMax, yMin, yMax, logY, fn, title) => {
-      const X = (v) => x0 + (v - xMin) / (xMax - xMin) * pw;
-      const Y = (v) => {
-        const t = logY ? (Math.log10(Math.max(1e-12, v)) - yMin) / (yMax - yMin) : (v - yMin) / (yMax - yMin);
-        return padT + ph - t * ph;
-      };
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x0, padT, pw, ph);
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.07);
-      for (let i = 1; i < 4; i++) {
-        const y = padT + ph * i / 4;
-        ctx.beginPath();ctx.moveTo(x0, y);ctx.lineTo(x0 + pw, y);ctx.stroke();
-      }
-      ctx.beginPath();
-      const N = 260;
-      for (let i = 0; i <= N; i++) {
-        const v = xMin + (xMax - xMin) * i / N;
-        const x = X(v),y = Y(fn(v));
-        if (i === 0) ctx.moveTo(x, y);else ctx.lineTo(x, y);
-      }
-      ctx.save();
-      ctx.shadowColor = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.5);
-      ctx.shadowBlur = 7;
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-azure-80-c11", 0.95);
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-      ctx.restore();
-      if (sqrtS >= xMin && sqrtS <= xMax) {
-        ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-89", 0.5);
-        ctx.lineWidth = 1;
-        ctx.beginPath();ctx.moveTo(X(sqrtS), padT);ctx.lineTo(X(sqrtS), padT + ph);ctx.stroke();
-        ctx.save();
-        ctx.shadowColor = QGA_TOKENS.alpha("pigment-amber-89", 0.8);
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = QGA_TOKENS.css("pigment-amber-89");
-        ctx.beginPath();ctx.arc(X(sqrtS), Y(fn(sqrtS)), 3.2, 0, Math.PI * 2);ctx.fill();
-        ctx.restore();
-      }
-      ctx.font = QGA_TOKENS.monoPx(9.5);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-      ctx.fillText(title, x0 + 4, padT - 4);
-      ctx.fillText(xMin.toFixed(0), x0 - 2, h - 10);
-      ctx.fillText(xMax.toFixed(0), x0 + pw - 18, h - 10);
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.42);
-      ctx.fillText("√s (GeV)", x0 + pw / 2 - 22, h - 1);
-    };
-    panel(0, 1, 200, -3, 2, true,
-    (v) => window.QGA_PHYSICS.qftTotalCrossSection({ sqrtS: v }),
-    "σ_γ (nb) · log");
-    panel(pw + gap, M_Z - 3 * G_Z, M_Z + 3 * G_Z, 0, 1.05, false,
-    (v) => window.QGA_PHYSICS.breitWignerResonance({ sqrtS: v }),
-    "Z⁰ Breit–Wigner · linear");
-  }, [sqrtS, fontsReady]);
+function QFTResonancePlot({ sqrtS }) {
+  const photon = useMemo(() => window.QGA_FIGURE.plots.qft.photonCrossSectionSpec({ sqrtS }), [sqrtS]);
+  const zPole = useMemo(() => window.QGA_FIGURE.plots.qft.zResonanceSpec({ sqrtS }), [sqrtS]);
   return (
-    <canvas ref={ref} className="qft-resonance"
-    aria-label="Energy scan: photon 1 over s cross-section and the Z boson Breit-Wigner resonance"></canvas>);
-
+    <div className="qft-stack">
+      <Figure spec={photon}></Figure>
+      <Figure spec={zPole}></Figure>
+    </div>);
 }
 
 function AmplitudeRoom() {
@@ -1392,38 +1154,15 @@ function AmplitudeRoom() {
             fontsReady={fontsReady}></QFTScatterCanvas>
           </div>
         </figure>
-        <figure className="qft-panel">
-          <header className="qft-panel-head">
-            <span className="qft-panel-title">Spacetime picture</span>
-            <span className="qft-panel-note">schematic wave-packet collision · longitudinal axis</span>
-          </header>
-          <div className="qft-panel-body">
-            <QFTWaterfall cosTheta={cosTheta} tau={tau} fontsReady={fontsReady}></QFTWaterfall>
-          </div>
-        </figure>
+        <QFTWaterfall cosTheta={cosTheta} tau={tau}></QFTWaterfall>
       </div>
 
       <div className="qft-plots">
-        <figure className="qft-panel">
-          <header className="qft-panel-head">
-            <span className="qft-panel-title">Angular distribution</span>
-            <span className="qft-panel-note">normalised to the 90° value · y clipped at 20×</span>
-          </header>
-          <div className="qft-panel-body">
-            <div className="qft-formula"><Eq tex={process.shapeTex} display={true}></Eq></div>
-            <QFTAngularPlot process={process} cosTheta={cosTheta} photonX={photonX}
-            fontsReady={fontsReady}></QFTAngularPlot>
-          </div>
-        </figure>
-        <figure className="qft-panel">
-          <header className="qft-panel-head">
-            <span className="qft-panel-title">Energy scan</span>
-            <span className="qft-panel-note">photon 1/s (log) · Z⁰ Breit–Wigner (linear, ±3Γ)</span>
-          </header>
-          <div className="qft-panel-body">
-            <QFTResonancePlot sqrtS={sqrtS} fontsReady={fontsReady}></QFTResonancePlot>
-          </div>
-        </figure>
+        <div>
+          <div className="qft-formula"><Eq tex={process.shapeTex} display={true}></Eq></div>
+          <QFTAngularPlot process={process} cosTheta={cosTheta} photonX={photonX}></QFTAngularPlot>
+        </div>
+        <QFTResonancePlot sqrtS={sqrtS}></QFTResonancePlot>
       </div>
 
       <div className="kerr-deck">

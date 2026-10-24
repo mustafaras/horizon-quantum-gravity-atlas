@@ -655,8 +655,6 @@ function grPrecDeg(M, a, e) {
    selected body, GR vs Newtonian, with photon-sphere / ISCO markers, the
    energy line, turning points, and a live radius marker driven by the scene
    loop through stRef (no per-frame React renders). */
-// Unique SVG clipPath ids: two panels of the same type must not share one.
-let ngClipSeed = 0;
 
 /* ── Effective-potential panel ───────────────────────────────────────────────
    V_eff(r) = −GM/r + L²/2r² − GM·L²/c²r³ for the selected body, GR against
@@ -666,8 +664,6 @@ let ngClipSeed = 0;
    from the Newtonian a(1±e), which is wrong once the r⁻³ term matters. */
 function VEffPanel({ mass, body, view, stRef }) {
   const dotRef = useRef(null);
-  const mapRef = useRef(null);
-  const veffClipId = useMemo(() => "veff-clip-" + (ngClipSeed++), []);
   const P = window.QGA_PHYSICS;
   const gm = 0.55 * mass;
   const rPh = P.grPhotonSphereRadius(gm, GR_C2);
@@ -679,9 +675,6 @@ function VEffPanel({ mass, body, view, stRef }) {
   const L2 = gm * a * (1 - e * e);
   const L = Math.sqrt(L2);
   const E = -gm / (2 * a);
-
-  const W = 620, H = 326, PL = 56, PR = 20, PT = 22, PB = 44;
-  const iw = W - PL - PR, ih = H - PT - PB;
 
   const V = (r) => P.grEffectivePotential(gm, GR_C2, L, r);
   const VN = (r) => -gm / r + L2 / (2 * r * r);
@@ -748,62 +741,39 @@ function VEffPanel({ mass, body, view, stRef }) {
   const ySub = yStep / 5;
   const yHi = Math.ceil(yTopRaw / ySub) * ySub;
 
-  const xs = (r) => PL + (r - rMin) / (rMax - rMin) * iw;
-  const ys = (v) => PT + (yHi - v) / (yHi - yLo) * ih;
-  mapRef.current = { xs, ys, V, rMin, rMax };
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      const el = dotRef.current, m = mapRef.current;
-      if (!el || !m) return;
-      const r = Math.min(Math.max(stRef.current.selR || 0, m.rMin), m.rMax);
-      el.setAttribute("cx", m.xs(r).toFixed(1));
-      el.setAttribute("cy", m.ys(m.V(r)).toFixed(1));
-    }, 160);
-    return () => clearInterval(id);
-  }, [stRef]);
-
   const NPT = 200;
-  const pts = [];
+  const rs_ = [], gr_ = [], newton_ = [];
   for (let i = 0; i <= NPT; i++) {
     const r = rMin + (rMax - rMin) * i / NPT;
-    pts.push([r, V(r), VN(r)]);
+    rs_.push(r); gr_.push(V(r)); newton_.push(VN(r));
   }
-  const path = (idx) => pts.map((s, i) =>
-    (i ? "L" : "M") + xs(s[0]).toFixed(1) + " " + ys(s[idx]).toFixed(1)).join(" ");
-
-  const yTicks = [];
-  {
-    const i0 = Math.ceil(yLo / yStep - 1e-9);
-    const i1 = Math.floor(yHi / yStep + 1e-9);
-    for (let i = i0; i <= i1; i++) yTicks.push(i * yStep);
-  }
-  const xStep = niceStep((rMax - rMin) / 5, NICE_R);
-  const xTicks = [];
-  {
-    const i0 = Math.ceil(rMin / xStep - 1e-9);
-    const i1 = Math.floor(rMax / xStep + 1e-9);
-    for (let i = i0; i <= i1; i++) xTicks.push(i * xStep);
-  }
-  // One decimal count per axis, so the tick column reads as a column.
-  const decOf = (step) => {
-    for (let d = 0; d <= 4; d++) {
-      const s = step * Math.pow(10, d);
-      if (Math.abs(s - Math.round(s)) < 1e-9) return d;
-    }
-    return 4;
-  };
-  const fmtY = (v) => v.toFixed(decOf(yStep));
-  const fmtX = (v) => v.toFixed(decOf(xStep));
-
   const hex = body ? "#" + body.hex.toString(16).padStart(6, "0") : QGA_TOKENS.css("pigment-cyan-85");
   const inRange = (r) => r > rMin && r < rMax;
   const marks = [
-    { r: rs, c: QGA_TOKENS.css("pigment-red-76"), label: "r_s" },
-    { r: rPh, c: QGA_TOKENS.css("pigment-violet-65-c16"), label: "r_ph" },
-    { r: rIsco, c: QGA_TOKENS.css("pigment-cyan-77"), label: "r_ISCO" },
+    { r: rs, color: "pigment-red-76", tex: "r_s" },
+    { r: rPh, color: "pigment-violet-65-c16", tex: "r_{\\mathrm{ph}}" },
+    { r: rIsco, color: "pigment-cyan-77", tex: "r_{\\mathrm{ISCO}}" },
   ].filter((m) => inRange(m.r));
   const liveR = Math.min(Math.max(rPeri, rMin), rMax);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.gr.effectivePotentialSpec({
+    r: rs_, gr: gr_, newton: newton_, rDomain: [rMin, rMax], vDomain: [yLo, yHi], marks,
+    energy: bound ? E : null,
+    turning: bound ? [{ r: rPeri, tex: "r_{\\mathrm{peri}}" }, { r: rApo, tex: "r_{\\mathrm{apo}}" }].filter((t) => inRange(t.r)) : [],
+    view,
+  }), [mass, a, e, bound, view]); // eslint-disable-line
+
+  // Live radius marker: moved by the scene loop through stRef; no per-frame React renders.
+  const sceneRef = useRef(null);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const el = dotRef.current, sc = sceneRef.current;
+      if (!el || !sc) return;
+      const r = Math.min(Math.max(stRef.current.selR || 0, rMin), rMax);
+      el.style.left = sc.sx.map(r).toFixed(1) + "px";
+      el.style.top = sc.sy.map(V(r)).toFixed(1) + "px";
+    }, 160);
+    return () => clearInterval(id);
+  }, [stRef, mass, a, e]); // eslint-disable-line
 
   return (
     <div className="veff-wrap">
@@ -811,87 +781,13 @@ function VEffPanel({ mass, body, view, stRef }) {
         <span>Effective potential</span>
         <em>V_eff(r) · selected orbit</em>
       </div>
-      <svg viewBox={"0 0 " + W + " " + H} className="veff-svg" role="img"
-        aria-label="Effective potential of the selected body: general relativity against Newtonian, with the energy level, turning points and live radius">
-        <defs>
-          <linearGradient id="veff-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-violet-81")}></stop>
-            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-violet-56")}></stop>
-          </linearGradient>
-          <clipPath id={veffClipId}>
-            <rect x={PL} y={PT} width={iw} height={ih}></rect>
-          </clipPath>
-        </defs>
-        {yTicks.map((v) => (
-          <g key={"y" + v}>
-            <line x1={PL} y1={ys(v)} x2={W - PR} y2={ys(v)} stroke={QGA_TOKENS.css("pigment-blue-27")} strokeWidth="0.7"></line>
-            <text x={PL - 7} y={ys(v) + 2.8} fill={QGA_TOKENS.css("pigment-blue-61")} fontSize="8.5"
-              fontFamily="var(--font-mono)" textAnchor="end">{fmtY(v)}</text>
-          </g>
-        ))}
-        {xTicks.map((r) => (
-          <g key={"x" + r}>
-            <line x1={xs(r)} y1={PT} x2={xs(r)} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-27")} strokeWidth="0.7"></line>
-            <text x={xs(r)} y={H - PB + 13} fill={QGA_TOKENS.css("pigment-blue-61")} fontSize="8.5"
-              fontFamily="var(--font-mono)" textAnchor="middle">{fmtX(r)}</text>
-          </g>
-        ))}
-        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-36")} strokeWidth="1"></line>
-        <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke={QGA_TOKENS.css("pigment-blue-36")} strokeWidth="1"></line>
-        <text x={PL + iw / 2} y={H - 9} fill={QGA_TOKENS.css("pigment-blue-72-c05")} fontSize="9"
-          fontFamily="var(--font-mono)" textAnchor="middle">r  (scene units)</text>
-        <text x={15} y={PT + ih / 2} fill={QGA_TOKENS.css("pigment-blue-72-c05")} fontSize="9"
-          fontFamily="var(--font-mono)" textAnchor="middle"
-          transform={"rotate(-90 15 " + (PT + ih / 2) + ")"}>V_eff</text>
-
-        {marks.map((m) => (
-          <g key={m.label}>
-            <line x1={xs(m.r)} y1={PT} x2={xs(m.r)} y2={H - PB}
-              stroke={m.c} strokeWidth="0.9" strokeDasharray="3 3" opacity="0.75"></line>
-            <text x={xs(m.r) + 3} y={PT + 9} fill={m.c} fontSize="8"
-              fontFamily="var(--font-mono)">{m.label}</text>
-          </g>
-        ))}
-
-        <g clipPath={"url(#" + veffClipId + ")"}>
-          <path d={path(2)} fill="none" stroke={QGA_TOKENS.css("pigment-blue-52")} strokeWidth="1.2"
-            strokeDasharray="5 4" opacity={view === "newton" ? 1 : 0.5}></path>
-          <path d={path(1)} fill="none" stroke="url(#veff-grad)" strokeWidth="2.1"
-            strokeLinecap="round" opacity={view === "newton" ? 0.3 : 1}></path>
-        </g>
-
-        {bound && (
-          <g>
-            <line x1={PL} y1={ys(E)} x2={W - PR} y2={ys(E)}
-              stroke={hex} strokeWidth="1.1" strokeDasharray="6 3" opacity="0.9"></line>
-            <text x={W - PR - 3} y={ys(E) - 4} fill={hex} fontSize="8.5"
-              fontFamily="var(--font-mono)" textAnchor="end">E</text>
-            {inRange(rPeri) && (
-              <g>
-                <circle cx={xs(rPeri)} cy={ys(E)} r="3" fill={hex}></circle>
-                <text x={xs(rPeri)} y={ys(E) + 15} fill={hex} fontSize="8"
-                  fontFamily="var(--font-mono)" textAnchor="middle">r_peri</text>
-              </g>
-            )}
-            {inRange(rApo) && (
-              <g>
-                <circle cx={xs(rApo)} cy={ys(E)} r="3" fill={hex}></circle>
-                <text x={xs(rApo)} y={ys(E) + 15} fill={hex} fontSize="8"
-                  fontFamily="var(--font-mono)" textAnchor="middle">r_apo</text>
-              </g>
-            )}
-            <circle ref={dotRef} cx={xs(liveR)} cy={ys(V(liveR))} r="3.4"
-              fill={QGA_TOKENS.css("pigment-white")} stroke={QGA_TOKENS.css("pigment-blue-18")} strokeWidth="1.2"></circle>
-          </g>
-        )}
-      </svg>
-      <div className="veff-legend">
-        <span className="veff-key"><i style={{ background: QGA_TOKENS.css("pigment-violet-71") }}></i>GR</span>
-        <span className="veff-key"><i className="dash" style={{ background: QGA_TOKENS.css("pigment-blue-52") }}></i>Newtonian</span>
-        <span className="veff-key"><i className="dot" style={{ background: hex }}></i>E, turning points</span>
-        <span className="veff-key"><i className="ring"></i>live r</span>
-        <span className="veff-formula"><Eq tex="V_{\mathrm{eff}}=-\frac{GM}{r}+\frac{L^{2}}{2r^{2}}-\frac{GM\,L^{2}}{c^{2}r^{3}}"></Eq></span>
-      </div>
+      <Figure spec={spec} extra={(sc) => {
+        sceneRef.current = sc;
+        return bound ? <i ref={dotRef} className="fig-live-dot" style={{ left: sc.sx.map(liveR), top: sc.sy.map(V(liveR)) }}></i> : null;
+      }}>
+        <Eq tex="V_{\mathrm{eff}}=-\frac{GM}{r}+\frac{L^{2}}{2r^{2}}-\frac{GM\,L^{2}}{c^{2}r^{3}}"></Eq>
+        <span className="dim"> · GR against Newtonian; the live marker is the selected body's radius.</span>
+      </Figure>
     </div>
   );
 }
@@ -908,103 +804,29 @@ const NG_FRACTIONS = [0.55, 0.8, 0.95, 0.995, 1.005, 1.05, 1.25, 1.7, 2.4];
 const NG_ESCAPE = QGA_TOKENS.css("pigment-amber-88");
 const NG_CAPTURE = QGA_TOKENS.css("pigment-red-71-c18");
 function NullGeodesicPanel({ mass }) {
-  const clipId = useMemo(() => "ng-clip-" + (ngClipSeed++), []);
   const P = window.QGA_PHYSICS;
   const gm = 0.55 * mass;
   const rPh = P.grPhotonSphereRadius(gm, GR_C2);
   const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
   const rs = 2 * gm / GR_C2;
-  const W = 360, H = 360, PAD = 20;
-  const half = 2.5 * bCrit;
-  const scale = (Math.min(W, H) - 2 * PAD) / 2 / half;
-  const sx = (x) => W / 2 + x * scale;
-  const sy = (y) => H / 2 - y * scale;
-  const paths = useMemo(() => NG_FRACTIONS.map((f, idx) => {
+  const rays = useMemo(() => NG_FRACTIONS.map((f) => {
     // rCap just outside the horizon so a captured ray is drawn plunging in
     // rather than stopping in mid-air at the photon sphere; the finer step
     // keeps the stiff near-horizon integration smooth.
     const t = P.grNullTrajectory(bCrit * f, gm, GR_C2, { maxSteps: 60000, dt: 0.0005, rCap: 1.02 * rs });
-    // The integration starts far outside the frame; trim to the visible span so
-    // the travelling pulse spends its cycle on screen instead of in the void.
-    const pts = t.points.map((q) => [sx(q[0]), sy(q[1])]);
-    let i0 = 0, i1 = pts.length - 1;
-    while (i0 < i1 && (pts[i0][0] < -2 || pts[i0][0] > W + 2 || pts[i0][1] < -2 || pts[i0][1] > H + 2)) i0++;
-    while (i1 > i0 && (pts[i1][0] < -2 || pts[i1][0] > W + 2 || pts[i1][1] < -2 || pts[i1][1] > H + 2)) i1--;
-    i0 = Math.max(0, i0 - 1); i1 = Math.min(pts.length - 1, i1 + 1);
-    const out = [];
-    let lx = null, ly = null;
-    for (let i = i0; i <= i1; i++) {
-      const px = pts[i][0], py = pts[i][1];
-      if (lx === null || Math.hypot(px - lx, py - ly) >= 1.4 || i === i1) {
-        out.push(px.toFixed(1) + " " + py.toFixed(1));
-        lx = px; ly = py;
-      }
-    }
-    return { f, idx, captured: t.captured, windings: t.windings, d: "M" + out.join(" L") };
-  }), [mass]);
-  const near = paths.find((p) => p.f === 1.005);
+    return { f, captured: t.captured, windings: t.windings, points: t.points };
+  }), [mass]); // eslint-disable-line
+  const near = rays.find((p) => p.f === 1.005);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.gr.nullGeodesicSpec({ rays, bCrit, rPh, rs }), [rays]); // eslint-disable-line
   return (
     <div className="ng-wrap">
       <div className="panel-head">
         <span>Null geodesics</span>
         <em>orbital plane · b in GM/c²</em>
       </div>
-      <svg viewBox={"0 0 " + W + " " + H} className="ng-svg" role="img"
-        aria-label="Null geodesics in the orbital plane: photon paths below the critical impact parameter plunge through the horizon, paths above it escape, and the near-critical path winds around the photon sphere">
-        <defs>
-          <clipPath id={clipId}><rect x="0" y="0" width={W} height={H} rx="10"></rect></clipPath>
-          <radialGradient id="ng-hole">
-            <stop offset="0%" stopColor={QGA_TOKENS.css("pigment-black")}></stop>
-            <stop offset="72%" stopColor={QGA_TOKENS.css("pigment-grey-12-c02")}></stop>
-            <stop offset="100%" stopColor={QGA_TOKENS.css("pigment-blue-18-c03")}></stop>
-          </radialGradient>
-        </defs>
-        <g clipPath={"url(#" + clipId + ")"}>
-          {paths.map((p) => (
-            <path key={"b" + p.f} d={p.d} fill="none"
-              stroke={p.captured ? NG_CAPTURE : NG_ESCAPE}
-              strokeWidth="1.25" opacity="0.40"></path>
-          ))}
-          {paths.map((p) => (
-            <path key={"p" + p.f} d={p.d} fill="none" pathLength="100"
-              stroke={p.captured ? NG_CAPTURE : NG_ESCAPE}
-              strokeWidth={p.f === 1.005 || p.f === 0.995 ? 2.4 : 1.9}
-              strokeLinecap="round" strokeDasharray="11 89" className="ng-pulse"
-              style={{ animationDelay: (p.idx * 0.34).toFixed(2) + "s" }}></path>
-          ))}
-          <circle cx={W / 2} cy={H / 2} r={bCrit * scale} fill="none"
-            stroke={QGA_TOKENS.css("pigment-orange-82-c13")} strokeWidth="1" strokeDasharray="4 3" opacity="0.8"></circle>
-          <circle cx={W / 2} cy={H / 2} r={rPh * scale} fill="none"
-            stroke={QGA_TOKENS.css("pigment-azure-88")} strokeWidth="1" strokeDasharray="2 3" opacity="0.85"></circle>
-          <circle cx={W / 2} cy={H / 2} r={rs * scale} fill="url(#ng-hole)"
-            stroke={QGA_TOKENS.css("pigment-red-76")} strokeWidth="1.1"></circle>
-          {[1, 2, -1, -2].map((k) => {
-            const label = k === 1 ? "b_c" : k === -1 ? "\u2212b_c" : k === 2 ? "2b_c" : "\u22122b_c";
-            return (
-              <g key={"t" + k}>
-                <line x1={PAD - 6} y1={sy(k * bCrit)} x2={PAD} y2={sy(k * bCrit)}
-                  stroke={QGA_TOKENS.css("pigment-orange-82-c13")} strokeWidth="1" opacity="0.8"></line>
-                <rect x={PAD + 2} y={sy(k * bCrit) - 5} width={label.length * 4.6 + 4} height="10"
-                  rx="2" fill={QGA_TOKENS.css("pigment-grey-13-c01")} opacity="0.82"></rect>
-                <text x={PAD + 4} y={sy(k * bCrit) + 2.6} fill={QGA_TOKENS.css("pigment-orange-82-c13")} fontSize="8"
-                  fontFamily="var(--font-mono)" opacity="0.95">{label}</text>
-              </g>
-            );
-          })}
-        </g>
-        <circle cx={W / 2} cy={H / 2} r="2.2" fill={QGA_TOKENS.css("pigment-amber-94")}></circle>
-        <rect x={W - PAD - 58} y={H - 17} width="58" height="12" rx="2"
-          fill={QGA_TOKENS.css("pigment-grey-13-c01")} opacity="0.82"></rect>
-        <text x={W - PAD} y={H - 8} fill="var(--text-dim)" fontSize="8"
-          fontFamily="var(--font-mono)" textAnchor="end">orbital plane</text>
-      </svg>
-      <div className="ng-legend">
-        <span><i style={{ background: NG_ESCAPE }}></i>escapes b &gt; b_crit</span>
-        <span><i style={{ background: NG_CAPTURE }}></i>captured b &lt; b_crit</span>
-        <span><i style={{ background: QGA_TOKENS.css("pigment-azure-88") }}></i>r_ph = {rPh.toFixed(3)}</span>
-        <span><i style={{ background: QGA_TOKENS.css("pigment-orange-82-c13") }}></i>b_crit = {bCrit.toFixed(3)}</span>
+      <Figure spec={spec}>
         <span className="ng-note">near-critical b = 1.005 b_crit winds {near ? near.windings.toFixed(2) : "\u2014"} turns</span>
-      </div>
+      </Figure>
     </div>
   );
 }
@@ -1014,18 +836,21 @@ const { ngTextures, ngLensModel: lensModelFor, renderLensedSky } = window.QGA_GR
 const ngLensModel = (mass) => lensModelFor(mass, window.QGA_PHYSICS, GR_C2);
 const NG_MODES = [["sky", "Sky"], ["grid", "Grid"], ["flat", "Unlensed"]];
 function LensedSkyPanel({ mass }) {
-  const cvRef = useRef(null);
+  const image = useMemo(() => Object.assign(document.createElement("canvas"), { width: 720, height: 720 }), []);
   const [mode, setMode] = useState("sky");
+  const [painted, setPainted] = useState(0);
   const tex = useMemo(() => ngTextures(), []);
   const L = useMemo(() => ngLensModel(mass), [mass]);
   useEffect(() => {
-    const cv = cvRef.current;
-    if (!cv) return;
-    const raf = requestAnimationFrame(() =>
-      renderLensedSky(cv, L, mode === "grid" ? tex.grid : tex.sky, mode !== "flat"));
+    const raf = requestAnimationFrame(() => {
+      renderLensedSky(image, L, mode === "grid" ? tex.grid : tex.sky, mode !== "flat");
+      setPainted((v) => v + 1);
+    });
     return () => cancelAnimationFrame(raf);
-  }, [L, tex, mode]);
-  const rad = (t) => t / L.FOV * 180;
+  }, [L, tex, mode, image]);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.gr.lensFrameSpec({
+    thetaShadow: L.thetaShadow, thetaE: L.thetaE, fov: L.FOV, lensed: mode !== "flat",
+  }), [L, mode]);
   return (
     <div className="lens-wrap">
       <div className="panel-head">
@@ -1038,24 +863,10 @@ function LensedSkyPanel({ mass }) {
           ))}
         </div>
       </div>
-      <div className="lens-stage">
-        <canvas ref={cvRef} width="720" height="720" className="lens-canvas" role="img"
-          aria-label="Gravitational lensing of a background sky: a black shadow at the critical impact parameter, a bright photon ring at its edge, and an Einstein ring where the deflection maps the sky back onto itself"></canvas>
-        {mode !== "flat" && (
-          <svg viewBox="0 0 360 360" className="lens-overlay" aria-hidden="true">
-            <circle cx="180" cy="180" r={rad(L.thetaShadow)} fill="none"
-              stroke={QGA_TOKENS.css("pigment-red-76")} strokeWidth="1" strokeDasharray="4 3" opacity="0.85"></circle>
-            <circle cx="180" cy="180" r={rad(L.thetaE)} fill="none"
-              stroke={QGA_TOKENS.css("pigment-amber-94")} strokeWidth="1.2" opacity="0.9"></circle>
-          </svg>
-        )}
-      </div>
-      <div className="lens-legend">
-        <span><i style={{ background: QGA_TOKENS.css("pigment-red-76") }}></i>shadow b &lt; b_crit</span>
-        <span><i style={{ background: QGA_TOKENS.css("pigment-azure-88") }}></i>photon ring</span>
-        <span><i style={{ background: QGA_TOKENS.css("pigment-amber-94") }}></i>Einstein ring θ_E = {L.thetaE.toFixed(3)}</span>
+      <Figure spec={spec} backdropKey={painted}
+        backdrop={(ctx, plot) => { if (painted) ctx.drawImage(image, plot.x, plot.y, plot.w, plot.h); }}>
         <span className="lens-note">α(b) integrated per pixel · FOV = 2.5 θ_E</span>
-      </div>
+      </Figure>
     </div>
   );
 }

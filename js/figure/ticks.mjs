@@ -48,7 +48,7 @@ export function logTicks(min, max, count = 6, withMinor = false) {
   const [lo, hi] = min < max ? [min, max] : [max, min];
   const e0 = Math.ceil(Math.log10(lo) - 1e-9), e1 = Math.floor(Math.log10(hi) + 1e-9);
   const decades = e1 - e0 + 1;
-  const stride = decades > count * 1.6 ? Math.ceil(decades / count) : 1;
+  const stride = decades > count * 2 ? Math.ceil(decades / count) : 1;
   const major = [];
   for (let e = e0; e <= e1; e += stride) major.push(10 ** e);
   if (!withMinor) return min < max ? major : major.reverse();
