@@ -1,7 +1,24 @@
 /* Flamm embedding and special-relativity factors. */
 
 import { defineFormula } from "../formula.mjs";
-import { sqrt, mul, sub, pow, div, term } from "../expr.mjs";
+import { sqrt, mul, sub, pow, div, neg, term } from "../expr.mjs";
+import { constants, CODATA_2018 } from "./constants.mjs";
+
+export const newtonianPotential = defineFormula({
+  id: "newtonian-potential", title: "Newtonian potential (weak-field limit)", status: "established",
+  symbols: {
+    ...constants("G", "c"),
+    M: { tex: "M", unit: "kg", dims: { M: 1 }, description: "mass of the source" },
+    r: { tex: "r", unit: "m", dims: { L: 1 }, description: "distance from the source" },
+  },
+  output: { tex: "\\Phi/c^{2}", unit: "1", dims: {} },
+  expr: term("phi", neg(div(mul("G", "M"), mul("r", pow("c", 2))))),
+  domain: { M: [1e-2, 1e2, "log"], r: [1, 1e2, "log"] },
+  references: [
+    { citation: "Einstein, Die Grundlage der allgemeinen Relativitätstheorie, Ann. Phys. 354, 769 (1916)", doi: "10.1002/andp.19163540702", retrieved: "2026-10-24" },
+    CODATA_2018,
+  ],
+});
 
 export const flammEmbedding = defineFormula({
   id: "flamm-embedding", title: "Flamm paraboloid embedding", status: "established",

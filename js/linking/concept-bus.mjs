@@ -28,6 +28,10 @@ export const CONCEPT_EVENT_TYPES = Object.freeze({
     description: "A scene concept target reports the live numerical value for a symbol.",
     fields: Object.freeze({ symbol: "string", label: "string", value: "string", unit: "string" }),
   }),
+  "formula-term": Object.freeze({
+    description: "A typeset term of a Formula Core formula was hovered or focused (Formula Lens); value and unit are its current evaluation, unit \"1\" when dimensionless.",
+    fields: Object.freeze({ formulaId: "string", termId: "string", value: "number", unit: "string" }),
+  }),
   "formula-clear": Object.freeze({
     description: "The active formula highlight ended.",
     fields: Object.freeze({ reason: Object.freeze(["blur", "escape", "navigation", "end"]) }),

@@ -16,7 +16,7 @@ export const schwarzschildRadius = defineFormula({
   id: "schwarzschild-radius", title: "Schwarzschild radius", status: "established",
   symbols: { ...constants("G", "c"), M: mass },
   output: { tex: "r_s", unit: "m", dims: { L: 1 } },
-  expr: term("r_s", div(mul(2, "G", "M"), pow("c", 2))),
+  expr: term("r_s", div(mul(2, "G", term("M", "M")), pow("c", 2))),
   domain: { M: [1e-2, 1e2, "log"] },
   references: [SCHWARZSCHILD, CODATA_2018],
 });

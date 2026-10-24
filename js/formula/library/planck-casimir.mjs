@@ -8,7 +8,7 @@ export const planckLength = defineFormula({
   id: "planck-length", title: "Planck length", status: "established",
   symbols: constants("hbar", "G", "c"),
   output: { tex: "\\ell_P", unit: "m", dims: { L: 1 } },
-  expr: term("l_P", sqrt(div(mul("hbar", "G"), pow("c", 3)))),
+  expr: term("l_P", sqrt(div(mul(term("hbar", "hbar"), term("G", "G")), pow(term("c", "c"), 3)))),
   references: [CODATA_2018],
 });
 
