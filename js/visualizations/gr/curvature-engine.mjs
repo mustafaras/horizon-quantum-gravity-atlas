@@ -9,18 +9,23 @@
 import { seededRng } from "../../physics.mjs";
 import * as TK from "../../design/tokens.mjs";
 import { createDataPoints } from "../../render/materials/index.mjs";
-import { createStarfield, createStarMaterial, createWellMaterial } from "./curvature-materials.mjs";
+import { LENS_MIN_RADIUS, createStarfield, createStarMaterial, createWellMaterial } from "./curvature-materials.mjs";
 import { appendTrails, applyRadiationReaction, makeRay, projectBodies, stepDynamics, syncSimBodies } from "./curvature-sim.mjs";
+import { attachLens } from "../common/lens-scenes.mjs";
 
 const TAU = Math.PI * 2;
 const EXT = 17;
+/** GM/c^2 in scene length units per unit of the mass slider (the well is a display-scaled schematic). */
+const GM_SCALE = 0.55;
+/** The mass slider of mod-gr.jsx ([min, max]); test/formula-lens-scenes.test.mjs keeps the two in step. */
+export const GR_MASS_SLIDER = Object.freeze([1, 10]);
 
 /**
  * @param ctx  Scene3D build context ({ THREE, scene, camera, settings, motion, label, annotation, glow, engraved, conceptTarget }).
  * @param env  { refs: { mass, view, ray, trail, rr, spin, speed, light, bodies, sel, st }, setSelected, constants: { GR_RAY_B, GR_C2,
  *             GR_MAX_BODIES }, precessionDeg(M, a, e) }; every `refs.*` is a React ref read live.
  */
-export function buildCurvatureScene(ctx, env) {
+export async function buildCurvatureScene(ctx, env) {
   const { THREE, scene, camera } = ctx;
   const { refs, constants } = env;
   const { GR_RAY_B, GR_C2, GR_MAX_BODIES } = constants;
@@ -79,12 +84,13 @@ export function buildCurvatureScene(ctx, env) {
   const depth = (x, z, GM) => (refs.view.current === "gr" ? -0.92 * GM / Math.sqrt(x * x + z * z + 0.62) : 0);
   let lastM = -1, lastView = "";
   const reshape = () => {
-    const GM = 0.55 * refs.mass.current;
+    const GM = GM_SCALE * refs.mass.current;
     for (let k = 0; k < pos.count; k++) pos.setY(k, depth(pos.getX(k), pos.getZ(k), GM));
     pos.needsUpdate = true;
     wellUniforms.maxDepth.value = Math.max(0.5, 0.92 * GM / Math.sqrt(0.62));
+    wellUniforms.mass.value = GM;
   };
-  const hAt = (x, z) => depth(x, z, 0.55 * refs.mass.current);
+  const hAt = (x, z) => depth(x, z, GM_SCALE * refs.mass.current);
 
   // ---------- central mass: fBm-granulated star, corona, Einstein ring ----------
   const core = createStarMaterial();
@@ -250,7 +256,7 @@ export function buildCurvatureScene(ctx, env) {
     object: surf,
     readout: () => ({
       label: "Embedding depth at throat",
-      value: (0.92 * 0.55 * refs.mass.current / Math.sqrt(0.62)).toFixed(2),
+      value: (0.92 * GM_SCALE * refs.mass.current / Math.sqrt(0.62)).toFixed(2),
       unit: "scene units",
     }),
   });
@@ -290,6 +296,12 @@ export function buildCurvatureScene(ctx, env) {
     ripple: () => { wellUniforms.rippleT.value = 0; },
   };
 
+  // Formula Lens (S10): the Newtonian-potential card paints its term over the well.
+  await attachLens("gr-well", ctx, {
+    surface: surf, nodes: well.nodes, geometricMass: () => GM_SCALE * refs.mass.current,
+    massRange: GR_MASS_SLIDER.map((mass) => GM_SCALE * mass), radiusRange: [LENS_MIN_RADIUS, EXT / 2],
+  });
+
   return {
     autoRotate: true,
     pickables: bodyVis.map((v) => v.mesh),
@@ -299,7 +311,7 @@ export function buildCurvatureScene(ctx, env) {
       }
     },
     update: (t, dt) => {
-      const M = refs.mass.current, GM = 0.55 * M;
+      const M = refs.mass.current, GM = GM_SCALE * M;
       const newton = refs.view.current === "newton";
       const st = refs.st.current;
       if (lastM !== M || lastView !== refs.view.current) {

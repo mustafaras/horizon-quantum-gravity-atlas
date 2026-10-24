@@ -145,7 +145,8 @@ function fieldTarget(where, formula, termId, target) {
     throw new RangeError(`${where}: palette must be ${FIELD_PALETTES.map((p) => `"${p}"`).join(" or ")} (the legend draws the Figure Kit ramps), received ${JSON.stringify(target.palette)}`);
   }
   const checked = Object.fromEntries(Object.entries(bindings).map(([name, value]) => [name, checkBinding(where, name, value)]));
-  const optional = Object.fromEntries(["palette", "paletteName"].filter((key) => target[key] !== undefined).map((key) => [key, target[key]]));
+  if (target.mask !== undefined && !isNonEmptyString(target.mask)) throw new TypeError(`${where}: mask must be the name of a scene node`);
+  const optional = Object.fromEntries(["palette", "paletteName", "mask"].filter((key) => target[key] !== undefined).map((key) => [key, target[key]]));
   return Object.freeze({ kind: "field", surfaceName: target.surfaceName, range: Object.freeze([...range]), bindings: Object.freeze(checked), ...optional });
 }
 

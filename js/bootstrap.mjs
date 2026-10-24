@@ -111,8 +111,12 @@ async function bootstrap() {
       configurable: true,
     });
     Object.defineProperty(window, "QGA_CONCEPT_BUS", { value: conceptBus, configurable: true });
+    const formulaTerms = await import("./linking/formula-terms.mjs");
     Object.defineProperty(window, "QGA_LINKING", {
-      value: Object.freeze({ createConceptBus: linking.createConceptBus, CONCEPT_EVENT_TYPES: linking.CONCEPT_EVENT_TYPES }),
+      value: Object.freeze({
+        createConceptBus: linking.createConceptBus, CONCEPT_EVENT_TYPES: linking.CONCEPT_EVENT_TYPES,
+        attachFormulaTerms: formulaTerms.attachFormulaTerms,
+      }),
       configurable: true,
     });
     Object.defineProperty(window, "QGA_ANNOTATIONS", {
@@ -172,8 +176,18 @@ async function bootstrap() {
     const { library: formulaLibrary } = await import("./formula/library/index.mjs");
     const { compileTSL } = await import("./formula/to-tsl.mjs");
     const { toTeX, KATEX_OPTIONS } = await import("./formula/to-tex.mjs");
+    const { lens: formulaLens } = await import("./formula/lens.mjs");
     Object.defineProperty(window, "QGA_FORMULA", {
-      value: Object.freeze({ library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS }),
+      value: Object.freeze({ library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS, lens: formulaLens }),
+      configurable: true,
+    });
+
+    // Formula Lens (S10): the scene half loads with the first scene that links a formula. Its provenance is
+    // registered now so a figure never appears without one.
+    const lensProvenance = await import("./visualizations/common/term-lens-provenance.mjs");
+    lensProvenance.registerFormulaLensProvenance();
+    Object.defineProperty(window, "QGA_TERM_LENS", {
+      value: Object.freeze({ attach: async (key, ctx, params) => (await import("./visualizations/common/lens-scenes.mjs")).attachLens(key, ctx, params) }),
       configurable: true,
     });
 

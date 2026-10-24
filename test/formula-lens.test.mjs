@@ -129,6 +129,15 @@ test("a field palette is sequential or diverging: a custom ramp would not match 
   assert.equal(lens.target("newtonian-potential", "phi").paletteName, "magma");
 });
 
+test("a field target may name a scene node that masks it (e.g. a rim fade) and nothing else", () => {
+  const lens = createLensRegistry();
+  const bind = (mask) => lens.bindScene("s", "newtonian-potential", { termTargets: { phi: { ...fieldTarget, mask } } });
+  assert.throws(() => bind(""), { name: "TypeError", message: /mask/ });
+  assert.throws(() => bind({ node: "rim" }), { name: "TypeError", message: /mask/ });
+  assert.doesNotThrow(() => bind("rim"));
+  assert.equal(lens.target("newtonian-potential", "phi").mask, "rim");
+});
+
 test("a field target must bind exactly the symbols of its term", () => {
   const lens = createLensRegistry();
   const bind = (bindings) => lens.bindScene("s", "newtonian-potential", { termTargets: { phi: { ...fieldTarget, bindings } } });

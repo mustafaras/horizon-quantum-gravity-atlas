@@ -47,7 +47,13 @@ export function buildFieldLayer({ sceneId, formula, termId, target, surface, nod
 
   const state = material.userData.termLens ?? (material.userData.termLens = { base: material.colorNode, uniforms: {}, palette: {} });
   const mix = TSL.uniform(0);
-  material.colorNode = TSL.mix(material.colorNode, TSL.vec4(color, 1), mix);
+  let weight = mix;
+  if (target.mask) {
+    const mask = nodes[target.mask];
+    if (!mask?.isNode) throw new ReferenceError(`term lens: scene ${sceneId} provides no node "${target.mask}" to mask term ${termId}`);
+    weight = mix.mul(mask);
+  }
+  material.colorNode = TSL.mix(material.colorNode, TSL.vec4(color, 1), weight);
   material.needsUpdate = true;
   state.uniforms[termId] = mix;
   state.palette[termId] = palette;

@@ -17,6 +17,8 @@ import * as TK from "../../design/tokens.mjs";
 import { createDataPoints, fieldColorNode, lineCoverage, paletteTexture } from "../../render/materials/index.mjs";
 
 const TAU = Math.PI * 2;
+/** Scene units: the radius the Formula Lens clamps to, about the largest radius of the central star. */
+export const LENS_MIN_RADIUS = 1;
 const STAR_TINTS = ["pigment-blue-94", "pigment-orange-96", "pigment-violet-81-c11", "pigment-pink-78"];
 const WELL_RAMP = ["pigment-azure-64", "pigment-blue-79-c11", "pigment-blue-89-c05"];
 const kitMaterial = (material, kit) => {
@@ -90,7 +92,14 @@ export function createWellMaterial() {
   const [fr, fg, fb] = TK.linear("pigment-blue-75-c05");
   const flat = vec3(fr, fg, fb).mul(grid.mul(0.35).add(fill.mul(0.5)));
   material.colorNode = vec4(mix(lit, flat, uFlat.mul(0.55)), 1);
-  return { material: kitMaterial(material, "gr-well"), uniforms: { time: uTime, maxDepth: uMaxDepth, flat: uFlat, rippleT: uRippleT } };
+  // Formula Lens (S10): the nodes a formula term is evaluated from. The potential is not drawn inside the central star.
+  const uMass = uniform(0);
+  const nodes = { mass: uMass, radius: max(vR, float(LENS_MIN_RADIUS)), rim: rimFade };
+  return {
+    material: kitMaterial(material, "gr-well"),
+    uniforms: { time: uTime, maxDepth: uMaxDepth, flat: uFlat, rippleT: uRippleT, mass: uMass },
+    nodes,
+  };
 }
 
 const hash3 = Fn(([p]) => fract(sin(dot(p, vec3(127.1, 311.7, 74.7))).mul(43758.5453)));

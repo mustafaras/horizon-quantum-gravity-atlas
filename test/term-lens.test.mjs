@@ -234,6 +234,26 @@ test("the field is evaluated on the GPU from the formula's own AST: the graph ho
   assert.ok([...seen].some((n) => n.isTextureNode), "the colour comes from the kit's palette table");
 });
 
+test("a masked field multiplies its mix by the scene's mask node and rejects a missing one", async () => {
+  const make = (nodes) => {
+    const material = new MeshBasicNodeMaterial();
+    material.colorNode = vec4(0.25, 0.5, 0.75, 1);
+    const { ctx } = fakeCtx();
+    return createTermLens({
+      sceneId: "gr", formulaId: "newtonian-potential", ctx, bus: createConceptBus({ diagnostic() {} }), registry: createLensRegistry({ diagnostic() {} }),
+      termTargets: { phi: { kind: "field", surfaceName: "well", range: [-5.5, 0], mask: "rim", bindings: { M: 1, r: { node: "radius" } } } },
+      surfaces: { well: new Mesh(geometry, material) }, nodes,
+    }).then((handle) => ({ handle, material }));
+  };
+  const rim = uniform(0.5), radius = max(length(positionLocal.xz), float(1));
+  const { material } = await make({ radius, rim });
+  const seen = new Set();
+  const walk = (node) => { if (!seen.has(node)) { seen.add(node); for (const child of node.getChildren()) walk(child); } };
+  walk(material.colorNode);
+  assert.ok(seen.has(rim), "the mask node is part of the mix weight");
+  await assert.rejects(make({ radius }), { name: "ReferenceError", message: /"rim"/ });
+});
+
 /* ---------- legend ---------- */
 
 test("legendModel states the term, its range, its unit and what is schematic", async () => {
