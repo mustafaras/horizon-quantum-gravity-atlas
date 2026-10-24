@@ -70,7 +70,8 @@ Ticks are nice 1-2-5 numbers inside the domain; log axes label decades as 10^n a
 
 | Figure id | Where | Marks |
 |---|---|---|
-| `sm-neutrino-flavour` (S12, `plots/neutrino.mjs`), `sm-higgs-potential` | `labs/neutrino-lab.jsx`, `mod-standard-model.jsx` | model lines, T2K rule, vacuum points and callout |
+| `sm-neutrino-flavour` (S12, `plots/neutrino.mjs`) | `labs/neutrino-lab.jsx` | stacked bands, focal channel, vacuum ghost, experiment rule |
+| `sm-higgs-running`, `sm-higgs-stability` (S13, `plots/higgs.mjs`) | `labs/higgs-lab.jsx` | lambda(mu) line with a 1 sigma band, zero line and instability rule; three region bands with the measured ellipse |
 | `bh-hawking-spectrum`, `bh-page-curve`, `bh-kerr-radii` | `mod-blackholes.jsx` | emitter line and band; two curves and a rule; nested circles |
 | `gr-effective-potential`, `gr-null-geodesics`, `gr-lensed-sky` | `mod-gr.jsx` | GR and Newtonian curves with turning points and a live marker; rays and circles; ring chrome over the rendered sky |
 | `rg-scale-trajectory`, `rg-beta-function` | `mod-gauge-rg.jsx` | trajectory, fixed-point rules, selected-scale marker; beta curve with phase-line triangles |

@@ -979,6 +979,72 @@
       "scientificStatus": "effective-model",
       "statusNote": "Exact three-flavour oscillation in constant-density matter at the NuFIT 6.0 best fit (T2K, normal ordering, delta_CP 212 degrees); probabilities for single-energy neutrinos, not event rates.",
       "readme": false
+    },
+    {
+      "id": "sm-higgs-lab",
+      "file": "docs/screenshots/31-higgs-potential-lab.png",
+      "description": "Higgs lab: the TSL Mexican hat (surface compiled from the Formula Core potential, vacuum ring, radial and Goldstone arrows), the running quartic coupling with its zero crossing, and the (m_t, m_H) stability diagram with the measured point.",
+      "viewport": {
+        "width": 1600,
+        "height": 3000,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "WebGL surface plus canvas figures; GPU-dependent shading and font rasterization, 2% tolerance."
+      },
+      "target": ".hg-lab",
+      "scientificStatus": "effective-model",
+      "statusNote": "Tree-level Higgs potential with the measured v and m_H (established) and the two-loop running of the quartic coupling to the Planck mass from a leading-order matching, no new physics assumed (effective); stability regions are computed from that running.",
+      "readme": false,
+      "view": "sm",
+      "url": "?view=sm&seed=42",
+      "scope": "element",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".hg-lab",
+          "text": "quartic crosses zero"
+        }
+      ]
+    },
+    {
+      "id": "sm-higgs-lab-mobile",
+      "file": "docs/screenshots/32-higgs-potential-lab-mobile.png",
+      "description": "Mobile Higgs lab: the Mexican hat stage at 390 px with its status label and KaTeX mode labels.",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "WebGL surface on mobile; GPU-dependent shading, 2% tolerance."
+      },
+      "target": ".hg-lab .s3d-stage",
+      "scientificStatus": "effective-model",
+      "statusNote": "Tree-level Higgs potential with the measured v and m_H (established) and the two-loop running of the quartic coupling to the Planck mass from a leading-order matching, no new physics assumed (effective); stability regions are computed from that running.",
+      "readme": false,
+      "view": "sm",
+      "url": "?view=sm&seed=42",
+      "scope": "element",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".hg-lab",
+          "text": "quartic crosses zero"
+        }
+      ]
     }
   ]
 }
