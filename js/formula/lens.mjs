@@ -20,6 +20,7 @@ import { texToPlain } from "../figure/spec.mjs";
 const SUPERSCRIPT = Object.freeze({ "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" });
 const PLAIN_RANGE = Object.freeze([1e-3, 1e4]);
 const SIGNIFICANT_FIGURES = 4;
+const FIELD_PALETTES = Object.freeze(["sequential", "diverging"]);
 
 const isPlainObject = (x) => typeof x === "object" && x !== null && !Array.isArray(x);
 const isNonEmptyString = (x) => typeof x === "string" && x !== "";
@@ -139,6 +140,9 @@ function fieldTarget(where, formula, termId, target) {
   }
   for (const name of variables) {
     if (!(name in bindings)) throw new RangeError(`${where}: bindings: no binding for ${name}`);
+  }
+  if (target.palette !== undefined && !FIELD_PALETTES.includes(target.palette)) {
+    throw new RangeError(`${where}: palette must be ${FIELD_PALETTES.map((p) => `"${p}"`).join(" or ")} (the legend draws the Figure Kit ramps), received ${JSON.stringify(target.palette)}`);
   }
   const checked = Object.fromEntries(Object.entries(bindings).map(([name, value]) => [name, checkBinding(where, name, value)]));
   const optional = Object.fromEntries(["palette", "paletteName"].filter((key) => target[key] !== undefined).map((key) => [key, target[key]]));

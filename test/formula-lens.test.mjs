@@ -119,6 +119,16 @@ test("bindScene validates the formula, the term ids and each target kind", () =>
   assert.throws(() => lens.bindScene("s", "newtonian-potential", { termTargets: { phi: { ...fieldTarget, range: [0, Number.NaN] } } }), /range/);
 });
 
+test("a field palette is sequential or diverging: a custom ramp would not match the Figure Kit legend", () => {
+  const lens = createLensRegistry();
+  const bind = (extra) => lens.bindScene("s", "newtonian-potential", { termTargets: { phi: { ...fieldTarget, ...extra } } });
+  assert.throws(() => bind({ palette: { stops: [[0, 0, 0], [1, 1, 1]] } }), { name: "RangeError", message: /palette/ });
+  assert.throws(() => bind({ palette: "rainbow" }), /palette/);
+  assert.doesNotThrow(() => bind({ palette: "diverging" }));
+  assert.doesNotThrow(() => bind({ palette: "sequential", paletteName: "magma" }));
+  assert.equal(lens.target("newtonian-potential", "phi").paletteName, "magma");
+});
+
 test("a field target must bind exactly the symbols of its term", () => {
   const lens = createLensRegistry();
   const bind = (bindings) => lens.bindScene("s", "newtonian-potential", { termTargets: { phi: { ...fieldTarget, bindings } } });

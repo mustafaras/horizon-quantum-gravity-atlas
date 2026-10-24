@@ -49,15 +49,20 @@ function colorRamp(name) {
   return ramp;
 }
 
-function colorbar(m, zDomain) {
-  const rows = 32;
-  const ramp = colorRamp(m.palette);
+/** RGBA bytes of a colour bar, one pixel per row, the high end first. Shared with the Formula Lens legend (S10). */
+export function colorbarBytes(palette, rows = 32) {
+  const ramp = colorRamp(palette);
   const data = new Uint8ClampedArray(rows * 4);
   for (let r = 0; r < rows; r++) {
     const rgb = ramp(1 - r / (rows - 1)); // top is the high end
     data[r * 4] = rgb[0]; data[r * 4 + 1] = rgb[1]; data[r * 4 + 2] = rgb[2]; data[r * 4 + 3] = 255;
   }
-  return { rows, data, zDomain };
+  return data;
+}
+
+function colorbar(m, zDomain) {
+  const rows = 32;
+  return { rows, data: colorbarBytes(m.palette, rows), zDomain };
 }
 
 function heatImage(m, sx, sy) {
