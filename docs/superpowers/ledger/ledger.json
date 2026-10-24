@@ -878,17 +878,34 @@
       "findings": [
         "F-08"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s13-sm-higgs",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/75",
       "commits": [],
       "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 868/869 pass, 1 skipped (new: test/higgs.test.mjs 20 tests, test/mexican-hat.test.mjs 7; figure-plots +2 cases; formula-core library table +2 formulas)",
+          "npm run validate: passed (53 provenance entries, every caption registered); npm run qa:verify: 33 captures valid; npm run perf:audit: no counter worse except <VizCaption 27 -> 30 (three new, all registered)",
+          "qa/specs/higgs-lab.spec.mjs: 6/6 pass; figure-kit.spec (sm view with the two new figures), a11y, smoke, provenance-layers and neutrino-lab specs: 100/100 pass; visual: sm-higgs-lab and sm-higgs-lab-mobile 2/2",
+          "qa/specs/formula-gpu.spec.mjs webgl2: higgsPotentialReduced 1.7e-6 and higgsQuarticTree 0 against evaluateF32; twoFlavourOscillation (S12) fails the same way, 1.0636e-3 against 2e-4, on a clean archive of main (D-072)",
+          "full local qa:test not run (left to CI, D-072)"
+        ],
+        "screenshots": [
+          "docs/screenshots/31-higgs-potential-lab.png",
+          "docs/screenshots/32-higgs-potential-lab-mobile.png"
+        ],
+        "measurements": [
+          "v = (sqrt2 G_F)^-1/2 = 246.2197 GeV for PDG 2026 G_F = 1.1663785e-5 vs 246.220 for the planned 1.1663788e-5; tree lambda 0.12914 at m_H = 125.13 (0.12928 at the planned 125.20)",
+          "two-loop flow from Buttazzo et al. couplings at M_t to M_Pl: lambda -0.0151 vs paper eq. (61) -0.0143, y_t 0.3831 vs 0.3825, g1 0.6153 vs 0.6154, g2 0.5054 vs 0.5055, g3 0.4873 vs 0.4873; instability scale 4.9e9 GeV vs literature 1e9 to 1e12",
+          "measured masses, leading-order matching: lambda crosses zero at 7.96e8 GeV (two loops) and 3.7e7 GeV (one loop) vs the planned range 1e9 to 1e12 for one loop (D-070); lambda_min -0.0228 at 4.5e17 GeV, log10 p0 = -265: metastable",
+          "stability lines at m_H = 125.13: stable below m_t = 169.2 GeV, unstable above 176.3 GeV (computed from this running, D-070)",
+          "pure-lambda and gauge-only flows match their closed forms to 1e-9; one-loop beta equals an independent Python evaluation to 1e-12",
+          "js/mod-standard-model.jsx 612 -> 594 lines (net -18); toy figure sm-higgs-potential removed; new files all under 210 lines",
+          "static audit: ShaderMaterial sites 8 -> 8, Math.random 1 -> 1, colour literals unchanged, files over 800 lines 13 -> 13, <VizCaption 27 -> 30"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1940,6 +1957,34 @@
       "prompt": "S12",
       "decision": "Local verification was narrowed to the changed area (the user agreed to leave the full browser suite to CI): npm test, validate, qa:verify, neutrino-lab, figure-kit, a11y, smoke, provenance-layers for sm and the seed test, and the two new visual captures. The a11y check 'view sm names every interactive control' timed out once while other specs ran and passed alone. The two new baselines (qa/baselines/sm-neutrino-lab.png, sm-neutrino-lab-mobile.png) are new, not refreshed; the desktop capture uses a 1600 x 2000 viewport so the tall lab is not covered by the sticky header, and the mobile capture is the figure element.",
       "rationale": "The plan's acceptance list names tests; the full qa:test is CI's job on every PR that touches qa/."
+    },
+    {
+      "id": "D-069",
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "decision": "The inputs come from the PDG 2026 edition (Int. J. Mod. Phys. A 41, 2630011), read from its PDF summary tables and reviews with pdftotext, not from the 2024 values of the plan: m_H = 125.13 +- 0.11 GeV (plan 125.20), G_F = 1.1663785(6)e-5 GeV^-2 (plan 1.1663788e-5), M_W = 80.3625 +- 0.0077, M_Z = 91.1879 +- 0.0020, m_t = 172.60 +- 0.27 GeV (direct measurements; the pole mass from cross sections is 172.1 +- 0.6), alpha_s(M_Z) = 0.1180(9), MS-bar sin^2 theta_W(M_Z) = 0.23122(6). alpha_em^-1(M_Z) in the MS-bar scheme is printed in neither the 2024 nor the 2026 edition (the 2026 review gives only Delta alpha_had^(5) = 0.02760 +- 0.00010), so it is not shipped (PDG_OMITTED in js/science/data/pdg.mjs) and the gauge couplings are fixed from M_Z, v and the MS-bar angle instead. The 2026 edition has no DOI in Crossref (searched), so it is cited by its URL, https://pdg.lbl.gov/2026/. The Buttazzo et al. DOI 10.1007/JHEP12(2013)089 was confirmed on Crossref. The top mass is the direct-measurement average used as the pole mass, as the literature does; it is ambiguous by about Lambda_QCD.",
+      "rationale": "The prompt says to verify every value against the primary source and to let the source win; an unverifiable number is not written."
+    },
+    {
+      "id": "D-070",
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "decision": "The running uses the two-loop equations (Buttazzo et al. 2013, Appendix B, eq. 96-99 and 101 without y_b and y_tau) with a leading-order matching at m_t (tree-level lambda, y_t with the 1 - 4 alpha_s / 3 pi factor, gauge couplings from M_Z, v and the MS-bar angle). The two-loop coefficients were verified by integrating the paper's own couplings at M_t (eq. 55, 57-60) to M_Pl and comparing with its eq. (61): lambda -0.0151 against -0.0143 (three-loop terms omitted), y_t 0.3831 against 0.3825, g1 0.6153 against 0.6154, g2 0.5054 against 0.5055, g3 0.4873 against 0.4873; the instability scale for those inputs is 4.9e9 GeV, inside the literature range. For the measured masses the zero of lambda is at 7.96e8 GeV (two loops) and 3.7e7 GeV (one loop), below the 1e9 to 1e12 GeV the plan expected for the one-loop truncation: the paper's own thresholds (lambda 0.1260, y_t 0.9369 against 0.1292 and 0.9498 here) move the zero from 3e8 to 5e9 GeV at the paper's inputs, so the cause is the matching and not the equations. The test asserts 1e9 to 1e12 GeV for the paper's inputs and 1e8 to 1e11 GeV for ours, and the figures and the provenance drawer state the offset. M_Pl = sqrt(hbar c / G) = 1.2209e19 GeV is derived from the SI constants (the plan rounds to 1.22e19). stabilityRegion is computed from this running (documented truncation, not digitised); at m_H = 125.13 the stable and unstable lines are at m_t = 169.2 and 176.3 GeV, and the measured point is metastable (lambda_min = -0.0228 at 4.5e17 GeV, log10 p0 = -265, H0 = 67.4 km/s/Mpc from Planck 2018).",
+      "rationale": "Tuning the matching until the plan's range is met would be a tuned number; the honest result is shown with its cause and the test that proves the equations."
+    },
+    {
+      "id": "D-071",
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "decision": "With V = -mu^2 |H|^2 + lambda |H|^4 (the plan's convention, mu^2 = lambda v^2 at the vacuum) the symmetric phase is mu^2 < 0, not mu^2 > 0 as the plan's visual section says. The lab's caption states the convention and the toggle is labelled 'Symmetric phase'. The surface is the Formula Core reduced potential V / (lambda v^4) = x^4/4 - s x^2/2 with s = 1 (Higgs phase) and s = -1 (symmetric phase). The toy figure sm-higgs-potential, HiggsPotentialViz, plots/sm.mjs and its provenance entry are removed; js/mod-standard-model.jsx shrank by 18 lines.",
+      "rationale": "With the plan's own potential the sign it names would make the origin unstable."
+    },
+    {
+      "id": "D-072",
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "decision": "Local verification was narrowed to the changed area, as agreed for S11: npm test, validate, qa:verify, perf:audit, the new higgs-lab spec, figure-kit, formula-gpu, a11y, smoke, provenance-layers, neutrino-lab and the visual test of the two new captures; the full qa:test is left to CI. qa/specs/formula-gpu.spec.mjs fails locally in its webgl2 case for twoFlavourOscillation (S12) with a max relative error of 1.0636e-3 against 2e-4; the same failure, to the digit, occurs on a clean archive of main, so it is not from S13, and the two new Higgs formulas pass in that spec (1.7e-6 and 0). The two new baselines (qa/baselines/sm-higgs-lab.png, sm-higgs-lab-mobile.png) are new, not refreshed. The desktop capture uses a 1600 x 3000 viewport so the sticky header does not cover the tall lab; the mobile capture is the hat stage. Labels in the 3D scene carry s3d-lens-note (a z-index) because the canvas paints over plain labels.",
+      "rationale": "The plan's acceptance names tests and captures; the full browser suite is CI's job on every PR that touches qa/."
     }
   ],
   "log": [
@@ -2215,6 +2260,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "claimed",
       "detail": "S13 claimed on claude/s13-sm-higgs from main df65129 (S12 done)."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "Physical Higgs potential and vacuum stability done: PDG 2026 inputs, two-loop running verified against Buttazzo et al. eq. (61), TSL Mexican hat from the Formula Core potential, lambda(mu) and stability figures, Higgs lab; D-069 to D-072. F-08 is closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/75."
     }
   ]
 }
