@@ -283,9 +283,7 @@
     color: rgba(188, 207, 235, 0.82); font: 500 10px/1.4 var(--font-mono);
     letter-spacing: 0.03em; background: rgba(5, 12, 22, 0.94);
   }
-  .rg-scale-plot svg { min-width: 650px; }
-  .rg-beta-plot svg { min-width: 330px; }
-  .rg-hit-surface { pointer-events: none; }
+  .rg-scale-plot .fig-plot { pointer-events: none; }
   .rg-readout-deck, .rg-equation-grid, .rg-validity-grid { grid-template-columns: 1fr; }
   .rg-readout-deck > div { border-right: 0; border-bottom: 1px solid rgba(120, 160, 220, 0.09); }
   .rg-formulation > header { align-items: flex-start; flex-direction: column; }
@@ -293,3 +291,8 @@
 @media (prefers-reduced-motion: reduce) {
   .rg-flow-tracer, .rg-current-point circle { animation: none !important; }
 }
+
+/* Figure Kit inside the RG panels: the scale plot keeps its swipe-to-scroll width on narrow screens. */
+.rg-plot .fig { border: 0; border-radius: 0; background: transparent; }
+.rg-scale-plot .fig { min-width: 600px; }
+.rg-beta-plot .fig { min-width: 300px; }

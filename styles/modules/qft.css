@@ -105,3 +105,7 @@
   .qft-transport-label { justify-content: space-between; }
 }
 
+
+/* Figure Kit panels in the amplitude room. */
+.qft-stack { display: grid; gap: 12px; }
+.qft-formula + .fig, .qft-stack .fig { margin-top: 0; }

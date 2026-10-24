@@ -139,18 +139,12 @@
   /* grey */
   --pigment-grey-98: #eafcff;
   --pigment-grey-97-c02: #eaf6ff;
-  --pigment-grey-97: #e9f6ff;
-  --pigment-grey-96-c02: #ebf4ff;
   --pigment-grey-96-c01: #edf2fb;
   --pigment-grey-96: #eaf2ff;
   --pigment-grey-92: #dde6f5;
   --pigment-grey-16: #0a0e16;
-  --pigment-grey-15: #070c15;
-  --pigment-grey-13-c01: #05070d;
   --pigment-grey-13: #04070d;
-  --pigment-grey-12-c02: #04060c;
   --pigment-grey-12-c01: #04060b;
-  --pigment-grey-12: #02060c;
   --pigment-grey-11-c02-h261: #03050a;
   --pigment-grey-11: #02040a;
   --pigment-grey-11-c02: #020409;
@@ -166,7 +160,6 @@
   --pigment-red-71-c18: #ff6b6b;
   --pigment-red-71: #ff6a5a;
   --pigment-red-70: oklch(0.7 0.13 25);
-  --pigment-red-70-c16: oklch(0.7 0.16 25);
   --pigment-red-69: #ff5a5a;
   --pigment-red-65: #d96a5a;
   --pigment-red-43: #8a2a1a;
@@ -178,13 +171,11 @@
   --pigment-orange-90: #ffd9a0;
   --pigment-orange-89: #ffd38a;
   --pigment-orange-88-c10: #ffd08a;
-  --pigment-orange-88: #ffcd82;
   --pigment-orange-87: #ffc98a;
   --pigment-orange-86: #ffc46a;
   --pigment-orange-85-c11: #ffc27a;
   --pigment-orange-85: oklch(0.85 0.13 70);
   --pigment-orange-84-c13: #ffbd66;
-  --pigment-orange-84: #ffba5c;
   --pigment-orange-82-c13: #ffb066;
   --pigment-orange-82-c13-h064: #ffb060;
   --pigment-orange-82: #f0b86a;
@@ -224,10 +215,8 @@
   --pigment-green-84: #6ee7a0;
   --pigment-green-82: #8fd6a8;
   /* cyan */
-  --pigment-cyan-94: #cdf5f8;
   --pigment-cyan-93: #7fffff;
   --pigment-cyan-91: #9df3ff;
-  --pigment-cyan-91-c08: #a0f0f4;
   --pigment-cyan-89-c07: #9fe8f2;
   --pigment-cyan-89: #9fe8f0;
   --pigment-cyan-88: #9be6f0;
@@ -242,11 +231,9 @@
   --pigment-azure-95: #dff2ff;
   --pigment-azure-92: #bfefff;
   --pigment-azure-92-c04: #cfe8ff;
-  --pigment-azure-91-c04: #cde5ff;
   --pigment-azure-91: #bfe8ff;
   --pigment-azure-90: #c8e1ff;
   --pigment-azure-88: #8fe8ff;
-  --pigment-azure-87: #a0dcff;
   --pigment-azure-86: #9fd8ff;
   --pigment-azure-85-c08: #9fd4ff;
   --pigment-azure-85: #8fd8ff;
@@ -260,7 +247,6 @@
   --pigment-azure-80-c10: #8fc2ff;
   --pigment-azure-80: oklch(0.8 0.12 235);
   --pigment-azure-80-c13: oklch(0.8 0.13 235);
-  --pigment-azure-79: #58c6ff;
   --pigment-azure-77: #7fb8ff;
   --pigment-azure-76: #5ab9ff;
   --pigment-azure-75: #6fb3ff;
@@ -271,17 +257,14 @@
   --pigment-azure-64: #5f8fc8;
   --pigment-azure-60: oklch(0.6 0.07 230);
   --pigment-azure-48: oklch(0.48 0.13 250);
-  --pigment-azure-26: #10243c;
   /* blue */
   --pigment-blue-94: #dfeaff;
-  --pigment-blue-93-c03: #dcebff;
   --pigment-blue-93: #dce8ff;
   --pigment-blue-91-c03: #d6e2f5;
   --pigment-blue-91: #d2e1fa;
   --pigment-blue-90: #cfe0ff;
   --pigment-blue-89: #c8dcff;
   --pigment-blue-89-c05: #cdd9ff;
-  --pigment-blue-89-c03: #cddbf1;
   --pigment-blue-88-c03: #cdd9ee;
   --pigment-blue-88: #c8d7f0;
   --pigment-blue-87: #c7d4ee;
@@ -303,7 +286,6 @@
   --pigment-blue-74: #78aaff;
   --pigment-blue-73: #6fa8ff;
   --pigment-blue-72: #6ba6ff;
-  --pigment-blue-72-c05: #8fa6c6;
   --pigment-blue-71-c06-h263: #8fa3c8;
   --pigment-blue-71-c06: #8fa2c8;
   --pigment-blue-71: #78a0e6;
@@ -313,7 +295,6 @@
   --pigment-blue-63: #7e8ba1;
   --pigment-blue-62-c20: #4a7dff;
   --pigment-blue-62: #7a6cff;
-  --pigment-blue-61: #6f86a8;
   --pigment-blue-60: #5382c8;
   --pigment-blue-60-c12: #5a7ec8;
   --pigment-blue-58: #2a6cff;
@@ -327,27 +308,20 @@
   --pigment-blue-43: #37507e;
   --pigment-blue-41: #2c4a7c;
   --pigment-blue-37: #24406b;
-  --pigment-blue-36: #2c3d5c;
   --pigment-blue-35: #2a3a58;
   --pigment-blue-33: #16345f;
   --pigment-blue-31-c06: #223052;
   --pigment-blue-31: #20304e;
   --pigment-blue-29: #182c49;
   --pigment-blue-29-c06: #1a2a4a;
-  --pigment-blue-27: #1b2740;
   --pigment-blue-23-c05: #101d36;
   --pigment-blue-23: #101c36;
   --pigment-blue-21-c05: #0b1830;
   --pigment-blue-21: #0a1730;
   --pigment-blue-19-c04: #0a1428;
   --pigment-blue-19: #0a1424;
-  --pigment-blue-18-c03: #0b1220;
-  --pigment-blue-18-c03-h259: #08111f;
-  --pigment-blue-18: #0a1020;
-  --pigment-blue-17: #0a101c;
   /* violet */
   --pigment-violet-81-c11: #d0aef7;
-  --pigment-violet-81: #c3b2ff;
   --pigment-violet-79: #beaaff;
   --pigment-violet-78: #c9a2ff;
   --pigment-violet-77: #bfa0ff;
@@ -364,7 +338,6 @@
   --pigment-violet-65-c16: #8f7ae8;
   --pigment-violet-59: #785aff;
   --pigment-violet-57: #785adc;
-  --pigment-violet-56: #6f5bd6;
   /* magenta */
   --pigment-magenta-78: oklch(0.78 0.14 320);
   /* @pigments:end */
