@@ -151,11 +151,11 @@
       "id": "F-07",
       "title": "Neutrino lab is two-flavour vacuum only",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S12"
       ],
-      "closedIn": null
+      "closedIn": "bb9e4d035665cb0b2b33432ea9ba24f365e30583"
     },
     {
       "id": "F-08",
@@ -835,13 +835,15 @@
       "findings": [
         "F-07"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s12-sm-neutrinos",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/73",
-      "commits": [],
+      "commits": [
+        "bb9e4d035665cb0b2b33432ea9ba24f365e30583"
+      ],
       "startedAt": "2026-10-24",
-      "completedAt": null,
+      "completedAt": "2026-10-24",
       "evidence": {
         "tests": [
           "npm test: 841/842 pass, 1 skipped (new: test/neutrino.test.mjs 31 tests; formula-core library table +2 formulas; figure-plots ribbon cases)",
@@ -2199,6 +2201,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "Three-flavour oscillations in matter done: exact exp(-iHL), NuFIT 6.0 data and four experiment presets, Formula Core entries, flavour ribbon, keyboard delta_CP dial, two captures; D-063 to D-068. F-07 is closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/73."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 73 merged as bb9e4d035665cb0b2b33432ea9ba24f365e30583; CI (Browser QA 6m50s, Validate) green. F-07 closed."
     }
   ]
 }
