@@ -71,18 +71,18 @@ function ScaleLadder() {
 
     // faint starfield for depth
     const det0 = ctx.settings.current.detail3d;
-    const starN = det0 === "low" ? 200 : 420;
+    const starN = det0 === "low" ? 200 : 420, rnd = QGA_SEEDED(0x9a1c4);
     const sGeo = new THREE.BufferGeometry();
     const sPos = new Float32Array(starN * 3);
     for (let i = 0; i < starN; i++) {
-      const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R = 30 + Math.random() * 36;
+      const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R = 30 + rnd() * 36;
       sPos[i * 3] = Math.cos(a) * rr * R; sPos[i * 3 + 1] = u * R; sPos[i * 3 + 2] = Math.sin(a) * rr * R;
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
-    scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({
+    scene.add(ctx.tag(new THREE.Points(sGeo, new THREE.PointsMaterial({
       size: 1.1, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-78-c08"), transparent: true,
       opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
-    })));
+    })), "decoration"));
 
     // glowing descent axis
     const axis = ctx.line([new THREE.Vector3(0, 5.6, 0), new THREE.Vector3(0, -5.4, 0)], QGA_TOKENS.hex("pigment-blue-72"), 0.6);
@@ -110,7 +110,7 @@ function ScaleLadder() {
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-31"), transparent: true, opacity: 0.32,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
     desert.position.set(0, (desTop + desBot) / 2, -0.05);
-    scene.add(desert);
+    scene.add(ctx.tag(desert, "model"));
     ctx.annotation("the desert — 16 orders of magnitude, no experimental data",
       () => ({ x: 1.0, y: (desTop + desBot) / 2, z: 0 }));
 
@@ -122,7 +122,7 @@ function ScaleLadder() {
           blending: THREE.AdditiveBlending, depthWrite: false }));
       ring.rotation.x = Math.PI / 2;
       ring.position.y = yOf(s.log);
-      scene.add(ring);
+      scene.add(ctx.tag(ring, "model"));
       rings.push({ ring, log: s.log, hex });
       const lp = { x: 2.05, y: ring.position.y, z: 0 };
       ctx.label(s.name.split(" — ")[0], () => lp, "s3d-quiet");
@@ -130,7 +130,7 @@ function ScaleLadder() {
     await window.QGA_TERM_LENS.attach("planck-descent", ctx, { rings });
     const probe = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16),
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-cyan-89-c07") }));
-    scene.add(probe);
+    scene.add(ctx.tag(probe, "model"));
     const pGlow = ctx.glow(QGA_TOKENS.hex("pigment-cyan-85"), 2.0, 0.7);
     scene.add(pGlow);
     const pHalo = ctx.glow(QGA_TOKENS.hex("pigment-cyan-85"), 4.0, 0.28);
@@ -139,7 +139,7 @@ function ScaleLadder() {
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.13, 1, 12, 1, true),
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-blue-75"), transparent: true, opacity: 0.32,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-    scene.add(beam);
+    scene.add(ctx.tag(beam, "decoration"));
 
     // Planck lattice at the bottom — distorts as the probe approaches
     const det = ctx.settings.current.detail3d;
@@ -152,7 +152,7 @@ function ScaleLadder() {
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     latMesh.position.y = -5.6;
-    scene.add(latMesh);
+    scene.add(ctx.tag(latMesh, "decoration"));
     // foam glow bubbles that bloom up near the Planck scale
     const foam = [];
     for (let i = 0; i < 7; i++) {
@@ -246,7 +246,7 @@ function ScaleLadder() {
             <div className="readout-value" style={{ fontSize: 12.5 }}>{active.name.split(" — ")[0]}</div>
           </div>
         </div>
-        <VizCaption status="schematic">
+        <VizCaption provenanceId="planck-descent" status="schematic">
           Resolving a length <Eq tex="l"></Eq> requires energy <Eq tex="E \approx \hbar c/l"></Eq>. Each tick is
           one power of ten, so the gulf you descend is honest: sixteen empty decades — <strong>the desert</strong> —
           separate the collider frontier from the Planck scale. Near <Eq tex="\ell_P"></Eq> the energy needed to
@@ -341,7 +341,7 @@ function SpinFoamLab() {
         initial={{ radius: 9.5, theta: 0.7, phi: 1.25, minR: 4, maxR: 28, bloom: { strength: 0.75, radius: 0.55, threshold: 0.16 } }}
         build={build} deps={[jMax, mode, seed, stepIndex]}
         fallback={<div className="lab-fallback">The 3-D spin-foam lab needs WebGL; the area spectrum above is computed without it.</div>}></Scene3D>
-      <VizCaption status="conjectural">
+      <VizCaption provenanceId="spin-foam-lab" status="conjectural">
         The graph is a real combinatorial object: edges carry half-integer spins j, and the area of each surface is
         <Eq tex="A = 8\pi\gamma\,\ell_P^2\,\sqrt{j(j+1)}"></Eq> — the LQG area spectrum, computed here in Planck
         units by <code>js/science/spin-networks.mjs</code>. Node volumes come from the Cayley–Menger determinant of

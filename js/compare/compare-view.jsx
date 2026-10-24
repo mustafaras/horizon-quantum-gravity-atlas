@@ -313,7 +313,7 @@ function CompareView({ go }) {
         ) : null}
         {(!ready.A || !ready.B) && mode === "swipe" ? <div className="compare-loading" role="status">Loading comparison scenes…</div> : null}
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="compare-view" status="schematic">
         Each side is a full, independently validated atlas state (URL-clamped parameters, seeded physics).
         {cameraSynced
           ? " Both scenes declared the same orbit camera space, so dragging one camera moves both."

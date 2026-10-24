@@ -333,11 +333,21 @@ function SimBar({ sim, children }) {
   );
 }
 
-function VizCaption({ status, children }) {
+// The status chip is a button: it opens the provenance drawer of the registry entry named by provenanceId (S11).
+// The registry owns the status; a status stated here must agree with it (assertCaption throws otherwise).
+function VizCaption({ status, provenanceId, children }) {
+  const entry = window.QGA_PROVENANCE.assertCaption(provenanceId, status);
+  const [open, setOpen] = useState(false);
+  const chipRef = useRef(null);
+  const close = useCallback(() => { setOpen(false); chipRef.current?.focus(); }, []);
   return (
     <div className="viz-caption">
-      {status ? <Badge kind={status}></Badge> : null}
+      <button ref={chipRef} type="button" className={"badge badge-" + entry.status + " prov-chip"} aria-haspopup="dialog"
+        aria-expanded={open} data-provenance-id={provenanceId} onClick={() => setOpen(true)}>
+        {BADGE_LABELS[entry.status] || entry.status}
+      </button>
       <span>{children}</span>
+      {open ? <ProvenanceDrawer id={provenanceId} onClose={close}></ProvenanceDrawer> : null}
     </div>
   );
 }
@@ -391,14 +401,14 @@ function Starfield({ enabled = true, motionScale = 1, hue = 226 }) {
     const cv = ref.current;
     if (!cv || !enabled) return;
     let raf, alive = true;
-    const stars = [];
+    const stars = [], rnd = QGA_SEEDED(0x57a2f1d);
     for (let i = 0; i < 170; i++) {
-      const z = 0.25 + Math.random() * 0.75; // depth: far (0.25) → near (1)
+      const z = 0.25 + rnd() * 0.75; // depth: far (0.25) → near (1)
       stars.push({
-        x: Math.random(), y: Math.random(), z,
+        x: rnd(), y: rnd(), z,
         r: 0.35 + z * 1.15,
-        p: Math.random() * Math.PI * 2,
-        s: 0.3 + Math.random() * 0.7,
+        p: rnd() * Math.PI * 2,
+        s: 0.3 + rnd() * 0.7,
       });
     }
     let hueNow = hueTargetRef.current;

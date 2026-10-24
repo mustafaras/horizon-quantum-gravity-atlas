@@ -38,6 +38,7 @@ import {
 import { seededRng } from "../../physics.mjs";
 import { sharedGlowTexture, ringGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 
 const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
@@ -107,7 +108,7 @@ export function createHawkingLabRuntime({
     track(stars.material);
     stars.object.frustumCulled = false;
     stars.object.renderOrder = 0;
-    group.add(stars.object);
+    group.add(tag(stars.object, "decoration"));
 
   }
 
@@ -122,7 +123,7 @@ export function createHawkingLabRuntime({
   const haloDisc = new Mesh(track(new PlaneGeometry(4.9, 4.9)), haloMat);
   haloDisc.renderOrder = 6;
   haloDisc.frustumCulled = false;
-  group.add(haloDisc);
+  group.add(tag(haloDisc, "decoration"));
   billboards.push(haloDisc);
 
   // whisper of ambient warmth (kept very faint — depth, never a blob)
@@ -135,20 +136,20 @@ export function createHawkingLabRuntime({
   const ambDisc = new Mesh(track(new PlaneGeometry(10.5, 10.5)), ambMat);
   ambDisc.renderOrder = 5;
   ambDisc.frustumCulled = false;
-  group.add(ambDisc);
+  group.add(tag(ambDisc, "decoration"));
   billboards.push(ambDisc);
 
   // ---- horizon sphere + tight atmosphere shells ----
   const holeGeo = track(new SphereGeometry(R_HORIZON, 64, 48));
   const holeMat = track(new MeshBasicMaterial({ color: TK.hex("pigment-grey-10") }));
-  group.add(new Mesh(holeGeo, holeMat));
+  group.add(tag(new Mesh(holeGeo, holeMat), "model"));
   for (const [scale, opacity] of [[1.018, 0.16], [1.05, 0.06]]) {
     const shellGeo = track(new SphereGeometry(R_HORIZON * scale, 48, 32));
     const shellMat = track(new MeshBasicMaterial({
       color: TK.hex("pigment-orange-82-c13-h064"), transparent: true, opacity,
       blending: AdditiveBlending, depthWrite: false,
     }));
-    group.add(new Mesh(shellGeo, shellMat));
+    group.add(tag(new Mesh(shellGeo, shellMat), "decoration"));
   }
 
   // ---- photon ring: bright torus + soft halo torus in the disk plane ----
@@ -162,7 +163,7 @@ export function createHawkingLabRuntime({
     }));
     const torus = new Mesh(torusGeo, torusMat);
     torus.rotation.x = -Math.PI / 2; // lie flat in the reference-disk plane
-    group.add(torus);
+    group.add(tag(torus, "model"));
   }
 
   // ---- equatorial reference disk: horizon / photon sphere / ISCO + spokes ----
@@ -196,7 +197,7 @@ export function createHawkingLabRuntime({
     }));
     spokes.frustumCulled = false;
     disk.add(spokes);
-    group.add(disk);
+    group.add(tag(disk, "model"));
   }
 
   // ---- temperature rail: T(a*)/T(0) arcing over the scene, with marker ----
@@ -220,13 +221,13 @@ export function createHawkingLabRuntime({
       color: TK.hex("pigment-azure-83-c09"), transparent: true, opacity: 0.95,
       blending: AdditiveBlending, depthWrite: false,
     }));
-    group.add(new Mesh(tubeGeo, tubeMat));
+    group.add(tag(new Mesh(tubeGeo, tubeMat), "model"));
     const haloGeo = track(new TubeGeometry(curve, 128, 0.085, 6, false));
     const haloMat2 = track(new MeshBasicMaterial({
       color: TK.hex("pigment-blue-58"), transparent: true, opacity: 0.13,
       blending: AdditiveBlending, depthWrite: false,
     }));
-    group.add(new Mesh(haloGeo, haloMat2));
+    group.add(tag(new Mesh(haloGeo, haloMat2), "decoration"));
 
     // ticks at a* = 0, 1/2, 1 (short marks rising from the disk plane)
     const tickPos = [];
@@ -249,7 +250,7 @@ export function createHawkingLabRuntime({
       const dot = new Sprite(dotMat);
       dot.scale.setScalar(0.22);
       dot.position.copy(railPoint(a));
-      group.add(dot);
+      group.add(tag(dot, "model"));
     }
   }
 
@@ -262,7 +263,7 @@ export function createHawkingLabRuntime({
   const marker = new Sprite(markerMat);
   marker.scale.setScalar(0.34);
   marker.position.copy(railPoint(markerA));
-  group.add(marker);
+  group.add(tag(marker, "model"));
   const guide = trackLine(engraved.segments(
     [marker.position.x, 0.05, RAIL.z, marker.position.x, marker.position.y, RAIL.z],
     { color: "pigment-azure-85-c08", opacity: 0.35, additive: true, widthPx: engraved.WIDTH_PX.hairline, layer: "decoration" },
@@ -283,7 +284,7 @@ export function createHawkingLabRuntime({
   // by one compute kernel from the shared timeline phase, drawn in one call, with nothing uploaded per frame (hawking-pairs.mjs).
   const pairs = createHawkingPairs({ escaping, falling, hotColor, fallColor: FALL_COLOR, fallTailColor: tokenColor("pigment-red-43"), pace, fade: fieldFade });
   pairs.object.renderOrder = 4;
-  group.add(pairs.object);
+  group.add(tag(pairs.object, "decoration"));
 
   function sync({ time = 0, motion = 1 } = {}) {
     // Reduced motion: freeze the emission cycle on a fixed phase so captures

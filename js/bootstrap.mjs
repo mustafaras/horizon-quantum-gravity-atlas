@@ -191,6 +191,27 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
+    const { registerAllProvenance } = await import("./provenance-index.mjs");
+    const provenanceRegistry = await import("./science/provenance.mjs");
+    const { referenceLinks } = await import("./science/references.mjs");
+    registerAllProvenance();
+    Object.defineProperty(window, "QGA_PROVENANCE", {
+      value: Object.freeze({
+        get: provenanceRegistry.getVisualizationProvenance,
+        list: provenanceRegistry.listVisualizationProvenance,
+        assertCaption: provenanceRegistry.assertCaptionProvenance,
+        referenceLinks,
+      }),
+      configurable: true,
+    });
+
+    const sceneLayers = await import("./render/scene-layers.mjs");
+    Object.defineProperty(window, "QGA_LAYERS", {
+      value: Object.freeze({ tag: sceneLayers.tagLayer, layerOf: sceneLayers.layerOf, applyMode: sceneLayers.applyLayerMode, untagged: sceneLayers.untaggedObjects }),
+      configurable: true,
+    });
+
     // Figure Kit (S09): scene description, renderers and plot specs for every 2D figure.
     const figureKit = await import("./figure/index.mjs");
     figureKit.registerFigureProvenance();

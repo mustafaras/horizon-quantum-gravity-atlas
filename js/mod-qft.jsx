@@ -126,7 +126,7 @@ function FieldLab() {
         <Toggle label="annotations" checked={annot} onChange={setAnnot}></Toggle>
         <button className="btn" onClick={() => {initField();sim.reset();}}>Clear field</button>
       </SimBar>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="qft-field-kinds" status="schematic">
         Click anywhere to excite the field. Disturbances obey a discretized Klein–Gordon equation: wave packets
         disperse, reflect, and interfere. Raising the mass m stiffens the field and slows propagation.
         {" "}{KIND_NOTE[kind]}
@@ -174,7 +174,7 @@ function FieldLab3D() {
       emissive: QGA_TOKENS.hex("pigment-blue-21-c05"), emissiveIntensity: 0.75, side: THREE.DoubleSide,
       flatShading: false,
     }));
-    scene.add(surf);
+    scene.add(ctx.tag(surf, "model"));
 
     // luminous lattice overlay with its OWN colours: a visible oscillator grid at
     // rest (the field is a value at every point), brightening to the crest colour
@@ -189,7 +189,7 @@ function FieldLab3D() {
       blending: THREE.AdditiveBlending, depthWrite: false
     }));
     wire.renderOrder = 2;
-    scene.add(wire);
+    scene.add(ctx.tag(wire, "model"));
 
     const base = new THREE.Color(QGA_TOKENS.hex("pigment-blue-23"));
     const up = new THREE.Color(QGA_TOKENS.hex("pigment-cyan-85"));
@@ -201,7 +201,7 @@ function FieldLab3D() {
     // deterministic vacuum shimmer: the vacuum is never still — a fixed spectrum
     // of seeded modes oscillates at ω = √(c²k² + m²c⁴)/ħ, so raising the mass
     // visibly quickens even the zero-point shimmer (the mass gap, made visible).
-    const vRandom = QGA_SEEDED((qgaReadState().seed ^ 0x51ce) >>> 0);
+    const vRandom = QGA_SEEDED((qgaReadState().seed ^ 0x51ce) >>> 0), kickRandom = QGA_SEEDED((qgaReadState().seed ^ 0x2f9b) >>> 0);
     const vModes = [];
     for (let i = 0; i < 6; i++) {
       const kx = (vRandom() * 2 - 1) * 1.9, kz = (vRandom() * 2 - 1) * 1.9;
@@ -265,8 +265,8 @@ function FieldLab3D() {
         // living vacuum: faint zero-point kicks keep the membrane restless
         if (run) {
           for (let n = 0; n < 5; n++) {
-            const rk = Math.random() * N * N | 0;
-            F.pi[rk] += (Math.random() - 0.5) * 0.5;
+            const rk = kickRandom() * N * N | 0;
+            F.pi[rk] += (kickRandom() - 0.5) * 0.5;
           }
         }
         const steps = 3, sdt = Math.min(dt, 0.034) / steps;
@@ -340,7 +340,7 @@ function FieldLab3D() {
       initial={{ radius: 13.2, theta: 0.52, phi: 1.06, minR: 7, maxR: 32, bloom: { strength: 0.85, radius: 0.5, threshold: 0.16 } }}
       build={build} fallback={<FieldLab></FieldLab>}></Scene3D>
       <DispersionPlot mass={mass}></DispersionPlot>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="qft-membrane" status="schematic">
         A two-dimensional slice of a scalar field, integrating the Klein–Gordon equation
         <Eq tex="\partial_t^2\phi = c^2\nabla^2\phi - m^2\phi"></Eq> in real time. Click the membrane to deposit
         energy: the wave packet disperses, reflects, and interferes. Its modes obey the dispersion relation
@@ -565,7 +565,7 @@ function FeynmanCollision3D({ proc, procKey }) {
         new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 1.5, metalness: 0.25, roughness: 0.35 })
       );
       const glow = ctx.glow(hex, rad * 6.5, 0.9);
-      scene.add(core); scene.add(glow);
+      scene.add(ctx.tag(core, "model")); scene.add(glow);
       const tl = ctx.engraved.stream(TRAIL, {
         color: hex, opacity: 0.55, additive: true, widthPx: ctx.engraved.WIDTH_PX.standard, layer: "model",
       });
@@ -792,7 +792,7 @@ function FeynmanBuilder() {
         <div className="fey-verdict bad"><strong>Forbidden.</strong> {result.reason}</div>
         }
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="qft-feynman-builder" status="schematic">
         Pick a process template or build a custom 2 → 2 reaction. The animation shows time flowing left → right:
         incoming quanta stream into a vertex, the force carrier (gold) is exchanged, and outgoing quanta emerge.
         External lines are real (on-shell) particles; the internal line is a propagator — a term in the
@@ -1260,7 +1260,7 @@ function AmplitudeRoom() {
         </div>
       </details>
 
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="qft-scattering-explorer" status="schematic">
         The readouts are exact leading-order QED results; the two canvases are a schematic animation of the same
         process. Drag the transport to scrub the collision, or change √s and cos θ to watch the Mandelstam
         variables, the angular shape and the resonance curve respond. Every value is a pure function of the
@@ -1324,7 +1324,7 @@ function QftComputeLab() {
       initial={{ radius: 15.5, theta: 0.55, phi: 1.06, minR: 6, maxR: 34, bloom: { strength: 0.62, radius: 0.5, threshold: 0.2 } }}
       build={build} deps={[mode, mass, seed]}
       fallback={<div className="lab-fallback">The 3-D vacuum lab needs WebGL; the module numerics remain available via the export.</div>}></Scene3D>
-      <VizCaption status={mode === "flux" ? "schematic" : "effective"}>
+      <VizCaption provenanceId={mode === "flux" ? "qft-flux-tube" : "qft-field-lab"} status={mode === "flux" ? "schematic" : "effective"}>
         {mode === "flux" ? (
           <>The tube is a <strong>schematic</strong> cross-section of a confining flux tube (a transverse
             Gaussian profile whose width shrinks as the string tension grows); it illustrates the shape of the

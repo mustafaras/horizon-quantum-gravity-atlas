@@ -29,6 +29,8 @@ test.describe("render contract modules", () => {
         validity: ["no rendering side effects"],
         numericalMethod: "deterministic policy normalization",
         references: ["Prompt 00 render architecture contract"],
+        layers: [{ name: "Contract check", class: "model" }],
+        seed: "none: deterministic policy normalization",
       });
       return {
         backend: capabilities.activeBackend,

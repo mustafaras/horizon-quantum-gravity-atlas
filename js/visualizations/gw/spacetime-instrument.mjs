@@ -20,6 +20,7 @@
 
 import { GW_REAL_MODE } from "../../science/gravitational-waves.mjs";
 import { getVisualizationProvenance, registerVisualization } from "../../science/provenance.mjs";
+import { REF } from "../../science/references.mjs";
 
 export const GW_INSTRUMENT_VIEW_ID = "exp-gw-spacetime-instrument";
 
@@ -42,9 +43,11 @@ export const GW_INSTRUMENT_PROVENANCE = Object.freeze({
     + "h sampled with linear interpolation from a float DataTexture (WebGL2 vertex shader) or a storage buffer staged from the same rows (WebGPU compute kernel); "
     + "envelope is a 0.995-decay running peak used for glow, size, and color grading",
   references: [
-    "Prompt 06 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    " Maggiore, Gravitational Waves Vol 1, detector-frame geodesic-deviation effect of a plus/cross polarized wave",
+    REF.MAGGIORE,
+    REF.LIGO_GW150914,
   ],
+  layers: [{ name: "Lattice displacement from the loaded strain bundle", class: "model" }, { name: "Strain-bundle texture (observed or synthetic)", class: "data" }, { name: "Particle glow and envelope grading", class: "decoration" }],
+  seed: "Generated bundles carry the URL state seed (key seed, default 42); real GWOSC bundles are not seeded",
 });
 
 export function registerGwInstrumentProvenance() {

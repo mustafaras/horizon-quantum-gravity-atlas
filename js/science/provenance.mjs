@@ -29,3 +29,19 @@ export function listVisualizationProvenance() {
     Array.from(REGISTRY.entries(), ([id, provenance]) => deepFreeze({ id, provenance })),
   );
 }
+
+/**
+ * A caption names its registry entry and states a status. The two must agree: the registry is the single source of
+ * the status a figure is allowed to wear, so a caption can neither drop it nor change it.
+ */
+export function assertCaptionProvenance(id, status) {
+  if (typeof id !== "string" || id.trim() === "") {
+    throw new TypeError("A caption requires a provenanceId");
+  }
+  const provenance = REGISTRY.get(id.trim());
+  if (!provenance) throw new Error(`Caption provenanceId is not registered: ${id}`);
+  if (status !== undefined && status !== provenance.status) {
+    throw new Error(`Caption status "${status}" differs from the registered status "${provenance.status}" of ${id}`);
+  }
+  return provenance;
+}

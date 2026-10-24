@@ -386,7 +386,7 @@ function RGFlowLandscape() {
           <p>Deterministic fixed-step RK4 integrates both directions from <Eq tex="\mu_0"></Eq>. Non-finite values, iteration limits, and <Eq tex="\alpha = 1"></Eq> boundaries terminate visibly; no missing segment is reported as success. Reduced motion snaps directly to exact final geometry.</p>
         </section>
       </div>
-      <VizCaption status={layer}>
+      <VizCaption provenanceId={layer === "effective" ? "rg-scale-trajectory" : layer === "conjectural" ? "rg-landscape-asymptotic-safety" : "rg-landscape-toy"} status={layer}>
         {activePreset?.note || "Custom parameter state."} Scale is measurement resolution, not ordinary time.
         Curve morphing is presentation-only; readouts always use the exact current state.
       </VizCaption>

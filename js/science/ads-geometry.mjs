@@ -22,6 +22,7 @@
  */
 
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const ADS_LAB_VIEW_ID = "ads-holography-lab";
 
@@ -50,11 +51,12 @@ export const ADS_LAB_PROVENANCE = Object.freeze({
     "Closed-form Poincaré disk geometry: geodesic circle center at (1/cos(Δφ/2)) along the interval bisector with radius |tan(Δφ/2)|; "
     + "hyperbolic distance d = arcosh(1 + 2|p−q|²/((1−|p|²)(1−|q|²))); arcs sampled at fixed angular resolution for rendering only",
   references: [
-    "Prompt 08 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "Ryu & Takayanagi, Phys. Rev. Lett. 96 (2006) 181602",
-    "Maldacena, Adv. Theor. Math. Phys. 2 (1998) 231 (AdS/CFT)",
-    "Calabrese & Cardy, J. Stat. Mech. (2004) P06002 (interval entropy on a circle)",
+    REF.RYU_TAKAYANAGI,
+    REF.MALDACENA_ATMP,
+    REF.CALABRESE_CARDY,
   ],
+  layers: [{ name: "Poincare disk geodesics and Ryu-Takayanagi surfaces", class: "model" }, { name: "Disk shading, tube glow and backdrop", class: "decoration" }],
+  seed: "Fixed constant 42 passed to the runtime; the geometry itself is closed form and draws no random numbers",
 });
 
 export function registerAdsLabProvenance() {

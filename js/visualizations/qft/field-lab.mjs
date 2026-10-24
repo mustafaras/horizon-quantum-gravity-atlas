@@ -32,6 +32,7 @@ import {
 import { createFieldPeaks } from "./field-peaks.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 
 const EXTENT_X = 9;
 const EXTENT_Z = 7;
@@ -94,7 +95,7 @@ export function createQftFieldLabRuntime({
   });
   const surf = new Mesh(geo, surfMat);
   surf.frustumCulled = false;
-  group.add(surf);
+  group.add(tag(surf, "model"));
 
   // additive energy layer: shares the position buffer, own hot colors
   const glowGeo = new BufferGeometry();
@@ -108,7 +109,7 @@ export function createQftFieldLabRuntime({
   const glow = new Mesh(glowGeo, glowMat);
   glow.renderOrder = 2;
   glow.frustumCulled = false;
-  group.add(glow);
+  group.add(tag(glow, "model"));
 
   const tmp = new Color();
   const COLOR_POS = new Color(TK.hex("pigment-cyan-91"));
@@ -165,7 +166,7 @@ export function createQftFieldLabRuntime({
   const corrGroup = new Group();
   corrGroup.add(corrHalo, corrTube);
   corrGroup.visible = false;
-  group.add(corrGroup);
+  group.add(tag(corrGroup, "model"));
 
   // ---- flux-tube overlay (SCHEMATIC analogy), vertex-alpha density shell ----
   const tube = new Group();
@@ -236,7 +237,7 @@ export function createQftFieldLabRuntime({
       tube.add(halo);
     }
   }
-  group.add(tube);
+  group.add(tag(tube, "model"));
 
   // ---- particle interpretation (slice crests): a GPU particle system (S08) ----
   // One particle per interior sample point; the kernel evaluates the closed-form field from the mode table itself, so the CPU sets one
@@ -245,7 +246,7 @@ export function createQftFieldLabRuntime({
   const peaks = createFieldPeaks({ field, nx, color: new Color(TK.hex("pigment-white")) });
   peaks.object.renderOrder = 3;
   peaks.object.visible = false;
-  group.add(peaks.object);
+  group.add(tag(peaks.object, "model"));
 
   function setMode(next) {
     mode = next;

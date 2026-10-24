@@ -25,6 +25,7 @@ import {
   COLLIDER_LAB_DEFAULTS, COLLIDER_CHANNELS,
 } from "../../science/collider-kinematics.mjs";
 import { seededRng } from "../../physics.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
 
@@ -74,7 +75,7 @@ export function createColliderDisplayRuntime({
       })),
     );
     cyl.rotation.x = Math.PI / 2;
-    group.add(cyl);
+    group.add(tag(cyl, "decoration"));
   }
   {
     const axis = trackLine(engraved.line([0, 0, -LEN * 0.62, 0, 0, LEN * 0.62], {
@@ -86,13 +87,13 @@ export function createColliderDisplayRuntime({
   // ---- interaction vertex + beam bunches ----
   const vertex = new Mesh(track(new SphereGeometry(0.1, 16, 12)),
     track(new MeshBasicMaterial({ color: TK.hex("pigment-white") })));
-  group.add(vertex);
+  group.add(tag(vertex, "model"));
   const vFlash = new Sprite(track(new SpriteMaterial({
     map: sharedGlowTexture(), color: TK.hex("pigment-amber-97"), transparent: true, opacity: 0.12,
     blending: AdditiveBlending, depthWrite: false,
   })));
   vFlash.scale.setScalar(1.2);
-  group.add(vFlash);
+  group.add(tag(vFlash, "decoration"));
   const BZ = LEN * 0.6;
   const beamMats = [];
   const beams = [1, -1].map(() => {
@@ -103,7 +104,7 @@ export function createColliderDisplayRuntime({
     beamMats.push(m);
     const s = new Sprite(m);
     s.scale.setScalar(1.3);
-    group.add(s);
+    group.add(tag(s, "decoration"));
     return s;
   });
 
@@ -206,7 +207,7 @@ export function createColliderDisplayRuntime({
     towerAxes[i * 3] = ax; towerAxes[i * 3 + 1] = ay;
     towerBases[i * 3] = dummy.position.x - ax * half; towerBases[i * 3 + 1] = dummy.position.y - ay * half; towerBases[i * 3 + 2] = dummy.position.z;
   }
-  group.add(towers);
+  group.add(tag(towers, "model"));
 
   // ---- jet cones: open wireframe cones along (φ, η) ----
   const jetCones = [];
@@ -224,7 +225,7 @@ export function createColliderDisplayRuntime({
     cone.quaternion.setFromUnitVectors(up, dir);
     cone.position.copy(dir).multiplyScalar(h / 2);
     cone.userData = { info: `jet · ET ${j.et.toFixed(0)} GeV · η ${j.eta.toFixed(2)} · ${j.nMembers} objects` };
-    group.add(cone);
+    group.add(tag(cone, "model"));
     jetCones.push(cone);
   }
 
@@ -242,7 +243,7 @@ export function createColliderDisplayRuntime({
       track(new MeshBasicMaterial({ color: TK.hex("pigment-red-65"), transparent: true, opacity: 0.95, depthWrite: false })));
     head.quaternion.setFromUnitVectors(up, dir);
     head.position.copy(dir).multiplyScalar(len + 0.2);
-    group.add(head);
+    group.add(tag(head, "model"));
   }
 
   // ---- seeded ambient dust for depth ----
@@ -259,7 +260,7 @@ export function createColliderDisplayRuntime({
     const dust = createDataPoints({ positions: pos, color: TK.linear("pigment-blue-47"), sizePx: 0.3, sizeAttenuation: true, profile: "soft", additive: true, opacity: 0.4 });
     track(dust.material);
     dust.object.frustumCulled = false;
-    group.add(dust.object);
+    group.add(tag(dust.object, "decoration"));
   }
 
   function sync({ time = 0, motion = 1 } = {}) {

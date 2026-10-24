@@ -28,6 +28,7 @@ import {
   particleBudget,
 } from "./spacetime-instrument.mjs";
 import * as TK from "../../design/tokens.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 
 const VERT = /* glsl */ `
 precision highp float;
@@ -112,9 +113,9 @@ function detectorAssembly({ extent }) {
     const ring = new Mesh(new RingGeometry(0.965, 1, 96), ringMat.clone());
     ring.rotation.x = -Math.PI / 2;
     rings.push(ring);
-    group.add(ring);
+    group.add(tag(ring, "decoration"));
   }
-  group.add(armX, armZ);
+  group.add(tag(armX, "model"), tag(armZ, "model"));
   return { group, armX, armZ, armMat, armXGeo, armZGeo, rings, armLength };
 }
 
@@ -203,7 +204,7 @@ export function createGwGlslRuntime({ seed = 42, detail3d = "balanced", reducedM
     points.frustumCulled = false;
     const detector = detectorAssembly({ extent });
     const rowGroup = new Group();
-    rowGroup.add(ghost, points, detector.group);
+    rowGroup.add(tag(ghost, "decoration"), tag(points, "model"), detector.group);
     group.add(rowGroup);
     return { points, material, geometry: geo, detector, rowGroup, ghost, ghostGeo, ghostMat };
   };

@@ -149,7 +149,7 @@ function ColliderEvent() {
           <span className="small" style={{ flex: 1 }}>{selTr.info}</span>
         </div>
       ) : null}
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="experiments-collider-event" status="schematic">
         Transverse view of a stylized collider event (beam axis horizontal). Click any track to inspect it —
         clicking pauses the event. Real event reconstruction is statistical and detector-dependent: what
         experiments report are fitted candidates with uncertainties, not labeled particles.
@@ -253,7 +253,7 @@ function GWInspiral() {
       <SimBar sim={sim}>
         <button className="btn" onClick={() => { init(); sim.reset(); }}>Restart inspiral</button>
       </SimBar>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="experiments-gw-chirp" status="schematic">
         Compact binary inspiral with quadrupole-style energy loss: the orbit shrinks, the frequency and amplitude
         sweep upward (the 'chirp'), and ringdown follows merger. An unequal mass ratio offsets the orbit around the
         common center of mass. GW150914 (2016) matched waveforms like this computed from general relativity —
@@ -355,10 +355,10 @@ function GWInspiral3D() {
       sPos[i * 3] = Math.cos(a) * rr * R0; sPos[i * 3 + 1] = Math.abs(u) * R0 * 0.7 + 4; sPos[i * 3 + 2] = Math.sin(a) * rr * R0;
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
-    scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({
+    scene.add(ctx.tag(new THREE.Points(sGeo, new THREE.PointsMaterial({
       size: 1.3, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-83"), transparent: true,
       opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
-    })));
+    })), "decoration"));
 
     const det = ctx.settings.current.detail3d;
     const SEG = det === "low" ? 52 : det === "ultra" ? 96 : 72;
@@ -377,7 +377,7 @@ function GWInspiral3D() {
       emissive: QGA_TOKENS.hex("pigment-blue-19-c04"), emissiveIntensity: 0.45, transparent: true, opacity: 0.92,
       side: THREE.DoubleSide,
     }));
-    scene.add(surf);
+    scene.add(ctx.tag(surf, "model"));
     const wColAttr = new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3);
     const wireGeo = new THREE.BufferGeometry();
     wireGeo.setIndex(geo.index);
@@ -388,7 +388,7 @@ function GWInspiral3D() {
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     wire.renderOrder = 2;
-    scene.add(wire);
+    scene.add(ctx.tag(wire, "model"));
     const cCrest = new THREE.Color(QGA_TOKENS.hex("pigment-azure-85"));
     const cTrough = new THREE.Color(QGA_TOKENS.hex("pigment-violet-71-c15"));
     const cFlat = new THREE.Color(QGA_TOKENS.hex("pigment-blue-23-c05"));
@@ -434,7 +434,7 @@ function GWInspiral3D() {
         map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-78-c07"), transparent: true, opacity: 0.26,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }));
-      scene.add(m); scene.add(halo); scene.add(warmth);
+      scene.add(ctx.tag(m, "model")); scene.add(ctx.tag(halo, "decoration")); scene.add(ctx.tag(warmth, "decoration"));
       return { m, halo, warmth, trail: [] };
     };
     const b1 = mkHole(QGA_TOKENS.hex("pigment-blue-82")), b2 = mkHole(QGA_TOKENS.hex("pigment-violet-78"));
@@ -468,7 +468,7 @@ function GWInspiral3D() {
       blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
     }));
     burst.renderOrder = 7;
-    scene.add(burst);
+    scene.add(ctx.tag(burst, "decoration"));
     const coreFlash = ctx.glow(QGA_TOKENS.hex("pigment-white"), 1, 0);
     scene.add(coreFlash);
 
@@ -481,7 +481,7 @@ function GWInspiral3D() {
       }));
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.04;
-      scene.add(ring); wavefronts.push(ring);
+      scene.add(ctx.tag(ring, "model")); wavefronts.push(ring);
     }
 
     const bLabel = ctx.label("binary — orbital decay by gravitational radiation",
@@ -660,7 +660,7 @@ function GWInspiral3D() {
         <div className="readout"><div className="readout-label">peak strain at Earth (410 Mpc)</div>
           <div className="readout-value">1.0×10⁻²¹</div></div>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="experiments-gw-sheet" status="schematic">
         Leading-order quadrupole inspiral, integrated with the <em>exact</em> radiation-reaction scaling
         <Eq tex="\dot a \propto -a^{-3}"></Eq>, so the orbit follows <Eq tex="a \propto (t_c-t)^{1/4}"></Eq> and the
         wave frequency sweeps as <Eq tex="f_{\rm gw}\propto (t_c-t)^{-3/8}"></Eq> with amplitude
@@ -678,7 +678,7 @@ function GWInspiral3D() {
 /* ---------- invariant-mass reconstruction: how a particle is "discovered" ---------- */
 const IM_MIN = 60, IM_MAX = 120, IM_BINS = 40, IM_BW = (IM_MAX - IM_MIN) / IM_BINS;
 const MZ = 91.1876, GZ = 2.4952; // PDG Z⁰ mass & width (GeV)
-function sampleDielectronMass(pSig, random = Math.random) {
+function sampleDielectronMass(pSig, random) {
   if (random() < pSig) {
     // relativistic-ish Breit–Wigner (Cauchy core) around the Z mass + detector smearing
     const bw = MZ + (GZ / 2) * Math.tan(Math.PI * (random() - 0.5));
@@ -741,7 +741,7 @@ function InvariantMassLab() {
         <div className="readout"><div className="readout-label">Z⁰ mass / width (PDG)</div>
           <div className="readout-value">91.19 / 2.50<span className="unit">GeV</span></div></div>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="experiments-dielectron-mass" status="schematic">
         This is how a particle is actually <em>discovered</em>. Each collision contributes one dielectron
         invariant-mass entry; most are smooth Drell–Yan continuum, but a fraction come from a real resonance.
         No single event is decisive — fire a hundred and you see noise; fire thousands and the <strong>Z⁰ peak at

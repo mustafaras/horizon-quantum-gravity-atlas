@@ -105,6 +105,8 @@ test("runtime validators normalize and freeze contract values", () => {
       validity: ["background separation from scientific instruments"],
       numericalMethod: "deterministic animation curves",
       references: ["Internal atlas contract"],
+      layers: [{ name: "Backdrop", class: "decoration" }],
+      seed: "none: deterministic animation curves",
     },
     lifecycle: {
       initialize() {},

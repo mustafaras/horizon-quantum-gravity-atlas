@@ -12,6 +12,7 @@ import { createDataPoints } from "../../render/materials/index.mjs";
 import { LENS_MIN_RADIUS, createStarfield, createStarMaterial, createWellMaterial } from "./curvature-materials.mjs";
 import { appendTrails, applyRadiationReaction, makeRay, projectBodies, stepDynamics, syncSimBodies } from "./curvature-sim.mjs";
 import { attachLens } from "../common/lens-scenes.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 
 const TAU = Math.PI * 2;
 const EXT = 17;
@@ -55,7 +56,7 @@ export async function buildCurvatureScene(ctx, env) {
 
   // ---------- twinkling starfield + nebulae ----------
   const starfield = createStarfield({ count: det === "low" ? 320 : det === "ultra" ? 1100 : 640 });
-  scene.add(starfield.object);
+  scene.add(tag(starfield.object, "decoration"));
 
   const nebTex = mkRadialTex([
     [0, TK.alpha("pigment-violet-57", 0.34)], [0.4, TK.alpha("pigment-blue-48", 0.16)], [1, TK.alpha("pigment-black", 0)],
@@ -68,7 +69,7 @@ export async function buildCurvatureScene(ctx, env) {
     const ang = i * 2.1 + 0.6;
     sp.position.set(Math.cos(ang) * 52, 26 + i * 9, Math.sin(ang) * 52);
     sp.scale.setScalar(46 + i * 14);
-    scene.add(sp);
+    scene.add(tag(sp, "decoration"));
   }
 
   // ---------- luminous gravity well (engraved grid + depth heatmap, polar near the throat) ----------
@@ -78,7 +79,7 @@ export async function buildCurvatureScene(ctx, env) {
   const wellUniforms = well.uniforms;
   const surf = new THREE.Mesh(geo, well.material);
   surf.renderOrder = -2;
-  scene.add(surf);
+  scene.add(tag(surf, "model"));
   const pos = geo.attributes.position;
 
   const depth = (x, z, GM) => (refs.view.current === "gr" ? -0.92 * GM / Math.sqrt(x * x + z * z + 0.62) : 0);
@@ -95,7 +96,7 @@ export async function buildCurvatureScene(ctx, env) {
   // ---------- central mass: fBm-granulated star, corona, Einstein ring ----------
   const core = createStarMaterial();
   const star = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), core.material);
-  scene.add(star);
+  scene.add(tag(star, "model"));
   const starGlow = ctx.glow(hexOf("pigment-amber-93-c07"), 5, 0.5);
   scene.add(starGlow);
   const corona = ctx.glow(hexOf("pigment-orange-78-c15"), 7, 0.18);
@@ -109,7 +110,7 @@ export async function buildCurvatureScene(ctx, env) {
   const einstein = new THREE.Sprite(new THREE.SpriteMaterial({
     map: ringTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
-  scene.add(einstein);
+  scene.add(tag(einstein, "model"));
   // frame-dragging vortex disc (visible only with spin > 0)
   const vortexTex = mkRadialTex([
     [0, TK.alpha("pigment-black", 0)], [0.30, TK.alpha("pigment-black", 0)], [0.40, TK.alpha("pigment-cyan-87", 0.55)],
@@ -118,7 +119,7 @@ export async function buildCurvatureScene(ctx, env) {
   const vortex = new THREE.Sprite(new THREE.SpriteMaterial({
     map: vortexTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
-  scene.add(vortex);
+  scene.add(tag(vortex, "decoration"));
 
   // ---------- gradient-fading trails with comet dust ----------
   const TRAIL_N = det === "low" ? 220 : 360;
@@ -138,7 +139,7 @@ export async function buildCurvatureScene(ctx, env) {
         positions: dotPos, colors: dotCol, sizePx: 0.16, sizeAttenuation: true, profile: "soft", additive: true, opacity: 0.7, dynamic: true,
       });
       dots.setCount(0);
-      scene.add(dots.object);
+      scene.add(tag(dots.object, "model"));
     }
     return { pos, col, l, dots, dotPos, dotCol, pn, hex: new THREE.Color(hex) };
   };
@@ -172,7 +173,7 @@ export async function buildCurvatureScene(ctx, env) {
     }));
     mesh.userData.bodyIndex = i;
     mesh.visible = false;
-    scene.add(mesh);
+    scene.add(tag(mesh, "model"));
     const glow = ctx.glow(hexOf("pigment-white"), 1, 0.6);
     glow.visible = false;
     scene.add(glow);
@@ -183,7 +184,7 @@ export async function buildCurvatureScene(ctx, env) {
     blending: THREE.AdditiveBlending, depthWrite: false,
   }));
   selRing.visible = false;
-  scene.add(selRing);
+  scene.add(tag(selRing, "model"));
 
   // lensing fan of light rays
   const rayVis = refs.st.current.rays.map(() => mkTrail(hexOf("pigment-amber-88")));
@@ -198,7 +199,7 @@ export async function buildCurvatureScene(ctx, env) {
     m.rotation.x = -Math.PI / 2;
     m.renderOrder = 3;
     m.visible = false;
-    scene.add(m);
+    scene.add(tag(m, "model"));
     return m;
   };
   const ringPhoton = mkRing(hexOf("pigment-azure-88"), 0.7);
@@ -239,7 +240,7 @@ export async function buildCurvatureScene(ctx, env) {
       positions: dustPos, sizePx: 0.09, sizeAttenuation: true, profile: "soft", additive: true, opacity: 0.42, dynamic: true,
       color: TK.linear("pigment-blue-79-c11"),
     });
-    scene.add(dust.object);
+    scene.add(tag(dust.object, "decoration"));
   }
 
   // Prompt 10 formula linking: map the module's formula symbols onto the scene objects they describe, with live numerical readouts.
@@ -277,7 +278,7 @@ export async function buildCurvatureScene(ctx, env) {
   force.line = ctx.engraved.line([0, 0, 0, 0, 1, 0], { color: "pigment-red-65", widthPx: ctx.engraved.WIDTH_PX.standard, layer: "model" });
   force.add(force.line);
   force.visible = false;
-  scene.add(force);
+  scene.add(tag(force, "model"));
 
   ctx.label("M — curvature source", () => ({ x: 0, y: hAt(0.01, 0.01) + 1.9, z: 0 }), "s3d-strong");
   const pLabel = ctx.label("geodesic — free fall, no force",

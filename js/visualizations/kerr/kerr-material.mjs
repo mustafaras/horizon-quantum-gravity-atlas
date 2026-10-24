@@ -575,6 +575,7 @@ export function createKerrGlslRuntime({ seed = 42, volume = true } = {}) {
   mesh.frustumCulled = false;
   mesh.renderOrder = -10;
   mesh.name = "kerr-observatory-display";
+  mesh.userData.layer = "model"; // the ray-traced image is the model (S11)
 
   function ensureTargets(renderer, width, height) {
     if (targets[0] && targets[0].width === width && targets[0].height === height) return;
