@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-23",
+  "updated": "2026-10-24",
   "statuses": [
     "todo",
     "claimed",
@@ -707,12 +707,12 @@
       "findings": [
         "F-06"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "branch": "claude/zealous-goldberg-fi73ya",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
         "tests": [],
