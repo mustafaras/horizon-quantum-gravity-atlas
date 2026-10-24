@@ -41,6 +41,7 @@ function objectEntry(ctx, termId, objectName, spec) {
   const group = spec.outline ? outlineGroup(ctx, `term-lens:${termId}`, spec) : null;
   const note = spec.note ? ctx.annotation(spec.note, spec.notePosition ?? ORIGIN) : null;
   note?.setShow(false);
+  note?.el?.classList.add("s3d-lens-note");
   const label = spec.label ?? null;
   label?.setShow(false);
   return {

@@ -41,7 +41,7 @@ function element(document, tag, className, text) {
 }
 
 function paintBar(document, palette) {
-  const canvas = element(document, "canvas", "lens-legend-bar");
+  const canvas = element(document, "canvas", "term-lens-legend-bar");
   canvas.width = 1;
   canvas.height = BAR_ROWS;
   canvas.setAttribute("aria-hidden", "true");
@@ -55,13 +55,13 @@ function paintBar(document, palette) {
  * TeX source is shown as text.
  */
 export function createLensLegend({ document, model, katex = globalThis.katex }) {
-  const root = element(document, "div", "lens-legend");
+  const root = element(document, "div", "term-lens-legend");
   root.hidden = true;
   root.setAttribute("role", "img");
   root.setAttribute("aria-label", model.ariaLabel);
   root.dataset.termLensLegend = model.termId;
 
-  const equation = element(document, "div", "lens-legend-eq");
+  const equation = element(document, "div", "term-lens-legend-eq");
   let typeset = false;
   if (katex) {
     try { katex.render(model.tex, equation, { ...KATEX_OPTIONS, throwOnError: true }); typeset = true; }
@@ -69,15 +69,15 @@ export function createLensLegend({ document, model, katex = globalThis.katex }) 
   }
   if (!typeset) equation.textContent = model.tex;
 
-  const scale = element(document, "div", "lens-legend-scale");
-  scale.append(element(document, "span", "lens-legend-max", model.max), element(document, "span", "lens-legend-min", model.min));
-  const body = element(document, "div", "lens-legend-body");
+  const scale = element(document, "div", "term-lens-legend-scale");
+  scale.append(element(document, "span", "term-lens-legend-max", model.max), element(document, "span", "term-lens-legend-min", model.min));
+  const body = element(document, "div", "term-lens-legend-body");
   body.append(paintBar(document, model.palette), scale);
 
   root.append(
     equation, body,
-    element(document, "div", "lens-legend-unit", model.unit),
-    element(document, "div", "lens-legend-note", `${model.status} · ${model.note}`),
+    element(document, "div", "term-lens-legend-unit", model.unit),
+    element(document, "div", "term-lens-legend-note", `${model.status} · ${model.note}`),
   );
   return {
     element: root,

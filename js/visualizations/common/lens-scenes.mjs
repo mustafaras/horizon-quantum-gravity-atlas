@@ -33,7 +33,7 @@ export function circlePoints(radius, plane = "xz", segments = CIRCLE_SEGMENTS) {
 
 /* ---------- Kerr observatory ---------- */
 
-const KERR_NOTE = "r_s = 2GM/c² · coordinate sphere of a non-rotating hole, drawn unlensed · the Kerr horizon r₊ is smaller when a★ ≠ 0 (schematic)";
+const KERR_NOTE = "r_s = 2GM/c² · unlensed coordinate sphere, a★ = 0 (schematic)";
 
 /** `massSolar()` is the black-hole mass of the slider in solar masses. */
 async function attachKerrObservatory(ctx, { massSolar }) {

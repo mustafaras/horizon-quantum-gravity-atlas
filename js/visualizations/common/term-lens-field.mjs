@@ -53,17 +53,17 @@ export function buildFieldLayer({ sceneId, formula, termId, target, surface, nod
     if (!mask?.isNode) throw new ReferenceError(`term lens: scene ${sceneId} provides no node "${target.mask}" to mask term ${termId}`);
     weight = mix.mul(mask);
   }
+  // Built with the scene, before its first frame, so the first compile already holds the field; no needsUpdate.
   material.colorNode = TSL.mix(material.colorNode, TSL.vec4(color, 1), weight);
-  material.needsUpdate = true;
   state.uniforms[termId] = mix;
   state.palette[termId] = palette;
 
   return {
     uniform: mix,
     restore() {
+      // Runs when the scene is torn down, so the material is not compiled again.
       if (material.userData.termLens === state) {
         material.colorNode = state.base;
-        material.needsUpdate = true;
         delete material.userData.termLens;
       }
       palette.dispose();

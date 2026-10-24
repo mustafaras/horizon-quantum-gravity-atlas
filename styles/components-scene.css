@@ -38,6 +38,21 @@ select:focus { border-color: var(--acc); }
 .s3d-label.s3d-strong { font-family: var(--font-head); font-size: 12.5px; font-weight: 600; color: var(--head); }
 .s3d-label.s3d-quiet { background: none; border: none; color: rgba(170,195,230,0.75); }
 .s3d-annot { color: var(--gold); border-color: oklch(0.8 0.1 85 / 0.3); }
+/* Formula Lens (S10): a label the focused term points at, and the key of a painted field. Static: nothing animates. */
+/* The label layer and the canvas are both z-index: auto and the canvas comes later, so lens items need their own level to sit over opaque pixels. */
+.s3d-label.s3d-lens-on, .s3d-label.s3d-lens-note { z-index: 2; }
+.s3d-label.s3d-lens-on { color: var(--ink-strong); border-color: var(--ink-strong); box-shadow: 0 0 0 1px var(--ink-strong); }
+.term-lens-legend {
+  position: absolute; z-index: 2; left: 12px; bottom: 32px; display: grid; gap: 6px; max-width: min(260px, 70%); padding: 10px 12px;
+  background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; pointer-events: none;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+}
+.term-lens-legend[hidden] { display: none; }
+.term-lens-legend-eq { color: var(--ink-strong); overflow: hidden; }
+.term-lens-legend-body { display: flex; gap: 8px; height: 64px; }
+.term-lens-legend-bar { width: 12px; height: 100%; border-radius: 3px; }
+.term-lens-legend-scale { display: flex; flex-direction: column; justify-content: space-between; color: var(--ink-strong); }
+.term-lens-legend-note { color: var(--gold); }
 .s3d-hud {
   position: absolute; top: 10px; right: 10px; z-index: 5;
   display: flex; gap: 6px;
