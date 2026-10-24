@@ -835,17 +835,33 @@
       "findings": [
         "F-07"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s12-sm-neutrinos",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/73",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 841/842 pass, 1 skipped (new: test/neutrino.test.mjs 31 tests; formula-core library table +2 formulas; figure-plots ribbon cases)",
+          "npm run validate: passed (51 provenance entries, every caption registered); npm run qa:verify: 31 captures valid",
+          "npm run qa:test -- qa/specs/neutrino-lab.spec.mjs: 7/7 pass; figure-kit.spec: 10/10; a11y.spec: all views pass (the sm 'accessible names' check timed out once under load and passes alone, 11.8 s); provenance-layers (sm chips, seed) pass; smoke: all views mount; visual: capture sm-neutrino-lab and sm-neutrino-lab-mobile 2/2",
+          "full local qa:test not run (user agreed to leave it to CI, D-068)"
+        ],
+        "screenshots": [
+          "docs/screenshots/29-neutrino-flavour-lab.png",
+          "docs/screenshots/30-neutrino-flavour-lab-mobile.png"
+        ],
+        "measurements": [
+          "probability matrix rows and columns sum to 1 within 1e-12 over a 300-point grid (2 orderings, 5 energies, 5 baselines to 8000 km, 3 densities, nu and anti-nu)",
+          "exact exponential vs a Taylor-series matrix exponential: worst difference 3.3e-11 over the same grid, equal to the difference between two Taylor evaluations (reference-limited); vs the closed vacuum formula: below 1e-10",
+          "theta13 = 0, dm21 = 0 vs the two-flavour formula: below 1e-10; the two-flavour library formula agrees with the exact result to 1e-9",
+          "matter potential V = sqrt(2) G_F N_e: 9.92e-14 eV at rho = 2.6 g/cm^3, Y_e = 0.5, i.e. 7.63e-14 eV x Y_e rho within 0.5 per cent",
+          "1-3 MSW resonance energy 12.1 GeV at rho = 2.6 g/cm^3 (normal ordering, neutrinos); the argmax of P(nu_mu -> nu_e) in a constant-density scan equals E_res within the 1 per cent scan step",
+          "at the T2K design point (295 km, 0.6 GeV, 2.6 g/cm^3, NuFIT 6.0 NO, delta 212 deg): P_e 0.0517, P_mu 0.0085, P_tau 0.9397",
+          "js/mod-standard-model.jsx 639 -> 612 lines; needsUpdate sites 33 -> 33; Math.random sites 1 -> 1; colour literals unchanged; registerVisualization sites 11 -> 11"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1880,6 +1896,48 @@
       "prompt": "S11",
       "decision": "No visual baseline is refreshed (local-only, D-048). Every scene capture that shows backdrop stars changes on purpose: the stars now come from seededRng constants instead of Math.random (the QA bootstrap replaced Math.random with an xorshift stream, which no product path reads any more). Captures that include the atlas backdrop, the approaches, planck, standard-model, experiments and QFT scenes are affected.",
       "rationale": "The prompt asks for a one-line justification for captures whose content changes on purpose."
+    },
+    {
+      "id": "D-063",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "The NuFIT release could not be confirmed at nu-fit.org: the site was unreachable from the build environment (connection refused / 502). The values are those of Table 1 of NuFit-6.0 (Esteban, Gonzalez-Garcia, Maltoni, Martinez-Soler, Pinheiro & Schwetz, JHEP 12 (2024) 216, doi:10.1007/JHEP12(2024)216, arXiv:2410.05380v2, data up to September 2024), read twice (a summarised fetch and the LaTeX annotations of the raw HTML; they agree on every number). Both variants of the table are stored, IC19 without and IC24 with Super-Kamiokande atmospheric data; the lab uses the second, as the NuFIT page does by default. That 6.0 is the latest release is not verified; the data file says so and carries the retrieval date.",
+      "rationale": "The prompt asks for the current release verified at nu-fit.org; the published table is the primary source of the numbers and is what could be checked."
+    },
+    {
+      "id": "D-064",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "Presets, each read in the cited paper: T2K 295 km, flux peak about 0.6 GeV, crust density 2.6 g/cm^3 (Phys. Rev. D 103, 112008); NOvA 810 km, flux peak around 1.9 GeV (the plan says 2 GeV) and 2.84 g/cm^3 from CRUST2.0 (Phys. Rev. D 98, 032012); DUNE 1300 km, on-axis flux peak about 2.5 GeV and an average density of 2.8482 g/cm^3 (stated for the 1284.9 km chord) in the DUNE TDR Volume II; JUNO 52.5 km with a reference energy of 4 MeV and a typical matter density of 3 g/cm^3 (the plan says 2.6-2.8) from the matter-effect estimate of J. Phys. G 43, 030401. The 4 MeV is that paper's reference energy, not a quoted spectrum peak; the inverse-beta threshold in the same paper is 1.806 MeV.",
+      "rationale": "The prompt requires every value verified against the primary source; where the source differs, the source wins."
+    },
+    {
+      "id": "D-065",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "G_F = 1.1663787e-5 GeV^-2 and the atomic mass constant 1.66053906892e-24 g are the current values of the NIST Reference on Constants (retrieved 2026-10-24), not the CODATA 2018 set of the rest of the library; N_e = rho Y_e / m_u uses the atomic mass constant (the nucleon mass differs from it by under 1 per cent). hbar c is derived from the exact SI values of hbar, c and e; the 1.267 factor is derived in code and tested against 1/(4 hbar c).",
+      "rationale": "Same primary source for both; the 2018 and 2022 values of G_F differ by 1e-7 relative."
+    },
+    {
+      "id": "D-066",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "The eigendecomposition is analytic as planned, with one change: the trigonometric cubic gives the isolated eigenvalue to rounding but loses about 1e-8 on a coincident pair (acos near 1), which the theta13 = 0, dm21 = 0 test exposed. The isolated eigenvector is the cross product of two rows (as planned); the other two eigenpairs come from the exact 2 x 2 problem in the orthogonal plane. The tests compare with an independent Taylor-series matrix exponential; its hbar c must be the exact SI-derived value (a ten-digit literal gave 1e-8 at the 8000 km cases).",
+      "rationale": "Accuracy for degenerate spectra, found by a failing test before the change."
+    },
+    {
+      "id": "D-067",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "The two-flavour figure sm-neutrino-oscillation and its provenance entry are removed; the flavour ribbon has two entries (sm-neutrino-flavour-vacuum, established; sm-neutrino-flavour-matter, effective) and figure id sm-neutrino-flavour. The pigment tokens azure-80 and magenta-78, used only by the old figure, are deleted from styles/tokens.css (the orphan-token test requires it). qa/specs/figure-kit.spec.mjs follows the new id, axis label and title. The two-flavour limit stays as a Formula Core formula that the tests tie to the exact calculation.",
+      "rationale": "The prompt says replace the toy; nothing else reads the old ids."
+    },
+    {
+      "id": "D-068",
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "decision": "Local verification was narrowed to the changed area (the user agreed to leave the full browser suite to CI): npm test, validate, qa:verify, neutrino-lab, figure-kit, a11y, smoke, provenance-layers for sm and the seed test, and the two new visual captures. The a11y check 'view sm names every interactive control' timed out once while other specs ran and passed alone. The two new baselines (qa/baselines/sm-neutrino-lab.png, sm-neutrino-lab-mobile.png) are new, not refreshed; the desktop capture uses a 1600 x 2000 viewport so the tall lab is not covered by the sticky header, and the mobile capture is the figure element.",
+      "rationale": "The plan's acceptance list names tests; the full qa:test is CI's job on every PR that touches qa/."
     }
   ],
   "log": [
@@ -2127,6 +2185,20 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 71 merged as f446f74dd1b5d497ddc9dd5e55022a9b99c93476; CI (Browser QA 6m56s, Validate) green. F-02 and F-03 closed."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Branch claude/s12-sm-neutrinos from main da64adb."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "Three-flavour oscillations in matter done: exact exp(-iHL), NuFIT 6.0 data and four experiment presets, Formula Core entries, flavour ribbon, keyboard delta_CP dial, two captures; D-063 to D-068. F-07 is closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/73."
     }
   ]
 }

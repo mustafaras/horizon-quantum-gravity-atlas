@@ -451,33 +451,6 @@ function HiggsPotentialViz() {
   );
 }
 
-/* ---------- neutrino oscillations (real two-flavour vacuum formula) ---------- */
-function NeutrinoOscillationLab() {
-  const [dm2, setDm2] = useState(2.5e-3);   // Δm² (eV²), atmospheric default
-  const [s22t, setS22t] = useState(0.98);   // sin²2θ
-  // survival P(νμ→νμ) = 1 − sin²2θ sin²(1.27 Δm²[eV²] (L/E)[km/GeV]); appearance is the complement
-  const spec = useMemo(() => window.QGA_FIGURE.plots.sm.neutrinoOscillationSpec({ dm2, s22t }), [dm2, s22t]);
-  return (
-    <div className="viz-frame">
-      <div className="viz-toolbar">
-        <SliderRow label="Δm²" min={0.5e-3} max={4e-3} step={0.05e-3} value={dm2} onChange={setDm2}
-          format={(v) => (v * 1e3).toFixed(2) + "×10⁻³ eV²"}></SliderRow>
-        <SliderRow label="sin²2θ" min={0} max={1} step={0.01} value={s22t} onChange={setS22t}
-          format={(v) => v.toFixed(2)}></SliderRow>
-        <button className="btn" onClick={() => { setDm2(2.5e-3); setS22t(0.98); }}>Atmospheric (real)</button>
-      </div>
-      <Figure spec={spec}>
-        Real two-flavour vacuum oscillation: <Eq tex="P(\nu_\mu\!\to\!\nu_\tau) = \sin^2 2\theta\,\sin^2\!\big(1.27\,\Delta m^2\,[\mathrm{eV}^2]\,L[\mathrm{km}]/E[\mathrm{GeV}]\big)"></Eq>.
-        Because the probability depends on <Eq tex="\Delta m^2"></Eq>, oscillation <em>proves neutrinos have mass</em> —
-        the one laboratory-confirmed departure from the minimal Standard Model, and a direct hint that the lepton
-        sector mixes just as quarks do. Defaults are the measured atmospheric values
-        (<Eq tex="\Delta m^2_{32}\approx2.5\times10^{-3}\,\mathrm{eV}^2,\ \sin^2 2\theta_{23}\approx0.98"></Eq>); the
-        dashed line marks the T2K baseline. <span className="dim">Two-flavour approximation; the full picture is the three-flavour PMNS matrix at right.</span>
-      </Figure>
-    </div>
-  );
-}
-
 /* ---------- PMNS & CKM mixing-matrix magnitudes (PDG / NuFIT) ---------- */
 const CKM_MAG = [[0.97435, 0.22500, 0.00369], [0.22486, 0.97349, 0.04182], [0.00857, 0.04110, 0.999118]];
 const PMNS_MAG = [[0.821, 0.550, 0.150], [0.376, 0.610, 0.697], [0.428, 0.580, 0.701]];
@@ -570,7 +543,7 @@ function ModuleSM({ go }) {
           neutrino oscillations — flavor that changes with distance, which is only possible if neutrinos have mass.
           This is the single confirmed crack in the minimal Standard Model.
         </p>
-        <NeutrinoOscillationLab></NeutrinoOscillationLab>
+        <NeutrinoLab></NeutrinoLab>
         <div style={{ marginTop: 14 }}>
           <MixingMatrices></MixingMatrices>
         </div>

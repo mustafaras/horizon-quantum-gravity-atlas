@@ -1,6 +1,7 @@
 // Plot builders: pure functions from controls to a figure() spec, one per migrated figure.
 
 export * as sm from "./sm.mjs";
+export * as neutrino from "./neutrino.mjs";
 export * as bh from "./bh.mjs";
 export * as gr from "./gr.mjs";
 export * as rg from "./rg.mjs";

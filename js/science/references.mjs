@@ -61,6 +61,15 @@ export const REF = Object.freeze({
   BLANDFORD_ZNAJEK: "Blandford & Znajek, Electromagnetic extraction of energy from Kerr black holes, Mon. Not. R. Astron. Soc. 179, 433 (1977), doi:10.1093/mnras/179.3.433",
   TCHEKHOVSKOY: "Tchekhovskoy, Narayan & McKinney, Black hole spin and the radio loud/quiet dichotomy of active galactic nuclei, Astrophys. J. 711, 50 (2010), doi:10.1088/0004-637X/711/1/50",
   MCKINNEY_NARAYAN: "McKinney & Narayan, Disc-jet coupling in black hole accretion systems - I. General relativistic magnetohydrodynamical models, Mon. Not. R. Astron. Soc. 375, 513 (2007), doi:10.1111/j.1365-2966.2006.11301.x",
+  NUFIT_6: "Esteban, Gonzalez-Garcia, Maltoni, Martinez-Soler, Pinheiro & Schwetz, NuFit-6.0: updated global analysis of three-flavor neutrino oscillations, JHEP 12 (2024) 216, doi:10.1007/JHEP12(2024)216, arXiv:2410.05380",
+  T2K_2021: "T2K Collaboration, Improved constraints on neutrino mixing from the T2K experiment with 3.13e21 protons on target, Phys. Rev. D 103, 112008 (2021), doi:10.1103/PhysRevD.103.112008, arXiv:2101.03779",
+  NOVA_2018: "NOvA Collaboration, New constraints on oscillation parameters from nu_e appearance and nu_mu disappearance in the NOvA experiment, Phys. Rev. D 98, 032012 (2018), doi:10.1103/PhysRevD.98.032012, arXiv:1806.00096",
+  DUNE_TDR: "DUNE Collaboration, Deep Underground Neutrino Experiment (DUNE), Far Detector Technical Design Report, Volume II: DUNE Physics (2020), arXiv:2002.03005",
+  JUNO_2016: "JUNO Collaboration, Neutrino physics with JUNO, J. Phys. G 43, 030401 (2016), doi:10.1088/0954-3899/43/3/030401, arXiv:1507.05613",
+  WOLFENSTEIN: "Wolfenstein, Neutrino oscillations in matter, Phys. Rev. D 17, 2369 (1978), doi:10.1103/PhysRevD.17.2369",
+  BARGER_1980: "Barger, Whisnant, Pakvasa & Phillips, Matter effects on three-neutrino oscillations, Phys. Rev. D 22, 2718 (1980), doi:10.1103/PhysRevD.22.2718",
+  MNS_1962: "Maki, Nakagawa & Sakata, Remarks on the unified model of elementary particles, Prog. Theor. Phys. 28, 870 (1962), doi:10.1143/PTP.28.870",
+  NIST_CONSTANTS: "NIST Reference on Constants, Units, and Uncertainty (CODATA recommended values: Fermi coupling constant, atomic mass constant), retrieved 2026-10-24, https://physics.nist.gov/cgi-bin/cuu/Value?gf",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 

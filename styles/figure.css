@@ -48,3 +48,23 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .prov-class-decoration { color: var(--ink-dim); }
 @media (prefers-reduced-motion: no-preference) { .prov-drawer { animation: prov-in var(--dur-quick) var(--ease-out-quart); } }
 @keyframes prov-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Neutrino lab (S12): the delta_CP dial, the control rows and the readouts. */
+.nu-bar { gap: 10px; }
+.btn.nu-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
+.nu-btn .katex { font-size: 1em; }
+.nu-controls { align-items: flex-start; }
+.nu-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.nu-dial-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nu-dial { width: 132px; height: 132px; cursor: pointer; touch-action: none; border-radius: 50%; }
+.nu-dial:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.nu-dial-ring { fill: none; stroke: var(--ink-faint); stroke-width: 1; }
+.nu-dial-tick { stroke: var(--ink-dim); stroke-width: 0.8; }
+.nu-dial-tick.major { stroke: var(--ink); stroke-width: 1.2; }
+.nu-dial-label { fill: var(--ink-dim); font: 8px var(--font-mono); }
+.nu-dial-band { fill: none; stroke: var(--accent-2); stroke-width: 3; opacity: 0.55; }
+.nu-dial-hand { stroke: var(--accent); stroke-width: 1.4; }
+.nu-dial-knob { fill: var(--surface-2); stroke: var(--accent); stroke-width: 2; }
+.nu-dial-readout { font: var(--step--1) var(--font-mono); color: var(--ink); }
+.nu-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
+.nu-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }

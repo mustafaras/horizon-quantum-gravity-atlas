@@ -6,7 +6,7 @@ import { gotoReady } from "./helpers.mjs";
 
 const WIDTHS = [320, 480, 640, 768, 1024, 1200, 1280, 1440];
 const VIEWS = [
-  { view: "sm", figures: ["sm-higgs-potential", "sm-neutrino-oscillation"] },
+  { view: "sm", figures: ["sm-higgs-potential", "sm-neutrino-flavour"] },
   { view: "bh", figures: ["bh-kerr-radii", "bh-hawking-spectrum", "bh-page-curve"] },
   { view: "gr", figures: ["gr-effective-potential", "gr-null-geodesics", "gr-lensed-sky"] },
   { view: "rg&rgp=qcd", figures: ["rg-scale-trajectory", "rg-beta-function"] },
@@ -86,13 +86,13 @@ for (const { view, figures } of VIEWS) {
 
 test("keyboard moves the crosshair along the focal series; Home and End jump to the ends", async ({ page }) => {
   await gotoReady(page, "/?view=sm");
-  const plot = page.locator('.fig[data-figure="sm-neutrino-oscillation"] .fig-plot');
-  const readout = page.locator('.fig[data-figure="sm-neutrino-oscillation"] .fig-readout');
+  const plot = page.locator('.fig[data-figure="sm-neutrino-flavour"] .fig-plot');
+  const readout = page.locator('.fig[data-figure="sm-neutrino-flavour"] .fig-readout');
   await plot.scrollIntoViewIfNeeded();
   await plot.focus();
   await expect(readout).toHaveText("");
   await page.keyboard.press("Home");
-  await expect(readout).toContainText("L/E [km/GeV] = 0,");
+  await expect(readout).toContainText("E [GeV] = 0.1,");
   const first = await readout.textContent();
   await page.keyboard.press("ArrowRight");
   const second = await readout.textContent();
@@ -100,7 +100,7 @@ test("keyboard moves the crosshair along the focal series; Home and End jump to 
   await page.keyboard.press("Shift+ArrowRight");
   await expect(readout).not.toHaveText(second);
   await page.keyboard.press("End");
-  await expect(readout).toContainText("L/E [km/GeV] = 1200,");
+  await expect(readout).toContainText("E [GeV] = 2,");
   await expect(plot.locator(".fig-cross-dot")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(readout).toHaveText("");
@@ -108,13 +108,13 @@ test("keyboard moves the crosshair along the focal series; Home and End jump to 
 
 test("the Data disclosure lists at most 200 decimated rows and the summary names the figure", async ({ page }) => {
   await gotoReady(page, "/?view=sm");
-  const fig = page.locator('.fig[data-figure="sm-neutrino-oscillation"]');
+  const fig = page.locator('.fig[data-figure="sm-neutrino-flavour"]');
   await fig.scrollIntoViewIfNeeded();
   await fig.locator(".fig-data > summary").click();
   const rows = fig.locator(".fig-table tbody tr");
   await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeLessThanOrEqual(200);
-  await expect(fig.locator(".fig-summary")).toContainText("Neutrino oscillation probability");
+  await expect(fig.locator(".fig-summary")).toContainText("Flavour ribbon");
   const box = await fig.locator(".fig-data > summary").boundingBox();
   expect(box.height).toBeGreaterThanOrEqual(44);
 });
@@ -134,8 +134,8 @@ test("RG scale plot stays a keyboard slider and selects the scale", async ({ pag
 
 test("theme change repaints figures without errors", async ({ page }) => {
   const errors = await gotoReady(page, "/?view=sm");
-  await page.locator('.fig[data-figure="sm-neutrino-oscillation"]').scrollIntoViewIfNeeded();
+  await page.locator('.fig[data-figure="sm-neutrino-flavour"]').scrollIntoViewIfNeeded();
   await page.evaluate(() => document.dispatchEvent(new CustomEvent("qga:theme")));
-  await expect(page.locator('.fig[data-figure="sm-neutrino-oscillation"] canvas')).toBeVisible();
+  await expect(page.locator('.fig[data-figure="sm-neutrino-flavour"] canvas')).toBeVisible();
   expect(errors()).toEqual([]);
 });
