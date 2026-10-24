@@ -161,11 +161,11 @@
       "id": "F-08",
       "title": "Higgs potential in toy units; no vacuum-stability story",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S13"
       ],
-      "closedIn": null
+      "closedIn": "1292d106224e346f46835a6d97d354f8db6cf504"
     },
     {
       "id": "F-09",
@@ -878,13 +878,15 @@
       "findings": [
         "F-08"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s13-sm-higgs",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/75",
-      "commits": [],
+      "commits": [
+        "1292d106224e346f46835a6d97d354f8db6cf504"
+      ],
       "startedAt": "2026-10-24",
-      "completedAt": null,
+      "completedAt": "2026-10-24",
       "evidence": {
         "tests": [
           "npm test: 868/869 pass, 1 skipped (new: test/higgs.test.mjs 20 tests, test/mexican-hat.test.mjs 7; figure-plots +2 cases; formula-core library table +2 formulas)",
@@ -2267,6 +2269,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "Physical Higgs potential and vacuum stability done: PDG 2026 inputs, two-loop running verified against Buttazzo et al. eq. (61), TSL Mexican hat from the Formula Core potential, lambda(mu) and stability figures, Higgs lab; D-069 to D-072. F-08 is closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/75."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S13",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 75 merged as 1292d106224e346f46835a6d97d354f8db6cf504; CI (Browser QA 4m24s, Validate) green. F-08 closed."
     }
   ]
 }
