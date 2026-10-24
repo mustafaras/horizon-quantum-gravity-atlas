@@ -438,6 +438,7 @@ function BlackHoleLab3D() {
       wantsVolume,
     });
     scene.add(runtime.mesh);
+    await window.QGA_TERM_LENS.attach("kerr-observatory", ctx, { massSolar: () => Math.pow(10, logRef.current) });
     let lastLens = { tanHalfFov: 0.35, aspect: 1.6 };
     let lastPlan = null;
     let settleTimer = 0;
@@ -889,8 +890,7 @@ function ModuleBH({ go }) {
         </p>
         <BlackHoleLab3D></BlackHoleLab3D>
         <div className="formula-grid" style={{ marginTop: 16 }}>
-          <FormulaCard title="Schwarzschild radius" status="established"
-            tex="r_s = \frac{2GM}{c^2}"
+          <FormulaCard title="Schwarzschild radius" status="established" formulaId="schwarzschild-radius"
             symbols={[
               { s: "M", d: "Black hole mass." },
               { s: "r_s", d: "Horizon radius for a non-rotating, uncharged black hole: ≈ 3 km per solar mass." },

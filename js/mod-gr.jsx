@@ -1274,6 +1274,7 @@ function ModuleGR({ go }) {
           differences (precession, light bending by the full relativistic factor) are measurable.
         </p>
         <CurvatureEngine3D></CurvatureEngine3D>
+        <div className="formula-grid" style={{ marginTop: 16 }}><NewtonianLimitCard></NewtonianLimitCard></div>
       </Section>
 
       <Section title="Mathematical formulation">
@@ -1318,5 +1319,4 @@ function ModuleGR({ go }) {
     </article>
   );
 }
-
 window.ModuleGR = ModuleGR;

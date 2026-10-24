@@ -58,7 +58,7 @@ function ScaleLadder() {
   const [logL, setLogL] = useState(-10);
   const logRef = useRef(logL); logRef.current = logL;
 
-  const build = (ctx) => {
+  const build = async (ctx) => {
     const { THREE, scene } = ctx;
     scene.fog = new THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.016);
     scene.add(new THREE.AmbientLight(QGA_TOKENS.hex("pigment-blue-68"), 0.6));
@@ -127,7 +127,7 @@ function ScaleLadder() {
       const lp = { x: 2.05, y: ring.position.y, z: 0 };
       ctx.label(s.name.split(" — ")[0], () => lp, "s3d-quiet");
     }
-
+    await window.QGA_TERM_LENS.attach("planck-descent", ctx, { rings });
     const probe = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16),
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-cyan-89-c07") }));
     scene.add(probe);
@@ -382,8 +382,8 @@ function ModulePlanck({ go }) {
           parameter reaches unity.
         </p>
         <div className="formula-grid">
-          <FormulaCard title="Planck units" status="established"
-            tex="l_P = \sqrt{\frac{\hbar G}{c^3}} \approx 1.6\times10^{-35}\,\mathrm{m}, \quad E_P = \sqrt{\frac{\hbar c^5}{G}} \approx 1.22\times10^{19}\,\mathrm{GeV}"
+          <FormulaCard title="Planck units" status="established" formulaId="planck-length"
+            texAfter="\approx 1.6\times10^{-35}\,\mathrm{m}, \quad E_P = \sqrt{\frac{\hbar c^5}{G}} \approx 1.22\times10^{19}\,\mathrm{GeV}"
             symbols={[
               { s: "l_P", d: "Planck length — the unique length built from ħ, G, c. Also: the Schwarzschild radius of a Planck-mass black hole, up to O(1) factors." },
               { s: "E_P", d: "Planck energy (≈ 2 GJ — a lightning bolt's energy in a single quantum). Planck mass m_P ≈ 2.18×10⁻⁸ kg." },

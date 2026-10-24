@@ -58,3 +58,18 @@ test("compare-camera payloads validate finite numbers and sides", () => {
   assert.throws(() => bus.publish("compare-camera", { side: "A", radius: Number.NaN, theta: 0, phi: 0 }), /finite/);
   assert.throws(() => bus.on("unknown", () => {}), /unknown type/);
 });
+
+test("formula-term carries a typed formula term: ids, a finite value and a unit", () => {
+  const bus = createConceptBus();
+  const seen = [];
+  bus.on("formula-term", (payload) => seen.push(payload));
+  bus.publish("formula-term", { formulaId: "schwarzschild-radius", termId: "r_s", value: 2953.25, unit: "m" });
+  assert.deepEqual({ ...seen[0] }, { formulaId: "schwarzschild-radius", termId: "r_s", value: 2953.25, unit: "m" });
+  assert.throws(() => bus.publish("formula-term", { formulaId: "", termId: "r_s", value: 1, unit: "m" }), /formulaId/);
+  assert.throws(() => bus.publish("formula-term", { formulaId: "f", termId: "", value: 1, unit: "m" }), /termId/);
+  assert.throws(() => bus.publish("formula-term", { formulaId: "f", termId: "t", value: Number.NaN, unit: "m" }), /value.*finite/);
+  assert.throws(() => bus.publish("formula-term", { formulaId: "f", termId: "t", value: "2", unit: "m" }), /value.*finite/);
+  assert.throws(() => bus.publish("formula-term", { formulaId: "f", termId: "t", value: 1 }), /unit/);
+  assert.throws(() => bus.publish("formula-term", { formulaId: "f", termId: "t", value: 1, unit: "m", extra: true }), /does not declare/);
+  assert.equal(bus.validate("formula-term", { formulaId: "f", termId: "t", value: 0, unit: "1" }).ok, true, "zero is a value");
+});

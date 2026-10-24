@@ -234,11 +234,16 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     labelLayer.className = "s3d-labels";
     mount.appendChild(labelLayer);
     let resourcesReleased = false, initPromise = null, spaceBridge = null;
+    const disposers = [];
     stop = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
       if (spaceBridge) { window.QGA_CINEMATIC.unregisterSpace(shotSpace, spaceBridge); spaceBridge = null; }
       const releaseScene = () => {
+        for (const release of disposers.splice(0)) {
+          try { release(); }
+          catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
+        }
         if (built.dispose) {
           try { built.dispose(); }
           catch (error) { QGA_RENDER.renderDiagnostics.message(diagnosticId, `Scene cleanup failed: ${error.message}`); }
@@ -348,6 +353,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       annotation: makeLabel(true),
       glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: (size, divisions, color, opacity) => s3dGrid(size, divisions, color, opacity, ctx.engraved),
       engraved: null,
+      // Formula Lens (S10): DOM that sits over the stage (it dies with the label layer), and cleanup that runs with the scene.
+      mountOverlay: (element) => labelLayer.appendChild(element),
+      onDispose: (release) => { disposers.push(release); },
       conceptTarget: (id, target) => {
         if (typeof id !== "string" || !id || !target || !target.object) {
           throw new TypeError("conceptTarget(id, { object, readout? }) requires an id and an object");

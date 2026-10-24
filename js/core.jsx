@@ -149,10 +149,20 @@ function Badge({ kind }) {
 // Hover, keyboard focus and click all highlight the matching scene object
 // (when the mounted scene registered one) and surface its live numerical
 // value + unit. Unknown mappings do nothing visible — by design.
-function FormulaCard({ title, tex, status, symbols = [], meaning, limits }) {
+function FormulaCard({ title, tex, status, symbols = [], meaning, limits, formulaId, texAfter }) {
   const [open, setOpen] = useState(false);
   const [readout, setReadout] = useState(null);
+  const [termReadout, setTermReadout] = useState(null);
   const rootRef = useRef(null);
+  const eqRef = useRef(null);
+  // Formula Lens (S10): with a formulaId the equation is the Formula Core TeX (its \htmlData terms are focusable and
+  // drive the scene through the ConceptBus); `texAfter` appends TeX the formula does not hold. Without it nothing changes.
+  const formula = formulaId ? (window.QGA_FORMULA?.lens.formula(formulaId) ?? null) : null;
+  const cardTex = formula ? formula.output.tex + " = " + formula.tex + (texAfter || "") : tex;
+  useEffect(() => {
+    if (!formula || !eqRef.current) return undefined;
+    return window.QGA_LINKING.attachFormulaTerms({ container: eqRef.current, formula, onReadout: setTermReadout });
+  }, [formula]);
   const reveal = useCallback(() => {
     setOpen(true);
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -189,15 +199,30 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits }) {
     return () => { offReadout(); offClear(); };
   }, []); // eslint-disable-line
   return (
-    <div className={"formula-card" + (open ? " open" : "")} data-qga-formula={title} ref={rootRef}>
+    <div className={"formula-card" + (open ? " open" : "") + (formula ? " fc-lens" : "")} data-qga-formula={title} ref={rootRef}>
       <button className="fc-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <div className="fc-title-row">
           <span className="fc-title">{title}</span>
           {status ? <Badge kind={status}></Badge> : null}
         </div>
-        <div className="fc-eq"><Eq tex={tex} display={true}></Eq></div>
+        {formula ? null : <div className="fc-eq"><Eq tex={cardTex} display={true}></Eq></div>}
         <span className="fc-hint">{open ? "− collapse lens" : "+ formula lens · symbols & meaning"}</span>
       </button>
+      {formula ? (
+        <React.Fragment>
+          {/* Outside the button: the terms are controls of their own and may not nest in one. */}
+          <div className="fc-eq fc-eq-lens" ref={eqRef} role="group" aria-label={title + ": equation, terms are interactive"}>
+            <Eq tex={cardTex} display={true}></Eq>
+          </div>
+          <div className="fc-lens-readout" role="status" aria-live="polite">
+            {termReadout ? (
+              <React.Fragment>
+                <span className="fc-lens-label">{termReadout.label}</span> = <strong>{termReadout.value}</strong>{termReadout.unit ? " " + termReadout.unit : ""}
+              </React.Fragment>
+            ) : null}
+          </div>
+        </React.Fragment>
+      ) : null}
       {open ? (
         <div className="fc-body">
           {symbols.length > 0 ? (

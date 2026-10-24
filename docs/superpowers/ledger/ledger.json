@@ -746,17 +746,39 @@
       "findings": [
         "F-26"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s10-formula-lens",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/66",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 769/770 pass, 1 skipped (new: test/formula-lens 21, formula-terms 7, term-lens 15, formula-lens-scenes 8, concept-bus +1 = 52 tests; formula-core dims table +1 formula)",
+          "npm run validate: passed",
+          "npm run qa:test -- qa/specs/formula-lens.spec.mjs qa/specs/premium-interactions.spec.mjs: 16/16 pass locally (WebGL2 backend)",
+          "a11y 'accessible names' for bh, paper, compare timed out under load in the full run and pass alone (9.6 s, 5.0 s, 9.6 s)"
+        ],
+        "screenshots": [
+          "docs/screenshots/formula-lens-kerr-r_s.png",
+          "docs/screenshots/formula-lens-kerr-M.png",
+          "docs/screenshots/formula-lens-gr-potential.png",
+          "docs/screenshots/formula-lens-planck-G.png",
+          "docs/screenshots/formula-lens-planck-hbar.png",
+          "docs/screenshots/formula-lens-kerr-r_s-card.png",
+          "docs/screenshots/formula-lens-kerr-M-card.png",
+          "docs/screenshots/formula-lens-gr-potential-card.png",
+          "docs/screenshots/formula-lens-planck-G-card.png",
+          "docs/screenshots/formula-lens-planck-hbar-card.png"
+        ],
+        "measurements": [
+          "WebGL programs linked while focusing/blurring the potential term twice, and while showing the three Planck gates: 0 (baseline: 25 at load)",
+          "GR well canvas after blur vs before focus: identical FNV-1a hash (4084972173), differs while focused",
+          "GR field range from the formula over the slider corners: -5.5 to -0.0647 (Phi/c^2 = -GM/(rc^2), GM 0.55-5.5, r 1-8.5)",
+          "term hit area >= 44 x 44 px; running animations while a term is highlighted (reduced motion): 0",
+          "mod-blackholes.jsx 961 -> 961, mod-planck.jsx 451 -> 451, mod-gr.jsx 1322 -> 1322 lines; needsUpdate sites unchanged (33)"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1751,6 +1773,62 @@
       "prompt": "S09",
       "decision": "Perf: scene build and canvas redraw run on change only (no per-frame loop). The GW strain and spectrogram panels rebuild their scene while the playhead moves; the spectrogram colour map uses a 256-entry byte table, so no per-cell allocation. Math.random is not used by any figure module.",
       "rationale": "Keeps the no-allocation rule for render loops."
+    },
+    {
+      "id": "D-050",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "Library terms: M is a term inside r_s; hbar, G, c are terms inside l_P; new formula newtonian-potential (Phi/c^2 = -GM/(r c^2)) added to the library for the GR field. Values of r_s and l_P are unchanged (term is transparent in JS and TSL). Einstein 1916 (Ann. Phys. 354, 769, doi:10.1002/andp.19163540702) checked against Crossref (title, journal, volume, pages, year); the section number was not verifiable offline and is not cited.",
+      "rationale": "The prompt binds terms that did not exist yet; every citation must be verified against the source."
+    },
+    {
+      "id": "D-051",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "The association of a Planck constant with a decade gate is didactic: hbar -> atomic gate (1e-10 m), c -> nuclear gate (1e-15 m), G -> Planck gate (1e-35 m). Each outline carries the note 'schematic association', the provenance entry is schematic, and test/formula-lens-scenes.test.mjs checks what can be checked (ladder wording, probe energy hbar c / l = 0.2 GeV at 1e-15 m, decade of l_P and of the Bohr radius). Reading the decade of each constant's own SI value was rejected as numerology.",
+      "rationale": "The prompt does not say how a constant maps to a gate; no literal reading is physically meaningful, so the mapping follows the card's own sentence and the ladder's notes and says what it is."
+    },
+    {
+      "id": "D-052",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "Kerr observatory: r_s is drawn as three great circles of radius 2 GM/c^2 (the term evaluated with M = 1), an unlensed coordinate sphere with the note 'a* = 0 (schematic)', not as the Kerr horizon r_+; M is a label read from the mass slider. The ray-traced image is not touched.",
+      "rationale": "The scene is a ray-traced full-screen quad with no horizon object; r_s is exact, r_+ differs for a nonzero spin."
+    },
+    {
+      "id": "D-053",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "GR field: Phi/c^2 over the well with G = c = 1 and lengths in scene units (GM = 0.55 x mass slider, now one constant GM_SCALE). The colour range is the term evaluated over the corners of the mass slider and visible radii (-5.5 to -0.065), not a hand-tuned number, and the legend says 'schematic scale'. A new card 'Newtonian limit' (js/labs/lens-cards.jsx) carries the term because no existing GR card holds it. The field is multiplied by the well's rim fade (field target option mask) so it has no hard plate edge.",
+      "rationale": "The prompt names 'the Newtonian potential term' but the module had no such formula; the well height is a softened embedding, so the scale is honestly schematic."
+    },
+    {
+      "id": "D-054",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "Lens cards render the equation outside the fc-head button (a button may not contain the focusable terms); Enter, Space or a click pins a term and Escape drops it; hover and focus alone show it. Pinning is needed because a card can be far from its scene and a scene scrolled out of view stops drawing.",
+      "rationale": "Nested interactive content fails accessibility; the prompt asks for focusable terms and touch targets of 44 px."
+    },
+    {
+      "id": "D-055",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "The label layer and the canvas are both z-index auto and the canvas is later in the DOM, so labels paint under opaque pixels. Only lens items (legend, notes, highlighted label) get z-index 2; existing labels are not changed. Legend classes are term-lens-legend* because .lens-legend already styles the lensed-sky plot legend.",
+      "rationale": "Found by measuring the legend over opaque pixels; changing every label's stacking would change existing captures."
+    },
+    {
+      "id": "D-056",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "Test method: the GR field and the Kerr outline are proved by exact FNV-1a hashes of the full capture (reduced motion, paused scene) and a WebGL linkProgram counter (0 programs linked while using the lens). The Planck descent is proved in the scene graph, because its probe glow pulses with the scene clock on every frame (existing behaviour: pulse = 1 + 0.08 sin(3t) ignores the motion setting), so its canvas never repeats exactly.",
+      "rationale": "A hash there would measure the scene's own pulse instead of the lens."
+    },
+    {
+      "id": "D-057",
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "decision": "No visual baseline is refreshed (they are local-only and not reproducible here, D-048). The only capture whose content changes on purpose is gr-curvature-lensing: its section now ends with the Newtonian-limit card. The lens is hidden by default, so every other scene capture is unchanged. js/mod-blackholes.jsx, mod-planck.jsx and mod-gr.jsx changed by the same number of lines they lost (net 0); two needsUpdate sites were removed again so the F-27 counter does not grow; registerVisualization call sites go 9 -> 10 (three lens entries toward F-02).",
+      "rationale": "The prompt requires a justification per refreshed baseline and forbids growing mod-*.jsx."
     }
   ],
   "log": [
@@ -1956,6 +2034,20 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "done",
       "detail": "PR 64 merged as 39d17f4aa8d34b80afb958e9f44c09acf8a24549; F-06 closed in it."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claim",
+      "detail": "S10 claimed on claude/s10-formula-lens from main 08fcafb."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "Formula Lens done: lens registry, formula-term event, FormulaCard terms, scene helper, three scene wirings, Newtonian-limit card, docs and QA spec; D-050 to D-057. F-26 stays closed (closedBy S03, S10). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/66."
     }
   ]
 }

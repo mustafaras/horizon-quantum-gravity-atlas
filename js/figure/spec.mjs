@@ -33,7 +33,7 @@ export function texToPlain(tex) {
     .replace(/\\([A-Za-z]+)/g, (_, name) => GREEK[name] ?? ({ to: "→", times: "×", cdot: "·", pm: "±", infty: "∞", approx: "≈", hbar: "ħ", partial: "∂", langle: "⟨", rangle: "⟩", neq: "≠", ne: "≠", leq: "≤", geq: "≥", sqrt: "√", ell: "ℓ", ln: "ln", log: "log", sin: "sin", cos: "cos", exp: "exp" })[name] ?? name)
     .replace(/[{}]/g, "").replace(/\^/g, "^").replace(/\s+/g, " ").trim();
 }
-const GREEK = Object.fromEntries("alpha α,beta β,gamma γ,delta δ,epsilon ε,theta θ,lambda λ,mu μ,nu ν,pi π,rho ρ,sigma σ,tau τ,phi φ,omega ω,Delta Δ,Gamma Γ,Omega Ω,Lambda Λ,Sigma Σ,Theta Θ".split(",").map((s) => s.split(" ")));
+const GREEK = Object.fromEntries("alpha α,beta β,gamma γ,delta δ,epsilon ε,theta θ,lambda λ,mu μ,nu ν,pi π,rho ρ,sigma σ,tau τ,phi φ,omega ω,Delta Δ,Gamma Γ,Omega Ω,Lambda Λ,Sigma Σ,Theta Θ,Phi Φ,Psi Ψ".split(",").map((s) => s.split(" ")));
 
 /**
  * A label is `{ tex }`, `{ text }` (ASCII words only) or `{ formula, symbol }` (a Formula Core
