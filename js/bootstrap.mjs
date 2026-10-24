@@ -204,6 +204,20 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Higgs lab (S13): the potential, the running of the couplings and the PDG inputs behind js/labs/higgs-lab.jsx; the TSL
+    // Mexican hat loads on demand with the first scene that builds it.
+    const higgs = await import("./science/higgs.mjs");
+    const higgsRunning = await import("./science/higgs-running.mjs");
+    const pdg = await import("./science/data/pdg.mjs");
+    Object.defineProperty(window, "QGA_HIGGS", {
+      value: Object.freeze({ ...higgs, ...higgsRunning, PDG: pdg.PDG, PDG_SOURCE: pdg.PDG_SOURCE, PDG_OMITTED: pdg.PDG_OMITTED }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_SM_VIZ", {
+      value: Object.freeze({ loadMexicanHat: () => import("./visualizations/sm/mexican-hat.mjs") }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

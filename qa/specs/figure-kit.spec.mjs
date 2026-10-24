@@ -6,7 +6,7 @@ import { gotoReady } from "./helpers.mjs";
 
 const WIDTHS = [320, 480, 640, 768, 1024, 1200, 1280, 1440];
 const VIEWS = [
-  { view: "sm", figures: ["sm-higgs-potential", "sm-neutrino-flavour"] },
+  { view: "sm", figures: ["sm-higgs-running", "sm-higgs-stability", "sm-neutrino-flavour"] },
   { view: "bh", figures: ["bh-kerr-radii", "bh-hawking-spectrum", "bh-page-curve"] },
   { view: "gr", figures: ["gr-effective-potential", "gr-null-geodesics", "gr-lensed-sky"] },
   { view: "rg&rgp=qcd", figures: ["rg-scale-trajectory", "rg-beta-function"] },

@@ -433,24 +433,6 @@ function GaugeSectors() {
   );
 }
 
-function HiggsPotentialViz() {
-  const [mu2, setMu2] = useState(-1); // sign-flipped mass parameter: negative → broken phase
-  const spec = useMemo(() => window.QGA_FIGURE.plots.sm.higgsPotentialSpec({ mu2 }), [mu2]);
-  return (
-    <div className="viz-frame">
-      <div className="viz-toolbar">
-        <SliderRow label="μ² parameter" min={-1} max={1} step={0.01} value={mu2} onChange={setMu2}
-          format={(v) => (v < 0 ? "μ² < 0" : v > 0 ? "μ² > 0" : "μ² = 0")}></SliderRow>
-        <span className="ctl-label">{mu2 < 0 ? "broken phase — Higgs mechanism active" : "unbroken phase"}</span>
-      </div>
-      <Figure spec={spec}>
-        Radial slice of the Higgs potential V(φ) = μ²|φ|² + λ|φ|⁴. Drag μ² negative to watch the symmetric vacuum
-        destabilize into the “Mexican hat” minimum at |φ| = v. The marker tracks the vacuum state.
-      </Figure>
-    </div>
-  );
-}
-
 /* ---------- PMNS & CKM mixing-matrix magnitudes (PDG / NuFIT) ---------- */
 const CKM_MAG = [[0.97435, 0.22500, 0.00369], [0.22486, 0.97349, 0.04182], [0.00857, 0.04110, 0.999118]];
 const PMNS_MAG = [[0.821, 0.550, 0.150], [0.376, 0.610, 0.697], [0.428, 0.580, 0.701]];
@@ -532,7 +514,7 @@ function ModuleSM({ go }) {
           unstable, and the field settles into a vacuum with <Eq tex="\langle\phi\rangle = v \approx 246\ \mathrm{GeV}"></Eq>.
           Particles interacting with this background acquire effective masses while the underlying equations remain symmetric.
         </p>
-        <HiggsPotentialViz></HiggsPotentialViz>
+        <HiggsLab go={go}></HiggsLab>
       </Section>
 
       <Section title="Flavor mixing and neutrino oscillations">

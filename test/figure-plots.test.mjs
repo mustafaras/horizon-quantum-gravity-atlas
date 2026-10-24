@@ -12,6 +12,8 @@ import { hasReferenceIdentifier } from "../js/science/references.mjs";
 import { parseXml } from "./support/xml.mjs";
 import { flavourCurves } from "../js/science/neutrino.mjs";
 import { defaultParams } from "../js/science/data/nufit.mjs";
+import { PDG } from "../js/science/data/pdg.mjs";
+import { runFromInputs, lambdaBand, instabilityScale, stabilityBoundaries } from "../js/science/higgs-running.mjs";
 import { grNullTrajectory, grPhotonSphereRadius, grCriticalImpactParameter } from "../js/physics.mjs";
 
 const T = buildTokens(parseTokensCss(fs.readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8")));
@@ -31,6 +33,20 @@ const rays = [0.55, 0.995, 1.005, 1.7].map((f) => {
 
 const nuNO = defaultParams("NO"), nuIO = defaultParams("IO");
 
+const higgsInputs = { mt: PDG.mt.value, mH: PDG.mH.value, alphaS: PDG.alphaS.value };
+const higgsCentralRun = runFromInputs(higgsInputs);
+const higgsRunningInput = () => {
+  const band = lambdaBand({ mt: PDG.mt, mH: PDG.mH.value, alphaS: PDG.alphaS });
+  return {
+    mu: higgsCentralRun.t.map(Math.exp), lambda: higgsCentralRun.states.map((s) => s[0]), lower: band.lower, upper: band.upper,
+    instabilityGeV: instabilityScale(higgsCentralRun), treeLambda: higgsCentralRun.states[0][0], mtGeV: PDG.mt.value,
+  };
+};
+const higgsStabilityInput = () => ({
+  boundaries: stabilityBoundaries({ mHValues: [120, 122, 124, 126, 128, 130], mtRange: [150, 200] }),
+  measured: { mt: PDG.mt, mH: PDG.mH }, mtDomain: [164, 182], mHDomain: [120, 130],
+});
+
 const cases = {
   neutrinoVacuum: () => plots.neutrino.flavourRibbonSpec({
     curves: flavourCurves({ initial: 1, mode: "energy", range: [0.1, 2], fixed: 295, params: nuNO }), mode: "energy", channel: 0, initial: 1,
@@ -39,8 +55,8 @@ const cases = {
     curves: flavourCurves({ initial: 1, mode: "baseline", range: [0, 1200], fixed: 2.5, params: nuIO, rhoGcm3: 2.85, antineutrino: true }),
     ghost: flavourCurves({ initial: 1, mode: "baseline", range: [0, 1200], fixed: 2.5, params: nuIO, rhoGcm3: 0, antineutrino: true }),
     mode: "baseline", channel: 2, initial: 1, antineutrino: true, matter: true }),
-  higgsBroken: () => plots.sm.higgsPotentialSpec({ mu2: -1 }),
-  higgsSymmetric: () => plots.sm.higgsPotentialSpec({ mu2: 0.6 }),
+  higgsRunning: () => plots.higgs.couplingRunSpec(higgsRunningInput()),
+  higgsStability: () => plots.higgs.stabilityDiagramSpec(higgsStabilityInput()),
   hawking: () => plots.bh.hawkingSpectrumSpec({ logM: 3, tempFactor: 1 }),
   hawkingHot: () => plots.bh.hawkingSpectrumSpec({ logM: 0, tempFactor: 1.4 }),
   page: () => plots.bh.pageCurveSpec(),
@@ -116,6 +132,16 @@ test("plots reproduce the physics: values are the functions' own outputs", () =>
   const page = plots.bh.pageCurveSpec().marks[1];
   assert.equal(Math.max(...page.y), 0.85);
   assert.equal(page.y[0], 0); assert.equal(page.y.at(-1), 0);
-  const h = plots.sm.higgsPotentialSpec({ mu2: -1 });
-  assert.ok(Math.abs(h.marks[1].x[0] - Math.sqrt(0.5)) < 1e-12);
+  const run = higgsCentralRun, running = cases.higgsRunning();
+  const focal = running.marks.find((m) => m.focal);
+  assert.equal(focal.y.length, run.t.length);
+  assert.ok(focal.y.every((y, i) => y === run.states[i][0]), "the focal line is the integrated lambda(mu)");
+  const instability = running.marks.find((m) => m.type === "rule" && m.axis === "x");
+  assert.ok(Math.abs(instability.value - instabilityScale(run)) < 1e-6 * instability.value, "the rule sits at mu_inst");
+  assert.equal(running.status, "effective");
+  const stability = cases.higgsStability();
+  const ellipse = stability.marks.find((m) => m.type === "line" && m.layer === "data");
+  assert.ok(Math.max(...ellipse.x) - Math.min(...ellipse.x) > 0.5, "the 1-sigma ellipse spans +-0.27 GeV in m_t");
+  assert.equal(stability.marks.filter((m) => m.type === "band").length, 3);
+  assert.equal(stability.status, "effective");
 });

@@ -69,7 +69,9 @@ export const REF = Object.freeze({
   WOLFENSTEIN: "Wolfenstein, Neutrino oscillations in matter, Phys. Rev. D 17, 2369 (1978), doi:10.1103/PhysRevD.17.2369",
   BARGER_1980: "Barger, Whisnant, Pakvasa & Phillips, Matter effects on three-neutrino oscillations, Phys. Rev. D 22, 2718 (1980), doi:10.1103/PhysRevD.22.2718",
   MNS_1962: "Maki, Nakagawa & Sakata, Remarks on the unified model of elementary particles, Prog. Theor. Phys. 28, 870 (1962), doi:10.1143/PTP.28.870",
-  NIST_CONSTANTS: "NIST Reference on Constants, Units, and Uncertainty (CODATA recommended values: Fermi coupling constant, atomic mass constant), retrieved 2026-10-24, https://physics.nist.gov/cgi-bin/cuu/Value?gf",
+  PDG_2026: "Particle Data Group (Takahashi et al.), Review of Particle Physics, Int. J. Mod. Phys. A 41, 2630011 (2026), https://pdg.lbl.gov/2026/",
+  BUTTAZZO_2013: "Buttazzo, Degrassi, Giardino, Giudice, Sala, Salvio & Strumia, Investigating the near-criticality of the Higgs boson, JHEP 12 (2013) 089, doi:10.1007/JHEP12(2013)089, arXiv:1307.3536",
+  NIST_CONSTANTS:"NIST Reference on Constants, Units, and Uncertainty (CODATA recommended values: Fermi coupling constant, atomic mass constant), retrieved 2026-10-24, https://physics.nist.gov/cgi-bin/cuu/Value?gf",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 
