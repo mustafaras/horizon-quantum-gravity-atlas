@@ -20,6 +20,7 @@
 import { rgBeta, rgFixedPoints, seededRng } from "../physics.mjs";
 import { rk4Step } from "./integrators.mjs";
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const RG_FLOW_3D_VIEW_ID = "rg-flow-field-3d";
 
@@ -50,9 +51,11 @@ export const RG_FLOW_3D_PROVENANCE = Object.freeze({
     "Fixed-step RK4 (js/science/integrators.mjs) on (g, r) with t accumulated in ln μ; deterministic seeding: a regular grid in the (g, r) box with seeded jitter; "
     + "fixed points from the shared analytic rgFixedPoints plus the r = 0 axis; separatrices integrated from the linearized eigendirections at each fixed point",
   references: [
-    "Prompt 07 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "Peskin & Schroeder §12.1–12.6 (beta functions, relevant/irrelevant directions)",
+    REF.PESKIN,
+    REF.GROSS_WILCZEK,
   ],
+  layers: [{ name: "Streamlines, fixed points and separatrices", class: "model" }, { name: "Flow tracers, tube shading and backdrop", class: "decoration" }],
+  seed: "Fixed constant 42 for the jitter of the streamline seeds; no URL seed",
 });
 
 export function registerRgFlow3dProvenance() {

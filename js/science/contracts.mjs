@@ -7,6 +7,10 @@ const SCIENTIFIC_STATUS_LABELS = Object.freeze([
   "open",
 ]);
 
+// What a drawn thing is: `data` is measured or tabulated, `model` is computed from the stated equations,
+// `decoration` carries no quantity and may be hidden without changing any number.
+const SCIENTIFIC_LAYER_CLASSES = Object.freeze(["data", "model", "decoration"]);
+
 function typeError(message) {
   return new TypeError(message);
 }
@@ -45,6 +49,21 @@ function expectEnum(value, allowed, fieldName) {
   return normalized;
 }
 
+function expectLayers(value, fieldName) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw typeError(`${fieldName} must be a non-empty array`);
+  }
+  const seen = new Set();
+  return value.map((layer, index) => {
+    const at = `${fieldName}[${index}]`;
+    expectRecord(layer, at);
+    const name = expectString(layer.name, `${at}.name`);
+    if (seen.has(name)) throw typeError(`${fieldName} has a duplicate layer name: ${name}`);
+    seen.add(name);
+    return { name, class: expectEnum(layer.class, SCIENTIFIC_LAYER_CLASSES, `${at}.class`) };
+  });
+}
+
 export function validateScientificProvenance(value) {
   expectRecord(value, "ScientificProvenance");
   return deepFreeze({
@@ -54,10 +73,13 @@ export function validateScientificProvenance(value) {
     validity: expectArrayOfStrings(value.validity, "ScientificProvenance.validity"),
     numericalMethod: expectString(value.numericalMethod, "ScientificProvenance.numericalMethod"),
     references: expectArrayOfStrings(value.references, "ScientificProvenance.references"),
+    layers: expectLayers(value.layers, "ScientificProvenance.layers"),
+    seed: expectString(value.seed, "ScientificProvenance.seed"),
   });
 }
 
 export {
+  SCIENTIFIC_LAYER_CLASSES,
   SCIENTIFIC_STATUS_LABELS,
   deepFreeze,
 };

@@ -657,7 +657,7 @@ function BlackHoleLab3D() {
         <HawkingSpectrumPlot logM={logM} tempFactor={tempFactor}></HawkingSpectrumPlot>
         <PageCurvePlot></PageCurvePlot>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="bh-spin-geometry" status="schematic">
         Spin reshapes the geometry. The outer horizon <Eq tex="r_+ = M + \sqrt{M^2 - a^2}"></Eq> shrinks as the hole
         spins up, the prograde <strong>ISCO</strong> falls from 6 to 1 <Eq tex="GM/c^2"></Eq> as
         <Eq tex="a_\star\!:0\to1"></Eq> (Bardeen 1972) while retrograde orbits move outward — which is why prograde
@@ -787,7 +787,7 @@ function BlackHoleSim() {
         <div className="readout"><div className="readout-label">Evaporation time (order of magnitude)</div>
           <div className="readout-value">{sciNotation(t_ev, 2)}<span className="unit">yr</span></div></div>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="bh-thermodynamics" status="schematic">
         Visual scale is fixed; the readouts carry the physics. Note the inversions: doubling the mass doubles r_s,
         quadruples the entropy, and <em>halves</em> the temperature — black holes have negative specific heat.
         A solar-mass black hole at 6×10⁻⁸ K is far colder than the cosmic microwave background and is currently
@@ -857,7 +857,7 @@ function HawkingComputeLab() {
       initial={{ radius: 11.5, theta: 0.55, phi: 1.08, minR: 4, maxR: 30, bloom: { strength: 0.9, radius: 0.5, threshold: 0.12 } }}
       build={build} deps={[massSolar, spin, gain]}
       fallback={<div className="lab-fallback">The 3-D Hawking lab needs WebGL; the temperature readouts above are computed without it.</div>}></Scene3D>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="bh-hawking-lab" status="schematic">
         The escaping/falling sprite pairs are the textbook <strong>pair-production picture</strong> of Hawking
         radiation — a heuristic, not the derivation (the real calculation is Bogoliubov mixing of modes on the
         collapsing background). What <em>is</em> physical: the colour tracks the shared Hawking temperature

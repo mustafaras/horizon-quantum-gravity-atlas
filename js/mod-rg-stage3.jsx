@@ -39,7 +39,7 @@ function RgFlowFieldLab() {
       initial={{ radius: 13.5, theta: 0.7, phi: 1.15, minR: 5, maxR: 34, bloom: { strength: 0.55, radius: 0.45, threshold: 0.22 } }}
       build={build} deps={[state.rgModel, state.rgNf, state.rgA, state.rgB, state.rgGStar]}
       fallback={<div className="lab-fallback">The 3-D flow field needs WebGL; the 2-D landscape above carries the same trajectories.</div>}></Scene3D>
-      <VizCaption status="effective">
+      <VizCaption provenanceId="rg-flow-field-3d" status="effective">
         The same beta function that drives the 2-D landscape now flows in a third dimension: vertical position
         is the shared log scale t = ln μ (UV up, IR down), horizontal axes are the gauge coupling g and a
         mass-like coupling r with β_r = (2 − γ(g))·r. Cyan runs integrate toward the UV, amber toward the IR,

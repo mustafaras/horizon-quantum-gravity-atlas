@@ -19,6 +19,7 @@
 
 import { seededRng } from "../physics.mjs";
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const COLLIDER_LAB_VIEW_ID = "collider-event-lab";
 
@@ -59,11 +60,12 @@ export const COLLIDER_LAB_PROVENANCE = Object.freeze({
     "Seeded LCG kinematics; exact four-vector algebra (E, px, py, pz); two-body decays via the Källén function with isotropic angles; "
     + "greedy cone clustering seeded on the highest-pT unclustered particle; invariant masses from M² = E² − |p⃗|²",
   references: [
-    "Prompt 08 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "PDG 2024 review (gauge boson and fermion masses)",
-    "Cacciari, Salam & Soyez, JHEP 04 (2008) 063 (anti-kT, for contrast)",
-    "ATLAS detector paper, JINST 3 (2008) S08003 (detector layer anatomy)",
+    REF.PDG_2024,
+    REF.CACCIARI_ANTI_KT,
+    REF.ATLAS_2008,
   ],
+  layers: [{ name: "Seeded decay kinematics, tracks and jets", class: "model" }, { name: "Detector layer outline and glow", class: "decoration" }],
+  seed: "URL state seed (key seed, default 42); every event is deterministic in (channel, seed, sqrt s)",
 });
 
 export function registerColliderLabProvenance() {

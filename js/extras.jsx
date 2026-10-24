@@ -175,7 +175,7 @@ function OverviewArena3D() {
       color: QGA_TOKENS.hex("pigment-blue-86-c07"), transparent: true, opacity: 0.5,
       depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     })));
-    scene.add(dust);
+    scene.add(ctx.tag(dust, "decoration"));
 
     // ---------- corridor: floor panel + grid, rails and ticks merged ----------
     const floor = new THREE.Mesh(
@@ -185,7 +185,7 @@ function OverviewArena3D() {
     floor.geometry.rotateX(-Math.PI / 2);
     floor.position.set(0, -0.02, ARENA_RAMP_LEN / 2 - 6);
     floor.renderOrder = -3;
-    scene.add(floor);
+    scene.add(ctx.tag(floor, "decoration"));
     const grid = ctx.grid(16, 16, QGA_TOKENS.hex("pigment-blue-35"), 0.16);
     grid.geometry.rotateX(-Math.PI / 2);
     grid.position.set(0, 0.01, ARENA_RAMP_LEN / 2 - 6);
@@ -217,15 +217,15 @@ function OverviewArena3D() {
       const hoop = new THREE.Mesh(hoopGeo, classMat[cls]);
       hoop.position.set(0, 4.2, z);
       if (cls === "planck") hoop.scale.setScalar(1.06);
-      scene.add(hoop);
+      scene.add(ctx.tag(hoop, "model"));
       const core = new THREE.Mesh(coreGeo, coreMat);
       core.position.set(0, 4.2, z);
       core.userData = { gateIndex: i };
-      scene.add(core);
+      scene.add(ctx.tag(core, "model"));
       const glow = new THREE.Sprite(glowMat[cls]);
       glow.position.set(0, 4.2, z);
       glow.scale.setScalar(2.6 + (cls === "planck" ? 1.4 : 0));
-      scene.add(glow);
+      scene.add(ctx.tag(glow, "decoration"));
       gates.push({ hoop, core, glow, cls, phase: i * 0.61 });
       ctx.label(stop.label, () => ({ x: 0, y: 6.7 + (i % 2) * 1.0, z }), "s3d-strong");
       ctx.label("10" + supScript(stop.e) + " m", () => ({ x: 0, y: 0.7, z }), "s3d-quiet");
@@ -236,7 +236,7 @@ function OverviewArena3D() {
     const probe = new THREE.Sprite(glowMat.human);
     probe.scale.setScalar(2.0);
     probe.position.set(0, 4.2, ARENA_RAMP_LEN * 0.5);
-    scene.add(probe);
+    scene.add(ctx.tag(probe, "model"));
 
     // ---------- the Planck end-wall: where measurement ends ----------
     const wall = new THREE.Mesh(
@@ -247,7 +247,7 @@ function OverviewArena3D() {
       })),
     );
     wall.position.set(0, 4.2, -2.6);
-    scene.add(wall);
+    scene.add(ctx.tag(wall, "model"));
     ctx.annotation("measurement and geometry entangle — the Planck gate", () => ({ x: 0, y: 9.4, z: -2.6 }));
 
     // ---------- per-frame: transforms only, never material mutations ----------
@@ -304,7 +304,7 @@ function OverviewArena3D() {
           <div className="readout-value" style={{ fontSize: 12.5 }}>{focus ? focus.tag : "sixty decades, one map"}</div>
         </div>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="extras-scale-corridor" status="schematic">
         Distance in this corridor is logarithmic: every gate is a fixed ratio of ten in length. The probe travels from
         the cosmic horizon to the Planck gate, where probing would require a black hole — the atlas marks the frontier
         instead of crossing it.

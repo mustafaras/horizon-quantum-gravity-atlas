@@ -20,6 +20,7 @@ import {
 } from "three";
 import { adsLabState, ADS_LAB_DEFAULTS } from "../../science/ads-geometry.mjs";
 import { seededRng } from "../../physics.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 import { sharedGlowTexture, ringGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
 
@@ -73,7 +74,7 @@ export function createAdsLabRuntime({
     }));
     const stars = new Points(starGeo, starMat);
     stars.frustumCulled = false;
-    group.add(stars);
+    group.add(tag(stars, "decoration"));
   }
 
   // ---- disk floor: faint radial glow so the bulk reads as a surface ----
@@ -84,7 +85,7 @@ export function createAdsLabRuntime({
   const floor = new Mesh(track(new PlaneGeometry(S * 2.3, S * 2.3)), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.015;
-  group.add(floor);
+  group.add(tag(floor, "decoration"));
 
   // ---- hyperbolic grid: rings, spokes, weaving geodesic arcs (all tested) ----
   // One segment set per style: every ring and spoke is a pair list, every geodesic arc a chain of pairs, so the
@@ -127,7 +128,7 @@ export function createAdsLabRuntime({
   }));
   const ring = new Mesh(ringGeo, ringMat);
   ring.rotation.x = Math.PI / 2;
-  group.add(ring);
+  group.add(tag(ring, "model"));
 
   const nodeGeo = track(new SphereGeometry(0.05, 12, 10));
   const nodeGlows = [];
@@ -141,7 +142,7 @@ export function createAdsLabRuntime({
     sp.scale.setScalar(0.42);
     const v = to3(p, 0.02);
     sp.position.copy(v);
-    group.add(sp);
+    group.add(tag(sp, "decoration"));
     nodeGlows.push(sp);
   }
 
@@ -155,7 +156,7 @@ export function createAdsLabRuntime({
       blending: AdditiveBlending, depthWrite: false,
     }));
     partitionMats.push(mat);
-    group.add(new Mesh(geo, mat));
+    group.add(tag(new Mesh(geo, mat), "model"));
   }
 
   // ---- featured RT geodesic: gold core tube + magenta halo ----
@@ -168,8 +169,8 @@ export function createAdsLabRuntime({
     color: MAGENTA, transparent: true, opacity: 0.22,
     blending: AdditiveBlending, depthWrite: false,
   }));
-  group.add(new Mesh(track(new TubeGeometry(featuredCurve, 96, 0.045, 8, false)), rtCoreMat));
-  group.add(new Mesh(track(new TubeGeometry(featuredCurve, 96, 0.13, 8, false)), rtHaloMat));
+  group.add(tag(new Mesh(track(new TubeGeometry(featuredCurve, 96, 0.045, 8, false)), rtCoreMat), "model"));
+  group.add(tag(new Mesh(track(new TubeGeometry(featuredCurve, 96, 0.13, 8, false)), rtHaloMat), "decoration"));
 
   // ---- featured boundary arc: gold highlight on the boundary ring ----
   {
@@ -179,7 +180,7 @@ export function createAdsLabRuntime({
       arcPts.push(new Vector3(Math.cos(th) * S, 0.02, Math.sin(th) * S));
     }
     const curve = new CatmullRomCurve3(arcPts);
-    group.add(new Mesh(track(new TubeGeometry(curve, 96, 0.05, 8, false)), rtCoreMat));
+    group.add(tag(new Mesh(track(new TubeGeometry(curve, 96, 0.05, 8, false)), rtCoreMat), "model"));
   }
 
   // ---- entanglement wedge: ribbon between RT geodesic and boundary arc ----
@@ -209,7 +210,7 @@ export function createAdsLabRuntime({
     }));
     const wedge = new Mesh(g, wedgeMat);
     wedge.frustumCulled = false;
-    group.add(wedge);
+    group.add(tag(wedge, "model"));
   }
 
   // ---- endpoint glows for the featured region ----
@@ -222,7 +223,7 @@ export function createAdsLabRuntime({
     const sp = new Sprite(gm);
     sp.scale.setScalar(0.6);
     sp.position.set(Math.cos(th) * S, 0.05, Math.sin(th) * S);
-    group.add(sp);
+    group.add(tag(sp, "decoration"));
     endGlows.push(sp);
   }
 

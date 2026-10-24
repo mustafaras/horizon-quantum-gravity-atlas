@@ -601,7 +601,7 @@ function CausalSpacetimeLab() {
           <p>No gravity, curvature, acceleration history, geodesic deviation, expanding universe, uncertainty model, or black-hole spacetime. This is a flat-spacetime foundation for GR.</p>
         </section>
       </div>
-      <VizCaption status="effective">
+      <VizCaption provenanceId="gr-simultaneity" status="effective">
         Drag A or B, use their arrow-key controls, choose a documented preset, or change β. The solid event pair is
         frame S; the faint A′/B′ pair and dashed axes are frame S′. Timelike order and null connection are invariant.
         Only a spacelike pair can become simultaneous or reverse coordinate-time order. URL state stores both events,
@@ -1046,7 +1046,7 @@ function CurvatureEngine3D() {
         <div className="readout"><div className="readout-label">Solar-limb light deflection (real)</div>
           <div className="readout-value">1.75<span className="unit">″</span></div></div>
       </div>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="gr-curvature-well" status="schematic">
         The well is a Flamm-paraboloid embedding of a spatial slice — an intuition aid, not a literal picture of 3D
         space — but the <em>dynamics</em> are quantitatively real: each bound body rides the exact precessing solution
         of the geodesic acceleration
@@ -1239,7 +1239,7 @@ function CurvatureEngine() {
       <SimBar sim={sim}>
         <button className="btn" onClick={() => { initState(); }}>Re-launch bodies</button>
       </SimBar>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="gr-curvature-2d" status="schematic">
         Embedding-diagram-style visualization (Flamm-paraboloid intuition), not a literal picture of 3D space.
         In the relativistic view the orbit precesses — the perihelion advance absent from Newtonian gravity —
         and the light ray bends by twice the Newtonian prediction, the effect that made general relativity famous in 1919.

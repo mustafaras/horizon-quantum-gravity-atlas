@@ -57,7 +57,7 @@ function ParticleArchitecture3D() {
     let floorHiggs = false;
     scene.add(fieldFloor);
 
-    const nodes = [];
+    const nodes = [], rnd = QGA_SEEDED(0x5d0e);
     const halos = [];
     const geoFor = (cls) => cls === "quark" ? new THREE.IcosahedronGeometry(1, 1)
       : cls === "gauge" ? new THREE.OctahedronGeometry(1, 1)
@@ -74,9 +74,9 @@ function ParticleArchitecture3D() {
       m.scale.setScalar(scl);
       m.position.set(...SM3D_POS[p.id]);
       m.userData = { id: p.id, baseScale: scl, hex, base: m.position.clone(),
-        jit: Math.random() * Math.PI * 2,
+        jit: rnd() * Math.PI * 2,
         spin: p.cls === "gauge" ? 1.0 : p.cls === "higgs" ? 0 : 0.5 };
-      scene.add(m);
+      scene.add(ctx.tag(m, "data"));
       nodes.push(m);
       const gl = s3dGlow(hex, scl * 4.2, 0.34);
       gl.position.copy(m.position);
@@ -91,8 +91,8 @@ function ParticleArchitecture3D() {
         );
         halo.position.copy(m.position);
         halo.visible = false;
-        halo.userData = { node: m, phase: Math.random() };
-        scene.add(halo);
+        halo.userData = { node: m, phase: rnd() };
+        scene.add(ctx.tag(halo, "data"));
         halos.push(halo);
       }
     }
@@ -102,7 +102,7 @@ function ParticleArchitecture3D() {
       new THREE.TorusGeometry(1, 0.03, 8, 48),
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-white"), transparent: true, opacity: 0.9 })
     );
-    scene.add(marker);
+    scene.add(ctx.tag(marker, "model"));
 
     // gauge-group symmetry layers (schematic): three stacked rings
     const layers = new THREE.Group();
@@ -129,7 +129,7 @@ function ParticleArchitecture3D() {
       ring.userData.labelHandle = lh;
     }
     layers.visible = false;
-    scene.add(layers);
+    scene.add(ctx.tag(layers, "data"));
 
     ctx.annotation("gravity is NOT part of the Standard Model — no graviton node exists here",
       () => ({ x: 0, y: -3.4, z: 2.2 }));
@@ -170,8 +170,8 @@ function ParticleArchitecture3D() {
     const packets = [];
     for (let i = 0; i < 18; i++) {
       const s = s3dGlow(QGA_TOKENS.hex("pigment-white"), 0.85, 0.0);
-      s.userData = { t: Math.random(), speed: 0.32 + Math.random() * 0.36 };
-      scene.add(s); packets.push(s);
+      s.userData = { t: rnd(), speed: 0.32 + rnd() * 0.36 };
+      scene.add(ctx.tag(s, "decoration")); packets.push(s);
     }
 
     return {
@@ -278,7 +278,7 @@ function ParticleArchitecture3D() {
           {extra ? <span className="small dim" style={{ flexBasis: "100%" }}>{extra.role} {p.notes}</span> : null}
         </div>
       ) : null}
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="sm-interaction-map" status="schematic">
         Click a node to select it. Glowing packets stream along each arc — these are the force carriers being
         exchanged (coloured by the mediating boson: violet gluons, blue W/Z, etc.); gluon and Higgs self-couplings
         are listed, not drawn. Every particle shows zero-point jitter and spin-correct motion; the floor is the

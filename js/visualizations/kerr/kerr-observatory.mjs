@@ -35,6 +35,7 @@ import {
 } from "../../science/accretion-disk.mjs";
 import { blackbodyToSrgb } from "../../science/spectrum.mjs";
 import { getVisualizationProvenance, registerVisualization } from "../../science/provenance.mjs";
+import { REF } from "../../science/references.mjs";
 import { KERR_PLASMA, plasmaEdgeOpacity } from "./kerr-plasma.mjs";
 import { PLASMA_VOLUME } from "./plasma-volume.mjs";
 import { JET_FIELD, blandfordZnajekSpinFactor } from "./jet-field.mjs";
@@ -81,17 +82,17 @@ export const KERR_OBSERVATORY_PROVENANCE = Object.freeze({
     + "progressive ultra-quality stills render offscreen at 2K/4K/8K under a measured GPU-memory guard, accumulate Halton-jittered samples, denoise, and embed a metadata sidecar (state, provenance, backend, sample count, commit hash) in the PNG; "
     + "temporal accumulation as a running mean of Halton-jittered samples, reset on any geometry, camera, resolution, backend, quality or volume-flag change.",
   references: [
-    "Carter (1968), Phys. Rev. 174, 1559",
-    "Bardeen (1973), Timelike and null geodesics in the Kerr metric, Les Houches",
-    "Bardeen, Press & Teukolsky (1972), ApJ 178, 347",
-    "Page & Thorne (1974), ApJ 191, 499",
-    "Luminet (1979), A&A 75, 228",
-    "James, von Tunzelmann, Franklin & Thorne (2015), Class. Quantum Grav. 32, 065001",
-    "Gralla, Lupsasca & Marrone (2020), Phys. Rev. D 102, 124004",
-    "Blandford & Znajek (1977), MNRAS 179, 433",
-    "Tchekhovskoy, Narayan & McKinney (2010), ApJ 711, 50",
-    "McKinney & Narayan (2007a), MNRAS 375, 513",
+    REF.CARTER_1968,
+    REF.BARDEEN_PRESS_TEUKOLSKY,
+    REF.PAGE_THORNE,
+    REF.JAMES_2015,
+    REF.GRALLA_LUPSASCA_MARRONE,
+    REF.BLANDFORD_ZNAJEK,
+    REF.TCHEKHOVSKOY,
+    REF.MCKINNEY_NARAYAN,
   ],
+  layers: [{ name: "Kerr null-geodesic image of the thin disk", class: "model" }, { name: "Heuristic turbulence texture, corona and jets", class: "decoration" }, { name: "Synthetic background star catalogue", class: "decoration" }],
+  seed: "URL state seed (key seed, default 42) for the turbulence texture and the synthetic star catalogue",
 });
 
 /** Idempotent registration in the shared provenance registry. */

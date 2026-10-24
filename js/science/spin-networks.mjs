@@ -23,6 +23,7 @@
 
 import { seededRng } from "../physics.mjs";
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const SPIN_FOAM_LAB_VIEW_ID = "spin-foam-lab";
 
@@ -62,11 +63,13 @@ export const SPIN_FOAM_LAB_PROVENANCE = Object.freeze({
     "Seeded LCG edge-spin assignment with deterministic repair (resample highest-spin incident edge of the first invalid node, then force ½ to fixpoint); "
     + "exact Cayley–Menger 5×5 determinant for tetrahedron volumes; closed-form area spectrum",
   references: [
-    "Prompt 08 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "Rovelli & Smolin, Nucl. Phys. B442 (1995) 593 (area/volume spectra)",
-    "Baez, Adv. Math. 134 (1998) 253 (spin networks and spin foam review)",
-    "Ponzano & Regge (1968) (semiclassical 3D spin-foam model)",
+    REF.ROVELLI_SMOLIN_AREA,
+    REF.ROVELLI_SMOLIN_NETWORKS,
+    REF.BAEZ_1998,
+    REF.PEREZ_2013,
   ],
+  layers: [{ name: "Spin network, area spectrum and node volumes", class: "model" }, { name: "Node and edge glow, backdrop", class: "decoration" }],
+  seed: "URL state seed (key seed, default 42) for the seeded edge-spin assignment",
 });
 
 export function registerSpinFoamLabProvenance() {

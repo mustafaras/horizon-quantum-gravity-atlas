@@ -65,6 +65,7 @@ function s3dGlow(color, scale = 1, opacity = 0.8) {
   });
   const s = new THREE.Sprite(m);
   s.scale.setScalar(scale);
+  s.userData.layer = "decoration"; // a glow carries no quantity (S11); a scene that uses one as a marker re-tags it
   return s;
 }
 // Engraved line (S06): constant-pixel-width, anti-aliased, dashable. `engraved` is the API bound to the scene's
@@ -302,6 +303,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         overlay = s3dGlow(QGA_TOKENS.hex("pigment-azure-75"), (target.glowScale ?? 4.5) * intensity, 0);
         overlay.position.copy(object.position);
       }
+      overlay.userData.layer = "model"; // the highlight stays visible in the scientific mode
       (object.parent ?? scene).add(overlay);
       if (conceptPulse.active) conceptPulse.active.overlay.removeFromParent();
       conceptPulse.active = { overlay, object, target, startTime: clockT, duration: 0.8, intensity, hold: true };
@@ -351,7 +353,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       invalidate: () => session?.invalidate({ input: false }),
       label: makeLabel(false),
       annotation: makeLabel(true),
-      glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: (size, divisions, color, opacity) => s3dGrid(size, divisions, color, opacity, ctx.engraved),
+      tag: (object, layerClass) => QGA_LAYERS.tag(object, layerClass), glow: s3dGlow, line: (points, color, opacity, dashed) => s3dLine(points, color, opacity, dashed, ctx.engraved), grid: (size, divisions, color, opacity) => s3dGrid(size, divisions, color, opacity, ctx.engraved),
       engraved: null,
       // Formula Lens (S10): DOM that sits over the stage (it dies with the label layer), and cleanup that runs with the scene.
       mountOverlay: (element) => labelLayer.appendChild(element),
@@ -371,6 +373,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     // QA hook (like window.__qgaKerrRuntime): lets the browser suite inspect the live scene without touching React.
     mount.__qga = { scene, camera, engraved: ctx.engraved };
     built = (await build(ctx)) || {};
+    QGA_LAYERS.applyMode(scene, settingsRef.current.vizMode); // the scientific mode hides decoration and nothing else (S11)
     if (!alive) { if (built.dispose) built.dispose(); s3dDispose(scene); labelLayer.remove(); return; }
     // A scene holding a classic-only material (a GLSL ShaderMaterial) is drawn by the classic WebGLRenderer, which cannot
     // draw node lines: rebuild it once on the classic engraved lines. Scenes known to be classic pass classicLines.

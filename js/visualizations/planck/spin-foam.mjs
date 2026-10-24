@@ -23,6 +23,7 @@ import {
   spinFoamLabState, SPIN_FOAM_LAB_DEFAULTS, SPIN_TOPOLOGIES,
 } from "../../science/spin-networks.mjs";
 import { seededRng } from "../../physics.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 import { sharedGlowTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
 
@@ -82,7 +83,7 @@ export function createSpinFoamRuntime({
       transparent: true, opacity: 0.65, depthWrite: false, blending: AdditiveBlending,
     })));
     stars.frustumCulled = false;
-    group.add(stars);
+    group.add(tag(stars, "decoration"));
   }
 
   const nodePos = (i, lift = 0) => {
@@ -100,7 +101,7 @@ export function createSpinFoamRuntime({
       blending: AdditiveBlending, depthWrite: false,
     }));
     edgeMats.push(mat);
-    group.add(new Mesh(geo, mat));
+    group.add(tag(new Mesh(geo, mat), "model"));
   }
 
   // ---- face membranes: one merged triangle mesh, vertex-colored by spin sum ----
@@ -126,7 +127,7 @@ export function createSpinFoamRuntime({
     }));
     const mesh = new Mesh(g, faceMat);
     mesh.frustumCulled = false;
-    group.add(mesh);
+    group.add(tag(mesh, "model"));
   }
 
   // ---- nodes: spheres sized by weight, glow sprites on top ----
@@ -142,7 +143,7 @@ export function createSpinFoamRuntime({
     }));
     const m = new Mesh(geo, mat);
     m.position.copy(v);
-    group.add(m);
+    group.add(tag(m, "model"));
     const gm = track(new SpriteMaterial({
       map: sharedGlowTexture(), color: n.volume > 0 ? TK.hex("pigment-orange-86") : TK.hex("pigment-cyan-89"),
       transparent: true, opacity: 0.5, blending: AdditiveBlending, depthWrite: false,
@@ -150,7 +151,7 @@ export function createSpinFoamRuntime({
     const sp = new Sprite(gm);
     sp.scale.setScalar(r * 4);
     sp.position.copy(v);
-    group.add(sp);
+    group.add(tag(sp, "decoration"));
     nodeGlows.push(sp);
   }
 
@@ -185,7 +186,7 @@ export function createSpinFoamRuntime({
       transparent: true, opacity: 0.5, depthWrite: false, blending: AdditiveBlending,
     })));
     foamPoints.frustumCulled = false;
-    group.add(foamPoints);
+    group.add(tag(foamPoints, "model"));
     const arr = foamPoints.geometry.attributes.position;
     let k = 0;
     for (let s = 0; s < steps; s++) {

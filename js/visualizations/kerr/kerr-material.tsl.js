@@ -359,6 +359,7 @@ export function createKerrTslRuntime({ seed = 42 } = {}) {
     quad.frustumCulled = false;
     quad.renderOrder = -10;
     quad.name = "kerr-observatory-display";
+    quad.userData.layer = "model"; // the ray-traced image is the model (S11)
     return quad;
   }
 

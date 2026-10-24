@@ -25,3 +25,26 @@
 .fig-note { margin: 4px 0 8px; color: var(--ink-dim); font: var(--step--2) var(--font-mono); }
 .fig-caption { padding: 8px 12px 12px; border-top: 1px solid var(--rule); font-size: var(--step--1); color: var(--ink-dim); }
 .fig-live-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 2px solid var(--ink-strong); background: var(--ink-strong); pointer-events: none; }
+
+/* Provenance drawer (S11): the status chip of a caption opens the registry entry of its figure. */
+button.badge.prov-chip { position: relative; appearance: none; cursor: pointer; font-family: inherit; }
+button.badge.prov-chip::before { content: ""; position: absolute; inset: -14px -8px; }
+button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focus-visible, .prov-drawer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prov-drawer { position: fixed; z-index: 320; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); overflow-y: auto; padding: 16px 18px 24px; background: var(--surface-2); color: var(--ink); border-left: 1px solid var(--rule-strong); font: var(--step--1) var(--font-mono); }
+.prov-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.prov-head-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.prov-id { color: var(--ink-dim); overflow-wrap: anywhere; }
+.prov-close { min-width: 44px; min-height: 44px; border: 1px solid var(--rule); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; font-size: 20px; }
+.prov-model { margin: 12px 0 4px; font-size: var(--step-0); font-weight: 600; color: var(--ink-strong); }
+.prov-section h4 { margin: 14px 0 4px; font-size: var(--step--2); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+.prov-section ul { margin: 0; padding-left: 18px; }
+.prov-section p { margin: 0; }
+.prov-link { margin-left: 8px; color: var(--accent); text-decoration: underline; display: inline-block; min-height: 24px; }
+.prov-layers { width: 100%; border-collapse: collapse; }
+.prov-layers th, .prov-layers td { padding: 5px 6px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.prov-class { display: inline-block; padding: 0 6px; margin-right: 4px; border: 1px solid var(--rule-strong); border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.prov-class-data { color: var(--accent-2); }
+.prov-class-model { color: var(--accent); }
+.prov-class-decoration { color: var(--ink-dim); }
+@media (prefers-reduced-motion: no-preference) { .prov-drawer { animation: prov-in var(--dur-quick) var(--ease-out-quart); } }
+@keyframes prov-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }

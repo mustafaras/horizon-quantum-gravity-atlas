@@ -8,6 +8,7 @@ import { renderSvg } from "../js/figure/svg-renderer.mjs";
 import { figureSummary, dataTable } from "../js/figure/summary.mjs";
 import { registerFigureProvenance, FIGURE_PROVENANCE } from "../js/figure/provenance.mjs";
 import { getVisualizationProvenance } from "../js/science/provenance.mjs";
+import { hasReferenceIdentifier } from "../js/science/references.mjs";
 import { parseXml } from "./support/xml.mjs";
 import { grNullTrajectory, grPhotonSphereRadius, grCriticalImpactParameter } from "../js/physics.mjs";
 
@@ -86,7 +87,7 @@ for (const [name, make] of Object.entries(cases)) {
 test("every provenance entry is complete and every figure status is a scientific status label", () => {
   for (const [id, entry] of Object.entries(FIGURE_PROVENANCE)) {
     assert.ok(entry.model && entry.numericalMethod && entry.validity.length && entry.references.length, id);
-    assert.ok(entry.references.every((r) => /doi:|arXiv:|\(\d{4}\)/.test(r)), `${id}: references are citeable`);
+    assert.ok(entry.references.every((r) => hasReferenceIdentifier(r)), `${id}: references carry a DOI, arXiv id, bibcode or URL`);
   }
   const ids = new Set(Object.values(cases).map((make) => make().provenanceId));
   for (const id of Object.keys(FIGURE_PROVENANCE)) assert.ok(ids.has(id), `${id} has a plot case in this test`);

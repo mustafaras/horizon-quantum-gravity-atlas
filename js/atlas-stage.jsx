@@ -132,13 +132,13 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
 
     // bright foreground "hero" stars (fewer, larger, with the glow sprite)
     const heroN = detail0 === "low" ? 7 : 12;
-    const heroes = [];
+    const heroes = [], rnd = QGA_SEEDED(0xa71a5);
     for (let i = 0; i < heroN; i++) {
       const s = window.s3dGlow ? s3dGlow(QGA_TOKENS.hex("pigment-blue-94"), 2.6, 0.85) : null;
       if (!s) break;
-      s.position.set((Math.random() - 0.5) * 76, (Math.random() - 0.5) * 38, -8 - Math.random() * 52);
-      s.userData.tw = Math.random() * Math.PI * 2;
-      s.userData.sc = 1.6 + Math.random() * 2.8;
+      s.position.set((rnd() - 0.5) * 76, (rnd() - 0.5) * 38, -8 - rnd() * 52);
+      s.userData.tw = rnd() * Math.PI * 2;
+      s.userData.sc = 1.6 + rnd() * 2.8;
       s.scale.setScalar(s.userData.sc);
       root.add(s); heroes.push(s);
     }
@@ -149,8 +149,8 @@ function AtlasStage({ view = "overview", motion = "balanced", detail = "medium",
     for (let i = 0; i < nebN; i++) {
       const s = window.s3dGlow ? s3dGlow(i % 2 ? colAccent.getHex() : colPrimary.getHex(), 34, 0.34) : null;
       if (!s) break;
-      s.position.set((Math.random() - 0.5) * 90, (Math.random() - 0.5) * 46 - 4, -24 - Math.random() * 46);
-      s.userData = { baseX: s.position.x, baseY: s.position.y, drift: Math.random() * Math.PI * 2, sc: 30 + Math.random() * 34, accent: i % 2 === 1 };
+      s.position.set((rnd() - 0.5) * 90, (rnd() - 0.5) * 46 - 4, -24 - rnd() * 46);
+      s.userData = { baseX: s.position.x, baseY: s.position.y, drift: rnd() * Math.PI * 2, sc: 30 + rnd() * 34, accent: i % 2 === 1 };
       root.add(s); nebs.push(s);
     }
 

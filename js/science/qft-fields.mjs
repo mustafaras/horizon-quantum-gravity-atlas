@@ -23,6 +23,7 @@
 
 import { seededRng } from "../physics.mjs";
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const QFT_FIELD_LAB_VIEW_ID = "qft-field-lab";
 export const QFT_FLUX_TUBE_VIEW_ID = "qft-flux-tube";
@@ -51,9 +52,10 @@ export const QFT_FIELD_PROVENANCE = Object.freeze({
     "φ(x,t) = Σ_n a_n cos(k_n x − ω_n t + ϕ_n) evaluated pointwise; equal-time correlation C(r) = Σ_n (a_n²/2) cos(k_n r); "
     + "mode occupations counted in a documented frequency band",
   references: [
-    "Prompt 07 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "Peskin & Schroeder, An Introduction to Quantum Field Theory, §2.2–2.5 (free-field mode expansion)",
+    REF.PESKIN,
   ],
+  layers: [{ name: "Fourier-mode field, correlation and occupations", class: "model" }, { name: "Local-maximum sprites and glow", class: "decoration" }],
+  seed: "URL state seed (key seed, default 42) picks the retained subset of Fourier modes (buildFourierModes)",
 });
 
 export const QFT_FLUX_TUBE_PROVENANCE = Object.freeze({
@@ -70,9 +72,11 @@ export const QFT_FLUX_TUBE_PROVENANCE = Object.freeze({
     "ε(s, ρ) = tension · exp(−ρ²/w²) · edge taper, evaluated along the source axis s ∈ [0, separation] at transverse radius ρ; "
     + "width grows mildly toward the ends as a visual analogue of Lüscher broadening",
   references: [
-    "Prompt 07 spec (flux tubes must be identified as a model/analogy unless computed from actual gauge-field data)",
-    "Sommer, Lattice QCD and Heavy Quark Potentials (review) — flux tubes as a lattice-observable concept",
+    REF.BALI,
+    REF.PESKIN,
   ],
+  layers: [{ name: "Gaussian flux-tube profile (analogy)", class: "model" }, { name: "Source markers and glow", class: "decoration" }],
+  seed: "URL state seed (key seed, default 42) shared with the field rows underneath",
 });
 
 export function registerQftLabProvenance() {

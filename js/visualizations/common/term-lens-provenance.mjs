@@ -23,6 +23,8 @@ export const FORMULA_LENS_PROVENANCE = Object.freeze({
     validity: ["Exact for the Schwarzschild radius of the slider mass; marks the horizon only at spin a* = 0"],
     numericalMethod: "The radius and the mass are evaluations of the Formula Core terms r_s and M in float64 (js/formula/lens.mjs); nothing is simulated",
     references: [SCHWARZSCHILD, CODATA],
+    layers: [{ name: "Schwarzschild-radius circles and mass readout", class: "model" }, { name: "Observatory scene outside the circles", class: "decoration" }],
+    seed: "none: closed forms only",
   },
   "formula-lens-curvature-well": {
     model: "The Newtonian potential Phi/c^2 = -GM/(r c^2) painted over the embedding-diagram surface of the curvature engine as a viridis heat map of the formula term",
@@ -35,6 +37,8 @@ export const FORMULA_LENS_PROVENANCE = Object.freeze({
     validity: ["Weak-field, slow-motion limit (r much greater than GM/c^2)", "Colour range spans the slider range of the mass over the visible radii"],
     numericalMethod: "The term is compiled from the formula AST to a TSL node (js/formula/to-tsl.mjs) and evaluated per pixel on the GPU; the same AST is compared with the float32 JavaScript evaluation in qa/specs/formula-lens.spec.mjs",
     references: [EINSTEIN_1916, CODATA],
+    layers: [{ name: "Newtonian potential field on the well", class: "model" }, { name: "Well surface shading outside the field", class: "decoration" }],
+    seed: "none: closed forms only",
   },
   "formula-lens-planck-descent": {
     model: "Each physical constant of l_P = sqrt(hbar G / c^3) is associated with the decade gate of the descent where its physics first governs: hbar at the atomic gate, c at the nuclear gate, G at the Planck gate",
@@ -46,6 +50,8 @@ export const FORMULA_LENS_PROVENANCE = Object.freeze({
     validity: ["The values of the constants are CODATA 2018 and exact to their uncertainty; the placement of the gates is qualitative"],
     numericalMethod: "The values are the declared SI constants of Formula Core; the gate rings are the existing ladder rings",
     references: [CODATA],
+    layers: [{ name: "Constant gates of the Planck-length formula", class: "model" }, { name: "Descent rings, probe glow and backdrop", class: "decoration" }],
+    seed: "none: closed forms only",
   },
 });
 

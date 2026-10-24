@@ -22,6 +22,7 @@ import {
   blackHoleEvaporationTimeYears, seededRng,
 } from "../physics.mjs";
 import { getVisualizationProvenance, registerVisualization } from "./provenance.mjs";
+import { REF } from "./references.mjs";
 
 export const HAWKING_LAB_VIEW_ID = "bh-hawking-lab";
 
@@ -50,10 +51,11 @@ export const HAWKING_LAB_PROVENANCE = Object.freeze({
     "Relative power P ∝ A · T⁴ with A = (r₊/2)² in GM/c² units; particle energies by seeded rejection sampling of hawkingSpectralShape; "
     + "extremal factor κ(a*) = (r₊ − r₋)/(2(r₊² + a*²)) evaluated with |a*| ≤ 1 guards (no division by zero; κ(1) = 0)",
   references: [
-    "Prompt 07 spec: docs/superpowers/plans/2026-10-08-ultra-realistic-atlas-prompts.md",
-    "Hawking, Commun. Math. Phys. 43 (1975) 199",
-    "Page, Phys. Rev. D 13 (1976) 198 (emission rates and species)",
+    REF.HAWKING,
+    REF.PAGE_1976,
   ],
+  layers: [{ name: "Temperature, power and Planckian sample spectrum", class: "model" }, { name: "Pair-production sprites and glow", class: "decoration" }],
+  seed: "Fixed constant 42 for the rejection sampling of emission energies and 11 for the backdrop stars; no URL seed",
 });
 
 export function registerHawkingLabProvenance() {

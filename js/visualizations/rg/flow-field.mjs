@@ -27,6 +27,7 @@ import {
 } from "../../science/rg-flow-3d.mjs";
 import { sharedGlowTexture, wallGradientTexture } from "../glow-texture.mjs";
 import * as TK from "../../design/tokens.mjs";
+import { tagLayer as tag } from "../../render/scene-layers.mjs";
 
 const tokenColor = (name) => new Color().fromArray(TK.linearRef(name));
 
@@ -88,7 +89,7 @@ export function createRgFlowFieldRuntime({
     const cone = new Mesh(coneGeo, coneMat);
     cone.position.copy(end);
     cone.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), dir);
-    group.add(cone);
+    group.add(tag(cone, "model"));
   }
 
   // ---- flowing tracers: one GPU particle system over all streamlines (S08) ----
@@ -96,7 +97,7 @@ export function createRgFlowFieldRuntime({
   // rewritten or uploaded per frame (flow-tracers.mjs).
   const tracers = createFlowTracers({ runs, uvColor: UV_COLOR, irColor: IR_COLOR });
   tracers.object.visible = tracers.tracers > 0;
-  group.add(tracers.object);
+  group.add(tag(tracers.object, "model"));
 
   // ---- separatrices: glowing gold tubes (core + halo) ----
   for (const curve of separatrices) {
@@ -107,13 +108,13 @@ export function createRgFlowFieldRuntime({
       color: TK.hex("pigment-amber-88-c12-h083"), transparent: true, opacity: 0.95,
       blending: AdditiveBlending, depthWrite: false,
     }));
-    group.add(new Mesh(coreGeo, coreMat));
+    group.add(tag(new Mesh(coreGeo, coreMat), "model"));
     const haloGeo = track(new TubeGeometry(path, 96, 0.09, 6, false));
     const haloMat = track(new MeshBasicMaterial({
       color: TK.hex("pigment-orange-82-c13-h064"), transparent: true, opacity: 0.14,
       blending: AdditiveBlending, depthWrite: false,
     }));
-    group.add(new Mesh(haloGeo, haloMat));
+    group.add(tag(new Mesh(haloGeo, haloMat), "decoration"));
   }
 
   // ---- fixed points: pulsing wireframe icosahedron inside a glow halo ----
@@ -124,7 +125,7 @@ export function createRgFlowFieldRuntime({
     const mat = track(new MeshBasicMaterial({ color: TK.hex("pigment-white"), wireframe: true, transparent: true, opacity: 0.9 }));
     const marker = new Mesh(geo, mat);
     marker.position.copy(pos);
-    group.add(marker);
+    group.add(tag(marker, "model"));
     const haloMat = track(new SpriteMaterial({
       map: sharedGlowTexture(), color: TK.hex("pigment-white"), transparent: true,
       opacity: 0.75, blending: AdditiveBlending, depthWrite: false,
@@ -132,7 +133,7 @@ export function createRgFlowFieldRuntime({
     const halo = new Sprite(haloMat);
     halo.scale.setScalar(1.15);
     halo.position.copy(pos);
-    group.add(halo);
+    group.add(tag(halo, "decoration"));
     fpMarkers.push({ marker, halo, fp });
   }
 
@@ -150,7 +151,7 @@ export function createRgFlowFieldRuntime({
       const plane = new Mesh(planeGeo, planeMat);
       plane.position.set(sign * RG_VALIDITY_G * SCALE.x, ((RG_FLOW_3D_DEFAULTS.tMax + RG_FLOW_3D_DEFAULTS.tMin) / 2) * SCALE.y, 0);
       plane.rotation.y = Math.PI / 2;
-      group.add(plane);
+      group.add(tag(plane, "model"));
       const edgePts = [
         new Vector3(sign * RG_VALIDITY_G * SCALE.x, plane.position.y - h / 2, -zSpan / 2),
         new Vector3(sign * RG_VALIDITY_G * SCALE.x, plane.position.y + h / 2, -zSpan / 2),
@@ -174,7 +175,7 @@ export function createRgFlowFieldRuntime({
       const cone = new Mesh(geo, mat);
       cone.position.set(axisX, y, 0);
       if (flip) cone.rotation.x = Math.PI;
-      group.add(cone);
+      group.add(tag(cone, "model"));
       const tipMat = track(new SpriteMaterial({
         map: sharedGlowTexture(), color, transparent: true, opacity: 0.7,
         blending: AdditiveBlending, depthWrite: false,
@@ -182,7 +183,7 @@ export function createRgFlowFieldRuntime({
       const tip = new Sprite(tipMat);
       tip.scale.setScalar(0.9);
       tip.position.set(axisX, y + (flip ? -0.35 : 0.35), 0);
-      group.add(tip);
+      group.add(tag(tip, "decoration"));
     };
     mk((RG_FLOW_3D_DEFAULTS.tMax + 1.4) * SCALE.y, TK.hex("pigment-azure-81"), false); // UV up
     mk((RG_FLOW_3D_DEFAULTS.tMin - 1.4) * SCALE.y, TK.hex("pigment-orange-82-c13"), true);  // IR down

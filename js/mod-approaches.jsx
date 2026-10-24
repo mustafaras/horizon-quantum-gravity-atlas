@@ -24,11 +24,11 @@ function TheoryConstellation3D() {
 
     // starfield backdrop
     const det0 = ctx.settings.current.detail3d;
-    const starN = det0 === "low" ? 220 : 480;
+    const starN = det0 === "low" ? 220 : 480, rnd = QGA_SEEDED(0x61e5c);
     const sGeo = new THREE.BufferGeometry();
     const sPos = new Float32Array(starN * 3);
     for (let i = 0; i < starN; i++) {
-      const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R = 34 + Math.random() * 40;
+      const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, rr = Math.sqrt(1 - u * u), R = 34 + rnd() * 40;
       sPos[i * 3] = Math.cos(a) * rr * R; sPos[i * 3 + 1] = u * R * 0.8; sPos[i * 3 + 2] = Math.sin(a) * rr * R;
     }
     sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
@@ -36,11 +36,11 @@ function TheoryConstellation3D() {
       size: 1.2, map: qgaGlowTexture(), color: QGA_TOKENS.hex("pigment-blue-83"), transparent: true,
       opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
     }));
-    scene.add(starField);
+    scene.add(ctx.tag(starField, "decoration"));
 
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 26, 18),
       new THREE.MeshStandardMaterial({ color: QGA_TOKENS.hex("pigment-grey-96-c01"), emissive: QGA_TOKENS.hex("pigment-blue-78-c05"), emissiveIntensity: 0.85 }));
-    scene.add(core);
+    scene.add(ctx.tag(core, "data"));
     const coreGlow = ctx.glow(QGA_TOKENS.hex("pigment-blue-91-c03"), 4.2, 0.5);
     scene.add(coreGlow);
     ctx.label("the quantum gravity problem", () => ({ x: 0, y: 1.05, z: 0 }), "s3d-strong");
@@ -62,7 +62,7 @@ function TheoryConstellation3D() {
       }));
       m.position.set(...n.pos);
       m.userData = { id: n.id, base: new THREE.Vector3(...n.pos), hex: n.hex };
-      scene.add(m);
+      scene.add(ctx.tag(m, "data"));
       const g = ctx.glow(n.hex, 3.0, 0.34);
       g.position.copy(m.position);
       scene.add(g);
@@ -70,7 +70,7 @@ function TheoryConstellation3D() {
       const link = ctx.line([new THREE.Vector3(0, 0, 0), m.position.clone()], n.hex, 0.45, true);
       link.material.blending = THREE.AdditiveBlending; link.material.depthWrite = false;
       link.userData = { id: n.id };
-      scene.add(link);
+      scene.add(ctx.tag(link, "data"));
       links.push(link);
       ctx.label(th.name, () => ({ x: m.position.x, y: m.position.y - 1.0, z: m.position.z }), "s3d-quiet");
       nodes.push(m);
@@ -79,7 +79,7 @@ function TheoryConstellation3D() {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 10, 64),
       new THREE.MeshBasicMaterial({ color: QGA_TOKENS.hex("pigment-white"), transparent: true, opacity: 0.9,
         blending: THREE.AdditiveBlending, depthWrite: false }));
-    scene.add(ring);
+    scene.add(ctx.tag(ring, "model"));
 
     ctx.annotation("no winner is implied — none of these programs is experimentally confirmed",
       () => ({ x: 0, y: -2.7, z: 3.4 }));
@@ -134,7 +134,7 @@ function TheoryConstellation3D() {
           <span className="small dim">Open: <RichText text={t.rows.problems.short}></RichText> · Experiment: <RichText text={t.rows.experiment.short}></RichText></span>
         </div>
       ) : null}
-      <VizCaption status="conjectural">
+      <VizCaption provenanceId="approaches-orrery" status="conjectural">
         Five research programs orbiting the same unsolved problem. Click a node for its core idea, defining equation,
         experimental status, and open problems — the comparator below makes the full aspect-by-aspect comparison.
         Positions and shapes are mnemonic, not meaningful.
@@ -152,8 +152,8 @@ function MicrostructureViz() {
   const netRef = useRef(null);
   if (!netRef.current) {
     // build a small random spin network graph
-    const nodes = [];
-    for (let i = 0; i < 14; i++) nodes.push({ x: 0.12 + Math.random() * 0.76, y: 0.15 + Math.random() * 0.7 });
+    const nodes = [], rnd = QGA_SEEDED(0x5e17);
+    for (let i = 0; i < 14; i++) nodes.push({ x: 0.12 + rnd() * 0.76, y: 0.15 + rnd() * 0.7 });
     const edges = [];
     for (let i = 0; i < nodes.length; i++) {
       const dists = nodes.map((q, j) => ({ j, d: Math.hypot(q.x - nodes[i].x, q.y - nodes[i].y) }))
@@ -161,7 +161,7 @@ function MicrostructureViz() {
       for (let k = 0; k < 2; k++) {
         const j = dists[k].j;
         if (!edges.some((e) => (e.a === i && e.b === j) || (e.a === j && e.b === i)))
-          edges.push({ a: i, b: j, spin: [["1/2", 1], ["1", 2], ["3/2", 3], ["2", 4]][Math.floor(Math.random() * 4)] });
+          edges.push({ a: i, b: j, spin: [["1/2", 1], ["1", 2], ["3/2", 3], ["2", 4]][Math.floor(rnd() * 4)] });
       }
     }
     netRef.current = { nodes, edges };
@@ -229,7 +229,7 @@ function MicrostructureViz() {
         ) : null}
       </div>
       <canvas ref={sim.canvasRef} className="viz-canvas" style={{ height: 260 }}></canvas>
-      <VizCaption status="schematic">
+      <VizCaption provenanceId="approaches-microstructure" status="schematic">
         Two candidate microstructures for the same macroscopic spacetime. Left mode: in string theory the particle
         spectrum is the harmonic spectrum of an extended object. Right mode: in loop quantum gravity, space is a
         superposition of spin networks with discrete geometric spectra. Both are conceptual renderings of

@@ -47,7 +47,7 @@ function AdsLabSection({ compact = false } = {}) {
         initial={{ radius: 10.5, theta: 0.62, phi: 1.35, minR: 4, maxR: 30, bloom: { strength: 0.8, radius: 0.55, threshold: 0.16 } }}
         build={build} deps={[links, region]}
         fallback={<div className="lab-fallback">The 3-D AdS lab needs WebGL; the entropy readouts above are computed without it.</div>}></Scene3D>
-      <VizCaption status="conjectural">
+      <VizCaption provenanceId="ads-holography-lab" status="conjectural">
         The disk is the <strong>Poincaré disk</strong> model of a constant-curvature AdS slice: boundary rings crowd
         together exactly as hyperbolic distance demands, and every arc is a true geodesic computed by
         <code> js/science/ads-geometry.mjs</code>. The gold tube is the <strong>Ryu–Takayanagi surface</strong>:
