@@ -435,47 +435,7 @@ function GaugeSectors() {
 
 function HiggsPotentialViz() {
   const [mu2, setMu2] = useState(-1); // sign-flipped mass parameter: negative → broken phase
-  const prm = usePRM();
-  const sim = useSimLoop((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    const cx = w / 2, cy = h * 0.86, scaleX = w * 0.36, lam = 1;
-    // potential V(φ) = μ² φ² + λ φ⁴  (radial slice; μ² slider in units where |μ²|=1 at extremes)
-    const V = (p) => mu2 * p * p + lam * p * p * p * p;
-    // vertical scale
-    let vmin = 0, vmax = 0.4;
-    for (let p = -1.2; p <= 1.2; p += 0.02) { vmin = Math.min(vmin, V(p)); vmax = Math.max(vmax, V(p)); }
-    const Y = (v) => cy - ((v - vmin) / (vmax - vmin + 1e-9)) * h * 0.7;
-    // axes
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.18); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx, 14); ctx.lineTo(cx, cy + 6); ctx.moveTo(cx - scaleX * 1.25, Y(0)); ctx.lineTo(cx + scaleX * 1.25, Y(0)); ctx.stroke();
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5); ctx.font = QGA_TOKENS.monoPx(10);
-    ctx.fillText("V(φ)", cx + 8, 22); ctx.fillText("|φ|→", cx + scaleX * 1.1, Y(0) - 8);
-    // curve
-    ctx.strokeStyle = QGA_TOKENS.css("pigment-amber-80"); ctx.lineWidth = 2; ctx.beginPath();
-    for (let p = -1.2; p <= 1.2; p += 0.01) {
-      const x = cx + p * scaleX, y = Y(V(p));
-      if (p === -1.2) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    // vacuum marker(s): minimum at φ=0 (μ²≥0) or |φ|=√(−μ²/2λ)
-    const vev = mu2 < 0 ? Math.sqrt(-mu2 / (2 * lam)) : 0;
-    const wob = prm ? 0 : Math.sin(t * 2.2) * 0.03;
-    const px = cx + (vev + wob) * scaleX, py = Y(V(vev + wob));
-    ctx.fillStyle = QGA_TOKENS.css("pigment-cyan-78");
-    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-cyan-78", 0.4);
-    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.stroke();
-    if (vev > 0) {
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-      ctx.fillText("⟨φ⟩ = v ≠ 0 — symmetry broken", cx + scaleX * 0.18, Y(V(vev)) + 22);
-      // mirror minimum
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-cyan-78", 0.35);
-      ctx.beginPath(); ctx.arc(cx - vev * scaleX, Y(V(vev)), 5, 0, Math.PI * 2); ctx.fill();
-    } else {
-      ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-      ctx.fillText("⟨φ⟩ = 0 — symmetric vacuum", cx + 14, Y(0) - 26);
-    }
-  }, [mu2, prm]);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.sm.higgsPotentialSpec({ mu2 }), [mu2]);
   return (
     <div className="viz-frame">
       <div className="viz-toolbar">
@@ -483,11 +443,10 @@ function HiggsPotentialViz() {
           format={(v) => (v < 0 ? "μ² < 0" : v > 0 ? "μ² > 0" : "μ² = 0")}></SliderRow>
         <span className="ctl-label">{mu2 < 0 ? "broken phase — Higgs mechanism active" : "unbroken phase"}</span>
       </div>
-      <canvas ref={sim.canvasRef} className="viz-canvas" style={{ height: 260 }}></canvas>
-      <VizCaption status="schematic">
+      <Figure spec={spec}>
         Radial slice of the Higgs potential V(φ) = μ²|φ|² + λ|φ|⁴. Drag μ² negative to watch the symmetric vacuum
         destabilize into the “Mexican hat” minimum at |φ| = v. The marker tracks the vacuum state.
-      </VizCaption>
+      </Figure>
     </div>
   );
 }
@@ -496,49 +455,8 @@ function HiggsPotentialViz() {
 function NeutrinoOscillationLab() {
   const [dm2, setDm2] = useState(2.5e-3);   // Δm² (eV²), atmospheric default
   const [s22t, setS22t] = useState(0.98);   // sin²2θ
-  const cvRef = useRef(null);
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = cv.clientWidth, h = 230;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 44, padR = 14, padT = 18, padB = 34;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    const LEmax = 1200; // L/E in km/GeV
-    const X = (le) => padL + (le / LEmax) * pw;
-    const Y = (p) => padT + ph * (1 - p);
-    // axes + gridlines
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
-    ctx.textAlign = "right";
-    [0, 0.5, 1].forEach((p) => { ctx.fillText(p.toFixed(1), padL - 6, Y(p) + 3);
-      ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.08); ctx.beginPath(); ctx.moveTo(padL, Y(p)); ctx.lineTo(padL + pw, Y(p)); ctx.stroke(); });
-    ctx.textAlign = "center";
-    for (let le = 0; le <= LEmax; le += 300) ctx.fillText(le, X(le), padT + ph + 16);
-    ctx.fillText("L / E   [km / GeV]", padL + pw / 2, h - 4);
-    ctx.save(); ctx.translate(13, padT + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText("probability", 0, 0); ctx.restore();
-    ctx.textAlign = "left";
-    // survival P(νμ→νμ) = 1 − sin²2θ sin²(1.27 Δm²[eV²] (L/E)[km/GeV])
-    const arg = (le) => 1.27 * dm2 * le;
-    const survP = (le) => 1 - s22t * Math.pow(Math.sin(arg(le)), 2);
-    const appP = (le) => s22t * Math.pow(Math.sin(arg(le)), 2);
-    const drawCurve = (fn, col, lbl, lx) => {
-      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.shadowColor = col; ctx.shadowBlur = 6; ctx.beginPath();
-      for (let i = 0; i <= 300; i++) { const le = (i / 300) * LEmax; const x = X(le), y = Y(Math.max(0, Math.min(1, fn(le)))); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-      ctx.stroke(); ctx.shadowBlur = 0;
-      ctx.fillStyle = col; ctx.fillText(lbl, lx, padT + 12);
-    };
-    drawCurve(survP, QGA_TOKENS.css("pigment-azure-80"), "P(νμ→νμ) survival", padL + 6);
-    drawCurve(appP, QGA_TOKENS.css("pigment-magenta-78"), "P(νμ→ντ) appearance", padL + pw - 150);
-    // T2K baseline marker (L=295 km, E≈0.6 GeV → L/E≈490)
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.5); ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(X(490), padT); ctx.lineTo(X(490), padT + ph); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("T2K", X(490) + 4, padT + ph - 6);
-  }, [dm2, s22t]);
+  // survival P(νμ→νμ) = 1 − sin²2θ sin²(1.27 Δm²[eV²] (L/E)[km/GeV]); appearance is the complement
+  const spec = useMemo(() => window.QGA_FIGURE.plots.sm.neutrinoOscillationSpec({ dm2, s22t }), [dm2, s22t]);
   return (
     <div className="viz-frame">
       <div className="viz-toolbar">
@@ -548,16 +466,14 @@ function NeutrinoOscillationLab() {
           format={(v) => v.toFixed(2)}></SliderRow>
         <button className="btn" onClick={() => { setDm2(2.5e-3); setS22t(0.98); }}>Atmospheric (real)</button>
       </div>
-      <canvas ref={cvRef} style={{ width: "100%", height: 230, display: "block" }}
-        aria-label="Neutrino oscillation survival and appearance probability versus L over E"></canvas>
-      <VizCaption status="established">
+      <Figure spec={spec}>
         Real two-flavour vacuum oscillation: <Eq tex="P(\nu_\mu\!\to\!\nu_\tau) = \sin^2 2\theta\,\sin^2\!\big(1.27\,\Delta m^2\,[\mathrm{eV}^2]\,L[\mathrm{km}]/E[\mathrm{GeV}]\big)"></Eq>.
         Because the probability depends on <Eq tex="\Delta m^2"></Eq>, oscillation <em>proves neutrinos have mass</em> —
         the one laboratory-confirmed departure from the minimal Standard Model, and a direct hint that the lepton
         sector mixes just as quarks do. Defaults are the measured atmospheric values
         (<Eq tex="\Delta m^2_{32}\approx2.5\times10^{-3}\,\mathrm{eV}^2,\ \sin^2 2\theta_{23}\approx0.98"></Eq>); the
         dashed line marks the T2K baseline. <span className="dim">Two-flavour approximation; the full picture is the three-flavour PMNS matrix at right.</span>
-      </VizCaption>
+      </Figure>
     </div>
   );
 }

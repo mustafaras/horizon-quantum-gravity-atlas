@@ -47,80 +47,16 @@ function useEasedKerr(target, duration = 0.55) {
 }
 
 /* ---------- Hawking blackbody spectrum (responds to mass & spin) ---------- */
+// The Figure Kit builds the plot (js/figure/plots/bh.mjs): visual temperature, normalised x³/(eˣ/ᵀ − 1).
 function HawkingSpectrumPlot({ logM, tempFactor }) {
-  const cvRef = useRef(null);
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = cv.clientWidth, h = 150;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 34, padR = 12, padT = 18, padB = 24;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    // visual temperature: smaller mass / lower spin-suppression → hotter (peak at higher x)
-    // map so the curve visibly shifts with the sliders; absolute scale is illustrative.
-    const Tvis = Math.max(0.06, (1 - logM / 9) * tempFactor * 0.95 + 0.05);
-    const planck = (x) => window.QGA_PHYSICS.hawkingSpectralShape(x, Tvis);
-    let pk = 0; for (let i = 1; i <= 200; i++) { const x = i / 200 * 3; pk = Math.max(pk, planck(x)); }
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("Hawking spectrum  (blackbody)", padL, 12);
-    // filled curve
-    const grad = ctx.createLinearGradient(padL, 0, padL + pw, 0);
-    grad.addColorStop(0, QGA_TOKENS.alpha("pigment-red-70-c16", 0.7)); grad.addColorStop(0.5, QGA_TOKENS.alpha("pigment-orange-78", 0.7)); grad.addColorStop(1, QGA_TOKENS.alpha("pigment-azure-82", 0.7));
-    ctx.beginPath(); ctx.moveTo(padL, padT + ph);
-    for (let i = 0; i <= 200; i++) { const x = i / 200 * 3; const px = padL + (x / 3) * pw, py = padT + ph * (1 - planck(x) / pk); ctx.lineTo(px, py); }
-    ctx.lineTo(padL + pw, padT + ph); ctx.closePath(); ctx.fillStyle = grad; ctx.globalAlpha = 0.5; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.beginPath();
-    for (let i = 0; i <= 200; i++) { const x = i / 200 * 3; const px = padL + (x / 3) * pw, py = padT + ph * (1 - planck(x) / pk); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
-    ctx.strokeStyle = QGA_TOKENS.css("pigment-orange-85"); ctx.lineWidth = 1.8; ctx.stroke();
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55); ctx.fillText("photon energy →", padL + pw - 96, padT + ph + 16);
-  }, [logM, tempFactor]);
-  return <div className="viz-frame" style={{ padding: 6 }}><canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
-    aria-label="Hawking blackbody spectrum; peak shifts with black hole mass and spin"></canvas></div>;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.hawkingSpectrumSpec({ logM, tempFactor }), [logM, tempFactor]);
+  return <Figure spec={spec}></Figure>;
 }
 
 /* ---------- Page curve: entanglement entropy of Hawking radiation vs time ---------- */
 function PageCurvePlot() {
-  const cvRef = useRef(null);
-  useEffect(() => {
-    const cv = cvRef.current; if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = cv.clientWidth, h = 150;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    const padL = 34, padR = 12, padT = 18, padB = 24;
-    const pw = w - padL - padR, ph = h - padT - padB;
-    const X = (f) => padL + f * pw, Y = (s) => padT + ph * (1 - s);
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.22); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
-    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.6);
-    ctx.fillText("Page curve  S_rad(t)", padL, 12);
-    // Hawking's (naive) ever-rising thermal entropy
-    ctx.setLineDash([4, 4]); ctx.strokeStyle = QGA_TOKENS.alpha("pigment-red-65", 0.7); ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    for (let i = 0; i <= 100; i++) { const f = i / 100; const s = Math.min(1.6, 1.7 * f); ctx.lineTo(X(f), Y(Math.min(1, s))); }
-    ctx.stroke(); ctx.setLineDash([]);
-    // unitary Page curve: S_rad = min(thermal, remaining BH entropy)
-    ctx.strokeStyle = QGA_TOKENS.css("pigment-azure-82"); ctx.lineWidth = 2;
-    ctx.shadowColor = QGA_TOKENS.css("pigment-azure-82"); ctx.shadowBlur = 7;
-    ctx.beginPath();
-    for (let i = 0; i <= 100; i++) { const f = i / 100; const s = 0.85 * window.QGA_PHYSICS.pageCurveEntropy(f); ctx.lineTo(X(f), Y(s)); }
-    ctx.stroke(); ctx.shadowBlur = 0;
-    // Page time marker
-    ctx.strokeStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.5); ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(X(0.5), padT); ctx.lineTo(X(0.5), padT + ph); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-amber-79-c12", 0.85); ctx.fillText("Page time", X(0.5) + 4, padT + 24);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-red-65", 0.85); ctx.fillText("Hawking (info lost)", X(0.04), padT + 12);
-    ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55); ctx.fillText("evaporation →", padL + pw - 86, padT + ph + 16);
-  }, []);
-  return <div className="viz-frame" style={{ padding: 6 }}><canvas ref={cvRef} style={{ width: "100%", height: 150, display: "block" }}
-    aria-label="Page curve: entanglement entropy of Hawking radiation rising then falling for unitary evaporation"></canvas></div>;
+  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.pageCurveSpec(), []);
+  return <Figure spec={spec}></Figure>;
 }
 
 // Camera presets expressed as observatory state: inclination from the spin axis (deg) and

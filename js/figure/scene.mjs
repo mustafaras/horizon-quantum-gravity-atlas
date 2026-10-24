@@ -22,7 +22,7 @@ function thin(positions, widths, gap = 8) {
     let ok = true;
     for (let k = 1; k < keep.length && ok; k++) {
       const a = keep[k - 1], b = keep[k];
-      ok = positions[b] - widths[b] / 2 - (positions[a] + widths[a] / 2) >= gap;
+      ok = Math.abs(positions[b] - positions[a]) - (widths[b] + widths[a]) / 2 >= gap;
     }
     if (ok) return keep;
   }
@@ -187,11 +187,15 @@ export function buildScene(spec, { width, height = spec.height, measure, fonts }
       const px = sx.map(m.x), py = sy.map(m.y);
       if (!Number.isFinite(px) || !Number.isFinite(py)) return;
       const w = m.text ? texExtent(m.text.plain, measure, tickFont) : 0;
-      let tx = Math.min(plot.x + plot.w - 2, Math.max(plot.x + 2, px + m.dx)), ty = Math.min(plot.y + plot.h - 2, Math.max(plot.y + 2, py + m.dy));
-      const align = tx + w > plot.x + plot.w ? "right" : "left";
+      const tx = Math.min(plot.x + plot.w - 2, Math.max(plot.x + 2, px + m.dx)), ty = Math.min(plot.y + plot.h - 2, Math.max(plot.y + 2, py + m.dy));
+      const room = (side) => (side === "left" ? plot.x + plot.w - (tx + 3) : tx - 3 - plot.x);
+      const align = m.dx < 0 ? (room("right") >= w || room("right") >= room("left") ? "right" : "left") : (room("left") >= w || room("left") >= room("right") ? "left" : "right");
       prims.push({ k: "circle", x: px, y: py, r: 2.5, c: m.color, a: 1, mark: i });
       prims.push({ k: "line", pts: [[px, py], [tx, ty]], c: m.color, a: 0.8, w: 1, mark: i, role: "leader" });
-      if (m.text) text({ x: tx + (align === "left" ? 3 : -3), y: ty, text: m.text.plain, tex: m.text.tex, align, base: ty < py ? "bottom" : "top", c: m.color, a: 1, size: tickPx, role: "callout" });
+      if (m.text) {
+        const anchorX = align === "left" ? Math.min(tx + 3, plot.x + plot.w - w) : Math.max(tx - 3, plot.x + w);
+        text({ x: anchorX, y: ty, text: m.text.plain, tex: m.text.tex, align, base: ty < py ? "bottom" : "top", c: m.color, a: 1, size: tickPx, role: "callout" });
+      }
     }
   });
 

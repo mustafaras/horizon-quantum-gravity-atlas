@@ -177,6 +177,11 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Figure Kit (S09): scene description, renderers and plot specs for every 2D figure.
+    const figureKit = await import("./figure/index.mjs");
+    figureKit.registerFigureProvenance();
+    Object.defineProperty(window, "QGA_FIGURE", { value: Object.freeze({ ...figureKit }), configurable: true });
+
     // Prompt 09: cinematic direction system. The runtime assembles the
     // camera director, scroll driver, shot-space registry, and the
     // capability-gated scene transition; the transition shader is prewarmed
