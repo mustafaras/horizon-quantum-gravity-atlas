@@ -100,21 +100,21 @@
       "id": "F-02",
       "title": "Provenance registry covers 9 views while 28 VizCaption panels exist",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S11"
       ],
-      "closedIn": null
+      "closedIn": "f446f74dd1b5d497ddc9dd5e55022a9b99c93476"
     },
     {
       "id": "F-03",
       "title": "Math.random feeds labelled science figures; starfields unseeded",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S11"
       ],
-      "closedIn": null
+      "closedIn": "f446f74dd1b5d497ddc9dd5e55022a9b99c93476"
     },
     {
       "id": "F-04",
@@ -796,13 +796,15 @@
         "F-02",
         "F-03"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s11-provenance-sweep",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/71",
-      "commits": [],
+      "commits": [
+        "f446f74dd1b5d497ddc9dd5e55022a9b99c93476"
+      ],
       "startedAt": "2026-10-24",
-      "completedAt": null,
+      "completedAt": "2026-10-24",
       "evidence": {
         "tests": [
           "npm test: 810/811 pass, 1 skipped (new: provenance-coverage 11, references 8, scene-layers 8, provenance +8)",
@@ -2118,6 +2120,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "Provenance coverage done: 26 of 26 captions registered (50 entries), layers and seed in the contract, drawer, audit in npm run validate, Math.random 19 -> 1, scenes tagged, scientific mode hides decoration only; D-058 to D-062. F-02 and F-03 are closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/71."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 71 merged as f446f74dd1b5d497ddc9dd5e55022a9b99c93476; CI (Browser QA 6m56s, Validate) green. F-02 and F-03 closed."
     }
   ]
 }
