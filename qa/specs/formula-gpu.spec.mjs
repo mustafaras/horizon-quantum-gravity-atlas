@@ -58,7 +58,9 @@ async function runOnGpu({ backend, tolerances }) {
     const { node } = compileTSL(formula.expr, TSL, bindings);
 
     const material = new THREE.MeshBasicNodeMaterial();
-    material.colorNode = TSL.vec4(node, 0, 0, 1);
+    // The magnitude goes in red and the sign in green: a render target can clamp a negative output to 0, and
+    // formulas such as the Newtonian potential are negative.
+    material.colorNode = TSL.vec4(TSL.abs(node), TSL.select(TSL.float(node).lessThan(0), TSL.float(1), TSL.float(0)), 0, 1);
     const target = new THREE.RenderTarget(WIDTH, 1, { type: type === "half" ? THREE.HalfFloatType : THREE.FloatType, depthBuffer: false });
     const quad = new THREE.QuadMesh(material);
     renderer.setRenderTarget(target);
@@ -68,7 +70,7 @@ async function runOnGpu({ backend, tolerances }) {
 
     let maxRel = 0, nonFinite = 0;
     points.forEach((p, i) => {
-      const gpu = type === "half" && pixels instanceof Uint16Array ? NaN : pixels[i * 4];
+      const gpu = type === "half" && pixels instanceof Uint16Array ? NaN : pixels[i * 4] * (pixels[i * 4 + 1] > 0.5 ? -1 : 1);
       const reference = formula.evaluateF32(formula.geometric(p));
       if (!Number.isFinite(gpu)) { nonFinite += 1; return; }
       maxRel = Math.max(maxRel, Math.abs(gpu - reference) / (Math.abs(reference) || 1));
