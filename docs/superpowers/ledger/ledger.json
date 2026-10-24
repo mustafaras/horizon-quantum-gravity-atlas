@@ -746,13 +746,15 @@
       "findings": [
         "F-26"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s10-formula-lens",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/66",
-      "commits": [],
+      "commits": [
+        "ae1c236391f889dc38b27db1fffd2acf3db26320"
+      ],
       "startedAt": "2026-10-24",
-      "completedAt": null,
+      "completedAt": "2026-10-24",
       "evidence": {
         "tests": [
           "npm test: 769/770 pass, 1 skipped (new: test/formula-lens 21, formula-terms 7, term-lens 15, formula-lens-scenes 8, concept-bus +1 = 52 tests; formula-core dims table +1 formula)",
@@ -2048,6 +2050,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "Formula Lens done: lens registry, formula-term event, FormulaCard terms, scene helper, three scene wirings, Newtonian-limit card, docs and QA spec; D-050 to D-057. F-26 stays closed (closedBy S03, S10). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/66."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S10",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 66 merged as ae1c236391f889dc38b27db1fffd2acf3db26320; CI (Browser QA, Validate) green; Pages deployment succeeded. F-26 stays closed (closedBy S03, S10)."
     }
   ]
 }
