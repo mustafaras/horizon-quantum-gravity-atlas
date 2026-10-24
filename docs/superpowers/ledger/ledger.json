@@ -835,12 +835,12 @@
       "findings": [
         "F-07"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s12-sm-neutrinos",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -2127,6 +2127,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 71 merged as f446f74dd1b5d497ddc9dd5e55022a9b99c93476; CI (Browser QA 6m56s, Validate) green. F-02 and F-03 closed."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S12",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Branch claude/s12-sm-neutrinos from main da64adb."
     }
   ]
 }
