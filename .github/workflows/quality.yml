@@ -47,29 +47,43 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          # The merge commit and its first parent: what scripts/ci/browser-scope.mjs compares.
+          fetch-depth: 2
 
       - name: Set up Node
         uses: actions/setup-node@v5
         with:
           node-version: 24
 
+      # A change to documents only (the ledger, notes, screenshots) needs no browser run. The job still runs and
+      # reports success, so a required "Browser QA" check is satisfied. Scheduled and manual runs run everything.
+      - name: Decide what this change needs
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/ci/browser-scope.mjs
+
       - name: Install dependencies
         run: npm ci
 
       - name: Install pinned Chromium
+        if: steps.scope.outputs.code == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Verify capture manifest
         run: npm run qa:verify
 
+      # Only a renderer, three.js, QA harness, package or workflow change can move the native WebGPU boundary.
       - name: Verify native renderer boundary first
+        if: steps.scope.outputs.render == 'true'
         env:
           # Surface pinned Chromium/GPU-process stderr for software WebGPU triage.
           DEBUG: pw:browser
         run: npm run qa:test -- qa/specs/render-backends.spec.mjs --grep "real WebGPU API on a software adapter"
 
       - name: Preserve native renderer evidence
-        if: always()
+        if: always() && steps.scope.outputs.render == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: native-renderer-evidence
@@ -80,7 +94,7 @@ jobs:
 
       # PRs and pushes gate on the critical subset; the full suite runs weekly or on demand.
       - name: Run critical browser QA
-        if: github.event_name == 'push' || github.event_name == 'pull_request' || !inputs.full
+        if: steps.scope.outputs.code == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request' || !inputs.full)
         run: npm run qa:critical
 
       - name: Run full browser QA suite
