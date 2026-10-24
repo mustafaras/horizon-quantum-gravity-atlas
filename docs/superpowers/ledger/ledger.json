@@ -796,17 +796,29 @@
         "F-02",
         "F-03"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s11-provenance-sweep",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/71",
       "commits": [],
       "startedAt": "2026-10-24",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 810/811 pass, 1 skipped (new: provenance-coverage 11, references 8, scene-layers 8, provenance +8)",
+          "npm run validate: passed, including scripts/audit-provenance.mjs (50 registered entries, 26 captions)",
+          "npm run qa:test -- qa/specs/provenance-layers.spec.mjs qa/specs/premium-interactions.spec.mjs qa/specs/formula-lens.spec.mjs: 28/28 pass locally (WebGL2 backend)",
+          "full local qa:test not completed (D-058): 131 of 263 specs ran, 3 failed; a11y skip link and cinematic-navigation also fail on main, gwosc 'ok mode' was not compared with main"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "Math.random call sites in js/: 19 -> 1 (annotation pin id, allowlisted)",
+          "provenance registry entries: 9 views before (19 + 3 + 9 module entries counted by id, 26 captions, 0 requiring an id) -> 50 entries, 26 of 26 captions registered",
+          "drawn scene objects without a layer class, 9 views: 0 (qa/specs/provenance-layers.spec.mjs)",
+          "scientific mode: every changed pixel lies within 1 px of the decoration-only footprint (orrery scene); 0 outside",
+          "same seed, two loads: identical Points position hash (spin network) and identical FNV-1a canvas hash (orrery); seed 43 differs",
+          "js/mod-*.jsx lines: 9 files, net 0 (64 lines changed in, 64 out); needsUpdate sites 33 -> 33; colour literals unchanged"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -1831,6 +1843,41 @@
       "prompt": "S10",
       "decision": "No visual baseline is refreshed (they are local-only and not reproducible here, D-048). The only capture whose content changes on purpose is gr-curvature-lensing: its section now ends with the Newtonian-limit card. The lens is hidden by default, so every other scene capture is unchanged. js/mod-blackholes.jsx, mod-planck.jsx and mod-gr.jsx changed by the same number of lines they lost (net 0); two needsUpdate sites were removed again so the F-27 counter does not grow; registerVisualization call sites go 9 -> 10 (three lens entries toward F-02).",
       "rationale": "The prompt requires a justification per refreshed baseline and forbids growing mod-*.jsx."
+    },
+    {
+      "id": "D-058",
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "decision": "The full local qa:test was not completed. It ran 131 of 263 specs in one worker (about 40 minutes) and was stopped; the S11 spec and its neighbours (premium-interactions, formula-lens) pass 28/28. a11y 'skip link is the first Tab stop' and cinematic-navigation 'user input on a flagship scene' fail identically on main. gwosc 'ok mode' failed once under load and was not compared with main. CI runs the full browser suite on this PR because qa/ changed.",
+      "rationale": "The user approved leaving the remaining browser validation to CI instead of repeating an hour-long local run after every prompt."
+    },
+    {
+      "id": "D-059",
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "decision": "The prompt counts 28 VizCaption panels; the tree has 26 (perf:audit). All 26 name a provenanceId. 20 views had no entry and are registered in js/science/view-provenance.mjs; two captions pick among registered entries by a conditional (qft flux/field, rg effective/toy/asymptotic-safety). registerVisualization call sites go 10 -> 11. The static scan reads the literals of a conditional id and compares each with the registered status.",
+      "rationale": "The registry rejects a caption whose status differs from the entry, including the dynamic ones."
+    },
+    {
+      "id": "D-060",
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "decision": "Citations: every reference now carries a DOI, arXiv id, bibcode or URL (each DOI checked on Crossref: title, journal, volume, pages, year). Removed because no identifier could be verified: Luminet 1979 (replaced by James et al. 2015, doi:10.1088/0264-9381/32/6/065001), Bardeen 1973 Les Houches, Ponzano & Regge 1968 (replaced by Perez, Living Rev. Relativ. 16, 3), Sommer (replaced by Bali, Phys. Rep. 343, 1), and the internal 'Prompt NN spec' paths. Corrected: 'Baez, Adv. Math. 134 (1998) 253' does not match that paper; replaced by Baez, Class. Quantum Grav. 15, 1827 (1998). Chapter and section numbers (Misner-Thorne-Wheeler chapter 25, Peskin-Schroeder sections) are no longer written. McKinney & Narayan 2007a is doi:10.1111/j.1365-2966.2006.11301.x. Books cite the CRC DOI (Peskin & Schroeder) or the Princeton page (MTW).",
+      "rationale": "The prompt requires every citation verified against the primary source and forbids numbers that cannot be checked."
+    },
+    {
+      "id": "D-061",
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "decision": "The scene-layer audit lives in Playwright (qa/specs/provenance-layers.spec.mjs), not in npm run validate, because it needs a browser; validate runs the static half (captions, references, Math.random). Classes: glow sprites are decoration; the concept highlight overlay and selection markers are model so they stay visible; backdrop stars, floors, nebulae and dust are decoration; a group tag covers its children and an engraved line carries its class in userData.engraved.layer. The scientific-mode pixel test renders one scene with decoration shown and hidden and requires each changed pixel (above 2 levels, 8-bit blend rounding) to lie within 1 px of the decoration-only render, because the antialiasing filter spreads edges. It covers the approaches orrery; the layer audit covers 9 views.",
+      "rationale": "The scientific preset already drops post decoration; comparing within one preset isolates the object layer."
+    },
+    {
+      "id": "D-062",
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "decision": "No visual baseline is refreshed (local-only, D-048). Every scene capture that shows backdrop stars changes on purpose: the stars now come from seededRng constants instead of Math.random (the QA bootstrap replaced Math.random with an xorshift stream, which no product path reads any more). Captures that include the atlas backdrop, the approaches, planck, standard-model, experiments and QFT scenes are affected.",
+      "rationale": "The prompt asks for a one-line justification for captures whose content changes on purpose."
     }
   ],
   "log": [
@@ -2064,6 +2111,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "claimed",
       "detail": "Branch claude/s11-provenance-sweep from main 7055063."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S11",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "Provenance coverage done: 26 of 26 captions registered (50 entries), layers and seed in the contract, drawer, audit in npm run validate, Math.random 19 -> 1, scenes tagged, scientific mode hides decoration only; D-058 to D-062. F-02 and F-03 are closed with the merge commit in the done entry (the ledger requires closedIn). PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/71."
     }
   ]
 }
