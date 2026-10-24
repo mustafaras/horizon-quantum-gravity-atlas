@@ -145,7 +145,7 @@
       "closedBy": [
         "S09"
       ],
-      "closedIn": "af0e603"
+      "closedIn": "39d17f4aa8d34b80afb958e9f44c09acf8a24549"
     },
     {
       "id": "F-07",
@@ -707,20 +707,23 @@
       "findings": [
         "F-06"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "branch": "claude/zealous-goldberg-fi73ya",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/64",
-      "commits": [],
+      "commits": [
+        "39d17f4aa8d34b80afb958e9f44c09acf8a24549"
+      ],
       "startedAt": "2026-10-24",
-      "completedAt": null,
+      "completedAt": "2026-10-24",
       "evidence": {
         "tests": [
           "npm test: 717/718 pass, 1 skipped (new: test/figure-ticks 7, figure-layout 4, figure-spec 8, figure-plots 29 = 48 tests)",
           "npm run validate: passed",
           "npm run perf:audit: runs; files over 800 lines: mod-experiments 1892 -> 1566, mod-qft 1737 -> 1477, mod-gr 1511 -> 1322, mod-blackholes 1084 -> 961",
           "qa/specs/figure-kit.spec.mjs: 11/11 pass locally (18 figures x 8 widths 320-1440 px: no clipped text, no overlapping labels, summary linked by aria-describedby; keyboard crosshair; Data table <= 200 rows; RG slider; theme repaint)",
-          "Affected existing specs run locally: rg, gw-instrument, kerr-observatory (functional cases), state, smoke, motion all pass; visual and kerr reference-image comparisons fail against baselines this environment cannot reproduce (D-048)"
+          "Affected existing specs run locally: rg, gw-instrument, kerr-observatory (functional cases), state, smoke, motion all pass; visual and kerr reference-image comparisons fail against baselines this environment cannot reproduce (D-048)",
+          "PR 64 CI: Browser QA and Validate both green on 1172d27"
         ],
         "screenshots": [],
         "measurements": [
@@ -1946,6 +1949,13 @@
       "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
       "event": "review",
       "detail": "Figure Kit, 18 figures, builder tests and the 8-width spec done; D-044 to D-049. F-06 closed. PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/64."
+    },
+    {
+      "date": "2026-10-24",
+      "prompt": "S09",
+      "agent": "cloud: Claude Code session_01RY85D7AySPxRWZYHHruWzN",
+      "event": "done",
+      "detail": "PR 64 merged as 39d17f4aa8d34b80afb958e9f44c09acf8a24549; F-06 closed in it."
     }
   ]
 }
