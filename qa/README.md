@@ -39,6 +39,19 @@ qa/
 | `npm run qa:test` | Full Playwright suite against the local verified server. |
 | `npm run qa:test:live` | Live gwosc.org smoke (the only test that touches the network). |
 
+## What CI runs for a change
+
+`.github/workflows/quality.yml` runs the browser job on every pull request and push to `main`, but `scripts/ci/browser-scope.mjs` decides how much of it a change needs (the files of the merge commit against its first parent):
+
+| Change | Browser job |
+|---|---|
+| documents only (`docs/`, `*.md`, `LICENSE`, `CITATION.cff`) | reports success in about 20 s: no Chromium, no browser test (`qa:verify` and the whole `validate` job still run) |
+| code that does not touch the renderer | critical QA (`qa:critical`) |
+| `js/render/`, `vendor/three/`, `qa/`, package files, the workflow or `scripts/ci/` | native WebGPU boundary test and critical QA |
+| scheduled or manual run, or a change list that cannot be read | everything (the full suite on a schedule or on request) |
+
+The job always runs, so a required "Browser QA" check is satisfied when it is skipped. The rules are tested in `test/ci-browser-scope.test.mjs`.
+
 ## Suites
 
 | Spec | Coverage |
