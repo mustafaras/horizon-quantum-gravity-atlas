@@ -54,13 +54,13 @@ test("every tex= and $...$ in the Higgs lab source compiles, and its card text k
   assert.doesNotMatch(prose, /[α-ωΑ-Ω²³⁴⁻√]/, "no Greek letters, superscripts or radicals outside KaTeX");
 });
 
-test("the readout helper writes a mantissa and a signed exponent as TeX", () => {
-  const source = read("js/labs/higgs-lab.jsx");
-  const body = source.match(/function hgSciTex[\s\S]*?\n}\n/)[0];
-  const hgSciTex = new Function(`${body}; return hgSciTex;`)();
-  assert.equal(hgSciTex(7.96e8, 2), "7.96\\times10^{8}");
-  assert.equal(hgSciTex(1.2e-3, 1), "1.2\\times10^{-3}");
-  assert.doesNotThrow(() => katex.renderToString(`${hgSciTex(1.2209e19, 2)}\\,\\mathrm{GeV}`, OPTIONS));
+test("the shared readout helper (core.jsx sciTex) writes a mantissa and a signed exponent as TeX", () => {
+  const source = read("js/core.jsx");
+  const body = source.match(/function sciTex[\s\S]*?\n}\n/)[0];
+  const sciTex = new Function(`${body}; return sciTex;`)();
+  assert.equal(sciTex(7.96e8, 2), "7.96\\times10^{8}");
+  assert.equal(sciTex(1.2e-3, 1), "1.2\\times10^{-3}");
+  assert.doesNotThrow(() => katex.renderToString(`${sciTex(1.2209e19, 2)}\\,\\mathrm{GeV}`, OPTIONS));
 });
 
 test("the 3-D scene labels are KaTeX sources that compile", () => {

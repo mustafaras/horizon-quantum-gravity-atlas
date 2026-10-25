@@ -220,6 +220,19 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // QFT lattice lab (S14): the CPU reference of the phi^4 lattice (it also runs the 1+1D fallback), the lab's presets, clock and slider
+    // ranges; the GPU scene loads on demand with the first scene that builds it.
+    const latticeScience = await import("./science/lattice-field.mjs");
+    const latticePlan = await import("./visualizations/qft/lattice-plan.mjs");
+    const latticePresets = await import("./visualizations/qft/lattice-presets.mjs");
+    Object.defineProperty(window, "QGA_QFT_LATTICE", {
+      value: Object.freeze({
+        science: Object.freeze({ ...latticeScience }), view: latticePlan.LATTICE_VIEW, presets: latticePresets.LATTICE_PRESETS,
+        safeCouplings: latticePresets.safeCouplings, kickSeed: latticePresets.kickSeed, loadScene: () => import("./visualizations/qft/lattice-scene.mjs"),
+      }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

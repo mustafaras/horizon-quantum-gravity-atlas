@@ -115,10 +115,42 @@ async function attachPlanckDescent(ctx, { rings }) {
   return handle;
 }
 
+/* ---------- QFT lattice: the phi^4 Hamiltonian density ---------- */
+
+const LATTICE_NOTE = "lattice units · classical field · each term over the current state";
+/** Each term of qft-phi4-hamiltonian, the symbols it reads (all of them scene nodes) and the palette of its colour. */
+const LATTICE_TERMS = Object.freeze({
+  kinetic: Object.freeze({ symbols: ["pi"] }),
+  gradient: Object.freeze({ symbols: ["g2"] }),
+  mass: Object.freeze({ symbols: ["m2", "phi"], palette: "diverging" }),
+  interaction: Object.freeze({ symbols: ["lambda", "phi"] }),
+});
+
+/**
+ * @param surface  the lattice mesh
+ * @param nodes    { phi, pi, g2, m2, lambda } from createLatticeMaterial (varyings and the simulation's uniforms)
+ * @param ranges   { kinetic, gradient, mass, interaction }: the [lo, hi] each term is coloured over (the mass term symmetric about 0)
+ * @param sample   () => { pi, g2, phi, m2, lambda }: representative (rms) values, for the value a focused term shows on its card
+ */
+async function attachQftLattice(ctx, { surface, nodes, ranges, sample }) {
+  const formula = registry.formula("qft-phi4-hamiltonian");
+  const termTargets = Object.fromEntries(Object.entries(LATTICE_TERMS).map(([termId, spec]) => [termId, {
+    kind: "field", surfaceName: "lattice", range: ranges[termId], ...(spec.palette ? { palette: spec.palette } : {}),
+    bindings: Object.fromEntries(spec.symbols.map((name) => [name, { node: name }])),
+  }]));
+  const handle = await createTermLens({
+    sceneId: "qft-lattice", formulaId: formula.id, ctx, surfaces: { lattice: surface }, nodes, legendNote: LATTICE_NOTE, termTargets,
+    live: () => ({ env: sample(), unit: "(lattice units, rms over the lattice)" }),
+  });
+  ctx.onDispose?.(handle.dispose);
+  return handle;
+}
+
 const ATTACHERS = Object.freeze({
   "kerr-observatory": attachKerrObservatory,
   "gr-well": attachCurvatureWell,
   "planck-descent": attachPlanckDescent,
+  "qft-lattice": attachQftLattice,
 });
 
 export function attachLens(key, ctx, params) {

@@ -9,6 +9,8 @@ import { getVisualizationProvenance, registerVisualization } from "../../science
 
 const SCHWARZSCHILD = "Schwarzschild, On the gravitational field of a mass point according to Einstein's theory (1916), arXiv:physics/9905030";
 const EINSTEIN_1916 = "Einstein, Die Grundlage der allgemeinen Relativitätstheorie, Ann. Phys. 354, 769 (1916), doi:10.1002/andp.19163540702";
+const MONTVAY_MUENSTER = "Montvay & Münster, Quantum Fields on a Lattice, Cambridge University Press (1994), doi:10.1017/CBO9780511470783";
+const HAIRER_LUBICH_WANNER = "Hairer, Lubich & Wanner, Geometric numerical integration illustrated by the Störmer–Verlet method, Acta Numerica 12, 399–450 (2003), doi:10.1017/S0962492902000144";
 const CODATA = "Tiesinga, Mohr, Newell & Taylor, CODATA recommended values of the fundamental physical constants: 2018, Rev. Mod. Phys. 93, 025010 (2021), doi:10.1103/RevModPhys.93.025010";
 
 export const FORMULA_LENS_PROVENANCE = Object.freeze({
@@ -39,6 +41,21 @@ export const FORMULA_LENS_PROVENANCE = Object.freeze({
     references: [EINSTEIN_1916, CODATA],
     layers: [{ name: "Newtonian potential field on the well", class: "model" }, { name: "Well surface shading outside the field", class: "decoration" }],
     seed: "none: closed forms only",
+  },
+  "formula-lens-qft-lattice": {
+    model: "The four terms of the phi^4 Hamiltonian density, kinetic pi^2/2, gradient (grad phi)^2/2, mass m^2 phi^2/2 and interaction lambda phi^4/24, painted over the surface of the QFT lattice laboratory as heat maps of the formula term, computed on the GPU from the field's current state",
+    status: "effective",
+    assumptions: [
+      "Classical field on the lattice in lattice units (spacing 0.25, hbar = c = 1); each term is the energy per site, not per unit area",
+      "The terms are evaluated from the per-vertex values of phi, the synchronised pi and the squared gradient, interpolated between sites: exact at a site, the term of the interpolated field between sites",
+      "The colour range is 1.5 times the 99th percentile of the term in the preset's initial state, so a later burst of energy saturates at the top of the scale; the mass term is symmetric about zero and diverging",
+      "The value on the card is the term at the root-mean-square phi, pi and gradient of the lattice, not the mean of the term",
+    ],
+    validity: ["Exact at the lattice sites for the current state of the simulation; the scheme conserves the energy to order (omega dt)^2"],
+    numericalMethod: "Each term is compiled from the Formula Core AST to a TSL node (js/formula/to-tsl.mjs) bound to the simulation's buffers; the same AST is compared with the CPU lattice terms in test/lattice-field.test.mjs and with its float32 evaluation in qa/specs/formula-gpu.spec.mjs",
+    references: [MONTVAY_MUENSTER, HAIRER_LUBICH_WANNER],
+    layers: [{ name: "Hamiltonian-density terms on the lattice", class: "model" }, { name: "Lattice surface shading outside the field", class: "decoration" }],
+    seed: "URL state seed for the vacuum sample; the terms themselves are closed forms of the state",
   },
   "formula-lens-planck-descent": {
     model: "Each physical constant of l_P = sqrt(hbar G / c^3) is associated with the decade gate of the descent where its physics first governs: hbar at the atomic gate, c at the nuclear gate, G at the Planck gate",

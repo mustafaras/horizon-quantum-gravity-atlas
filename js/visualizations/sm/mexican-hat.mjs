@@ -17,6 +17,7 @@ import { higgsPotentialReduced } from "../../formula/library/higgs.mjs";
 import * as TK from "../../design/tokens.mjs";
 import { fieldColorNode, lineCoverage, paletteTexture } from "../../render/materials/index.mjs";
 import { tagLayer as tag } from "../../render/scene-layers.mjs";
+import { typesetLabel as typeset } from "../common/katex-label.mjs";
 import {
   HAT_UNIT, HAT_HEIGHT, HAT_RADIUS, PHYSICAL_PHASE, SYMMETRIC_PHASE, SHAFT_SAMPLES, HEAD_POINTS, hatHeight, makeArrow, ringPoints,
   radialArrow, goldstoneArrow, vacuumMarker, easePhase,
@@ -53,12 +54,6 @@ export function createHatMaterial() {
   material.userData.kit = "sm-hat";
   material.userData.phaseUniform = uS; // QA hook: qa/specs/higgs-lab.spec.mjs reads the live phase from it
   return { material, uniforms: { s: uS }, lut };
-}
-
-function typeset(handle, tex, plain) {
-  const katex = globalThis.katex;
-  if (!katex) { handle.el.textContent = plain; return; }
-  try { katex.render(tex, handle.el, { throwOnError: true }); } catch { handle.el.textContent = plain; }
 }
 
 /**

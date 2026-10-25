@@ -75,9 +75,9 @@ export const QGA_SHOT_MANIFESTS = Object.freeze({
   qft: Object.freeze([
     Object.freeze({
       id: "qft-membrane", view: "qft", space: "qft-field",
-      chapter: "Quantum Fields", title: "The scalar field membrane — excitations are particles",
+      chapter: "Quantum Fields", title: "The lattice scalar field — excitations are particles",
       duration: 8, focal: 45, exposure: 1, easing: "easeInOutQuint",
-      annotations: ["Klein–Gordon field", "mass gap"],
+      annotations: ["lattice field", "energy density"],
       section: "#shot-section-qft", minSafeRadius: 8,
       pose: Object.freeze({ radius: 19, theta: 0.52, phi: 1.0, target: Object.freeze([0, 0, 0]) }),
     }),

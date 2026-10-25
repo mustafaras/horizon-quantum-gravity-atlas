@@ -920,17 +920,31 @@
         "S13"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s14-qft-lattice",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/78",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-25",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 913/914 pass, 1 skipped (new: test/lattice-field.test.mjs 13, lattice-plan 4, lattice-presets 7, formula-lens-scenes +1 and the Formula Core terms test; baseline 887/888)",
+          "npm run validate: passed (54 provenance entries); npm run qa:verify: 35 captures valid; npm run perf:audit: needsUpdate sites 33 -> 30, files over 800 lines 13 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1, <VizCaption 30 -> 30 (15 -> 18 files)",
+          "qa/specs/lattice-gpu.spec.mjs 2/2 (webgl2, and webgpu on the software adapter); qa/specs/lattice-lab.spec.mjs 7/7",
+          "affected browser specs run locally with the PR open (shared-stage, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, compute-particles, higgs-lab, null-geodesic-panel); the full qa:test is CI's job (D-080)"
+        ],
+        "screenshots": [
+          "docs/screenshots/28-qft-field-lab.png",
+          "docs/screenshots/35-qft-field-lab-mobile.png"
+        ],
+        "measurements": [
+          "GPU vs CPU after 200 steps on 64 x 64: phi 2.9e-7, pi 1.5e-6, synchronised pi 1.3e-6, squared gradient 4.4e-7, energy density 2.5e-6 of its peak (tolerance 1e-3), identical on webgl2 and the software webgpu adapter; a step-length change (30 x 0.1 then 30 x 0.05) 2.2e-7 / 1.4e-6; one kick 6e-8 / 3.7e-7",
+          "free field: leapfrog invariant conserved to 3.6e-15 over 10^4 steps at dt = 0.1 a (plan: 1e-5); lambda = 1: mean-energy drift 1.9e-5 at dt = 0.1 a and 4.7e-6 at dt = 0.05 a (eight seeds), ratio 4.1 (D-078)",
+          "kink pair static to 1e-6 over 100 time units and its energy 2 (2 sqrt2 / 3) mu v^2 to 2e-3; free packets superpose to 1e-10; vacuum spectrum within 5 standard errors over 1500 seeds",
+          "js/mod-qft.jsx 1476 -> 695 lines (plan: under 900); new files all under 450 lines; three pigments removed with the code that used them",
+          "QFT view CPU frame on the software rasterizer, scripts/perf/collect.mjs, this machine: running lattice p50 2117 to 2483 ms, p95 2201 to 2533 ms against 100 and 133 ms before; at rest p95 117.4, 116.8, 133.4 ms against 133.4, 1067.6, 733.4 before (three runs each; programs 35 -> 39); no GPU adapter here, so hardware GPU time is not measured (D-077)"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -2008,6 +2022,41 @@
       "prompt": "S13",
       "decision": "The null-geodesic panel of the GR view lost its travelling pulse when the figure moved to the Figure Kit (the CSS dash animation of the old SVG). It is back as photons released together as a plane wavefront on a shared clock: the integrator's fixed step, so capture, the lag of the near-critical ray and the order of arrival are the physics and not an effect (js/visualizations/gr/null-photons.mjs, js/labs/null-geodesic-panel.jsx; the panel left js/mod-gr.jsx, which shrank by 37 lines). The clock readout is t / t0 with t0 the crossing time of an undeflected ray (2 half / (v0 dt) steps). At the reference mass (b_crit = 0.528, GR_C2 = 27.04) rays with b < b_crit end by 0.83 t0; the ray at b = 1.005 b_crit winds 1.26 turns and leaves at 1.35 t0, the farthest ray at 0.96 t0, and the ray at 1.05 b_crit leaves later still (1.39 t0), so the caption states that bent paths are longer and does not attribute the delay to the winding alone. Wavefront lines joining the photons were drawn and removed: a chord between a few rays does not represent a wavefront. Play/Pause and a scrub slider are provided, the clock rests at 0.7 t0 under reduced motion, drawing stops off-screen and in a hidden tab. A 2x display exposed that the overlay canvas needed the figure canvas's CSS box (the backing store is at devicePixelRatio); qa/specs/null-geodesic-panel.spec.mjs checks it. Two new captures (gr-null-photons, gr-null-photons-mobile; docs/screenshots 33 and 34, new baselines, not refreshed) are parked at 0.7 t0.",
       "rationale": "The picture is about light in a curved geometry; letting the integrator's own steps be the clock makes the animation carry the result."
+    },
+    {
+      "id": "D-076",
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "decision": "The lattice steps with two kernels, kick (writes pi) and drift (writes phi), as the plan says, and a third analysis kernel once per frame; each writes exactly one storage buffer and reads the others, so no invocation reads what another writes in a dispatch (race free on WebGPU). S08's one-kernel rule concerns kernels that write the same buffers on the node renderer's WebGL2 backend (a transform-feedback pass swaps the buffers it writes); here none does. The gather is possible there through setPBO(true): r186 copies a written buffer to a texture after each dispatch and reads it with texelFetch, in a kernel and in the vertex stage. Verified against the CPU reference on WebGL2 and on a Chromium started with the SwiftShader WebGPU adapter (--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader); lattice-gpu.spec skips the WebGPU run with an annotation when the browser has no adapter, and CI disables WebGPU. Three r186 facts were found by running the scene, not the harness: setPBO must be set when the buffers are created, before any shader that reads them compiles; a readback of a buffer no kernel has written leaves an empty backend record that breaks the first kernel to write it (dualAttributeData.switchBuffers is not a function), so readback answers phi and pi from the start state before the first step and needs analyse() for the display buffers; and a readback waits for all queued GPU work (2177 ms per call on a software rasterizer). The step length may change under the quality governor: the first kick after a change uses the mean of the old and new length (variable-step leapfrog), which keeps the half-step offset.",
+      "rationale": "A fused kernel would race on WebGPU; each of the three facts came from a failing run and has a test."
+    },
+    {
+      "id": "D-077",
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "decision": "Reduced motion and CPU rasterizers (softwareRendererClamp, the rule the Kerr observatory uses) start the lattice at rest until Play, Step or a click, and the lattice is 128 x 128 there (256 x 256 otherwise). With readbacks throttled the running lattice still cost about 2.4 s per frame on the software rasterizer (p50 2117 to 2483 ms, p95 2201 to 2533 ms in scripts/perf/collect.mjs, against 100 and 133.4 ms before), which breaks the plan's gate that the QFT view's CPU frame p95 must not regress. At rest the view measures p95 117.4, 116.8 and 133.4 ms against 133.4, 1067.6 and 733.4 before (three runs each on this macOS machine, Chromium with WebGPU disabled; very noisy), first frame 6063, 1954, 3879 against 2382, 4012, 7413 ms, programs 35 -> 39. S08's own numbers (qft p95 316.7 ms on the CI Linux machine) were not reproduced here and are not compared. On hardware the lattice runs from the start; its GPU time was not measured (no adapter in this environment). The energy readout is taken at 40 times its own measured cost on hardware and only while at rest on software.",
+      "rationale": "The gate is measured on the rasterizer CI has; a simulation that cannot run there is shown at rest and says so on the page rather than hidden."
+    },
+    {
+      "id": "D-078",
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "decision": "The plan asks for leapfrog energy drift below 1e-5 relative over 10^4 steps at dt = 0.1 a. The instantaneous energy of a synchronised kick-drift-kick state cannot meet it for any state with omega dt of order 0.1 (it oscillates at (omega dt)^2 / 8, 2e-3 to 4e-3 measured), so the test reads it three ways. Free field: the exact invariant of the scheme (shadowEnergy) is conserved to 3.6e-15. Interacting (lambda = 1, vacuum sample): the oscillation is bounded by 0.25 (omega_max dt)^2 and the drift of the mean energy between windows of 50 time units is 1.9e-5 at dt = 0.1 a (mean of eight seeds, up to 3.6e-5 for one) and 4.7e-6 at dt = 0.05 a, a ratio of 4.1: second order, with no secular drift (a state-dependent shift of the modified energy during thermalisation), so the plan's 1e-5 is met at half its step and not at it. The kink: a single kink cannot close on a periodic box, so it is the kink-antikink pair; the tanh solves the continuum equation and the lattice Laplacian differs at O(a^2), so the profile is polished by gradient flow to the lattice's own static solution (stopping at a few thousand rounding errors, about 1e-11: an absolute 1e-13 is below the rounding floor of the force and did not converge at a = 0.25); without it the analytic profile moves by more than 1e-6. vacuumLike also draws pi with <|pi_k|^2> = omega_k/2, which the plan does not state, so that the sample is the free ground state's Wigner sample. Initial energy is the CPU start state's, the GPU readouts follow.",
+      "rationale": "The plan's figure is a property of a quantity the scheme does not conserve; the tests assert what it does conserve and the order of what it does not."
+    },
+    {
+      "id": "D-079",
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "decision": "Scope reading and integration. FieldLab3D became the GPU lattice laboratory (js/labs/lattice-lab.jsx); FieldLab, its one-dimensional fallback, became the CPU lattice in 1+1D without damping or tuned constants (js/labs/field-lab.jsx); the amplitude room moved unchanged to js/labs/amplitude-room.jsx, js/mod-qft.jsx 1476 -> 695 lines. The plan also names 'the vacuum lab': I read it as the one-dimensional field lab (its label is the vacuum <phi> = 0). QftComputeLab ('Vacuum fluctuations, computed': the Fourier-mode free field of js/science/qft-fields.mjs, with a disclosed cutoff) stays because it is a different, tested computation and the plan names nothing to replace it with; if the plan meant that lab, it is the deviation to revisit. The old Math.random kicks the plan mentions were already seeded (S11); a click is now the seeded Gaussian kick of the lattice. The budget the quality governor gives the lab is its raySteps dimension, the only per-frame cost dimension applyRenderQuality receives. Provenance: qft-membrane became qft-lattice-phi4 (effective: a classical field, not schematic), qft-field-kinds describes the CPU lattice, formula-lens-qft-lattice is new (53 -> 54 entries). The unused pigments azure-92, blue-23 and blue-21-c05 were removed from styles/tokens.css with the membrane that used them (a test forbids orphaned pigments). The cinematic shots keep their ids and the section id and space name of the lab; two titles and annotations were reworded. The readouts, notes and the card text use KaTeX; the energy of the readout is written with the shared sciTex helper of js/core.jsx, which replaced the Higgs lab's private copy.",
+      "rationale": "Each is a reading of a sentence the plan leaves open or a consequence of deleting code; none changes a number."
+    },
+    {
+      "id": "D-080",
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "decision": "Baselines: qa/baselines/qft-field-lab.png and docs/screenshots/28-qft-field-lab.png are refreshed because the section they show changed by design (the membrane of S08 gave way to the lattice laboratory); the capture now targets .lt-lab at 1600 x 2400 so the sticky header does not cover the tall lab, on the CPU rasterizer where the lattice is 128 x 128 and at rest under reduced motion. qft-field-lab-mobile (docs 35) is new. Local verification was narrowed to the changed area as agreed for S11 to S13: npm test, validate, qa:verify, perf:audit, perf:collect, and the specs named in the evidence; the full qa:test is left to CI. A local full-suite run of S13 earlier showed six failures that a clean archive of main reproduces (gwosc and one each of a11y and gw-instrument); they were not looked at again.",
+      "rationale": "The prompt asks for a one-line justification per updated baseline; the browser suite is CI's job on every PR that touches qa/."
     }
   ],
   "log": [
@@ -2304,6 +2353,20 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "follow-up",
       "detail": "After the merge: KaTeX for the Higgs lab, the provenance drawer and every FormulaCard (D-074), the formula-gpu sin/cos budget replacing the local failure (D-073), travelling photons on the null-geodesic figure with two new captures (D-075). Not part of the merged PRs 75 and 76."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "S14 claimed on claude/s14-qft-lattice from main 5762aae (S13 done, follow-up PR 77 merged)."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "GPU lattice phi^4 with a conserved-energy integrator: CPU reference, kick/drift/analyse kernels on both backends, Formula Lens terms, the lab and its 1+1D fallback, amplitude room moved; D-076 to D-080. No finding closed. PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/78."
     }
   ]
 }
