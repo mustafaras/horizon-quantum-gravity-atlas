@@ -293,6 +293,7 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     kerrOuterHorizon: { L: 1 }, photonSphere: { L: 1 }, criticalImpact: { L: 1 }, planckLength: { L: 1 },
     chirpMass: { M: 1 }, newtonianGwFrequency: { T: -1 }, casimirPressure: { M: 1, L: -1, T: -2 }, flammEmbedding: { L: 1 }, lorentzGamma: {}, newtonianPotential: {},
     twoFlavourOscillation: {}, matterPotential: { M: 1, L: 2, T: -2 }, higgsPotentialReduced: {}, higgsQuarticTree: {}, phi4HamiltonianDensity: {},
+    casimirPlatesPressure: { M: 1, L: -1, T: -2 },
   };
   assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
   for (const [name, f] of Object.entries(library)) {

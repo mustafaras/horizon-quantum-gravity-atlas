@@ -1148,6 +1148,72 @@
           "text": "light-travel time"
         }
       ]
+    },
+    {
+      "id": "qft-casimir-lab",
+      "file": "docs/screenshots/36-qft-casimir-lab.png",
+      "description": "Casimir cavity lab: two plates with engraved-grid faces, the first eight standing modes between them as engraved sinusoids and the fainter continuum outside, the typeset pressure, the log-log pressure figure with the Lamoreaux and Bressi bands, and the mode-sum convergence.",
+      "view": "qft",
+      "url": "?view=qft&seed=42",
+      "viewport": {
+        "width": 1600,
+        "height": 2800,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "scope": "element",
+      "target": ".cv-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".cv-lab",
+          "text": "energy per area"
+        }
+      ],
+      "scientificStatus": "established",
+      "statusNote": "The ideal-plate pressure and the regularised 1+1D mode sum are established results, drawn on log-log axes with the agreement two experiments reported (Lamoreaux 5%, Bressi et al. 15%); the 3-D scene is a schematic (log-mapped gap, one dimension, eight modes) and says so in-canvas.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "WebGL scene plus Figure Kit and KaTeX text; the capture runs on a CPU rasterizer; 2% tolerance."
+      }
+    },
+    {
+      "id": "qft-casimir-lab-mobile",
+      "file": "docs/screenshots/37-qft-casimir-lab-mobile.png",
+      "description": "Mobile Casimir cavity lab at 390 px: the plates, the modes between them and the continuum outside, with the status label and the typeset pressure.",
+      "view": "qft",
+      "url": "?view=qft&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".cv-lab .s3d-stage",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".cv-lab",
+          "text": "energy per area"
+        }
+      ],
+      "scientificStatus": "established",
+      "statusNote": "The ideal-plate pressure is an established result; the 3-D scene is a schematic (log-mapped gap, one dimension, eight modes) and says so in-canvas.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "WebGL scene on mobile, on a CPU rasterizer; 2% tolerance."
+      }
     }
   ]
 }

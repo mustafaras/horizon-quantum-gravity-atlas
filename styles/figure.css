@@ -50,11 +50,11 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 @keyframes prov-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* Neutrino lab (S12): the delta_CP dial, the control rows and the readouts. */
-.nu-bar, .hg-bar, .lt-bar { gap: 10px; }
-.btn.nu-btn, .btn.hg-btn, .btn.lt-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
+.nu-bar, .hg-bar, .lt-bar, .cv-bar { gap: 10px; }
+.btn.nu-btn, .btn.hg-btn, .btn.lt-btn, .btn.cv-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
 .nu-btn .katex { font-size: 1em; }
-.nu-controls, .hg-controls, .lt-controls { align-items: flex-start; }
-.nu-sliders, .hg-sliders, .lt-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.nu-controls, .hg-controls, .lt-controls, .cv-controls { align-items: flex-start; }
+.nu-sliders, .hg-sliders, .lt-sliders, .cv-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
 .nu-dial-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .nu-dial { width: 132px; height: 132px; cursor: pointer; touch-action: none; border-radius: 50%; }
 .nu-dial:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -66,7 +66,10 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .nu-dial-hand { stroke: var(--accent); stroke-width: 1.4; }
 .nu-dial-knob { fill: var(--surface-2); stroke: var(--accent); stroke-width: 2; }
 .nu-dial-readout { font: var(--step--1) var(--font-mono); color: var(--ink); }
-.nu-readouts, .hg-readouts, .lt-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
-.nu-cards, .hg-cards, .lt-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
+.nu-readouts, .hg-readouts, .lt-readouts, .cv-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
+.nu-cards, .hg-cards, .lt-cards, .cv-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
 .lt-readouts .lt-note { flex: 1 1 100%; margin: 0; }
-.lt-note { margin: 4px 14px; font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+.lt-note, .cv-note { margin: 4px 14px; font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+.cv-btn .katex { font-size: 1em; }
+.cv-sums { border-top: 1px solid var(--rule); }
+.cv-readouts .readout-label .katex { text-transform: none; }

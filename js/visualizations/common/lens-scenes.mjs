@@ -146,7 +146,36 @@ async function attachQftLattice(ctx, { surface, nodes, ranges, sample }) {
   return handle;
 }
 
+/* ---------- Casimir cavity: the pressure between ideal plates ---------- */
+
+/**
+ * @param gapGroup  a Group the scene scales along x to the drawn gap, so a unit-width outline always spans the gap
+ * @param outline   flat xyz polyline of the unit-width gap rectangle, in the group's frame
+ * @param readout   the in-scene label that marks the pressure readout (P ~ hbar c); hbar and c show it, because that is where they enter the number
+ * @param gap       () => the plate separation in metres
+ * @param notePosition () => the position of the note under the gap
+ */
+async function attachCasimirCavity(ctx, { gapGroup, outline, readout, gap, notePosition }) {
+  const formula = registry.formula("casimir-plates-pressure");
+  const handle = await createTermLens({
+    sceneId: "casimir-cavity", formulaId: formula.id, ctx,
+    termTargets: {
+      a: { kind: "object", objectName: "gap" },
+      hbar: { kind: "object", objectName: "readout" },
+      c: { kind: "object", objectName: "readout" },
+    },
+    live: () => ({ env: { a: gap() } }),
+    objects: {
+      gap: { outline: [outline], parent: gapGroup, note: "schematic scale · the drawn gap is a log map of a", notePosition },
+      readout: { label: readout },
+    },
+  });
+  ctx.onDispose?.(handle.dispose);
+  return handle;
+}
+
 const ATTACHERS = Object.freeze({
+  "casimir-cavity": attachCasimirCavity,
   "kerr-observatory": attachKerrObservatory,
   "gr-well": attachCurvatureWell,
   "planck-descent": attachPlanckDescent,
