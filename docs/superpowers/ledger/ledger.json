@@ -920,19 +920,22 @@
         "S13"
       ],
       "findings": [],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s14-qft-lattice",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/78",
-      "commits": [],
+      "commits": [
+        "70c6e29950f1478fce338e5493563042fece15ad"
+      ],
       "startedAt": "2026-10-25",
-      "completedAt": null,
+      "completedAt": "2026-10-25",
       "evidence": {
         "tests": [
           "npm test: 913/914 pass, 1 skipped (new: test/lattice-field.test.mjs 13, lattice-plan 4, lattice-presets 7, formula-lens-scenes +1 and the Formula Core terms test; baseline 887/888)",
           "npm run validate: passed (54 provenance entries); npm run qa:verify: 35 captures valid; npm run perf:audit: needsUpdate sites 33 -> 30, files over 800 lines 13 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1, <VizCaption 30 -> 30 (15 -> 18 files)",
           "qa/specs/lattice-gpu.spec.mjs 2/2 (webgl2, and webgpu on the software adapter); qa/specs/lattice-lab.spec.mjs 7/7",
-          "affected browser specs run locally with the PR open (shared-stage, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, compute-particles, higgs-lab, null-geodesic-panel); the full qa:test is CI's job (D-080)"
+          "affected browser specs run locally with the PR open (shared-stage, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, compute-particles, higgs-lab, null-geodesic-panel); the full qa:test is CI's job (D-080)",
+          "CI on PR 78: Browser QA (full qa:test, 4m29s) and Validate green"
         ],
         "screenshots": [
           "docs/screenshots/28-qft-field-lab.png",
@@ -2367,6 +2370,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "GPU lattice phi^4 with a conserved-energy integrator: CPU reference, kick/drift/analyse kernels on both backends, Formula Lens terms, the lab and its 1+1D fallback, amplitude room moved; D-076 to D-080. No finding closed. PR https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/78."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 78 merged as 70c6e29950f1478fce338e5493563042fece15ad; CI (Browser QA 4m29s, Validate) green. No finding closed."
     }
   ]
 }
