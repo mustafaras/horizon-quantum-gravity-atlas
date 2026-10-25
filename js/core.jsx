@@ -126,6 +126,12 @@ function RichText({ text }) {
   );
 }
 
+/* A number in scientific notation as TeX: sciTex(7.96e8, 2) is "7.96\times10^{8}", so a readout can be typeset with Eq instead of printed as 7.96e+8. */
+function sciTex(x, digits) {
+  const [mantissa, exponent] = x.toExponential(digits).split("e");
+  return mantissa + "\\times10^{" + Number(exponent) + "}";
+}
+
 /* Plain-text projection of a RichText string, for search and aria labels. */
 function richPlain(text) {
   return typeof text === "string" ? text.replace(/\$[^$]*\$/g, " ") : "";

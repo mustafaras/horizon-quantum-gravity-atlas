@@ -63,7 +63,7 @@ documented closed form of the mode sum.
 
 ## What stays, and why
 
-* **QFT waterfall surface**: a mesh with a CPU ring buffer, not a particle system; the GPU lattice field theory of S14 replaces it.
+* **QFT waterfall surface** (the Fourier-mode vacuum lab): a mesh with a CPU ring buffer, not a particle system; it stays. The CPU membrane of the field laboratory was replaced in S14 by the GPU lattice field theory (`docs/render/lattice-field.md`).
 * **GW lattice**: its `needsUpdate` sites upload the signal texture once per signal, never per frame, and its WebGL2 twin already deforms
   in the vertex stage; nothing per-frame to move. S26 replaces it.
 * **Engraved lines** (`engraved-lines.mjs`, 3 sites) and the Planck, experiment and QFT-module canvases (`mod-*.jsx`) are line and 2D

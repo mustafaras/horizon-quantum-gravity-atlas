@@ -745,30 +745,67 @@
     {
       "id": "qft-field-lab",
       "file": "docs/screenshots/28-qft-field-lab.png",
-      "description": "Prompt 08 field laboratory 3D scene: Klein-Gordon lattice membrane with seeded mode shimmer, injection markers, and bloom crests.",
+      "description": "Field laboratory: a classical phi^4 field on a 2+1D lattice evolved on the GPU by a symplectic leapfrog and drawn as a height field coloured by its energy density, with the readouts, the dispersion plot and the Hamiltonian-density card whose four terms paint over the lattice.",
       "view": "qft",
       "url": "?view=qft&seed=42",
       "viewport": {
         "width": 1600,
-        "height": 1200,
+        "height": 2400,
         "deviceScaleFactor": 1,
         "label": "desktop-hi"
       },
       "scope": "element",
-      "target": "section:has-text(\"The field laboratory\")",
+      "target": ".lt-lab",
       "readiness": [
         "fonts",
         "network-idle",
         "view-mounted",
         "canvas-nonblank",
-        "animation-settled"
+        "animation-settled",
+        {
+          "selector": ".lt-lab",
+          "text": "simulated time"
+        }
       ],
       "scientificStatus": "effective-model",
-      "statusNote": "Free Klein-Gordon field on a seeded lattice; reduced motion parks the membrane at a deterministic phase.",
+      "statusNote": "Classical phi^4 lattice field (effective): the leapfrog of js/science/lattice-field.mjs on the GPU, equal to its float64 CPU reference to 3e-7 in phi after 200 steps; the Hamiltonian density and its four terms are the Formula Core expression. Reduced motion parks the lattice at its initial state, two colliding wave packets.",
       "readme": false,
       "baseline": {
         "maxDiffPixelRatio": 0.02,
-        "note": "Seeded lattice evolution; reduced motion parks the scene at a deterministic phase."
+        "note": "WebGL height field plus Figure Kit and KaTeX text; the capture runs on a CPU rasterizer, where the lattice is 128 x 128; 2% tolerance."
+      }
+    },
+    {
+      "id": "qft-field-lab-mobile",
+      "file": "docs/screenshots/35-qft-field-lab-mobile.png",
+      "description": "Mobile field laboratory at 390 px: the lattice height field at its initial state, its status label and the typeset equation of motion.",
+      "view": "qft",
+      "url": "?view=qft&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".lt-lab .s3d-stage",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".lt-lab",
+          "text": "simulated time"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Classical phi^4 lattice field (effective): the leapfrog of js/science/lattice-field.mjs on the GPU, equal to its float64 CPU reference to 3e-7 in phi after 200 steps; the Hamiltonian density and its four terms are the Formula Core expression. Reduced motion parks the lattice at its initial state, two colliding wave packets.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "WebGL height field on mobile, on a CPU rasterizer (128 x 128 lattice); 2% tolerance."
       }
     },
     {

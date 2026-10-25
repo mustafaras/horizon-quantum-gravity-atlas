@@ -229,7 +229,6 @@
   --pigment-cyan-75: oklch(0.75 0.11 200);
   /* azure */
   --pigment-azure-95: #dff2ff;
-  --pigment-azure-92: #bfefff;
   --pigment-azure-92-c04: #cfe8ff;
   --pigment-azure-91: #bfe8ff;
   --pigment-azure-90: #c8e1ff;
@@ -314,8 +313,6 @@
   --pigment-blue-29: #182c49;
   --pigment-blue-29-c06: #1a2a4a;
   --pigment-blue-23-c05: #101d36;
-  --pigment-blue-23: #101c36;
-  --pigment-blue-21-c05: #0b1830;
   --pigment-blue-21: #0a1730;
   --pigment-blue-19-c04: #0a1428;
   --pigment-blue-19: #0a1424;

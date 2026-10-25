@@ -5,6 +5,7 @@ import { Group, Mesh, Object3D, PlaneGeometry, TorusGeometry } from "three";
 import { MeshBasicNodeMaterial } from "three/webgpu";
 import { float, length, max, positionLocal, uniform, vec4 } from "three/tsl";
 
+import { buildTokens, parseTokensCss, setTokenSource } from "../js/design/tokens.mjs";
 import { lens } from "../js/formula/lens.mjs";
 import { library } from "../js/formula/library/index.mjs";
 import { createConceptBus } from "../js/linking/concept-bus.mjs";
@@ -82,6 +83,9 @@ test("every lens scene has a registered, schematic provenance entry, and registe
     assert.equal(registered[id].status, "schematic", id);
     assert.ok(registered[id].references.length >= 1, id);
   }
+  // the lattice lens shows exact terms of a computed classical field, not a schematic: it says "effective"
+  assert.equal(registered["formula-lens-qft-lattice"].status, "effective");
+  assert.ok(registered["formula-lens-qft-lattice"].references.length >= 2);
   assert.deepEqual(Object.keys(FORMULA_LENS_PROVENANCE).sort(), Object.keys(registered).filter((id) => id.startsWith("formula-lens-")).sort());
 });
 
@@ -156,4 +160,32 @@ test("curvature well: the colour range is the term over the slider corners, deri
   assert.equal(event.value, -2.75 / 4);
   assert.match(event.unit, /G = c = 1/);
   handle.dispose();
+});
+
+test("QFT lattice: each term of the Hamiltonian density is a field over the surface, bound to the simulation's nodes and ranged from the preset", async () => {
+  setTokenSource(buildTokens(parseTokensCss(source("styles/tokens.css")))); // the diverging palette of the mass term reads the colour tokens
+  const { ctx, disposers } = fakeCtx();
+  const material = new MeshBasicNodeMaterial();
+  material.colorNode = vec4(0.1, 0.2, 0.3, 1);
+  const nodes = { phi: uniform(0), pi: uniform(0), g2: uniform(0), m2: uniform(0.5), lambda: uniform(1) };
+  const ranges = { kinetic: [0, 0.43], gradient: [0, 0.34], mass: [-0.15, 0.15], interaction: [0, 0.02] };
+  const sample = { pi: 0.4, g2: 0.6, phi: 0.5, m2: 0.5, lambda: 1 };
+  const handle = await attachLens("qft-lattice", ctx, { surface: new Mesh(new PlaneGeometry(2, 2), material), nodes, ranges, sample: () => sample });
+  assert.equal(disposers.length, 1);
+  for (const termId of ["kinetic", "gradient", "mass", "interaction"]) {
+    const target = lens.target("qft-phi4-hamiltonian", termId);
+    assert.equal(target.kind, "field", termId);
+    assert.deepEqual([...target.range], ranges[termId], termId);
+    assert.equal(target.surfaceName, "lattice");
+  }
+  assert.equal(lens.target("qft-phi4-hamiltonian", "mass").palette, "diverging", "the mass term changes sign with m^2");
+  assert.equal(lens.target("qft-phi4-hamiltonian", "kinetic").palette, undefined);
+  // the card's readout is the term at the lattice's rms values
+  assert.equal(lens.termEvent("qft-phi4-hamiltonian", "kinetic").value, 0.4 ** 2 / 2);
+  assert.equal(lens.termEvent("qft-phi4-hamiltonian", "gradient").value, 0.6 / 2);
+  assert.ok(Math.abs(lens.termEvent("qft-phi4-hamiltonian", "mass").value - (0.5 * 0.5 ** 2) / 2) < 1e-15);
+  assert.ok(Math.abs(lens.termEvent("qft-phi4-hamiltonian", "interaction").value - (1 / 24) * 0.5 ** 4) < 1e-15);
+  assert.match(lens.termEvent("qft-phi4-hamiltonian", "kinetic").unit, /lattice units/);
+  handle.dispose();
+  assert.equal(lens.binding("qft-phi4-hamiltonian"), null);
 });

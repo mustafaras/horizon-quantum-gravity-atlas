@@ -444,7 +444,7 @@ All new animation routes through one shared motion clock (`js/motion/atlas-motio
 | # | Module | Core scientific role | Visual system | Epistemic emphasis |
 |---|---|---|---|---|
 | 01 | Standard Model | Particle content and gauge architecture | 3D particle map and analytical atlas | established physics with known gaps |
-| 02 | Quantum Field Theory | Fields, quanta, amplitudes, propagators | Klein-Gordon membrane and Feynman collision lab | established formalism with pedagogical simplification |
+| 02 | Quantum Field Theory | Fields, quanta, amplitudes, propagators | GPU φ⁴ lattice field laboratory and Feynman collision lab | established formalism with pedagogical simplification |
 | 03 | Gauge Symmetry & RG Flow | Local symmetry, scale dependence, and fixed-point stability | synchronized running-coupling / β-function flow chamber | one-loop QED/QCD with domain limits; pedagogical and conjectural presets explicitly separated |
 | 04 | General Relativity | Local causal structure and gravity as curved spacetime | Minkowski causal laboratory, deformable geometry, geodesics, lensing rays | exact flat-spacetime SR foundation plus established classical GR |
 | 05 | Planck Frontier | Why perturbative quantum gravity fails | scale ladder and speculative foam visualization | established obstruction, speculative visualization |
@@ -1378,7 +1378,7 @@ The screenshot set emphasizes visual and animated modules:
 | `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |
 | `26-collider-event-lab.png` | `sm` | synthetic collider lab at `?view=sm&clc=h2gg&seed=42`: tracks, towers, jets, missing energy |
 | `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges |
-| `28-qft-field-lab.png` | `qft` | field laboratory at `?view=qft&seed=42`: Klein–Gordon lattice membrane, seeded mode shimmer, injection markers |
+| `28-qft-field-lab.png` | `qft` | field laboratory at `?view=qft&seed=42`: a classical φ⁴ field on a GPU lattice drawn by its energy density, with the Hamiltonian-density card |
 
 Capture criteria:
 
@@ -1410,7 +1410,7 @@ It also flags neutrino mass, dark matter, matter-antimatter asymmetry, and the h
 
 The QFT module treats particles as localized excitations of fields.
 
-It includes a Klein-Gordon membrane that can be excited interactively.
+It includes a classical φ⁴ field on a periodic lattice, evolved on the GPU by a symplectic leapfrog and drawn as a height field coloured by its energy density; a click kicks it with a seeded Gaussian and the four terms of its Hamiltonian density can be painted over it (see `docs/render/lattice-field.md`).
 
 It includes a Feynman collision builder.
 
@@ -2417,7 +2417,7 @@ Each screenshot also has a caveat.
 | `25-ads-bulk-boundary-lab.png` | computes hyperbolic geodesics, the RT minimal surface and the entanglement wedge from the tested geometry module | the AdS/CFT duality reading is conjectural and labeled in-canvas |
 | `26-collider-event-lab.png` | shows seeded synthetic collision kinematics with exact four-momentum conservation | synthetic fixture, never a CERN observation; labeled in-canvas |
 | `27-spin-foam-lab.png` | shows the spin-network area spectrum and a four-simplex foam step | pedagogical sketch with no amplitudes computed; conjectural, labeled in-canvas |
-| `28-qft-field-lab.png` | shows the Klein–Gordon lattice membrane with seeded mode shimmer and injection markers | free-field effective model on a disclosed lattice; reduced motion parks it at a deterministic phase |
+| `28-qft-field-lab.png` | shows the φ⁴ lattice field with its energy-density colours, readouts and the Hamiltonian-density card | classical lattice field, equal to its float64 CPU reference to 3e-7 after 200 steps; reduced motion and software rasterizers park it at its initial state |
 
 ### Appendix W — Badge Manifest
 

@@ -10,12 +10,6 @@ const HG_BOUNDARY_MH = Array.from({ length: 21 }, (_, i) => 120 + i * 0.5);
 const HG_BOUNDARY_MT = [150, 200];
 const HG_REGION_TEXT = { stable: "absolutely stable", metastable: "metastable", unstable: "unstable" };
 
-// "7.96e+8" -> "7.96\times10^{8}": every number the readouts show with an exponent is typeset, not printed as e-notation.
-function hgSciTex(x, digits) {
-  const [mantissa, exponent] = x.toExponential(digits).split("e");
-  return mantissa + "\\times10^{" + Number(exponent) + "}";
-}
-
 function HiggsLab({ go }) {
   const H = window.QGA_HIGGS;
   const { PDG } = H;
@@ -102,10 +96,10 @@ function HiggsLab({ go }) {
           <div className="readout-value">{run.states[0][0].toFixed(5)}</div></div>
         <div className="readout"><div className="readout-label">quartic crosses zero</div>
           <div className="readout-value">{instability
-            ? <Eq tex={hgSciTex(instability, 2) + "\\,\\mathrm{GeV}"}></Eq>
+            ? <Eq tex={sciTex(instability, 2) + "\\,\\mathrm{GeV}"}></Eq>
             : <React.Fragment>never below <Eq tex="M_{\mathrm{Pl}}"></Eq></React.Fragment>}</div></div>
         <div className="readout"><div className="readout-label">smallest quartic</div>
-          <div className="readout-value">{decay.lambdaMin.toFixed(4)} at <Eq tex={hgSciTex(decay.scaleGeV, 1) + "\\,\\mathrm{GeV}"}></Eq></div></div>
+          <div className="readout-value">{decay.lambdaMin.toFixed(4)} at <Eq tex={sciTex(decay.scaleGeV, 1) + "\\,\\mathrm{GeV}"}></Eq></div></div>
         <div className="readout"><div className="readout-label">vacuum</div>
           <div className="readout-value">{HG_REGION_TEXT[region]}{Number.isFinite(decay.log10Probability)
             ? <React.Fragment> · <Eq tex={"\\log_{10}p = " + decay.log10Probability.toFixed(0)}></Eq></React.Fragment> : null}</div></div>
