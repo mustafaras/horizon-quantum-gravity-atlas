@@ -920,12 +920,12 @@
         "S13"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s14-qft-lattice",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-25",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -2304,6 +2304,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "follow-up",
       "detail": "After the merge: KaTeX for the Higgs lab, the provenance drawer and every FormulaCard (D-074), the formula-gpu sin/cos budget replacing the local failure (D-073), travelling photons on the null-geodesic figure with two new captures (D-075). Not part of the merged PRs 75 and 76."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S14",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "S14 claimed on claude/s14-qft-lattice from main 5762aae (S13 done, follow-up PR 77 merged)."
     }
   ]
 }
