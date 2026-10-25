@@ -106,10 +106,10 @@ function ModuleRGStage3({ go }) {
           <FormulaCard title="QCD beta function · one loop" status="effective"
             tex="\beta(g_s)=-\frac{b_0}{16\pi^2}g_s^3+\mathcal{O}(g_s^5),\qquad b_0=11-\frac{2}{3}n_f"
             symbols={[
-              { s: "\\mu", d: "Renormalization scale; t = ln μ increases toward the ultraviolet." },
+              { s: "\\mu", d: "Renormalization scale; $t=\\ln\\mu$ increases toward the ultraviolet." },
               { s: "n_f", d: "Number of active quark flavours in the one-loop SU(3) coefficient." },
             ]}
-            meaning="For n_f < 16.5, b₀ is positive and the QCD coupling decreases toward high scales."
+            meaning="For $n_f<16.5$, $b_0$ is positive and the QCD coupling decreases toward high scales."
             limits="Thresholds and higher loops are omitted. The one-loop curve is not valid in the infrared strong-coupling regime."></FormulaCard>
           <FormulaCard title="QED convention · one loop" status="effective"
             tex="\beta(e)=\frac{n_f e^3}{12\pi^2},\qquad \alpha=\frac{e^2}{4\pi}"
@@ -122,7 +122,7 @@ function ModuleRGStage3({ go }) {
           <FormulaCard title="Fixed-point linearization" status="effective"
             tex="\beta(g_*)=0,\qquad \beta(g)\simeq\beta'(g_*)(g-g_*)"
             symbols={[
-              { s: "\\beta'(g_*)<0", d: "UV-attractive for t = ln μ increasing toward the ultraviolet." },
+              { s: "\\beta'(g_*)<0", d: "UV-attractive for $t=\\ln\\mu$ increasing toward the ultraviolet." },
               { s: "\\beta'(g_*)>0", d: "IR-attractive because trajectories approach the point as t decreases." },
             ]}
             meaning="The local slope classifies attraction in a one-coupling flow. A vanishing slope is marginal at linear order."

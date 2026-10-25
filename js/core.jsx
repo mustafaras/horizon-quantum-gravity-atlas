@@ -230,7 +230,7 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits, formul
               <tbody>
                 {symbols.map((s, i) => (
                   <tr key={i} className="fc-symbol-row" tabIndex={0}
-                    aria-label={"Symbol " + s.s + ": " + s.d + (readout && readout.symbol === s.s ? ". Live scene value: " + readout.value + " " + readout.unit : "")}
+                    aria-label={"Symbol " + s.s + ": " + richPlain(s.d) + (readout && readout.symbol === s.s ? ". Live scene value: " + readout.value + " " + readout.unit : "")}
                     onMouseEnter={() => publishHighlight(s.s, "hover")}
                     onMouseLeave={clearHighlight}
                     onFocus={() => publishHighlight(s.s, "focus")}
@@ -238,7 +238,7 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits, formul
                     onClick={() => publishHighlight(s.s, "click")}>
                     <td><Eq tex={s.s}></Eq></td>
                     <td>
-                      {s.d}
+                      <RichText text={s.d}></RichText>
                       {readout && readout.symbol === s.s ? (
                         <span className="fc-readout" role="status">
                           <span className="fc-readout-label">{readout.label}</span>
@@ -252,8 +252,8 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits, formul
               </tbody>
             </table>
           ) : null}
-          {meaning ? <p className="fc-meaning">{meaning}</p> : null}
-          {limits ? <p className="fc-limits"><strong>Assumptions / limits.</strong> {limits}</p> : null}
+          {meaning ? <p className="fc-meaning"><RichText text={meaning}></RichText></p> : null}
+          {limits ? <p className="fc-limits"><strong>Assumptions / limits.</strong> <RichText text={limits}></RichText></p> : null}
         </div>
       ) : null}
     </div>

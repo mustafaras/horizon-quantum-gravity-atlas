@@ -1045,6 +1045,72 @@
           "text": "quartic crosses zero"
         }
       ]
+    },
+    {
+      "id": "gr-null-photons",
+      "file": "docs/screenshots/33-null-geodesic-photons.png",
+      "description": "Null geodesics with travelling photons: a plane wavefront released together on the integrator's clock, the captured rays absorbed early and the near-critical ray lagging, with the light-travel-time slider typeset in KaTeX.",
+      "viewport": {
+        "width": 1280,
+        "height": 1400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "2D canvas figure plus the photon overlay and KaTeX text; font rasterization, 2% tolerance. Orbital-plane light paths with the photon overlay parked at t = 0.7 t0 (reduced motion): the capture shows where a plane wavefront released together has reached, captured rays absorbed first and the near-critical ray still winding."
+      },
+      "target": ".ng-wrap",
+      "scientificStatus": "effective-model",
+      "statusNote": "Exact Schwarzschild photon paths in the orbital plane from the post-Newtonian integrator, played back on the integrator's own step as a clock (effective); b_crit and the photon sphere are the closed forms.",
+      "readme": false,
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "scope": "element",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".ng-wrap",
+          "text": "light-travel time"
+        }
+      ]
+    },
+    {
+      "id": "gr-null-photons-mobile",
+      "file": "docs/screenshots/34-null-geodesic-photons-mobile.png",
+      "description": "Mobile null-geodesic figure at 390 px: the light paths with the photons at the parked time, absorbed rays ringed at the horizon.",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Canvas figure on mobile; font rasterization, 2% tolerance."
+      },
+      "target": ".ng-wrap .fig-plot",
+      "scientificStatus": "effective-model",
+      "statusNote": "Exact Schwarzschild photon paths in the orbital plane from the post-Newtonian integrator, played back on the integrator's own step as a clock (effective); b_crit and the photon sphere are the closed forms.",
+      "readme": false,
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "scope": "element",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".ng-wrap",
+          "text": "light-travel time"
+        }
+      ]
     }
   ]
 }

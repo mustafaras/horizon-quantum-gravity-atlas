@@ -12,7 +12,7 @@ function ProvenanceList({ title, items }) {
   return (
     <section className="prov-section">
       <h4>{title}</h4>
-      <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
+      <ul>{items.map((item) => <li key={item}><RichText text={item}></RichText></li>)}</ul>
     </section>
   );
 }
@@ -50,10 +50,10 @@ function ProvenanceDrawer({ id, onClose }) {
         <div className="prov-head-id"><Badge kind={entry.status}></Badge><span className="prov-id">{id}</span></div>
         <button type="button" className="prov-close" onClick={onClose} aria-label="Close provenance">×</button>
       </header>
-      <h3 id={titleId} className="prov-model">{entry.model}</h3>
+      <h3 id={titleId} className="prov-model"><RichText text={entry.model}></RichText></h3>
       <ProvenanceList title="Assumptions" items={entry.assumptions}></ProvenanceList>
       <ProvenanceList title="Validity" items={entry.validity}></ProvenanceList>
-      <section className="prov-section"><h4>Numerical method</h4><p>{entry.numericalMethod}</p></section>
+      <section className="prov-section"><h4>Numerical method</h4><p><RichText text={entry.numericalMethod}></RichText></p></section>
       <section className="prov-section">
         <h4>References</h4>
         <ul>{entry.references.map((text) => <ProvenanceReference key={text} text={text}></ProvenanceReference>)}</ul>

@@ -10,6 +10,12 @@ const HG_BOUNDARY_MH = Array.from({ length: 21 }, (_, i) => 120 + i * 0.5);
 const HG_BOUNDARY_MT = [150, 200];
 const HG_REGION_TEXT = { stable: "absolutely stable", metastable: "metastable", unstable: "unstable" };
 
+// "7.96e+8" -> "7.96\times10^{8}": every number the readouts show with an exponent is typeset, not printed as e-notation.
+function hgSciTex(x, digits) {
+  const [mantissa, exponent] = x.toExponential(digits).split("e");
+  return mantissa + "\\times10^{" + Number(exponent) + "}";
+}
+
 function HiggsLab({ go }) {
   const H = window.QGA_HIGGS;
   const { PDG } = H;
@@ -71,18 +77,18 @@ function HiggsLab({ go }) {
       </div>
       <Figure spec={runningSpec}>
         Two-loop running of <Eq tex="\lambda"></Eq> from <Eq tex="\mu=m_t"></Eq> to the Planck mass for {moved ? "the chosen" : "the measured"} masses.
-        The cyan dot is the tree-level <Eq tex="\lambda=m_H^2/2v^2"></Eq> from the Higgs mass, the band the 1σ ranges of <Eq tex="m_t"></Eq> and{" "}
+        The cyan dot is the tree-level <Eq tex="\lambda=m_H^2/2v^2"></Eq> from the Higgs mass, the band the <Eq tex="1\sigma"></Eq> ranges of <Eq tex="m_t"></Eq> and{" "}
         <Eq tex="\alpha_s"></Eq>, and the rule the scale where <Eq tex="\lambda"></Eq> crosses zero.
       </Figure>
       <VizCaption provenanceId="sm-higgs-running" status="effective">
         Inputs: {H.PDG_SOURCE.edition}, retrieved {H.PDG_SOURCE.retrieved}, and the two-loop equations of Buttazzo et al. (2013).
         This is the Standard Model alone, extrapolated 17 decades with no new physics, from a leading-order matching at <Eq tex="m_t"></Eq>; the full
-        threshold corrections of the literature move the zero of <Eq tex="\lambda"></Eq> up to about 10<sup>10</sup> GeV (see the provenance drawer).
+        threshold corrections of the literature move the zero of <Eq tex="\lambda"></Eq> up to about <Eq tex="10^{10}\,\mathrm{GeV}"></Eq> (see the provenance drawer).
         The top mass is the direct-measurement average, ambiguous by about 0.2 GeV.
       </VizCaption>
       <Figure spec={diagramSpec}>
         The (<Eq tex="m_t"></Eq>, <Eq tex="m_H"></Eq>) plane divided by this lab's own running into absolutely stable, metastable and unstable. The black
-        ellipse is the measured point with its 1σ errors{moved ? "; the triangle is the masses set above" : ""}.
+        ellipse is the measured point with its <Eq tex="1\sigma"></Eq> errors{moved ? "; the triangle is the masses set above" : ""}.
       </Figure>
       <VizCaption provenanceId="sm-higgs-stability" status="effective">
         Metastable means the electroweak vacuum is not the lowest state but the chance that a bubble of true vacuum formed in our past light
@@ -90,32 +96,35 @@ function HiggsLab({ go }) {
         published boundary position.
       </VizCaption>
       <div className="hg-readouts">
-        <div className="readout"><div className="readout-label">vacuum value v</div>
+        <div className="readout"><div className="readout-label">vacuum value <Eq tex="v"></Eq></div>
           <div className="readout-value">{v.toFixed(2)} GeV</div></div>
-        <div className="readout"><div className="readout-label">tree quartic at m_t</div>
+        <div className="readout"><div className="readout-label">tree quartic at <Eq tex="m_t"></Eq></div>
           <div className="readout-value">{run.states[0][0].toFixed(5)}</div></div>
         <div className="readout"><div className="readout-label">quartic crosses zero</div>
-          <div className="readout-value">{instability ? instability.toExponential(2) + " GeV" : "never below M_Pl"}</div></div>
+          <div className="readout-value">{instability
+            ? <Eq tex={hgSciTex(instability, 2) + "\\,\\mathrm{GeV}"}></Eq>
+            : <React.Fragment>never below <Eq tex="M_{\mathrm{Pl}}"></Eq></React.Fragment>}</div></div>
         <div className="readout"><div className="readout-label">smallest quartic</div>
-          <div className="readout-value">{decay.lambdaMin.toFixed(4)} at {decay.scaleGeV.toExponential(1)} GeV</div></div>
+          <div className="readout-value">{decay.lambdaMin.toFixed(4)} at <Eq tex={hgSciTex(decay.scaleGeV, 1) + "\\,\\mathrm{GeV}"}></Eq></div></div>
         <div className="readout"><div className="readout-label">vacuum</div>
-          <div className="readout-value">{HG_REGION_TEXT[region]}{Number.isFinite(decay.log10Probability) ? " · log10 p = " + decay.log10Probability.toFixed(0) : ""}</div></div>
+          <div className="readout-value">{HG_REGION_TEXT[region]}{Number.isFinite(decay.log10Probability)
+            ? <React.Fragment> · <Eq tex={"\\log_{10}p = " + decay.log10Probability.toFixed(0)}></Eq></React.Fragment> : null}</div></div>
       </div>
       <div className="hg-cards">
         <FormulaCard title="Higgs potential" formulaId="higgs-potential" status="established"
           symbols={[
-            { s: "x", d: "Radial Higgs field h in units of the vacuum value v = (√2 G_F)^(-1/2), x = h/v." },
-            { s: "s", d: "μ² in units of λv²: 1 in the Higgs phase, zero or less in the symmetric phase." },
+            { s: "x", d: "Radial Higgs field $h$ in units of the vacuum value $v = (\\sqrt{2}\\,G_F)^{-1/2}$, $x = h/v$." },
+            { s: "s", d: "$\\mu^2$ in units of $\\lambda v^2$: $1$ in the Higgs phase, zero or less in the symmetric phase." },
           ]}
-          meaning="In units of λv⁴ the whole potential has no free number: a quartic wall and a quadratic term whose sign decides whether the origin or a ring of minima at |φ| = v is the vacuum."
-          limits="Tree level. Radiative corrections change the shape; the running of λ is in the figure."></FormulaCard>
+          meaning="In units of $\lambda v^4$ the whole potential has no free number: a quartic wall and a quadratic term whose sign decides whether the origin or a ring of minima at $|\phi| = v$ is the vacuum."
+          limits="Tree level. Radiative corrections change the shape; the running of $\lambda$ is in the figure."></FormulaCard>
         <FormulaCard title="Tree-level quartic coupling" formulaId="higgs-quartic-tree" status="established"
           symbols={[
             { s: "m_H", d: "Higgs boson pole mass." },
             { s: "v", d: "Vacuum expectation value from the Fermi constant." },
           ]}
-          meaning="The radial curvature of the potential at its minimum is m_H² = 2λv², which fixes λ once the Higgs mass and v are measured: about 0.129 at the top-quark mass."
-          limits="Before radiative matching: the MS-bar value of λ at m_t is 2 to 3 percent lower once the loop corrections are included."></FormulaCard>
+          meaning="The radial curvature of the potential at its minimum is $m_H^2 = 2\lambda v^2$, which fixes $\lambda$ once the Higgs mass and $v$ are measured: about $0.129$ at the top-quark mass."
+          limits="Before radiative matching: the $\overline{\mathrm{MS}}$ value of $\lambda$ at $m_t$ is 2 to 3 percent lower once the loop corrections are included."></FormulaCard>
       </div>
       <ConceptBridge id="higgs-rg" go={go}></ConceptBridge>
       <ConceptBridge id="higgs-planck" go={go}></ConceptBridge>

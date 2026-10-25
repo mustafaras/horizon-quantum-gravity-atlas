@@ -168,13 +168,13 @@ export const VIEW_PROVENANCE = Object.freeze({
     seed: "Fixed constant 0x5d0e for the jitter phases, halo phases and packet offsets; no URL seed",
   },
   "sm-higgs-hat": {
-    model: "The tree-level Higgs potential V = -mu^2 |H|^2 + lambda |H|^4 over the complex plane of the radial field, drawn as the surface height V / (lambda v^4) = x^4/4 - s x^2/2 with x = |phi|/v and s = mu^2/(lambda v^2), compiled from the Formula Core definition higgs-potential and evaluated on the GPU",
+    model: "The tree-level Higgs potential $V = -\\mu^2|H|^2 + \\lambda|H|^4$ over the complex plane of the radial field, drawn as the surface height $V/\\lambda v^4 = x^4/4 - s\\,x^2/2$ with $x = |\\phi|/v$ and $s = \\mu^2/\\lambda v^2$, compiled from the Formula Core definition higgs-potential and evaluated on the GPU",
     status: "established",
-    assumptions: ["The shape is the Standard Model's tree-level potential with the measured v = 246.22 GeV (from G_F) and m_H; the vertical scale is one uniform display factor, not a physical scale", "The radial curvature at the vacuum is m_H^2 = 2 lambda v^2 and the Goldstone directions are flat, as the arrows show; the Goldstone modes become the longitudinal W and Z", "The symmetric phase (s = -1, mu^2 < 0 in this sign convention) is a what-if on the sign of the quadratic term; the thermal restoration of the symmetry in the early universe is not modelled", "Radiative corrections to the potential are not drawn: the running of lambda is in the figures below"],
-    validity: ["Tree level, at the electroweak scale", "|phi| up to 1.7 v"],
+    assumptions: ["The shape is the Standard Model's tree-level potential with the measured $v = 246.22$ GeV (from $G_F$) and $m_H$; the vertical scale is one uniform display factor, not a physical scale", "The radial curvature at the vacuum is $m_H^2 = 2\\lambda v^2$ and the Goldstone directions are flat, as the arrows show; the Goldstone modes become the longitudinal W and Z", "The symmetric phase ($s = -1$, $\\mu^2 < 0$ in this sign convention) is a what-if on the sign of the quadratic term; the thermal restoration of the symmetry in the early universe is not modelled", "Radiative corrections to the potential are not drawn: the running of $\\lambda$ is in the figures below"],
+    validity: ["Tree level, at the electroweak scale", "$|\\phi|$ up to $1.7\\,v$"],
     numericalMethod: "Per-vertex evaluation of the compiled TSL node graph of the formula on a polar mesh; the same expression is checked against its float32 evaluation on the GPU in qa/specs/formula-gpu.spec.mjs",
     references: [REF.HIGGS, REF.BUTTAZZO_2013, REF.PDG_2026],
-    layers: [{ name: "Potential surface, vacuum circle and mode arrows", class: "model" }, { name: "Physical point |phi| = v with v from the Fermi constant", class: "data" }],
+    layers: [{ name: "Potential surface, vacuum circle and mode arrows", class: "model" }, { name: "Physical point $|\\phi| = v$ with $v$ from the Fermi constant", class: "data" }],
     seed: "none: closed form",
   },
   "qft-field-kinds": {

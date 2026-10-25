@@ -380,7 +380,7 @@ function ModuleApproaches({ go }) {
             symbols={[
               { s: "X^\\mu(\\sigma,\\tau)", d: "Embedding of the string worldsheet into spacetime." },
               { s: "h_{ab}", d: "Independent worldsheet metric; integrating it out recovers the Nambu–Goto area action." },
-              { s: "T", d: "String tension, setting the string scale; T = 1/(2πα′)." },
+              { s: "T", d: "String tension, setting the string scale; $T=1/(2\\pi\\alpha')$." },
             ]}
             meaning="The starting point of string perturbation theory: a 2D field theory whose consistency conditions (conformal invariance) reproduce Einstein's equations for the background — gravity emerges from the worldsheet."
             limits="Defines the theory only perturbatively, around a chosen background. Conjectural as a description of nature."></FormulaCard>
@@ -405,12 +405,12 @@ function ModuleApproaches({ go }) {
           <FormulaCard title="AdS/CFT dictionary (schematic)" status="conjectural"
             tex="Z_{\mathrm{grav}}\big[\phi \to J \big]_{\mathrm{AdS}} \;=\; \Big\langle e^{\int J\, \mathcal{O}}\Big\rangle_{\mathrm{CFT}}"
             symbols={[
-              { s: "Z_{\\mathrm{grav}}", d: "Gravitational partition function in the anti-de Sitter bulk, with boundary condition J for the field φ." },
+              { s: "Z_{\\mathrm{grav}}", d: "Gravitational partition function in the anti-de Sitter bulk, with boundary condition $J$ for the field $\\phi$." },
               { s: "\\mathcal{O}", d: "Dual operator in the boundary conformal field theory." },
               { s: "J", d: "Source on the boundary — knobs on the CFT side correspond to boundary values of bulk fields." },
             ]}
             meaning="The Gubser–Klebanov–Polyakov–Witten relation: every bulk gravitational question can in principle be translated into a boundary gauge-theory computation. Quantum gravity in AdS is defined by an ordinary quantum theory."
-            limits="Precise duality conjectured for specific theories (e.g. AdS₅×S⁵ ↔ N=4 SYM); unproven mathematically; our universe is not anti-de Sitter."></FormulaCard>
+            limits="Precise duality conjectured for specific theories (e.g. $\mathrm{AdS}_5\times S^5\leftrightarrow\mathcal{N}=4$ SYM); unproven mathematically; our universe is not anti-de Sitter."></FormulaCard>
         </div>
       </Section>
 
