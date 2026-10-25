@@ -386,7 +386,7 @@ function ModulePlanck({ go }) {
             texAfter="\approx 1.6\times10^{-35}\,\mathrm{m}, \quad E_P = \sqrt{\frac{\hbar c^5}{G}} \approx 1.22\times10^{19}\,\mathrm{GeV}"
             symbols={[
               { s: "l_P", d: "Planck length — the unique length built from ħ, G, c. Also: the Schwarzschild radius of a Planck-mass black hole, up to O(1) factors." },
-              { s: "E_P", d: "Planck energy (≈ 2 GJ — a lightning bolt's energy in a single quantum). Planck mass m_P ≈ 2.18×10⁻⁸ kg." },
+              { s: "E_P", d: "Planck energy ($\\approx 2$ GJ — a lightning bolt's energy in a single quantum). Planck mass $m_P\\approx2.18\\times10^{-8}$ kg." },
             ]}
             meaning="Dimensional analysis alone locates the quantum gravity regime: where the Compton wavelength of an object equals its Schwarzschild radius."
             limits="These are scales, not measured thresholds. What actually happens there is unknown."></FormulaCard>
@@ -395,15 +395,15 @@ function ModulePlanck({ go }) {
             symbols={[
               { s: "\\eta_{\\mu\\nu}", d: "Fixed flat background metric — the move that surrenders background independence." },
               { s: "h_{\\mu\\nu}", d: "Graviton field: quantized weak-field ripples, spin 2." },
-              { s: "\\kappa", d: "Gravitational coupling; dimensionful, with [κ] = energy⁻¹ — the origin of non-renormalizability." },
+              { s: "\\kappa", d: "Gravitational coupling; dimensionful, with $[\\kappa]=\\mathrm{energy}^{-1}$ — the origin of non-renormalizability." },
             ]}
-            meaning="The standard route to 'quantum gravity as a QFT'. It works beautifully — but only as an effective theory at energies far below E_P."
-            limits="The expansion is in κE ~ E/E_P; at Planckian energies every order contributes equally and the series tells you nothing."></FormulaCard>
+            meaning="The standard route to 'quantum gravity as a QFT'. It works beautifully — but only as an effective theory at energies far below $E_P$."
+            limits="The expansion is in $\kappa E\sim E/E_P$; at Planckian energies every order contributes equally and the series tells you nothing."></FormulaCard>
           <FormulaCard title="Growth of the effective coupling" status="established"
             tex="\alpha_{\mathrm{grav}}(E) \sim \frac{G E^2}{\hbar c^5} = \left(\frac{E}{E_P}\right)^{2}"
             symbols={[
-              { s: "\\alpha_{\\mathrm{grav}}", d: "Dimensionless measure of gravity's strength at energy E (compare α ≈ 1/137 for electromagnetism)." },
-              { s: "E/E_P", d: "At LHC energies this is ~10⁻¹⁵, making quantum gravity effects experimentally invisible — and the theory's UV behavior untestable directly." },
+              { s: "\\alpha_{\\mathrm{grav}}", d: "Dimensionless measure of gravity's strength at energy E (compare $\\alpha\\approx1/137$ for electromagnetism)." },
+              { s: "E/E_P", d: "At LHC energies this is $\\sim10^{-15}$, making quantum gravity effects experimentally invisible — and the theory's UV behavior untestable directly." },
             ]}
             meaning="Contrast with the gauge couplings of Module 03, which run logarithmically. Gravity's strength grows as a power law — the renormalization group flow leaves the perturbative domain."
             limits="Schematic scaling argument; the asymptotic safety program (Module 06) conjectures the full nonperturbative flow may nonetheless reach a fixed point."></FormulaCard>

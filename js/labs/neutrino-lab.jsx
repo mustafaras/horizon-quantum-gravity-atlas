@@ -182,12 +182,12 @@ function NeutrinoLab() {
             { s: "L", d: "Baseline: the distance from source to detector." },
             { s: "E", d: "Neutrino energy." },
           ]}
-          meaning="With θ₁₃ = 0 and Δm²₂₁ = 0 the three-flavour result reduces to this formula, which the tests check to 1e-9. The 1.267 is 1/(4ħc) in eV², km and GeV."
+          meaning="With $\theta_{13}=0$ and $\Delta m^2_{21}=0$ the three-flavour result reduces to this formula, which the tests check to $10^{-9}$. The $1.267$ is $1/(4\hbar c)$ in $\mathrm{eV}^2$, km and GeV."
           limits="Vacuum, two flavours. The three-flavour calculation above is exact for three flavours and constant density."></FormulaCard>
         <FormulaCard title="Matter potential" formulaId="matter-potential" status="established"
           symbols={[
             { s: "G_F", d: "Fermi coupling constant of the weak interaction." },
-            { s: "N_e", d: "Electron number density, ρ Y_e / m_u." },
+            { s: "N_e", d: "Electron number density, $\\rho Y_e/m_u$." },
           ]}
           meaning="Electron neutrinos scatter forward on the electrons of matter and acquire this energy; antineutrinos acquire its negative. It is why neutrinos and antineutrinos oscillate differently inside the Earth."
           limits="Charged-current term only, constant density. Neutral-current scattering is the same for all flavours and drops out."></FormulaCard>

@@ -177,9 +177,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .ng-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .ng-legend i { display: inline-block; width: 12px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
 .ng-legend .ng-note { grid-column: 1 / -1; opacity: 0.8; white-space: normal; }
-@keyframes ng-flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
-.ng-pulse { animation: ng-flow 3.6s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .ng-pulse { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: 0.85; } }
+.ng-photons { position: absolute; left: 0; top: 0; pointer-events: none; }
+.ng-bar { align-items: center; gap: 10px; flex-wrap: wrap; }
+.ng-bar .ctl-row { flex: 1 1 200px; min-width: 0; }
+.ng-clock { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
 .lens-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
 .lens-stage { position: relative; width: 100%; aspect-ratio: 1; }
 .lens-canvas { display: block; width: 100%; height: 100%; background: #02040a; border: 1px solid var(--line); border-radius: 10px; }

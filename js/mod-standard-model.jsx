@@ -559,11 +559,11 @@ function ModuleSM({ go }) {
             tex="V(\phi) = \mu^2\,\phi^\dagger\phi + \lambda\,(\phi^\dagger\phi)^2"
             symbols={[
               { s: "\\phi", d: "Complex SU(2) doublet scalar field (four real components)." },
-              { s: "\\mu^2", d: "Mass-squared parameter; μ² < 0 destabilizes the symmetric vacuum." },
-              { s: "\\lambda", d: "Quartic self-coupling; λ > 0 ensures the potential is bounded below." },
+              { s: "\\mu^2", d: "Mass-squared parameter; $\\mu^2<0$ destabilizes the symmetric vacuum." },
+              { s: "\\lambda", d: "Quartic self-coupling; $\\lambda>0$ ensures the potential is bounded below." },
             ]}
-            meaning="With μ² < 0 the minimum sits at |φ|² = −μ²/2λ ≡ v²/2. Three components become longitudinal modes of W± and Z; the fourth is the 125 GeV Higgs boson."
-            limits="Why μ² is small compared to the Planck scale (the hierarchy problem) has no accepted explanation."></FormulaCard>
+            meaning="With $\mu^2<0$ the minimum sits at $|\phi|^2=-\mu^2/2\lambda\equiv v^2/2$. Three components become longitudinal modes of $W^\pm$ and $Z$; the fourth is the 125 GeV Higgs boson."
+            limits="Why $\mu^2$ is small compared to the Planck scale (the hierarchy problem) has no accepted explanation."></FormulaCard>
           <FormulaCard title="Lagrangian structure (schematic)" status="established"
             tex="\mathcal{L} = -\tfrac{1}{4}F_{\mu\nu}^a F^{a\,\mu\nu} + i\bar\psi\,\gamma^\mu D_\mu \psi + |D_\mu\phi|^2 - V(\phi) - \left(\bar\psi_L\, Y\, \phi\, \psi_R + \mathrm{h.c.}\right)"
             symbols={[
@@ -573,7 +573,7 @@ function ModuleSM({ go }) {
               { s: "Y", d: "Yukawa coupling matrices; generate fermion masses and quark mixing (CKM)." },
             ]}
             meaning="A compressed schematic of the full Standard Model Lagrangian — each displayed term stands for a family of terms summed over gauge groups, generations, and chiralities."
-            limits="Schematic form: gauge-fixing, ghost terms, and the θ-term are omitted; indices are suppressed."></FormulaCard>
+            limits="Schematic form: gauge-fixing, ghost terms, and the $\theta$-term are omitted; indices are suppressed."></FormulaCard>
         </div>
       </Section>
 

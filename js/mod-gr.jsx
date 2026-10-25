@@ -792,44 +792,7 @@ function VEffPanel({ mass, body, view, stRef }) {
   );
 }
 
-/* ── Null-geodesic panel ─────────────────────────────────────────────────────
-   Exact Schwarzschild photon paths in the orbital plane, integrated with the
-   same stepper the 3D fan uses. Rays below the critical impact parameter
-   plunge through the horizon (red); rays above it escape (amber); the
-   near-critical pair winds around the photon sphere before leaving. A comet
-   pulse runs along each path so the direction of travel is legible without
-   motion blur. The 3D fan cannot show the winding — the star's visual radius
-   is larger than the photon sphere, so the loop hides inside it. */
-const NG_FRACTIONS = [0.55, 0.8, 0.95, 0.995, 1.005, 1.05, 1.25, 1.7, 2.4];
-const NG_ESCAPE = QGA_TOKENS.css("pigment-amber-88");
-const NG_CAPTURE = QGA_TOKENS.css("pigment-red-71-c18");
-function NullGeodesicPanel({ mass }) {
-  const P = window.QGA_PHYSICS;
-  const gm = 0.55 * mass;
-  const rPh = P.grPhotonSphereRadius(gm, GR_C2);
-  const bCrit = P.grCriticalImpactParameter(gm, GR_C2);
-  const rs = 2 * gm / GR_C2;
-  const rays = useMemo(() => NG_FRACTIONS.map((f) => {
-    // rCap just outside the horizon so a captured ray is drawn plunging in
-    // rather than stopping in mid-air at the photon sphere; the finer step
-    // keeps the stiff near-horizon integration smooth.
-    const t = P.grNullTrajectory(bCrit * f, gm, GR_C2, { maxSteps: 60000, dt: 0.0005, rCap: 1.02 * rs });
-    return { f, captured: t.captured, windings: t.windings, points: t.points };
-  }), [mass]); // eslint-disable-line
-  const near = rays.find((p) => p.f === 1.005);
-  const spec = useMemo(() => window.QGA_FIGURE.plots.gr.nullGeodesicSpec({ rays, bCrit, rPh, rs }), [rays]); // eslint-disable-line
-  return (
-    <div className="ng-wrap">
-      <div className="panel-head">
-        <span>Null geodesics</span>
-        <em>orbital plane · b in GM/c²</em>
-      </div>
-      <Figure spec={spec}>
-        <span className="ng-note">near-critical b = 1.005 b_crit winds {near ? near.windings.toFixed(2) : "\u2014"} turns</span>
-      </Figure>
-    </div>
-  );
-}
+/* The null-geodesic panel (paths, travelling photons and the playback clock) is js/labs/null-geodesic-panel.jsx. */
 
 /* The lensed-sky ray trace (lens model, procedural sky, per-pixel render) lives in js/visualizations/gr/lensed-sky.mjs (S07). */
 const { ngTextures, ngLensModel: lensModelFor, renderLensedSky } = window.QGA_GR.lensedSky;
@@ -1023,7 +986,7 @@ function CurvatureEngine3D() {
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D>
       <div className="panel-deck">
         <VEffPanel mass={mass} body={selBody} view={view} stRef={stRef}></VEffPanel>
-        <NullGeodesicPanel mass={mass}></NullGeodesicPanel>
+        <NullGeodesicPanel mass={mass} c2={GR_C2}></NullGeodesicPanel>
         <LensedSkyPanel mass={mass}></LensedSkyPanel>
       </div>
       <div className="viz-toolbar viz-toolbar-bottom readout-grid" style={{ display: "grid" }}>
@@ -1282,7 +1245,7 @@ function ModuleGR({ go }) {
           <FormulaCard title="Einstein field equations" status="established"
             tex="G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4}\, T_{\mu\nu}"
             symbols={[
-              { s: "G_{\\mu\\nu}", d: "Einstein tensor — a specific combination of curvature (R_{μν} − ½R g_{μν}) that is automatically conserved." },
+              { s: "G_{\\mu\\nu}", d: "Einstein tensor — a specific combination of curvature ($R_{\\mu\\nu}-\\tfrac12 R\\,g_{\\mu\\nu}$) that is automatically conserved." },
               { s: "g_{\\mu\\nu}", d: "Metric tensor: the dynamical field encoding distances, durations, and causal structure." },
               { s: "\\Lambda", d: "Cosmological constant; observations indicate a small positive value driving cosmic acceleration." },
               { s: "T_{\\mu\\nu}", d: "Energy–momentum tensor of matter and radiation — the source of curvature. Pressure and momentum flux gravitate, not just mass." },
@@ -1292,7 +1255,7 @@ function ModuleGR({ go }) {
           <FormulaCard title="Geodesic equation" status="established"
             tex="\frac{d^2 x^\mu}{d\tau^2} + \Gamma^{\mu}_{\alpha\beta}\,\frac{dx^\alpha}{d\tau}\frac{dx^\beta}{d\tau} = 0"
             symbols={[
-              { s: "x^\\mu(\\tau)", d: "Worldline of the freely falling body, parameterized by proper time τ." },
+              { s: "x^\\mu(\\tau)", d: "Worldline of the freely falling body, parameterized by proper time $\\tau$." },
               { s: "\\Gamma^{\\mu}_{\\alpha\\beta}", d: "Christoffel symbols — derivatives of the metric playing the role the 'gravitational field' plays in Newtonian language." },
             ]}
             meaning="The equation of motion for free fall: the curve of extremal proper time. No mass of the test body appears — the equivalence principle is built in."
@@ -1302,10 +1265,10 @@ function ModuleGR({ go }) {
             symbols={[
               { s: "R", d: "Ricci curvature scalar — the simplest invariant measure of curvature." },
               { s: "\\sqrt{-g}\\,d^4x", d: "Invariant spacetime volume element." },
-              { s: "G", d: "Newton's constant. Its dimensions, [G] = energy⁻² in natural units, are the root of gravity's non-renormalizability (Module 05)." },
+              { s: "G", d: "Newton's constant. Its dimensions, $[G]=\\mathrm{energy}^{-2}$ in natural units, are the root of gravity's non-renormalizability (Module 05)." },
             ]}
             meaning="Varying this action with respect to the metric yields the Einstein field equations. Its form is what one attempts to quantize — by path integral, canonical methods, or otherwise."
-            limits="Lowest-order term only; quantum corrections generate higher-curvature terms (R², …) suppressed by the Planck scale."></FormulaCard>
+            limits="Lowest-order term only; quantum corrections generate higher-curvature terms ($R^2$, …) suppressed by the Planck scale."></FormulaCard>
         </div>
       </Section>
 

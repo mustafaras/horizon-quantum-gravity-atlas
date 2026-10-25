@@ -893,9 +893,9 @@ function ModuleBH({ go }) {
           <FormulaCard title="Schwarzschild radius" status="established" formulaId="schwarzschild-radius"
             symbols={[
               { s: "M", d: "Black hole mass." },
-              { s: "r_s", d: "Horizon radius for a non-rotating, uncharged black hole: ≈ 3 km per solar mass." },
+              { s: "r_s", d: "Horizon radius for a non-rotating, uncharged black hole: $\\approx 3$ km per solar mass." },
             ]}
-            meaning="The point of no return. Within r_s, all future-directed paths point inward; escape would require exceeding the speed of light."
+            meaning="The point of no return. Within $r_s$, all future-directed paths point inward; escape would require exceeding the speed of light."
             limits="Idealized static, spherically symmetric solution; astrophysical black holes rotate (Kerr metric)."></FormulaCard>
           <FormulaCard title="Hawking temperature" status="established"
             tex="T_H = \frac{\hbar c^3}{8\pi G M k_B}"
@@ -904,11 +904,11 @@ function ModuleBH({ go }) {
               { s: "M^{-1}", d: "Inverse mass dependence: small black holes are hot, large ones are cold — hence negative specific heat." },
             ]}
             meaning="Derived from quantum field theory on the curved Schwarzschild background — a semiclassical result combining ħ, G, and c, widely regarded as the most trustworthy landmark in quantum gravity."
-            limits="A theoretical prediction: for astrophysical masses T_H is unobservably small, and Hawking radiation has never been directly detected."></FormulaCard>
+            limits="A theoretical prediction: for astrophysical masses $T_H$ is unobservably small, and Hawking radiation has never been directly detected."></FormulaCard>
           <FormulaCard title="Bekenstein–Hawking entropy" status="established"
             tex="S_{BH} = \frac{k_B c^3 A}{4 G \hbar} = k_B \frac{A}{4\, l_P^2}"
             symbols={[
-              { s: "A", d: "Horizon area, A = 4πr_s² for Schwarzschild." },
+              { s: "A", d: "Horizon area, $A=4\\pi r_s^2$ for Schwarzschild." },
               { s: "A / 4 l_P^2", d: "One quarter of the horizon area counted in Planck-area units — about 10⁷⁷ for a solar-mass black hole." },
             ]}
             meaning="Entropy proportional to area, not volume. Taken at face value, the information capacity of a region is bounded by its surface — the seed of the holographic principle."

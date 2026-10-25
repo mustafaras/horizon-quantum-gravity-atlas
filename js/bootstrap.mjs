@@ -36,9 +36,11 @@ async function bootstrap() {
 
     // Curvature engine scene (S07): TSL materials on the material kit; the builder loads with the scene.
     const lensedSky = await import("./visualizations/gr/lensed-sky.mjs");
+    const nullPhotons = await import("./visualizations/gr/null-photons.mjs");
     Object.defineProperty(window, "QGA_GR", {
       value: Object.freeze({
         lensedSky: Object.freeze({ ...lensedSky }),
+        nullPhotons: Object.freeze({ ...nullPhotons }),
         loadCurvatureEngine: () => import("./visualizations/gr/curvature-engine.mjs"),
       }),
       configurable: true,

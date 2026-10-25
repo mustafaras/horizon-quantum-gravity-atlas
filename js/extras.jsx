@@ -1162,8 +1162,8 @@ function ViewWhitepaper() {
               limits="Written for the minimal Standard Model; gravitational coupling is absent."></FormulaCard>
             <FormulaCard title="Higgs potential" tex="V(\Phi) = \mu^2 \Phi^\dagger \Phi + \lambda(\Phi^\dagger \Phi)^2, \qquad v = \sqrt{-\mu^2/\lambda} \approx 246\ \mathrm{GeV}" status="established"
               symbols={[{ s: "\\mu^2", d: "mass parameter (negative for breaking)" }, { s: "\\lambda", d: "quartic self-coupling" }, { s: "v", d: "vacuum expectation value" }]}
-              meaning="For μ² < 0 the field acquires a nonzero vacuum expectation value, giving masses to the W± and Z⁰ bosons and to fermions through Yukawa couplings."
-              limits="The measured value of v is an input, not a prediction; the stability of the electroweak vacuum depends on λ at high scales."></FormulaCard>
+              meaning="For $\mu^2<0$ the field acquires a nonzero vacuum expectation value, giving masses to the $W^\pm$ and $Z^0$ bosons and to fermions through Yukawa couplings."
+              limits="The measured value of $v$ is an input, not a prediction; the stability of the electroweak vacuum depends on $\lambda$ at high scales."></FormulaCard>
           </div>
         </div>
 
@@ -1176,7 +1176,7 @@ function ViewWhitepaper() {
               limits="The path-integral measure is formal except in special rigorously defined cases; the expression is a computational device, not a literal sum."></FormulaCard>
             <FormulaCard title="Scalar action and Klein–Gordon" tex="S = \int d^4x\left[\tfrac{1}{2}\partial_\mu\phi\,\partial^\mu\phi - \tfrac{1}{2}m^2\phi^2 - V(\phi)\right], \qquad (\Box + m^2)\phi = 0" status="established"
               symbols={[{ s: "\\Box", d: "d’Alembertian operator" }, { s: "m", d: "field mass" }]}
-              meaning="The free scalar field obeys the Klein–Gordon equation; its dispersion relation ω² = c²k² + m²c⁴/ħ² shows the mass gap as a nonzero frequency at zero wavenumber."
+              meaning="The free scalar field obeys the Klein–Gordon equation; its dispersion relation $\omega^2=c^2k^2+m^2c^4/\hbar^2$ shows the mass gap as a nonzero frequency at zero wavenumber."
               limits="Free-field statement; interactions are handled perturbatively."></FormulaCard>
             <FormulaCard title="Propagator and Mandelstam invariants" tex="\Delta_F(p) = \frac{i}{p^2 - m^2 + i\epsilon}, \qquad s + t + u = \sum_i m_i^2" status="effective"
               symbols={[{ s: "\\Delta_F", d: "Feynman propagator" }, { s: "s, t, u", d: "Mandelstam invariants" }]}
@@ -1185,7 +1185,7 @@ function ViewWhitepaper() {
             <FormulaCard title="Leading cross-section" tex="\sigma(e^+e^- \to \mu^+\mu^-) \sim \frac{4\pi\alpha^2}{3s}" status="effective"
               symbols={[{ s: "\\alpha", d: "fine-structure constant" }, { s: "s", d: "centre-of-mass energy squared" }]}
               meaning="The leading high-energy scaling of the QED annihilation cross-section; the Amplitude Room evaluates it live alongside the Breit–Wigner resonance shape."
-              limits="Leading order only; the Z⁰ panel shows the Breit–Wigner shape alone, not the γ–Z⁰ interference term."></FormulaCard>
+              limits="Leading order only; the $Z^0$ panel shows the Breit–Wigner shape alone, not the $\gamma$–$Z^0$ interference term."></FormulaCard>
           </div>
         </div>
 
@@ -1198,15 +1198,15 @@ function ViewWhitepaper() {
               limits="Classical statement; quantization introduces the usual gauge-fixing and ghost machinery."></FormulaCard>
             <FormulaCard title="One-loop beta function" tex="\mu\frac{dg}{d\mu} = \beta(g) = -\frac{b_0}{16\pi^2}g^3 + \mathcal{O}(g^5), \qquad b_0 = 11 - \frac{2}{3}n_f" status="effective"
               symbols={[{ s: "b_0", d: "one-loop coefficient" }, { s: "n_f", d: "active quark flavours" }]}
-              meaning="For QCD with sufficiently few flavours b₀ > 0 and the coupling weakens at high energy — asymptotic freedom. The b₀ = 0 boundary sits at n_f = 16.5."
+              meaning="For QCD with sufficiently few flavours $b_0>0$ and the coupling weakens at high energy — asymptotic freedom. The $b_0=0$ boundary sits at $n_f=16.5$."
               limits="One loop only; higher orders and scheme dependence are not shown."></FormulaCard>
             <FormulaCard title="Running coupling solution" tex="\frac{1}{g_s^2(\mu)} = \frac{1}{g_s^2(\mu_0)} + \frac{b_0}{8\pi^2}\ln\frac{\mu}{\mu_0}" status="effective"
               symbols={[{ s: "\\mu", d: "renormalization scale" }, { s: "\\mu_0", d: "reference scale" }]}
               meaning="The integrated one-loop solution the RG landscape plots; the QED preset uses a documented unit-charge Dirac-fermion convention whose Landau pole is shown only as a formal extrapolation."
-              limits="The instrument stops its numerical trajectory at the conservative display boundary α = 1 before the pole."></FormulaCard>
+              limits="The instrument stops its numerical trajectory at the conservative display boundary $\alpha=1$ before the pole."></FormulaCard>
             <FormulaCard title="Fixed point and linearization" tex="\beta(g_*) = 0, \qquad \beta(g) \simeq \beta'(g_*)(g - g_*)" status="conjectural"
               symbols={[{ s: "g_*", d: "fixed-point coupling" }, { s: "\\beta'(g_*)", d: "slope at the fixed point" }]}
-              meaning="With t = ln μ increasing toward the ultraviolet, β′(g★) < 0 is UV-attractive and β′(g★) > 0 is IR-attractive. The asymptotic-safety-style polynomial β(g) = ag − bg³ is an explicitly conjectural illustration."
+              meaning="With $t=\ln\mu$ increasing toward the ultraviolet, $\beta'(g_\star)<0$ is UV-attractive and $\beta'(g_\star)>0$ is IR-attractive. The asymptotic-safety-style polynomial $\beta(g)=ag-bg^3$ is an explicitly conjectural illustration."
               limits="The interacting UV fixed point is built into the chosen toy function; it is not evidence for quantum-gravity asymptotic safety."></FormulaCard>
           </div>
         </div>
@@ -1233,7 +1233,7 @@ function ViewWhitepaper() {
           <div className="paper-spine-label">A.5 · Planck scale and the perturbative obstruction</div>
           <div className="formula-grid">
             <FormulaCard title="Planck units" tex="\ell_P = \sqrt{\frac{\hbar G}{c^3}},\quad t_P = \sqrt{\frac{\hbar G}{c^5}},\quad m_P = \sqrt{\frac{\hbar c}{G}},\quad E_P = \sqrt{\frac{\hbar c^5}{G}}" status="established"
-              symbols={[{ s: "\\ell_P", d: "≈ 1.616 × 10⁻³⁵ m" }, { s: "t_P", d: "≈ 5.39 × 10⁻⁴⁴ s" }, { s: "m_P", d: "≈ 2.18 × 10⁻⁸ kg" }, { s: "E_P", d: "≈ 1.22 × 10¹⁹ GeV" }]}
+              symbols={[{ s: "\\ell_P", d: "$\\approx 1.616\\times10^{-35}$ m" }, { s: "t_P", d: "$\\approx 5.39\\times10^{-44}$ s" }, { s: "m_P", d: "$\\approx 2.18\\times10^{-8}$ kg" }, { s: "E_P", d: "$\\approx 1.22\\times10^{19}$ GeV" }]}
               meaning="The natural scale built from ħ, G, and c. The Planck scale is not an experimentally measured threshold."
               limits="It is a dimensional-analysis scale, not an observed boundary."></FormulaCard>
             <FormulaCard title="Heuristic obstruction" tex="\lambda_C \sim r_s, \qquad \lambda_C = \frac{\hbar}{mc}, \qquad r_s = \frac{2Gm}{c^2}" status="heuristic"
@@ -1259,7 +1259,7 @@ function ViewWhitepaper() {
               meaning="Smaller black holes are hotter and evaporate faster; the cubic mass scaling makes stellar-mass evaporation astronomically slow."
               limits="Astrophysical Hawking radiation has not been directly observed."></FormulaCard>
             <FormulaCard title="Kerr horizons and surface gravity" tex="r_\pm = \frac{GM}{c^2}\left[1 \pm \sqrt{1-a_\star^2}\right], \qquad \kappa = \frac{c^4}{2GM}\frac{\sqrt{1-a_\star^2}}{1+\sqrt{1-a_\star^2}}" status="established"
-              symbols={[{ s: "a_\\star", d: "dimensionless spin cJ/GM²" }, { s: "\\kappa", d: "surface gravity" }]}
+              symbols={[{ s: "a_\\star", d: "dimensionless spin $cJ/GM^2$" }, { s: "\\kappa", d: "surface gravity" }]}
               meaning="The Kerr Observatory prints exact coordinate radii and the live formulation panel substitutes the current parameters into these relations; the surface gravity — hence the temperature — tends to zero in the extremal limit."
               limits="The rendered image beside the map is a Schwarzschild-based geodesic raymarch with visual spin cues only — frame dragging is not integrated."></FormulaCard>
             <FormulaCard title="Ryu–Takayanagi formula" tex="S(A) = \frac{\mathrm{Area}(\gamma_A)}{4G_N\hbar}" status="conjectural"
@@ -1272,8 +1272,8 @@ function ViewWhitepaper() {
         <div className="paper-spine-group">
           <div className="paper-spine-label">A.7 · Gravitational waves and collider constraints</div>
           <div className="formula-grid">
-            <FormulaCard title="Quadrupole radiated power" tex="P = \frac{G}{5c^5}\left\langle \dddot{Q}_{ij}\dddot{Q}_{ij} \right\rangle" status="established"
-              symbols={[{ s: "Q_{ij}", d: "mass quadrupole moment" }, { s: "\\dddot{Q}", d: "third time derivative" }]}
+            <FormulaCard title="Quadrupole radiated power" tex="P = \frac{G}{5c^5}\left\langle Q^{(3)}_{ij}Q^{(3)}_{ij} \right\rangle" status="established"
+              symbols={[{ s: "Q_{ij}", d: "mass quadrupole moment" }, { s: "Q^{(3)}_{ij}", d: "third time derivative of the quadrupole" }]}
               meaning="The leading quadrupole power radiated by a source; for compact binary inspirals the orbital frequency increases and the waveform chirps upward."
               limits="The Signal Analysis Theatre’s generated waveform is a leading-order quadrupole teaching model — no spins, no higher post-Newtonian orders, not numerical relativity."></FormulaCard>
             <FormulaCard title="Scale gap" tex="E_P \sim 10^{19}\ \mathrm{GeV} \quad\text{vs}\quad E_{\mathrm{LHC}} \sim 10^{4}\ \mathrm{GeV}" status="open"

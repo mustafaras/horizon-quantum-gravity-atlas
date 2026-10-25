@@ -1410,13 +1410,13 @@ function ModuleQFT({ go }) {
           { s: "\\hbar", d: "Reduced Planck constant; as ħ → 0 stationary phase selects classical solutions." }]
           }
           meaning="Feynman's formulation: the quantum amplitude is a coherent sum over every possible history, each weighted by a phase. Interference between histories produces all quantum phenomena."
-          limits="The measure 𝒟φ is defined rigorously only in special cases; in practice the integral is computed perturbatively or on a lattice."></FormulaCard>
+          limits="The measure $\mathcal{D}\phi$ is defined rigorously only in special cases; in practice the integral is computed perturbatively or on a lattice."></FormulaCard>
           <FormulaCard title="Klein–Gordon equation" status="established"
           tex="\left(\Box + \frac{m^2 c^2}{\hbar^2}\right)\phi = 0, \qquad \Box \equiv \frac{1}{c^2}\frac{\partial^2}{\partial t^2} - \nabla^2"
           symbols={[
           { s: "\\phi", d: "Scalar field amplitude." },
           { s: "\\Box", d: "d'Alembert wave operator — the relativistic generalization of the Laplacian." },
-          { s: "m", d: "Mass of the field's quanta; sets the dispersion relation E² = p²c² + m²c⁴." }]
+          { s: "m", d: "Mass of the field's quanta; sets the dispersion relation $E^2=p^2c^2+m^2c^4$." }]
           }
           meaning="The free relativistic wave equation for spin-0 fields. The field laboratory above integrates exactly this equation on a lattice."
           limits="Free (non-interacting) field only. As a single-particle wave equation it fails (negative probabilities); it is consistent only as a field equation."></FormulaCard>
@@ -1424,20 +1424,20 @@ function ModuleQFT({ go }) {
           tex="\left(i\gamma^\mu \partial_\mu - \frac{mc}{\hbar}\right)\psi = 0"
           symbols={[
           { s: "\\psi", d: "Four-component spinor field describing spin-½ particles." },
-          { s: "\\gamma^\\mu", d: "Dirac matrices satisfying {γ^μ, γ^ν} = 2η^{μν} — the algebra that linearizes the relativistic energy relation." },
+          { s: "\\gamma^\\mu", d: "Dirac matrices satisfying $\\{\\gamma^\\mu,\\gamma^\\nu\\}=2\\eta^{\\mu\\nu}$ — the algebra that linearizes the relativistic energy relation." },
           { s: "m", d: "Fermion mass." }]
           }
           meaning="The relativistic equation for electrons and all matter fermions. Spin-½ and the existence of antimatter are consequences, not assumptions."
-          limits="Free-field form shown; interactions enter by replacing ∂ with the gauge-covariant derivative D."></FormulaCard>
+          limits="Free-field form shown; interactions enter by replacing $\partial$ with the gauge-covariant derivative $D$."></FormulaCard>
           <FormulaCard title="Feynman propagator" status="established"
           tex="\tilde{G}_F(p) = \frac{i}{p^2 - m^2 + i\epsilon}"
           symbols={[
-          { s: "p", d: "Four-momentum flowing through the internal line (p² = E² − |p⃗|² in natural units)." },
-          { s: "m", d: "Mass of the exchanged field's quanta; the pole at p² = m² corresponds to a real particle." },
+          { s: "p", d: "Four-momentum flowing through the internal line ($p^2=E^2-|\\vec p|^2$ in natural units)." },
+          { s: "m", d: "Mass of the exchanged field's quanta; the pole at $p^2=m^2$ corresponds to a real particle." },
           { s: "i\\epsilon", d: "Infinitesimal prescription enforcing causal boundary conditions." }]
           }
           meaning="The amplitude for a field disturbance to propagate between two vertices. Internal lines in the diagram builder carry exactly this factor, integrated over off-shell momenta."
-          limits="Internal momenta need not satisfy p² = m² — which is why 'virtual particles' are calculational terms rather than observed objects."></FormulaCard>
+          limits="Internal momenta need not satisfy $p^2=m^2$ — which is why 'virtual particles' are calculational terms rather than observed objects."></FormulaCard>
           <FormulaCard title="Mandelstam variables" status="established"
           tex="s + t + u = \sum_i m_i^2 c^4, \quad s = (p_1+p_2)^2,\ t = (p_1-p_3)^2"
           symbols={[
