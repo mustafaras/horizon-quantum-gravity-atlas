@@ -960,12 +960,12 @@
         "S14"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s15-qft-casimir",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-25",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -2377,6 +2377,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 78 merged as 70c6e29950f1478fce338e5493563042fece15ad; CI (Browser QA 4m29s, Validate) green. No finding closed."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S15",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Branch claude/s15-qft-casimir from main 9285e1c."
     }
   ]
 }
