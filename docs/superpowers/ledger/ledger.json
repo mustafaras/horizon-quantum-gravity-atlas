@@ -235,11 +235,11 @@
       "id": "F-15",
       "title": "Amplitude room is t-channel-pole-only and omits γ–Z interference",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S16"
       ],
-      "closedIn": null
+      "closedIn": "19d7f989685e69ea03a2f6fe0402f188e75ed2eb"
     },
     {
       "id": "F-16",
@@ -1004,13 +1004,15 @@
       "findings": [
         "F-15"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s16-qft-electroweak",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/82",
-      "commits": [],
+      "commits": [
+        "19d7f989685e69ea03a2f6fe0402f188e75ed2eb"
+      ],
       "startedAt": "2026-10-26",
-      "completedAt": null,
+      "completedAt": "2026-10-26",
       "evidence": {
         "tests": [
           "npm test: 976/977 pass, 1 skipped (new: test/electroweak.test.mjs 22, feynman-svg 11, figure-plots +9 (seven plot cases, two checks), figure-layout +1, formula-core +1 case and 2 formulas; baseline 932/933)",
@@ -2580,6 +2582,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "PR 82 opened. Evidence and decisions D-090 to D-097 recorded; F-15 is closed with the done commit, as for S13 and F-08."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 82 merged as 19d7f989685e69ea03a2f6fe0402f188e75ed2eb; CI (Browser QA 7m24s, Validate) green on the last commit. F-15 closed."
     }
   ]
 }
