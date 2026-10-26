@@ -134,7 +134,7 @@ export const region = (o) => {
  * At most one mark is focal; every mark has a layer; status is a scientific status label.
  */
 export function figure(spec) {
-  const { id, title, status, provenanceId, x, y, marks = [], legend = true, caption = "", height, summary, aspect = null, maxPlotWidth = null } = spec ?? {};
+  const { id, title, status, provenanceId, x, y, marks = [], legend = true, caption = "", height, summary, aspect = null, maxPlotWidth = null, minLeft = 0 } = spec ?? {};
   need(typeof id === "string" && id, "figure.id is required");
   need(typeof title === "string" && title, `${id}: title is required`);
   need(SCIENTIFIC_STATUS_LABELS.includes(status), `${id}: status must be one of ${SCIENTIFIC_STATUS_LABELS.join(", ")}`);
@@ -146,5 +146,6 @@ export function figure(spec) {
   need(focal.length <= 1, `${id}: ${focal.length} focal marks; the grammar allows one`);
   need(typeof legend === "boolean", `${id}: legend is true (one entry per labelled mark) or false`);
   need(aspect === null || aspect > 0, `${id}: aspect must be positive`);
-  return Object.freeze({ id, title, status, provenanceId, x, y, marks: Object.freeze(marks), legend, caption, height: height ?? 240, summary: summary ?? null, aspect, maxPlotWidth });
+  need(Number.isFinite(minLeft) && minLeft >= 0, `${id}: minLeft is a non-negative number of pixels`);
+  return Object.freeze({ id, title, status, provenanceId, x, y, marks: Object.freeze(marks), legend, caption, height: height ?? 240, summary: summary ?? null, aspect, maxPlotWidth, minLeft });
 }

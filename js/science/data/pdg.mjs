@@ -24,6 +24,8 @@ export const PDG = Object.freeze({
   mt: entry(172.60, 0.27, "GeV", "Quarks: t, mass (direct measurements) m = 172.60 +- 0.27 GeV (S = 1.5)",
     "The direct-measurement average, used as the pole mass as the literature does; it is ambiguous by about Lambda_QCD (PDG footnote). The pole mass from cross sections is 172.1 +- 0.6 GeV."),
   MZ: entry(91.1879, 0.0020, "GeV", "Gauge and Higgs bosons: Z, mass m = 91.1879 +- 0.0020 GeV"),
+  GammaZ: entry(2.4955, 0.0023, "GeV", "Z listing, Z width: 2.4955 +- 0.0023 GeV (OUR EVALUATION; read 2026-10-26, S16)",
+    "The LEP-SLC 2006 combination is 2.4952 +- 0.0023 GeV (Phys. Rept. 427, Table 2.13); the 2026 evaluation applies the corrections of Voutsinas et al. 2020 and Janot 2020."),
   MW: entry(80.3625, 0.0077, "GeV", "Gauge and Higgs bosons: W, mass m = 80.3625 +- 0.0077 GeV"),
   alphaS: entry(0.1180, 0.0009, "1", "Physical constants: alpha_s(m_Z) = 0.1180(9)"),
   sin2ThetaW: entry(0.23122, 0.00006, "1", "Electroweak review, Table 10.2: MS-bar sin^2 theta_W(M_Z) = 0.23122 +- 0.00006"),

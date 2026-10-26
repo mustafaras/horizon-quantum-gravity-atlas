@@ -293,7 +293,7 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     kerrOuterHorizon: { L: 1 }, photonSphere: { L: 1 }, criticalImpact: { L: 1 }, planckLength: { L: 1 },
     chirpMass: { M: 1 }, newtonianGwFrequency: { T: -1 }, casimirPressure: { M: 1, L: -1, T: -2 }, flammEmbedding: { L: 1 }, lorentzGamma: {}, newtonianPotential: {},
     twoFlavourOscillation: {}, matterPotential: { M: 1, L: 2, T: -2 }, higgsPotentialReduced: {}, higgsQuarticTree: {}, phi4HamiltonianDensity: {},
-    casimirPlatesPressure: { M: 1, L: -1, T: -2 },
+    casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {},
   };
   assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
   for (const [name, f] of Object.entries(library)) {
@@ -303,4 +303,11 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     assert.ok(report.ok, `${name}: float32 error ${report.maxRelError} at ${JSON.stringify(report.worst)}`);
     assert.equal(report.skipped, 0, name);
   }
+});
+
+test("the electroweak formulas reproduce the Z-pole couplings and the pole asymmetry", () => {
+  const sin2 = 0.23122;
+  const gV = library.ewVectorCoupling.evaluate({ T3: -0.5, Q: -1, sin2 });
+  close(gV, -0.5 + 2 * sin2, 1e-15, "g_V of a charged lepton");
+  close(library.ewPoleAsymmetry.evaluate({ gV, gA: -0.5 }), 0.016739, 1e-3, "A_FB^0 at sin^2 = 0.23122");
 });

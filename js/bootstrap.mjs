@@ -250,6 +250,21 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Electroweak scattering and Feynman diagrams (S16): the tree-level gamma + Z, Bhabha and Moller functions and the LEP Z-pole numbers behind
+    // the amplitude room, and the diagram geometry behind the Feynman builder (js/labs/feynman-diagram.jsx).
+    const electroweakScience = await import("./science/electroweak.mjs");
+    const electroweakData = await import("./science/data/electroweak.mjs");
+    const feynmanSvg = await import("./visualizations/qft/feynman-svg.mjs");
+    const feynmanDiagrams = await import("./visualizations/qft/feynman-diagrams.mjs");
+    Object.defineProperty(window, "QGA_ELECTROWEAK", {
+      value: Object.freeze({ science: Object.freeze({ ...electroweakScience }), data: electroweakData.LEP_POLE, source: electroweakData.LEP_SOURCE, derivedPole: electroweakData.derivedMuonPoleCrossSection }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_FEYNMAN", {
+      value: Object.freeze({ layout: feynmanSvg.layoutDiagram, ...feynmanDiagrams }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

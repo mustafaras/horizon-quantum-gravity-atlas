@@ -45,3 +45,11 @@ test("legend wraps and is content-sized", () => {
 test("invalid sizes are rejected", () => {
   assert.throws(() => solveLayout({ ...base, width: 0, height: 100 }), RangeError);
 });
+
+test("minLeft aligns the plot areas of stacked figures whose tick labels differ in width", () => {
+  const narrow = solveLayout({ ...base, width: 600, height: 240, yTicks: ["0", "1"], minLeft: 100 });
+  const wide = solveLayout({ ...base, width: 600, height: 240, yTicks: ["−1.0×10⁻⁷", "1.0×10⁻⁷"], minLeft: 100 });
+  assert.equal(narrow.plot.x, wide.plot.x);
+  assert.equal(narrow.plot.w, wide.plot.w);
+  assert.equal(solveLayout({ ...base, width: 600, height: 240, minLeft: 0 }).plot.x, solveLayout({ ...base, width: 600, height: 240 }).plot.x);
+});

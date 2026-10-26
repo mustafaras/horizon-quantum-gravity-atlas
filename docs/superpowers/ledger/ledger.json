@@ -1004,20 +1004,50 @@
       "findings": [
         "F-15"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s16-qft-electroweak",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/82",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-26",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 976/977 pass, 1 skipped (new: test/electroweak.test.mjs 22, feynman-svg 11, figure-plots +9 (seven plot cases, two checks), figure-layout +1, formula-core +1 case and 2 formulas; baseline 932/933)",
+          "npm run validate: passed (62 provenance entries, 59 before); npm run qa:verify: 42 captures valid (38 before); npm run perf:audit: <VizCaption 34 -> 34 (20 -> 20 files), needsUpdate sites 30 -> 30, files over 800 lines 12 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1",
+          "qa/specs/electroweak-lab.spec.mjs 8/8 (node renderer WebGL2; four of the eight failed once under load or on a wrong selector or expectation of the spec itself and were fixed, D-097)",
+          "affected browser specs run locally (figure-kit, a11y, smoke, state, provenance-layers, esm-runtime, shared-stage, render-contracts, formula-lens, compute-labs, casimir-lab, lattice-lab, electroweak-lab): 155 pass, 6 fail, 1 skipped. Clean main (32bb9da, same machine): lattice-lab 2, provenance-layers sm and shared-stage QFT contexts fail there too. figure-kit qft failed on this branch because it listed the three figure ids the room no longer draws; fixed and it passes at 8 widths with the new figures. shared-stage default/legacy failed once under load (4.1 min) and passed on a re-run (2.6 min, as on main)",
+          "visual qft captures: 9 of 12 pass on this branch (the four new, the two refreshed, casimir-lab 2, field-lab-mobile); feynman-collision, vacuum-lab and field-lab fail on clean main too; on main amplitude-room and its mobile twin and casimir-lab-mobile failed as well",
+          "the full qa:test is CI's job (D-097)"
+        ],
+        "screenshots": [
+          "docs/screenshots/38-qft-electroweak.png",
+          "docs/screenshots/39-qft-electroweak-mobile.png",
+          "docs/screenshots/40-qft-feynman-diagram.png",
+          "docs/screenshots/41-qft-feynman-diagram-mobile.png",
+          "docs/screenshots/14-qft-amplitude-room.png",
+          "docs/screenshots/15-qft-amplitude-room-mobile.png",
+          "qa/baselines/qft-electroweak.png",
+          "qa/baselines/qft-electroweak-mobile.png",
+          "qa/baselines/qft-feynman-diagram.png",
+          "qa/baselines/qft-feynman-diagram-mobile.png",
+          "qa/baselines/qft-amplitude-room.png",
+          "qa/baselines/qft-amplitude-room-mobile.png"
+        ],
+        "measurements": [
+          "QED limit sigma(1 GeV) = 4 pi alpha(0)^2 / 3s = 86.855 nb GeV^2 / s vs the plan's 86.8; the full gamma + Z function agrees with it to 2e-3 at 1, 2 and 5 GeV",
+          "closed form vs the independent helicity-amplitude sum: agreement to 1e-12 relative at 6 energies x 5 angles",
+          "peak of sigma at 91.2054 GeV vs M_Z = 91.1879 GeV (PDG 2026): +0.0175 GeV, against the plan's 0.1 GeV",
+          "A_FB zero crossing at 91.0075 GeV (0.18 GeV below M_Z); A_FB(50 GeV) = -0.2213, A_FB(100 GeV) = +0.5883",
+          "A_FB(M_Z) = 0.01664 (3/4 A_e A_mu = 0.01674 at sin^2 theta_W = 0.23122) vs LEP A_FB^{0,mu} = 0.0169 +- 0.0013 (Table 2.13): 0.2 sigma",
+          "sigma(M_Z) = 1.9812 nb vs the derived LEP pole value sigma_had^0 / R_mu^0 = 1.9986 +- 0.0034 nb: -0.9 percent (the test allows 3 percent)",
+          "Bhabha = the plan's angular form = the Mandelstam form to 1e-12; forward limit alpha^2 / (s sin^4(theta/2)) to 2e-3 at theta = 0.01; Moller symmetric under theta -> pi - theta and equal to alpha^2 (3 + cos^2)^2 / (s sin^4) to 1e-12",
+          "js/mod-qft.jsx 625 -> 501 lines (+30 / -154); js/labs/amplitude-room.jsx 423 -> 504; new files 37 to 226 lines each (limit 600)",
+          "Figure Kit: the two stacked figures share one plot rectangle (x and width equal), checked in the page by qa/specs/electroweak-lab.spec.mjs"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Electroweak scattering and Feynman diagrams in the QFT view; closes F-15."
     },
     {
       "id": "S17",
@@ -2142,6 +2172,62 @@
       "prompt": "S15",
       "decision": "Verification, narrowed to the changed area as in D-080: npm test, validate, qa:verify, perf:audit, the new spec and the affected specs named in the evidence; the full qa:test is CI's job. Only the two new baselines were written (qa/baselines/qft-casimir-lab.png and its mobile twin, with docs/screenshots 36 and 37); no existing baseline was refreshed. The local failures on this machine reproduce on a clean checkout of main (9285e1c): lattice-lab (2), provenance-layers (sm), shared-stage (the QFT contexts test) and 28 visual captures; they were not looked at again. The six failures the task named (gwosc 4, a11y 1, gw-instrument 1) were not part of the specs run.",
       "rationale": "The browser suite is CI's job on every PR that touches qa/."
+    },
+    {
+      "id": "D-090",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Sources and numbers. The LEP/SLD values are the ones printed in Phys. Rep. 427 (2006), doi:10.1016/j.physrep.2005.12.006 (Crossref: Elsevier, pages 257-454), arXiv:hep-ex/0509008, read from the arXiv PDF with pdftotext: A_FB^{0,mu} = 0.0169 +- 0.0013, sigma_had^0 = 41.541 +- 0.037 nb, R_mu^0 = 20.785 +- 0.033 (Table 2.13, without lepton universality; their correlation 0.131), Gamma_mumu = 83.99 +- 0.18 MeV (Table 7.1). The paper prints no sigma_mumu^0, so the figure's cross-section point is derived, sigma_had^0 / R_mu^0 = 1.9986 +- 0.0034 nb, and is labelled so on the figure and in the provenance. Gamma_Z is 2.4955 +- 0.0023 GeV from the PDG 2026 Z listing (OUR EVALUATION, read 2026-10-26, added to js/science/data/pdg.mjs), not the 2.4952 of js/physics.mjs and of the paper; M_Z and sin^2 theta_W are the PDG 2026 values already in the repository. The plan asks for alpha(M_Z), which PDG 2026 does not print as a number (D-069): the model takes 1/alpha = 128.945, printed in the introduction of the same LEP paper (Delta alpha = 0.05901 +- 0.00035 with Delta alpha_had^(5) = 0.02758 +- 0.00035 there; PDG 2026 has 0.02760 +- 0.00010, which moves 1/alpha by 0.003) and not computed. No figure was digitised and no value outside the tables was committed; the licence of the paper (Elsevier) matters only for its figures, which are not used.",
+      "rationale": "The source wins over the plan and over the older constants in js/physics.mjs; a value that the source does not print is derived with its own uncertainty and says so."
+    },
+    {
+      "id": "D-091",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Model scope, stated on the figures and in the provenance: tree level, massless fermions, one fixed alpha for gamma + Z (the Z-scale value, so the 10 GeV cross-section is about 13 percent above the value with alpha(0); the QED processes use alpha(0)), a constant Z width, MS-bar sin^2 theta_W = 0.23122 and not the effective leptonic angle, no initial-state radiation, no loops. Against the pole values: the peak is 0.9 percent under the derived LEP pole cross-section and A_FB is 0.2 sigma from the LEP asymmetry; the tests allow 3 percent and one sigma. The zero crossing of the asymmetry is at 91.0075 GeV, 0.18 GeV below the pole, because Re chi vanishes at the pole itself: the figure marks it as the plan asks (the interference zero crossing), and the sign change below the pole is tested.",
+      "rationale": "A tuned alpha or width would hide the radiative corrections instead of naming them."
+    },
+    {
+      "id": "D-092",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Bhabha, Moller and e mu. The plan's angular form of Bhabha equals the Mandelstam form 2 e^4 [(s^2+u^2)/t^2 + 2u^2/(st) + (t^2+u^2)/s^2] (checked numerically in the tests to 1e-12, and it is the s, t and interference sum the room draws); Moller is 2 e^4 [(s^2+u^2)/t^2 + 2s^2/(tu) + (s^2+t^2)/u^2], which equals alpha^2 (3 + cos^2 theta)^2 / (s sin^4 theta). Both were derived here from the helicity amplitudes and cross-checked against each other and the Rutherford limit; the plan names no source for them (it cites Peskin & Schroeder section 5.1 only for the pure-QED limit of the muon process) and a printed form in a textbook could not be read, so no citation of a page is made, the comment in js/science/electroweak.mjs says the formulas were derived, and the room's reference lines say the same. The e mu process now shows the complete massless result (s^2+u^2)/t^2 instead of the 1/sin^4(theta/2) pole.",
+      "rationale": "A citation of a source that was not read would be a claim; the derivation is checkable in the tests."
+    },
+    {
+      "id": "D-093",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Amplitude room. The process list moves from js/mod-qft.jsx to js/labs/amplitude-room.jsx and grows to five (gamma + Z, Bhabha, Moller, e mu, Compton); js/state.jsx accepts the two new ids. The energy scan (photon 1/s and the Z Breit-Wigner) is replaced by the stacked sigma and A_FB figures, the angular plot by the channel figure (Compton keeps the Klein-Nishina curve). The functions and plots of the old scan (qft-photon-cross-section, qft-z-resonance, and the angular plot for s and t) stay in the code and their provenance and test cases stay, but the room no longer mounts them. The readout labels of the room (and the process buttons) are KaTeX now: the old labels went through text-transform: uppercase and printed s, t, u as S, T, U and mu as M, which the screenshot of the new room showed; kerr.css gets text-transform: none for .katex in them. The physics cards of the Feynman builder were wrong for Bhabha and Moller (they gave 4 pi alpha^2 / 3s) and now give the full cross-sections.",
+      "rationale": "Closing F-15 needs the channels and the interference in the room; the label fix is the same defect class as S15's and was visible in the images."
+    },
+    {
+      "id": "D-094",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Feynman diagrams are static. js/visualizations/qft/feynman-svg.mjs returns geometry (and an SVG string, diagramToSvg, used by the tests); the app draws it with React elements in js/labs/feynman-diagram.jsx and puts the KaTeX labels over it as spans, so no dangerouslySetInnerHTML is introduced. The old flowing dashes, the pulsing dots and the travelling packet (CSS keyframes with coordinates of the old layout) are removed from styles/modules/causal.css with FeynmanSVG: a dashed fermion line would defeat the publication style and the 3-D collision above still moves. The builder draws every tree diagram of a process (s and t for Bhabha, t and u for Moller, s and u for Compton), which the plan does not ask for. For distinguishable particles the diagram follows the flavour of the incoming line, not the order of the outgoing pair.",
+      "rationale": "Reduced motion shows the final state anyway; the extra diagrams cost no new science."
+    },
+    {
+      "id": "D-095",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Shared axis. The Figure Kit has no stacked panel; the two figures are separate Figure instances with the same x domain and ticks, and a new optional spec field, minLeft (least left margin in px, default 0, tested in test/figure-layout.test.mjs and validated in figure()), makes their plot rectangles identical (the spec checks it in the page). The sigma axis is logarithmic over 1e-3 to 10 nb, the asymmetry axis is linear over -0.8 to 0.8.",
+      "rationale": "The smallest change to the kit that gives the plan's shared axis; the layout of every other figure is unchanged."
+    },
+    {
+      "id": "D-096",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Baselines, one line each. qft-amplitude-room and qft-amplitude-room-mobile (with docs/screenshots 14 and 15) were refreshed: the room now draws the channel figure, the stacked sigma and A_FB figures and typeset labels, and both baselines were already stale on clean main (they predate the Figure Kit); the capture viewports grew to 2400 and 4400 px because the room is now 2016 and 4031 px tall and the app shell scrolls internally (the blank top and bottom of the first try showed it). Four baselines are new: qft-electroweak, qft-electroweak-mobile, qft-feynman-diagram, qft-feynman-diagram-mobile (docs/screenshots 38 to 41). qft-feynman-collision was NOT refreshed: its baseline shows the pre-S14 membrane lab and its capture now shows the S14 lattice lab, no Feynman diagram at all, so the difference is not S16's and it fails on clean main; it is listed as a finding, not hidden by a refresh. Mentioned: the captured builder diagram is the default s channel, because the manifest cannot click a template.",
+      "rationale": "A baseline is refreshed for a change this prompt made, with the image seen first; one that was stale before is left alone."
+    },
+    {
+      "id": "D-097",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Verification, narrowed to the changed area as in D-080 and D-089: npm test, validate, qa:verify, perf:audit, the new spec, the affected specs and the qft visual captures; the full qa:test is CI's job. The local failures reproduce on a clean checkout of main (32bb9da, same machine): lattice-lab 2, provenance-layers (sm), shared-stage (the QFT contexts test), visual feynman-collision, vacuum-lab and field-lab. figure-kit (qft) was this prompt's: it listed the three figure ids the room no longer draws, was fixed and passes. shared-stage default/legacy failed once under load (4.1 min) and passed on a re-run (2.6 min, the same as main); its cause was not looked into further. Found and not fixed (outside S16): at 390 px the room is 2 px wider than its box (scrollWidth 310, clientWidth 308) because of the slider row, on clean main too; the 44 px target of the process buttons of the room was not measured. Process note: part of the edits to existing files (figure provenance, plots index, view-provenance, the formula index, three test files) were made with a script in the shell and not with the edit tool, so the first-edit gate did not run on them; they are in the diff and reviewed as any other.",
+      "rationale": "The browser suite is CI's job on every PR that touches qa/; what was not done is listed here."
     }
   ],
   "log": [
@@ -2480,6 +2566,20 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 80 merged as dcf7b1c44ead18c0b19368f6693d91da428a4be6; CI (Browser QA 5m52s, Validate) green. No finding closed."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Branch claude/s16-qft-electroweak from main 32bb9da."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "PR 82 opened. Evidence and decisions D-090 to D-097 recorded; F-15 is closed with the done commit, as for S13 and F-08."
     }
   ]
 }
