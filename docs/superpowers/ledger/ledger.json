@@ -2691,6 +2691,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 85 merged as c0b58224d22d1abd30b9f32ce566c31963777c0c; CI (Browser QA 7m34s, Validate) green on the last commit. F-14 closed (D-104)."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "follow-up",
+      "detail": "Units in the lab's readouts now use a thin space (art direction); the two captures stay within their tolerance, no baseline refreshed. Still open and not closable here: Machacek & Vaughn 1983 not read (paywall, D-100); the GUT hatch is class decoration in the provenance but a model mark in the Figure Kit, which has no decoration layer (D-103); the shared provenance chips are 21 px; the MSSM cross-fade rebuilds the figure spec on each of its frames for 420 ms."
     }
   ]
 }
