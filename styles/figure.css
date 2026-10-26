@@ -72,4 +72,23 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .lt-note, .cv-note { margin: 4px 14px; font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
 .cv-btn .katex { font-size: 1em; }
 .cv-sums { border-top: 1px solid var(--rule); }
+
+/* Unification lab (S17): toggles, the coupling selector, the two ranges and the readouts. */
+.ug-bar { gap: 10px; flex-wrap: wrap; }
+.btn.ug-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
+.ug-btn .katex, .ug-readouts .readout-label .katex, .ug-range .ctl-label .katex { font-size: 1em; text-transform: none; }
+.ug-btn.on { border-color: var(--accent); color: var(--ink-strong); }
+.ug-focus { display: flex; gap: 6px; flex-wrap: wrap; }
+.ug-group { margin-left: 6px; font: var(--step--2) var(--font-mono); color: var(--ink-dim); }
+.ug-controls { align-items: flex-start; }
+.ug-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.ug-range input[type="range"] { height: 44px; flex: 1 1 140px; min-width: 0; background: transparent; }
+.ug-range input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.ug-range input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
+.ug-range input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.ug-range.off { opacity: 0.45; }
+.ug-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
+.ug-readouts .readout { flex: 1 1 200px; }
+.ug-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
+.ug-fig-note { font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
 .cv-readouts .readout-label .katex { text-transform: none; }

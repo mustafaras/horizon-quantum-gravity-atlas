@@ -265,6 +265,15 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Gauge-coupling running and unification (S17): the three couplings run from M_Z and the triangle they enclose (js/labs/unification-lab.jsx).
+    const gaugeRunning = await import("./science/gauge-running.mjs");
+    const gaugeData = await import("./science/data/gauge-couplings.mjs");
+    const gaugePdg = await import("./science/data/pdg.mjs");
+    Object.defineProperty(window, "QGA_GAUGE", {
+      value: Object.freeze({ ...gaugeRunning, ...gaugeData, PDG: gaugePdg.PDG }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

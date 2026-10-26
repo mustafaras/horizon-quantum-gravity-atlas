@@ -80,6 +80,8 @@ export const REF = Object.freeze({
   JAFFE_2005: "Jaffe, The Casimir effect and the quantum vacuum, Phys. Rev. D 72, 021301 (2005), doi:10.1103/PhysRevD.72.021301, arXiv:hep-th/0503158",
   BORDAG_2001: "Bordag, Mohideen & Mostepanenko, New developments in the Casimir effect, Phys. Rep. 353, 1 (2001), doi:10.1016/S0370-1573(01)00015-1",
   LEP_SLC_2006: "ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP Electroweak Working Group and SLD Electroweak and Heavy Flavour Groups, Precision electroweak measurements on the Z resonance, Phys. Rep. 427, 257 (2006), doi:10.1016/j.physrep.2005.12.006, arXiv:hep-ex/0509008",
+  STEINHAUSER_1998: "Steinhauser, Leptonic contribution to the effective electromagnetic coupling constant up to three loops, Phys. Lett. B 429, 158 (1998), doi:10.1016/S0370-2693(98)00503-6, arXiv:hep-ph/9803313",
+  MARTIN_VAUGHN_1994: "Martin & Vaughn, Two-loop renormalization group equations for soft supersymmetry-breaking couplings, Phys. Rev. D 50, 2282 (1994), doi:10.1103/PhysRevD.50.2282, arXiv:hep-ph/9311340",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 

@@ -293,7 +293,7 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     kerrOuterHorizon: { L: 1 }, photonSphere: { L: 1 }, criticalImpact: { L: 1 }, planckLength: { L: 1 },
     chirpMass: { M: 1 }, newtonianGwFrequency: { T: -1 }, casimirPressure: { M: 1, L: -1, T: -2 }, flammEmbedding: { L: 1 }, lorentzGamma: {}, newtonianPotential: {},
     twoFlavourOscillation: {}, matterPotential: { M: 1, L: 2, T: -2 }, higgsPotentialReduced: {}, higgsQuarticTree: {}, phi4HamiltonianDensity: {},
-    casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {},
+    casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {}, gaugeRunningOneLoop: {},
   };
   assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
   for (const [name, f] of Object.entries(library)) {
@@ -303,6 +303,16 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     assert.ok(report.ok, `${name}: float32 error ${report.maxRelError} at ${JSON.stringify(report.worst)}`);
     assert.equal(report.skipped, 0, name);
   }
+});
+
+test("the one-loop gauge-running formula gives the Planck-scale couplings of the plan and exposes its four terms", () => {
+  const f = library.gaugeRunningOneLoop;
+  assert.deepEqual([...f.termIds].sort(), ["ainv", "b_over_2pi", "inputs", "ln_mu_over_MZ"]);
+  const env = (a0, b) => ({ ainv0: a0, b, mu: 1.22e19, MZ: 91.1876 });
+  close(f.evaluate(env(59.020, 41 / 10)), 33.29, 5e-4, "alpha_1^-1 at M_Pl");
+  close(f.evaluate(env(29.585, -19 / 6)), 49.46, 5e-4, "alpha_2^-1 at M_Pl");
+  close(f.evaluate(env(8.475, -7)), 52.41, 5e-4, "alpha_3^-1 at M_Pl");
+  assert.match(f.tex, /htmlData/);
 });
 
 test("the electroweak formulas reproduce the Z-pole couplings and the pole asymmetry", () => {
