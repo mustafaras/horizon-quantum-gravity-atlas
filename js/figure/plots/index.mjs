@@ -9,3 +9,4 @@ export * as qft from "./qft.mjs";
 export * as gw from "./gw.mjs";
 export * as casimir from "./casimir.mjs";
 export * as electroweak from "./electroweak.mjs";
+export * as unification from "./unification.mjs";

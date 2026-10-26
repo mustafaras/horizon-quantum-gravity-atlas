@@ -1061,20 +1061,43 @@
       "findings": [
         "F-14"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s17-rg-unification",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/85",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-26",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1000/1001 pass, 1 skipped (new: test/gauge-running.test.mjs 10, figure-lens 6, unification-plots 9, formula-core +1; baseline 974/975)",
+          "npm run validate: passed (64 provenance entries, 60 before); npm run qa:verify: 44 captures valid (42 before); npm run perf:audit: <VizCaption 34 -> 36 (20 -> 21 files, the two new captions), registerVisualization sites 11 -> 12 (the new registrar), needsUpdate sites 30 -> 30, files over 800 lines 12 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1",
+          "qa/specs/unification-lab.spec.mjs 6/6 (node renderer WebGL2): status and provenance, the MSSM toggle, the lens, keyboard, 44 px targets and KaTeX text-transform at 1280 and 390 px",
+          "affected browser specs (figure-kit, a11y, provenance-layers, formula-lens, rg, smoke, state, electroweak-lab, higgs-lab): 129 pass, 3 fail. a11y 'overview single H1' (took 16.8 min) and 'skip link first Tab stop' failed under the load of the long run and pass alone on this branch (17/17) and on clean main (17/17); provenance-layers 'sm: every status chip opens its own drawer' is on the known clean-main failure list",
+          "visual: the two new captures pass; rg-flow-landscape-qcd, rg-flow-landscape-mobile-toy, rg-flow-field-3d and sm-higgs-lab fail on this branch and identically on a clean main worktree of the same machine (49a62a9), so they are local baseline drift and not S17 (visual.spec runs only locally); no existing baseline was refreshed",
+          "the full qa:test is CI's job"
+        ],
+        "screenshots": [
+          "docs/screenshots/42-rg-unification.png",
+          "docs/screenshots/43-rg-unification-mobile.png",
+          "qa/baselines/rg-unification.png",
+          "qa/baselines/rg-unification-mobile.png"
+        ],
+        "measurements": [
+          "inputs at M_Z with the derived alpha_em^-1 = 127.9614: alpha_1^-1 = 59.0245, alpha_2^-1 = 29.5872, alpha_3^-1 = 8.4746; with the plan's 127.951 they are 59.0197, 29.5848, 8.4746 vs the plan's 59.020, 29.585, 8.475 (test tolerance 1e-3)",
+          "alpha_em^-1 derivation: 127.9299 with the PDG 2024 Delta alpha_had = 0.02783 vs the 127.930 +- 0.008 that edition prints; 127.9614 +- 0.0137 with the 2026 value 0.02760 +- 0.00010",
+          "one-loop SM at M_Pl (plan inputs; computed with the plan's 1.22e19 GeV, the shipped 1.2209e19 GeV shifts each by under 0.001): 33.287, 49.460, 52.409 vs the plan's 33.29, 49.46, 52.41 (to 0.01)",
+          "numerical one-loop run vs the analytic solution, SM and MSSM with the threshold: 1e-9; two-loop run vs an independent integration of Buttazzo et al. eq. 96-98 in g^2: 1e-6",
+          "two-loop SM at 1e19 GeV: alpha^-1 = 33.16, 49.03, 52.65 (one loop 33.42, 49.36, 52.19)",
+          "triangle area (decades x alpha^-1): SM two loop 5.472 (vertices at 13.04, 14.24, 16.47), one loop 7.265; MSSM at 1 TeV two loop 0.00896 (crossings at 16.03 to 16.17, alpha^-1 = 25.0 to 25.2), one loop 0.0724; ratios SM/MSSM 611 (two loop) and 100 (one loop); MSSM area 0.0269 at 500 GeV, 0.0007 at 2 TeV, 0.0002 at 3 TeV",
+          "1-sigma band half-width at M_Z: 0.0078, 0.0083, 0.0646 for alpha_1^-1, alpha_2^-1, alpha_3^-1; at 1e19 GeV 0.0079, 0.0084, 0.0628",
+          "Yukawa terms vs the two-loop gauge term at M_Z (y_t = 0.95): 10, 7 and 5 percent for the three couplings (estimate); top decoupling in alpha_em^-1: 0.18",
+          "js/mod-rg-stage3.jsx +8 / -10 lines (net -2); js/labs/unification-lab.jsx 191 lines; new files 70 to 191 lines (limit 600)",
+          "controls of the lab: 7 buttons and ranges, all 44 px high and at least 44 px wide at 1280 and at 390 px; the provenance chips of the figures (21 px) are the existing shared component"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Standard-Model gauge-coupling running and unification in the RG view; F-14 stays open until the done commit."
     },
     {
       "id": "S18",
@@ -2237,6 +2260,48 @@
       "prompt": "S16",
       "decision": "Follow-up after the review of S16 against docs/design/art-direction.md and docs/render/performance-contract.md (both read now; they were not read before). (1) Colours: the figures and the diagrams used frozen --pigment-* tokens, which the art direction forbids for new work; they now use accent, the categorical set (cat-1, cat-3, cat-6, cat-7) and the ink levels, and the two pigments that nothing used any more (pigment-blue-80, pigment-blue-63) are removed from styles/tokens.css, as test/design-tokens.test.mjs requires. (2) Line widths of the diagrams are 1.5 px (the limit for engraved geometry) instead of 1.6 and 1.7. (3) Touch targets: every control of the amplitude room and of the Feynman builder is at least 44 px (process buttons, speed buttons, play and replay, selects, the sliders and the progress bar through a taller hit area with the drawn size unchanged, and the validity summary), except the shared provenance badge, which belongs to the whole atlas; qa/specs/electroweak-lab.spec.mjs measures it. (4) The room's slider row, 2 px wider than the room at 390 px since before S16, no longer overflows, and the spec now includes the room itself. (5) The channel figure uses a symmetric-logarithmic y axis (linear within 0.01 of the 90 degree value), so the photon term on the Z pole and a Coulomb pole share one axis. (6) The slider labels of the room are KaTeX (SliderRow takes an optional labelTex; the old labels read COS TH (M-) after the uppercase transform). (7) Unused code removed: photonCrossSectionSpec and zResonanceSpec with their provenance entries (qft-photon-cross-section, qft-z-resonance) and test cases; this supersedes the sentence of D-093 that said they stay. (8) A legend diagram (js/visualizations/qft/feynman-diagrams.mjs legendDiagram, a details element in the builder) draws every line kind the module knows, including the gluon, the W or Z boson and the scalar, which no process diagram uses. (9) Six baselines refreshed again for the changes above (qft-amplitude-room, its mobile twin, qft-electroweak, its mobile twin, qft-feynman-diagram, its mobile twin; docs/screenshots 14, 15, 38 to 41), each seen before it was written. Not done: diagramToSvg stays an API used by the tests (the app draws with React elements); the stale local baselines of D-096 and D-097 are untouched; the shared-stage flake was not investigated; qft-casimir-lab-mobile, which fails on clean main too, failed in one of two visual runs here and is not touched by this change.",
       "rationale": "The art direction and the accessibility rule of the prompt are part of its definition of done; what remains is listed."
+    },
+    {
+      "id": "D-099",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "alpha_em^-1(M_Z) in the MS-bar scheme is derived, not taken from the plan: 127.961 +- 0.014. The plan's 127.951 is the value the PDG 2022 edition prints (127.951 +- 0.009). The 2024 edition prints 127.930 +- 0.008 (with Delta alpha_had^(5) = 0.02783 and alpha_s = 0.1187), which corrects D-069: that decision said neither the 2024 nor the 2026 edition prints it; the 2024 edition does, the 2026 one does not. A number from one edition does not go with the sin^2 theta_W and alpha_s of another, so the value is rebuilt from the 2026 inputs with the relation of the review's Section 10.3.1: alpha(0)^-1 = 137.035 999 177(21) (eq. 10.19) times [1 - Delta alpha_lep - Delta alpha_had^(5) = 0.02760(10) - (Delta alpha-hat - Delta alpha) = 0.007123 (eq. 10.21)], with Delta alpha_lep = 314.97686e-4 from Steinhauser, Phys. Lett. B 429, 158 (1998), Table 1 (DOI 10.1016/S0370-2693(98)00503-6 confirmed on Crossref, paper read; it quotes no uncertainty, so its three-loop term 1e-6 is taken as the bound). The check: the same pipeline with the 2024 Delta alpha_had returns 127.9299, the 127.930 that edition prints. The consequence for the plan's numbers: 59.024, 29.587, 8.475 instead of 59.020, 29.585, 8.475 (the plan values are reproduced by the explicit override 127.951 in the tests); 33.29, 49.46, 52.41 at the Planck mass hold to 0.01 either way. M_Pl is the 1.2209e19 GeV computed from the SI constants by higgs-running.mjs.",
+      "rationale": "The prompt says an unverifiable number is not shipped and the source wins; a derivation that reproduces a printed value of another edition to 0.001 is the verifiable route."
+    },
+    {
+      "id": "D-100",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "The coefficient tables are verified against sources that were read: the MSSM b_i and b_ij against Martin & Vaughn, PRD 50, 2282 (1994), eq. (4.4)-(4.5) (arXiv:hep-ph/9311340 downloaded and read; DOI confirmed on Crossref) and the SM b_i and b_ij against Buttazzo et al., JHEP 12 (2013) 089, appendix B.1 eq. (96)-(98), the coefficients of g^2 with the Yukawa couplings set to zero (arXiv:1307.3536 read): all 6 vectors and 4 matrices equal the plan's, and the code is checked against an independent integration of eq. (96)-(98) in g^2 to 1e-6. Machacek & Vaughn, Nucl. Phys. B222 (1983) 83 (DOI confirmed on Crossref) is paywalled and was not read; the prompt asked for it and that part is not met, nothing is cited to it as read. Martin & Vaughn do not print the SM matrix, which is why Buttazzo et al. is the SM source. Yukawa terms are omitted and stated; an estimate from eq. (96)-(98) with y_t(M_Z) = 0.95 puts them at 10, 7 and 5 percent of the two-loop gauge term at M_Z. The top threshold is not modelled (all six quarks run from M_Z; decoupling the top from alpha_em at M_Z would shift alpha_em^-1 by 0.18), nor the matching at M_SUSY.",
+      "rationale": "The prompt says a matrix that cannot be verified is not written; both were verified against a primary source that could be read, and what could not be read is said."
+    },
+    {
+      "id": "D-101",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "Measured and chosen, each in the figure or the caption: (1) the triangle area, in decades x alpha^-1, is 5.472 for the SM and 0.00896 for the MSSM at 1 TeV (ratio 611; one loop 7.265 and 0.0724, ratio 100), and the MSSM area falls to 0.0007 at 2 TeV, so the captions say that how small it gets is a property of the omitted thresholds and Yukawa terms; (2) the plot domain is 1.9 to 19.1 instead of 2 to 19 so that the Z-mass inputs (log10 M_Z = 1.96) sit inside the plot; (3) the GUT region is the decades 15 to 17 as a display convention, labelled schematic, not a derived range; (4) the toggles are 'one loop, dashed' (two-loop lines are always solid) and 'MSSM', both aria-pressed, plus a selector for the coupling the formula refers to; (5) the 1-sigma bands are the propagated uncertainty of alpha_em^-1, sin^2 theta_W and alpha_s only and are thin (0.008 to 0.065) at the scale of the plot, which the caption says and the triangle detail shows; (6) the MSSM cross-fade lasts 420 ms (--dur-settle) and snaps under reduced motion.",
+      "rationale": "These are places where the plan left a free choice or the measurement decided; each is visible to the reader."
+    },
+    {
+      "id": "D-102",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "The Formula Lens is extended to Figure Kit marks in js/figure/lens.mjs, after reading js/formula/lens.mjs, js/visualizations/common/term-lens.mjs and js/linking/formula-terms.mjs. Scope: the same registry (bindScene, termEvent) and ConceptBus events as the 3-D scenes. Deviations from the 3-D lens: only object targets (a field target is rejected: the Figure Kit has no surface); an object name addresses a mark by its id or every mark whose id starts with 'name:' (no change to the mark constructors); the lit marks are drawn at the focal 2.5 px with the other marks at 30 percent of their opacity (buildScene(spec, { lit })), where the 3-D lens draws an engraved outline in a decoration layer, because the Figure Kit has no layer above its marks and the art direction's one-focal-element rule is the same effect; spec may be a function so the lens follows a figure rebuilt by the cross-fade. Terms bound in the lab: ainv (the running line of the chosen coupling), inputs (its Z-mass point), ln_mu_over_MZ (the selected-scale rule), b_over_2pi (its dashed one-loop line). The formula card evaluates the Standard-Model one-loop line from M_Z and says so for the MSSM view. qa/specs/unification-lab.spec.mjs checks in the page that a focus draws the rule at 2.5 px with everything else at 0.3 or less, and that a blur restores exactly the lines drawn before (equality of the resolved line primitives, not a pixel hash).",
+      "rationale": "The prompt asked for an extension that has no counterpart in the code; its scope and where it differs from the existing lens are written down."
+    },
+    {
+      "id": "D-103",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "A caption must carry the status its provenance entry declares (assertCaptionProvenance, found when the first MSSM click threw), so the two figures have an entry for the effective Standard-Model view and one with the suffix -mssm for the conjectural MSSM view (four entries; the existing RG landscape does the same with one entry per status). Layer classes of the entries: data (the Z-mass inputs with errors), model (lines, bands, rules, the triangle) and decoration (the GUT hatch); the Figure Kit marks themselves carry only data or model, as before.",
+      "rationale": "The contract between caption and registry is a check, not a convention to route around."
+    },
+    {
+      "id": "D-104",
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "decision": "F-14 is set to closed with S17's done commit on the user's instruction. The ledger lists S17 and S18 in closedBy: S17 delivers the Standard-Model gauge-coupling running to two loops with a quantified near-unification; the toy fixed-point presets of the RG landscape are unchanged until S18. README Appendix P has no row for F-14 as such; the row 'one-loop RG omits thresholds and higher orders' is kept (still true for the QED and QCD presets) and now names what the unification lab omits, and a row on near-unification being a coincidence of coefficients is added.",
+      "rationale": "The instruction is explicit; the remaining half of the finding is stated so that closing it does not hide it."
     }
   ],
   "log": [
@@ -2603,6 +2668,20 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "follow-up",
       "detail": "Gaps found on review (art direction and performance contract not read, pigment colours, 44 px targets, unreadable channel terms, unused code, 2 px overflow, no use of the gluon, boson and scalar lines) closed in a follow-up PR; decision D-098."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Claimed on claude/s17-rg-unification from main 49a62a9 (c2ae9d4); baseline npm test 974/975, validate 60 entries, qa:verify 42 captures, all green."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "PR 85 opened. Evidence and decisions D-099 to D-104 recorded. F-14 stays open until the done commit (D-104)."
     }
   ]
 }

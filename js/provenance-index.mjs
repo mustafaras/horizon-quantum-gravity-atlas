@@ -3,6 +3,7 @@
 // in Node to compare the registry with the captions in the source. Each registrar is idempotent.
 
 import { registerFigureProvenance } from "./figure/provenance.mjs";
+import { registerGaugeRunningProvenance } from "./science/gauge-running-provenance.mjs";
 import { registerAdsLabProvenance } from "./science/ads-geometry.mjs";
 import { registerColliderLabProvenance } from "./science/collider-kinematics.mjs";
 import { registerHawkingLabProvenance } from "./science/hawking.mjs";
@@ -16,6 +17,7 @@ import { registerKerrObservatoryProvenance } from "./visualizations/kerr/kerr-ob
 
 const REGISTRARS = Object.freeze([
   registerFigureProvenance,
+  registerGaugeRunningProvenance,
   registerViewProvenance,
   registerAdsLabProvenance,
   registerColliderLabProvenance,

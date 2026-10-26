@@ -11,6 +11,9 @@ import { sampleSequential, diverging } from "../design/palettes.mjs";
 import { linearToSrgb } from "../design/color.mjs";
 import { current } from "../design/tokens.mjs";
 
+const LIT_WIDTH = 2.5; // the focal line width of the art direction
+const LIT_DIM = 0.3; // what is not lit recedes
+const LIT_RADIUS_GAIN = 1.5;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const byte = (linear) => Math.round(clamp01(linearToSrgb(clamp01(linear))) * 255);
 const parsePx = (font) => parseFloat(/([\d.]+)px/.exec(font)?.[1] ?? "12");
@@ -120,8 +123,9 @@ export function legendEntries(spec) {
  * @param spec     figure() result
  * @param opts     { width, height, measure, fonts: { tick, label } }
  */
-export function buildScene(spec, { width, height: requestedHeight = spec.height, measure, fonts }) {
+export function buildScene(spec, { width, height: requestedHeight = spec.height, measure, fonts, lit = [] }) {
   let height = requestedHeight;
+  const litSet = new Set(lit); // marks a focused formula term points at (figure/lens.mjs): focal width, the others recede
   const tickFont = fonts.tick, labelFont = fonts.label;
   const tickPx = parsePx(tickFont);
   const legend = legendEntries(spec);
@@ -211,7 +215,7 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
 
   // ---- marks
   const focalIndex = spec.marks.findIndex((m) => m.focal);
-  const level = (i) => (focalIndex < 0 || i === focalIndex ? 1 : 0.72) * spec.marks[i].alpha; // one ink level below the focal mark
+  const level = (i) => (litSet.size ? (litSet.has(i) ? 1 : LIT_DIM) : (focalIndex < 0 || i === focalIndex ? 1 : 0.72)) * spec.marks[i].alpha; // one ink level below the focal mark
   spec.marks.forEach((m, i) => {
     const a = level(i);
     if (m.type === "band") {
@@ -220,7 +224,7 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
       if (upper.length && lower.length) prims.push({ k: "poly", pts: [...upper, ...lower], c: m.color, a: m.opacity, mark: i });
     } else if (m.type === "line" || m.type === "step") {
       const segs = m.type === "step" ? [stepPath(m.x, m.y, sx, sy)] : segments(m.x, m.y, sx, sy);
-      for (const pts of segs) if (pts.length > 1) prims.push({ k: "line", pts, c: m.color, a, w: m.width * (i === focalIndex ? 1.15 : 1), dash: m.dash, emitter: !!m.emitter, mark: i, role: "data" });
+      for (const pts of segs) if (pts.length > 1) prims.push({ k: "line", pts, c: m.color, a, w: litSet.has(i) ? Math.max(m.width, LIT_WIDTH) : m.width * (i === focalIndex ? 1.15 : 1), dash: m.dash, emitter: !!m.emitter, mark: i, role: "data" });
     } else if (m.type === "points") {
       m.x.forEach((xv, j) => {
         const px = sx.map(xv), py = sy.map(m.y[j]);
@@ -228,7 +232,7 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
         if (m.yErr) prims.push({ k: "line", pts: [[px, sy.map(m.y[j] - m.yErr[0][j])], [px, sy.map(m.y[j] + m.yErr[1][j])]], c: m.color, a, w: 1.2, mark: i, role: "err" });
         if (m.xErr) prims.push({ k: "line", pts: [[sx.map(xv - m.xErr[0][j]), py], [sx.map(xv + m.xErr[1][j]), py]], c: m.color, a, w: 1.2, mark: i, role: "err" });
         const sh = Array.isArray(m.shape) ? m.shape[j] : m.shape;
-        const r = m.radius;
+        const r = m.radius + (litSet.has(i) ? LIT_RADIUS_GAIN : 0);
         if (sh === "triangle-up") prims.push({ k: "poly", pts: [[px - r, py + r * 0.8], [px, py - r], [px + r, py + r * 0.8]], c: m.color, a, mark: i });
         else if (sh === "triangle-down") prims.push({ k: "poly", pts: [[px - r, py - r * 0.8], [px, py + r], [px + r, py - r * 0.8]], c: m.color, a, mark: i });
         else prims.push({ k: "circle", x: px, y: py, r, c: m.color, a, mark: i });
@@ -237,7 +241,7 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
       const v = (m.axis === "x" ? sx : sy).map(m.value);
       if (!Number.isFinite(v)) return;
       const pts = m.axis === "x" ? [[v, plot.y], [v, plot.y + plot.h]] : [[plot.x, v], [plot.x + plot.w, v]];
-      prims.push({ k: "line", pts, c: m.color, a: Math.min(a, 0.8), w: 1.2, dash: m.dash, mark: i, role: "rule" });
+      prims.push({ k: "line", pts, c: m.color, a: litSet.has(i) ? 1 : Math.min(a, 0.8), w: litSet.has(i) ? LIT_WIDTH : 1.2, dash: m.dash, mark: i, role: "rule" });
       if (m.text) {
         const right = m.axis === "x" ? v + 4 + texExtent(m.text.plain, measure, tickFont) > plot.x + plot.w : false;
         text(m.axis === "x"

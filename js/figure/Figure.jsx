@@ -10,6 +10,8 @@
 //   backdrop(ctx, plot) paints under the scene (a rendered image) and backdropKey redraws it;
 //   onScrub(x)         press and drag (capture) in data x; the strain panels seek with it;
 //   slider             { min, max, now, text } turns the plot into role="slider"; readout replaces the crosshair text.
+//   lens               { sceneId, formulaId, termTargets, live }, memoised: focusing a term of the formula lights the marks it names
+//                      (figure/lens.mjs); the lit marks are drawn at the focal width and the others recede.
 
 const FIG_FORMAT = (v) => (Number.isFinite(v) ? Number(v.toPrecision(4)).toString() : "n/a");
 
@@ -27,8 +29,16 @@ function useFigureMeasure() {
   return { measure, version };
 }
 
-function Figure({ spec, children, className = "", onHover, onSelect, onNudge, slider, extra, readout: readoutOverride, onScrub, backdrop, backdropKey }) {
+function Figure({ spec, children, className = "", onHover, onSelect, onNudge, slider, extra, readout: readoutOverride, onScrub, backdrop, backdropKey, lens }) {
   const F = window.QGA_FIGURE;
+  const [lit, setLit] = useState([]);
+  const specRef = useRef(spec);
+  specRef.current = spec;
+  useEffect(() => {
+    if (!lens) return undefined;
+    const handle = F.createFigureLens({ spec: () => specRef.current, ...lens, onChange: setLit });
+    return () => handle.dispose();
+  }, [lens]); // eslint-disable-line
   const wrapRef = useRef(null);
   const cvRef = useRef(null);
   const scratch = useRef({});
@@ -54,8 +64,8 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
     return { tick: T.font.mono(-2), label: T.font.mono(-1), family: T.font.family.mono };
   }, [theme]);
   const scene = useMemo(
-    () => (width >= 120 ? F.buildScene(spec, { width, height: spec.height, measure, fonts }) : null),
-    [spec, width, measure, fonts, version]);
+    () => (width >= 120 ? F.buildScene(spec, { width, height: spec.height, measure, fonts, lit }) : null),
+    [spec, width, measure, fonts, version, lit]);
   useEffect(() => { setCursor(null); }, [spec.id]);
 
   useEffect(() => {

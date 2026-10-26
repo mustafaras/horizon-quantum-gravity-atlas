@@ -1344,6 +1344,72 @@
         "maxDiffPixelRatio": 0.03,
         "note": "Vector diagram plus KaTeX labels on mobile; 3% tolerance."
       }
+    },
+    {
+      "id": "rg-unification",
+      "file": "docs/screenshots/42-rg-unification.png",
+      "description": "Running of the three Standard-Model gauge couplings from the Z mass to 10^19 GeV: two-loop (solid) and one-loop (dashed) inverse couplings with their 1 sigma bands and the Z-mass inputs, the GUT region and the Planck mass, the magnified triangle where the lines nearly meet, and the one-loop formula card.",
+      "view": "rg",
+      "url": "?view=rg&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2600,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".ug-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".ug-lab",
+          "text": "Where the three lines nearly meet"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Standard Model running from PDG 2026 inputs at two loops without Yukawa terms or a top threshold (effective); the MSSM view, not shown in this capture, is labelled conjectural. alpha_em^-1 is derived, not printed by the PDG (ledger D-099).",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Figure Kit canvas plots from pure functions plus KaTeX text; deterministic, 2% for rasterization."
+      }
+    },
+    {
+      "id": "rg-unification-mobile",
+      "file": "docs/screenshots/43-rg-unification-mobile.png",
+      "description": "Mobile unification lab at 390 px: the coupling plot, the readouts, the magnified triangle and the formula card stacked in one column.",
+      "view": "rg",
+      "url": "?view=rg&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 3200,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".ug-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".ug-lab",
+          "text": "Where the three lines nearly meet"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Same figures as the desktop capture. Viewport height exceeds the target because the app shell scrolls internally.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "Mobile Figure Kit stack with KaTeX text; 3% tolerance."
+      }
     }
   ]
 }

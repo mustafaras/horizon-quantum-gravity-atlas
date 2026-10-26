@@ -7,7 +7,8 @@ import * as higgs from "./higgs.mjs";
 import * as qft from "./qft.mjs";
 import * as casimir from "./casimir.mjs";
 import * as electroweak from "./electroweak.mjs";
+import * as gaugeRunning from "./gauge-running.mjs";
 
 /** Every library formula by camelCase name. */
-export const library = Object.freeze({ ...blackHoles, ...planckCasimir, ...gravitationalWaves, ...relativity, ...neutrino, ...higgs, ...qft, ...casimir, ...electroweak });
+export const library = Object.freeze({ ...blackHoles, ...planckCasimir, ...gravitationalWaves, ...relativity, ...neutrino, ...higgs, ...qft, ...casimir, ...electroweak, ...gaugeRunning });
 export default library;

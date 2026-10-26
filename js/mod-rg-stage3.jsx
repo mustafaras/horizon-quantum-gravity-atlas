@@ -57,18 +57,11 @@ function ModuleRGStage3({ go }) {
   return (
     <article>
       <ModuleHeader num="03" kicker="Scale & symmetry" title="Gauge Theory and Renormalization"
-        lede="Local symmetry organizes interactions; renormalization-group flow makes their scale dependence quantitative. This module separates perturbative QED and QCD results from numerical presentation, pedagogical fixed-point toys, and conjectural quantum-gravity ideas."></ModuleHeader>
+        lede="Local symmetry organizes interactions; renormalization-group flow makes their scale dependence quantitative. This module separates perturbative QED and QCD results (and the two-loop running of all three Standard-Model gauge couplings) from numerical presentation, pedagogical fixed-point toys, and conjectural quantum-gravity ideas."></ModuleHeader>
 
       <Section title="Local gauge invariance">
-        <p>
-          A global symmetry rotates a field by the same amount everywhere. Promoting it to a <em>local</em> symmetry —
-          an independent rotation at every spacetime point — breaks derivative terms unless a compensating gauge field
-          is introduced. Electromagnetism, the weak force, and the strong force all arise from this principle.
-        </p>
-        <p>
-          In non-Abelian theories, gauge bosons carry the charge they mediate. Gluon self-interaction contributes
-          anti-screening in QCD, enabling asymptotic freedom when the one-loop coefficient b<sub>0</sub> is positive.
-        </p>
+        <p>A global symmetry rotates a field by the same amount everywhere. Promoting it to a <em>local</em> symmetry — an independent rotation at every spacetime point — breaks derivative terms unless a compensating gauge field is introduced. Electromagnetism, the weak force, and the strong force all arise from this principle.</p>
+        <p>In non-Abelian theories, gauge bosons carry the charge they mediate. Gluon self-interaction contributes anti-screening in QCD, enabling asymptotic freedom when the one-loop coefficient b<sub>0</sub> is positive.</p>
       </Section>
 
       <Section title="Renormalisation-group flow landscape">
@@ -78,6 +71,11 @@ function ModuleRGStage3({ go }) {
           can be read directly rather than inferred from visual motion.
         </p>
         <RGFlowLandscape></RGFlowLandscape>
+      </Section>
+
+      <Section title="Do the couplings meet?">
+        <p>The three Standard-Model gauge couplings, measured at the Z mass, run with the scale. Plotted as inverse couplings they are nearly straight lines that almost, but not quite, meet near 10<sup>14</sup> to 10<sup>17</sup> GeV; with superpartners at 1 TeV they come far closer. Run them yourself, and focus a term of the formula to see which line it is.</p>
+        <UnificationLab></UnificationLab>
       </Section>
 
       <Section title="The flow field in three dimensions">
