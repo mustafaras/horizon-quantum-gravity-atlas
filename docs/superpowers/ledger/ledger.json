@@ -224,12 +224,12 @@
       "id": "F-14",
       "title": "RG limited to one-loop QED/QCD and toy fixed points",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S17",
         "S18"
       ],
-      "closedIn": null
+      "closedIn": "c0b58224d22d1abd30b9f32ce566c31963777c0c"
     },
     {
       "id": "F-15",
@@ -1061,13 +1061,15 @@
       "findings": [
         "F-14"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s17-rg-unification",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/85",
-      "commits": [],
+      "commits": [
+        "c0b58224d22d1abd30b9f32ce566c31963777c0c"
+      ],
       "startedAt": "2026-10-26",
-      "completedAt": null,
+      "completedAt": "2026-10-26",
       "evidence": {
         "tests": [
           "npm test: 1000/1001 pass, 1 skipped (new: test/gauge-running.test.mjs 10, figure-lens 6, unification-plots 9, formula-core +1; baseline 974/975)",
@@ -1097,7 +1099,7 @@
         ]
       },
       "blockers": [],
-      "notes": "Standard-Model gauge-coupling running and unification in the RG view; F-14 stays open until the done commit."
+      "notes": "Standard-Model gauge-coupling running and unification in the RG view; closes F-14 (D-104)."
     },
     {
       "id": "S18",
@@ -2682,6 +2684,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "PR 85 opened. Evidence and decisions D-099 to D-104 recorded. F-14 stays open until the done commit (D-104)."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S17",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 85 merged as c0b58224d22d1abd30b9f32ce566c31963777c0c; CI (Browser QA 7m34s, Validate) green on the last commit. F-14 closed (D-104)."
     }
   ]
 }
