@@ -143,6 +143,25 @@ test("the process buttons keep their Greek letters and the readout labels are no
   expect(new Set(labels)).toEqual(new Set(["none"]));
 });
 
+test("every control of the room and the builder is at least 44 px, and the legend lists every line kind", async ({ page, context }) => {
+  const errors = await open(page, context);
+  const small = await page.evaluate(() => {
+    const scopes = [document.querySelector(".qft-room"), document.querySelector(".fey-templates")?.closest(".viz-frame")];
+    return scopes.flatMap((scope) => [...scope.querySelectorAll("button, select, input, [role=slider], summary")]
+      // the provenance badge is a shared component of the whole atlas, not a control of this room
+      .filter((el) => !el.classList.contains("badge"))
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter(({ r }) => r.width > 0 && (r.width < 44 || r.height < 44))
+      .map(({ el, r }) => `${el.tagName}.${el.className} ${Math.round(r.width)}x${Math.round(r.height)}`));
+  });
+  expect(small).toEqual([]);
+  const legend = page.locator(".fey-legend");
+  await legend.locator("summary").click();
+  await expect(legend.locator(".fey-tex")).toHaveCount(6);
+  expect(await legend.locator("svg path").count()).toBe(6);
+  expect(errors).toEqual([]);
+});
+
 test("the asymmetry figure is reachable by keyboard and reads out the model line", async ({ page, context }) => {
   await open(page, context);
   const plot = page.locator(`${ASYMMETRY} .fig-plot`);
@@ -159,8 +178,8 @@ test.describe("mobile", () => {
     const errors = await open(page, context);
     await page.locator(".fey-chip", { hasText: "Bhabha scattering" }).click();
     const overflow = await page.evaluate(() => {
-      // The room itself is left out: its slider row is 1 px wider than the room on a clean main too (scrollWidth 310, clientWidth 308 at 390 px).
-      const wide = [...document.querySelectorAll(".fey-diagram-set, .fey-diagram, .qft-stack, .qft-room .fig")].filter((el) => el.scrollWidth > el.clientWidth + 1);
+      // The room itself is included: its slider row used to be 2 px wider than the room (scrollWidth 310, clientWidth 308 at 390 px, also on the main of S15).
+      const wide = [...document.querySelectorAll(".qft-room, .fey-diagram-set, .fey-diagram, .qft-stack, .qft-room .fig")].filter((el) => el.scrollWidth > el.clientWidth + 1);
       return { wide: wide.map((el) => el.className), page: document.documentElement.scrollWidth - window.innerWidth };
     });
     expect(overflow.wide).toEqual([]);

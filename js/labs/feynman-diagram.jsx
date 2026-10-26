@@ -4,8 +4,8 @@
 // animation above it carries the motion.
 
 const FEYNMAN_ROLE_TOKENS = {
-  fermion: "pigment-blue-80", photon: "pigment-amber-80", boson: "pigment-amber-89", gluon: "pigment-cyan-80", scalar: "ink-dim",
-  vertex: "accent", momentum: "pigment-blue-63",
+  fermion: "ink", photon: "cat-1", boson: "cat-6", gluon: "cat-7", scalar: "ink-dim",
+  vertex: "accent", momentum: "ink-dim",
 };
 const FEYNMAN_ANCHOR_SHIFT = { start: "translate(0, -50%)", middle: "translate(-50%, -50%)", end: "translate(-100%, -50%)" };
 const FEYNMAN_ARROW = "-4,-3.5 4,0 -4,3.5";
@@ -49,6 +49,18 @@ function FeynmanDiagram({ def, ariaLabel }) {
         )}
       </div>
     </div>);
+
+}
+
+/* The key to the line conventions: one line of every kind the drawing knows, folded away until asked for. */
+function FeynmanLegend() {
+  const def = useMemo(() => window.QGA_FEYNMAN.legendDiagram(), []);
+  return (
+    <details className="fey-legend">
+      <summary>Line conventions</summary>
+      <FeynmanDiagram def={def}
+      ariaLabel="Key to the lines of the diagrams: fermion, antifermion, photon, W or Z boson, gluon and scalar."></FeynmanDiagram>
+    </details>);
 
 }
 

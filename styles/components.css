@@ -101,6 +101,7 @@ sub, sup { font-size: max(10px, 0.8em); }
 /* ---------- Controls ---------- */
 .ctl-row { display: flex; align-items: center; gap: 12px; min-width: 220px; }
 .ctl-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
+.ctl-label .katex { text-transform: none; }
 .ctl-value { font-family: var(--font-mono); font-size: 11.5px; color: var(--cyan); white-space: nowrap; min-width: 60px; text-align: right; }
 input[type="range"] {
   -webkit-appearance: none; appearance: none; flex: 1; height: 3px; min-width: 90px;

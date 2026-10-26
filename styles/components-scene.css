@@ -16,6 +16,9 @@ select:focus { border-color: var(--acc); }
 .fey-diagram-pair { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .fey-diagram-fig { margin: 0; min-width: 0; }
 .fey-diagram-cap { font: var(--step--2) var(--font-mono); letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 4px; }
+.fey-legend { margin-top: 10px; }
+.fey-legend summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font: var(--step--2) var(--font-mono); letter-spacing: 0.08em; color: var(--text-dim); }
+.fey-legend summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .fey-diagram { position: relative; }
 .fey-diagram svg { display: block; width: 100%; height: auto; }
 .fey-tex-layer { position: absolute; inset: 0; pointer-events: none; }

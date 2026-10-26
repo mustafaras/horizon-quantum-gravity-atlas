@@ -328,6 +328,7 @@ function FeynmanBuilder() {
         {result.ok ?
         <div>
             <FeynmanDiagramSet result={result} ids={[in1, in2, out1, out2]}></FeynmanDiagramSet>
+            <FeynmanLegend></FeynmanLegend>
             <div className="fey-verdict ok"><strong>Allowed at tree level.</strong> {result.note}</div>
             {phys ?
           <div className="fey-phys-grid">

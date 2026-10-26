@@ -9,7 +9,7 @@ const QFT_M_E = 0.51099895e-3; // GeV — electron rest energy (CODATA)
 const QFT_PROCESSES = [
 {
   id: "s-channel",
-  name: "e⁺e⁻ → μ⁺μ⁻", nameTex: "e^+e^-\\to\\mu^+\\mu^-",
+  name: "e⁺e⁻ → μ⁺μ⁻", nameTex: "e^+e^-\\to\\mu^+\\mu^-", angleTex: "\\cos\\theta\\ (\\mu^-)",
   sub: "γ + Z exchange",
   in: ["e-", "e+"], out: ["mu-", "mu+"],
   masses: [0, 0, 0, 0],
@@ -21,7 +21,7 @@ const QFT_PROCESSES = [
 },
 {
   id: "bhabha",
-  name: "e⁺e⁻ → e⁺e⁻", nameTex: "e^+e^-\\to e^+e^-",
+  name: "e⁺e⁻ → e⁺e⁻", nameTex: "e^+e^-\\to e^+e^-", angleTex: "\\cos\\theta\\ (e^-)",
   sub: "Bhabha scattering",
   in: ["e-", "e+"], out: ["e-", "e+"],
   masses: [0, 0, 0, 0],
@@ -33,7 +33,7 @@ const QFT_PROCESSES = [
 },
 {
   id: "moller",
-  name: "e⁻e⁻ → e⁻e⁻", nameTex: "e^-e^-\\to e^-e^-",
+  name: "e⁻e⁻ → e⁻e⁻", nameTex: "e^-e^-\\to e^-e^-", angleTex: "\\cos\\theta\\ (e^-)",
   sub: "Møller scattering",
   in: ["e-", "e-"], out: ["e-", "e-"],
   masses: [0, 0, 0, 0],
@@ -45,7 +45,7 @@ const QFT_PROCESSES = [
 },
 {
   id: "t-channel",
-  name: "e⁻μ⁻ → e⁻μ⁻", nameTex: "e^-\\mu^-\\to e^-\\mu^-",
+  name: "e⁻μ⁻ → e⁻μ⁻", nameTex: "e^-\\mu^-\\to e^-\\mu^-", angleTex: "\\cos\\theta\\ (e^-)",
   sub: "t-channel exchange",
   in: ["e-", "mu-"], out: ["e-", "mu-"],
   masses: [0, 0, 0, 0],
@@ -57,7 +57,7 @@ const QFT_PROCESSES = [
 },
 {
   id: "compton",
-  name: "γe⁻ → γe⁻", nameTex: "\\gamma e^-\\to\\gamma e^-",
+  name: "γe⁻ → γe⁻", nameTex: "\\gamma e^-\\to\\gamma e^-", angleTex: "\\cos\\theta\\ (\\gamma)",
   sub: "Compton scattering",
   in: ["ph", "e-"], out: ["ph", "e-"],
   masses: [0, QFT_M_E, 0, QFT_M_E],
@@ -329,12 +329,12 @@ function AmplitudeRoom() {
           )}
         </div>
         <div className="kerr-control-group" aria-label="Kinematic controls">
-          <SliderRow label="√s" min={1} max={200} step={0.5} value={sqrtS}
+          <SliderRow label="√s" labelTex="\sqrt{s}" min={1} max={200} step={0.5} value={sqrtS}
           onChange={(v) => setAtlasState({ qftSqrtS: v })} format={(v) => v.toFixed(1) + " GeV"}></SliderRow>
-          <SliderRow label={process.angleLabel} min={-1} max={1} step={0.01} value={cosTheta}
+          <SliderRow label={process.angleLabel} labelTex={process.angleTex} min={-1} max={1} step={0.01} value={cosTheta}
           onChange={(v) => setAtlasState({ qftAngle: v })} format={(v) => v.toFixed(2)}></SliderRow>
           {process.id === "compton" ?
-          <SliderRow label="x = E_γ/mₑc²" min={0.05} max={20} step={0.05} value={photonX}
+          <SliderRow label="x = E_γ/mₑc²" labelTex="x=E_\gamma/m_ec^2" min={0.05} max={20} step={0.05} value={photonX}
           onChange={(v) => setAtlasState({ qftPhotonX: v })} format={(v) => v.toFixed(2)}></SliderRow> :
           null}
         </div>

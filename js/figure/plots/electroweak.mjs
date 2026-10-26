@@ -16,9 +16,10 @@ const SHARED_MIN_LEFT = 64;
 const SIGMA_DOMAIN = [1e-3, 10];
 const AFB_DOMAIN = [-0.8, 0.8];
 const ZERO_SEARCH = Object.freeze({ lo: 60, hi: DEFAULT_PARAMS.mZ });
-const MODEL_COLOR = "pigment-azure-80-c11";
-const MARK_COLOR = "pigment-amber-89";
-const DATA_COLOR = "pigment-cyan-78";
+// Colours come from the token families of the art direction (accent for the focal model line, the categorical set for the rest), not from the frozen pigments.
+const MODEL_COLOR = "accent";
+const MARK_COLOR = "cat-1";
+const DATA_COLOR = "cat-3";
 const QED_COLOR = "ink-dim";
 
 let cachedScan = null;
@@ -81,8 +82,11 @@ export function asymmetrySpec({ sqrtS, height = 250 }) {
   });
 }
 
-const CHANNEL_COLORS = ["pigment-cyan-78", "pigment-violet-72-c15", "pigment-amber-80"];
+const CHANNEL_COLORS = ["cat-3", "cat-7", "cat-1"];
 const CLIP = 20;
+// Linear within +-0.01 of the 90 degree value and logarithmic outside, so a term a hundredth of the total (the photon on the Z pole) and a
+// Coulomb pole twenty times it share one axis.
+const CHANNEL_SYMLOG_CONSTANT = 0.01;
 const POLE_MARGIN = 1 - 1e-4;
 
 /** The terms of the angular distribution and their sum, each divided by the sum at 90 degrees; the sum is the focal line. */
@@ -104,7 +108,7 @@ export function channelsSpec({ processId, name, sqrtS, cosTheta, height = 232 })
   return figure({
     id: "qft-angular-channels", title: `Channels of ${name}`, status: "effective", provenanceId: "qft-angular-channels", height,
     x: axis({ scale: { type: "linear", domain: [-1, 1] }, label: { tex: "\\cos\\theta" } }),
-    y: axis({ scale: { type: "linear", domain: [yMin, yMax] }, label: { tex: "\\sigma(\\theta)/\\sigma(90^\\circ)" } }),
+    y: axis({ scale: { type: "symlog", domain: [yMin, yMax], constant: CHANNEL_SYMLOG_CONSTANT }, label: { tex: "\\sigma(\\theta)/\\sigma(90^\\circ)" } }),
     marks: [
       rule({ axis: "y", value: 0, layer: "model", color: QED_COLOR, dash: "2 4" }),
       ...thin,
@@ -112,6 +116,6 @@ export function channelsSpec({ processId, name, sqrtS, cosTheta, height = 232 })
       rule({ axis: "x", value: here, layer: "model", color: MARK_COLOR, dash: null }),
     ],
     summary: `Angular distribution of ${name} at ${sqrtS.toFixed(1)} GeV split into its ${columns[0].terms.length} term${columns[0].terms.length > 1 ? "s" : ""}, `
-      + `each divided by the total at 90 degrees; the vertical axis is clipped at ${yMax.toFixed(1)}. The thick line is their sum.`,
+      + `each divided by the total at 90 degrees; the vertical axis is symmetric-logarithmic and clipped at ${yMax.toFixed(1)}. The thick line is their sum.`,
   });
 }

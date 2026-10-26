@@ -2,7 +2,7 @@
 // distribution and the energy scan. Data come from js/physics.mjs.
 
 import { figure, axis, line, points, rule, callout, heatmap } from "../spec.mjs";
-import { angularDistribution, breitWignerResonance, qftTotalCrossSection, M_Z, GAMMA_Z } from "../../physics.mjs";
+import { angularDistribution } from "../../physics.mjs";
 import { grid, evaluate } from "./sample.mjs";
 
 /** omega(k) = sqrt(c^2 k^2 + m_eff^2) with the lab's constants c^2 = 30, m_eff = 3m. */
@@ -87,42 +87,3 @@ export function angularSpec({ process, cosTheta, photonX, height = 196 }) {
   });
 }
 
-/** Photon 1/s cross-section on a log axis (e+e- -> mu+mu-, nb). */
-export function photonCrossSectionSpec({ sqrtS, height = 168 }) {
-  const x = grid(1, 200, 260);
-  const y = evaluate(x, (v) => qftTotalCrossSection({ sqrtS: v }));
-  const marks = [
-    line({ x, y, layer: "model", focal: true, color: "pigment-azure-80-c11", label: { tex: "\\sigma_\\gamma\\propto 1/s" } }),
-  ];
-  if (sqrtS >= 1 && sqrtS <= 200) {
-    marks.push(rule({ axis: "x", value: sqrtS, layer: "model", color: "pigment-amber-89", dash: null }));
-    marks.push(points({ x: [sqrtS], y: [qftTotalCrossSection({ sqrtS })], layer: "model", color: "pigment-amber-89", radius: 3.2, label: "selected energy" }));
-  }
-  const lo = Math.min(...y), hi = Math.max(...y);
-  return figure({
-    id: "qft-photon-cross-section", title: "σ(γ) for e⁺e⁻ → μ⁺μ⁻, log scale", status: "established", provenanceId: "qft-photon-cross-section", height,
-    x: axis({ scale: { type: "linear", domain: [1, 200] }, label: { tex: "\\sqrt{s}" }, unit: "GeV" }),
-    y: axis({ scale: { type: "log", domain: [10 ** Math.floor(Math.log10(lo)), 10 ** Math.ceil(Math.log10(hi))] }, label: { tex: "\\sigma" }, unit: "nb" }),
-    marks,
-    summary: "Photon-exchange cross-section falling as one over s.",
-  });
-}
-
-/** Z0 Breit-Wigner shape on a linear axis, +-3 Gamma around the pole. */
-export function zResonanceSpec({ sqrtS, height = 168 }) {
-  const lo = M_Z - 3 * GAMMA_Z, hi = M_Z + 3 * GAMMA_Z;
-  const x = grid(lo, hi, 260);
-  const y = evaluate(x, (v) => breitWignerResonance({ sqrtS: v }));
-  const marks = [line({ x, y, layer: "model", focal: true, color: "pigment-azure-80-c11", label: { tex: "Z^0\\ \\text{Breit–Wigner}" } })];
-  if (sqrtS >= lo && sqrtS <= hi) {
-    marks.push(rule({ axis: "x", value: sqrtS, layer: "model", color: "pigment-amber-89", dash: null }));
-    marks.push(points({ x: [sqrtS], y: [breitWignerResonance({ sqrtS })], layer: "model", color: "pigment-amber-89", radius: 3.2, label: "selected energy" }));
-  }
-  return figure({
-    id: "qft-z-resonance", title: "Z⁰ Breit–Wigner resonance, ±3Γ", status: "established", provenanceId: "qft-z-resonance", height,
-    x: axis({ scale: { type: "linear", domain: [lo, hi] }, label: { tex: "\\sqrt{s}" }, unit: "GeV" }),
-    y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { tex: "\\sigma/\\sigma_{\\mathrm{peak}}" } }),
-    marks,
-    summary: "Breit-Wigner line shape normalised to one at the Z pole, shown within three widths of the pole.",
-  });
-}

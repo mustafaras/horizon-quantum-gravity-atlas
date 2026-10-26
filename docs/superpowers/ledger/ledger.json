@@ -2230,6 +2230,13 @@
       "prompt": "S16",
       "decision": "Verification, narrowed to the changed area as in D-080 and D-089: npm test, validate, qa:verify, perf:audit, the new spec, the affected specs and the qft visual captures; the full qa:test is CI's job. The local failures reproduce on a clean checkout of main (32bb9da, same machine): lattice-lab 2, provenance-layers (sm), shared-stage (the QFT contexts test), visual feynman-collision, vacuum-lab and field-lab. figure-kit (qft) was this prompt's: it listed the three figure ids the room no longer draws, was fixed and passes. shared-stage default/legacy failed once under load (4.1 min) and passed on a re-run (2.6 min, the same as main); its cause was not looked into further. Found and not fixed (outside S16): at 390 px the room is 2 px wider than its box (scrollWidth 310, clientWidth 308) because of the slider row, on clean main too; the 44 px target of the process buttons of the room was not measured. Process note: part of the edits to existing files (figure provenance, plots index, view-provenance, the formula index, three test files) were made with a script in the shell and not with the edit tool, so the first-edit gate did not run on them; they are in the diff and reviewed as any other.",
       "rationale": "The browser suite is CI's job on every PR that touches qa/; what was not done is listed here."
+    },
+    {
+      "id": "D-098",
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "decision": "Follow-up after the review of S16 against docs/design/art-direction.md and docs/render/performance-contract.md (both read now; they were not read before). (1) Colours: the figures and the diagrams used frozen --pigment-* tokens, which the art direction forbids for new work; they now use accent, the categorical set (cat-1, cat-3, cat-6, cat-7) and the ink levels, and the two pigments that nothing used any more (pigment-blue-80, pigment-blue-63) are removed from styles/tokens.css, as test/design-tokens.test.mjs requires. (2) Line widths of the diagrams are 1.5 px (the limit for engraved geometry) instead of 1.6 and 1.7. (3) Touch targets: every control of the amplitude room and of the Feynman builder is at least 44 px (process buttons, speed buttons, play and replay, selects, the sliders and the progress bar through a taller hit area with the drawn size unchanged, and the validity summary), except the shared provenance badge, which belongs to the whole atlas; qa/specs/electroweak-lab.spec.mjs measures it. (4) The room's slider row, 2 px wider than the room at 390 px since before S16, no longer overflows, and the spec now includes the room itself. (5) The channel figure uses a symmetric-logarithmic y axis (linear within 0.01 of the 90 degree value), so the photon term on the Z pole and a Coulomb pole share one axis. (6) The slider labels of the room are KaTeX (SliderRow takes an optional labelTex; the old labels read COS TH (M-) after the uppercase transform). (7) Unused code removed: photonCrossSectionSpec and zResonanceSpec with their provenance entries (qft-photon-cross-section, qft-z-resonance) and test cases; this supersedes the sentence of D-093 that said they stay. (8) A legend diagram (js/visualizations/qft/feynman-diagrams.mjs legendDiagram, a details element in the builder) draws every line kind the module knows, including the gluon, the W or Z boson and the scalar, which no process diagram uses. (9) Six baselines refreshed again for the changes above (qft-amplitude-room, its mobile twin, qft-electroweak, its mobile twin, qft-feynman-diagram, its mobile twin; docs/screenshots 14, 15, 38 to 41), each seen before it was written. Not done: diagramToSvg stays an API used by the tests (the app draws with React elements); the stale local baselines of D-096 and D-097 are untouched; the shared-stage flake was not investigated; qft-casimir-lab-mobile, which fails on clean main too, failed in one of two visual runs here and is not touched by this change.",
+      "rationale": "The art direction and the accessibility rule of the prompt are part of its definition of done; what remains is listed."
     }
   ],
   "log": [
@@ -2589,6 +2596,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 82 merged as 19d7f989685e69ea03a2f6fe0402f188e75ed2eb; CI (Browser QA 7m24s, Validate) green on the last commit. F-15 closed."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S16",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "follow-up",
+      "detail": "Gaps found on review (art direction and performance contract not read, pigment colours, 44 px targets, unreadable channel terms, unused code, 2 px overflow, no use of the gluon, boson and scalar lines) closed in a follow-up PR; decision D-098."
     }
   ]
 }

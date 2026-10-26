@@ -106,6 +106,22 @@
 }
 
 
+/* Touch targets of the amplitude room and the Feynman builder (S16): every control is at least 44 px in both directions. The look is unchanged:
+   the slider track and the progress bar keep their thin drawn size inside a taller hit area. */
+.qft-room .kerr-chip, .qft-room .gw-play-btn, .qft-room .gw-replay-btn { min-width: 44px; min-height: 44px; }
+.qft-room .gw-speed .kerr-chip { padding: 3px 8px; }
+.fey-row select, .qft-room select { min-height: 44px; }
+.qft-room .kerr-validity summary { min-height: 44px; box-sizing: border-box; }
+.qft-room .kerr-control-group { max-width: 100%; box-sizing: border-box; }
+.qft-room .kerr-control-group .ctl-row { max-width: 100%; box-sizing: border-box; }
+.qft-room input[type="range"] { height: 44px; background: transparent; }
+.qft-room input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.qft-room input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
+.qft-room input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.qft-room .gw-progress { position: relative; height: 44px; overflow: visible; background: none; border: 0; border-radius: 0; }
+.qft-room .gw-progress::before { content: ""; position: absolute; left: 0; right: 0; top: 17px; height: 10px; border-radius: 5px; background: var(--ink-faint); opacity: 0.45; }
+.qft-room .gw-progress-fill { position: absolute; left: 0; top: 17px; height: 10px; }
+
 /* Figure Kit panels in the amplitude room. */
 .qft-stack { display: grid; gap: 12px; }
 .qft-formula + .fig, .qft-stack .fig { margin-top: 0; }

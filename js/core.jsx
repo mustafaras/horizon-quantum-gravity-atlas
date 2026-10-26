@@ -301,10 +301,10 @@ function ModuleHeader({ num, kicker, title, lede, label }) {
 }
 
 /* ---------- controls ---------- */
-function SliderRow({ label, min, max, step, value, onChange, format }) {
+function SliderRow({ label, labelTex, min, max, step, value, onChange, format }) {
   return (
     <div className="ctl-row">
-      <span className="ctl-label">{label}</span>
+      <span className="ctl-label">{labelTex ? <Eq tex={labelTex}></Eq> : label}</span>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))} aria-label={label}></input>
       <span className="ctl-value">{format ? format(value) : value}</span>
