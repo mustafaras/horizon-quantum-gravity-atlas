@@ -13,8 +13,9 @@
 //   dsigma/dcos th = (pi alpha^2 / 2 s) N_c [ A0 (1 + cos^2 th) + A1 cos th ],
 //   A0 = Q_e^2 Q_f^2 + 2 Q_e Q_f Re chi g_V^e g_V^f + |chi|^2 (g_V^e2 + g_A^e2)(g_V^f2 + g_A^f2),
 //   A1 = 4 Q_e Q_f Re chi g_A^e g_A^f + 8 |chi|^2 g_V^e g_A^e g_V^f g_A^f,
-// which is the pure-QED result of Peskin & Schroeder section 5.1 when chi = 0 (the integral over cos th is sigma = 4 pi alpha^2 / 3s).
-// The Z electroweak review of the Review of Particle Physics (REF.PDG_2026) lists the same couplings. The forward-backward asymmetry is
+// which for chi = 0 is the pure-QED result that Peskin & Schroeder treat in section 5.1 (the book was not re-read for this file; the test checks
+// the limit): the integral over cos th is sigma = 4 pi alpha^2 / 3s.
+// The electroweak review of the Review of Particle Physics (REF.PDG_2026, Eq. 10.7a and 10.7b, read 2026-10-26) defines the same couplings. The forward-backward asymmetry is
 // A_FB = (sigma_F - sigma_B)/(sigma_F + sigma_B) = 3 A1 / (8 A0), and at the pole (Re chi = 0) it reduces to (3/4) A_e A_mu with
 // A_f = 2 g_V g_A / (g_V^2 + g_A^2).
 // The test file checks the closed form against the helicity sum above, which is an independent evaluation of the same amplitudes.
