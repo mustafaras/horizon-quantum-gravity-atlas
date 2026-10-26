@@ -1061,12 +1061,12 @@
       "findings": [
         "F-14"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s17-rg-unification",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-26",
       "completedAt": null,
       "evidence": {
         "tests": [],
