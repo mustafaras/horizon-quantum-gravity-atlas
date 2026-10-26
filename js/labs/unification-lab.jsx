@@ -14,7 +14,8 @@ const UG_COUPLINGS = [
   { tex: "\\alpha_3^{-1}", group: "SU(3)" },
 ];
 const ugObject = (objectName) => ({ kind: "object", objectName });
-const ugThreshold = (log10) => (10 ** log10 >= 1000 ? (10 ** log10 / 1000).toFixed(2) + " TeV" : Math.round(10 ** log10) + " GeV");
+const UG_THIN_SPACE = " "; // units are roman with a thin space (art direction)
+const ugThreshold = (log10) => (10 ** log10 >= 1000 ? (10 ** log10 / 1000).toFixed(2) + UG_THIN_SPACE + "TeV" : Math.round(10 ** log10) + UG_THIN_SPACE + "GeV");
 
 function ugRunLayer(G, model, mSusyGeV) {
   const options = { model, mSusyGeV, points: UG_POINTS };
