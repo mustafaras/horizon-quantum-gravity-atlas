@@ -1,13 +1,15 @@
 // mod-qft.jsx — Module 02: Quantum Field Theory
 /* ---------- Feynman diagram builder ---------- */
 const FEY_PARTICLES = [
-{ id: "e-", label: "e⁻", q: -1, le: 1, lmu: 0, type: "lepton" },
-{ id: "e+", label: "e⁺", q: 1, le: -1, lmu: 0, type: "lepton" },
-{ id: "mu-", label: "μ⁻", q: -1, le: 0, lmu: 1, type: "lepton" },
-{ id: "mu+", label: "μ⁺", q: 1, le: 0, lmu: -1, type: "lepton" },
-{ id: "q", label: "q (quark)", q: 2 / 3, le: 0, lmu: 0, type: "quark" },
-{ id: "qbar", label: "q̄ (antiquark)", q: -2 / 3, le: 0, lmu: 0, type: "quark" },
-{ id: "ph", label: "γ", q: 0, le: 0, lmu: 0, type: "photon" }];
+{ id: "e-", label: "e⁻", tex: "e^-", anti: false, q: -1, le: 1, lmu: 0, type: "lepton" },
+{ id: "e+", label: "e⁺", tex: "e^+", anti: true, q: 1, le: -1, lmu: 0, type: "lepton" },
+{ id: "mu-", label: "μ⁻", tex: "\\mu^-", anti: false, q: -1, le: 0, lmu: 1, type: "lepton" },
+{ id: "mu+", label: "μ⁺", tex: "\\mu^+", anti: true, q: 1, le: 0, lmu: -1, type: "lepton" },
+{ id: "q", label: "q (quark)", tex: "q", anti: false, q: 2 / 3, le: 0, lmu: 0, type: "quark" },
+{ id: "qbar", label: "q̄ (antiquark)", tex: "\\bar{q}", anti: true, q: -2 / 3, le: 0, lmu: 0, type: "quark" },
+{ id: "ph", label: "γ", tex: "\\gamma", anti: false, q: 0, le: 0, lmu: 0, type: "photon" }];
+
+const GAMMA_Z_TEX = "\\gamma / Z^0";
 
 function feyAnalyze(in1, in2, out1, out2) {
   const P = (id) => FEY_PARTICLES.find((p) => p.id === id);
@@ -20,21 +22,21 @@ function feyAnalyze(in1, in2, out1, out2) {
   const isPair = (x, y, m) => x === m + "-" && y === m + "+" || x === m + "+" && y === m + "-";
   // classify topology
   if (isPair(in1, in2, "e") && isPair(out1, out2, "mu"))
-  return { ok: true, topo: "s", boson: "γ / Z⁰", note: "s-channel annihilation: the e⁺e⁻ pair annihilates into a virtual photon (or Z⁰), which materializes as a μ⁺μ⁻ pair. The classic QED benchmark process." };
+  return { ok: true, topo: "s", boson: "γ / Z⁰", bosonTex: GAMMA_Z_TEX, channels: ["s"], note: "s-channel annihilation: the e⁺e⁻ pair annihilates into a virtual photon (or Z⁰), which materializes as a μ⁺μ⁻ pair. The classic QED benchmark process." };
   if (isPair(in1, in2, "mu") && isPair(out1, out2, "e"))
-  return { ok: true, topo: "s", boson: "γ / Z⁰", note: "s-channel annihilation: μ⁺μ⁻ → γ* → e⁺e⁻." };
+  return { ok: true, topo: "s", boson: "γ / Z⁰", bosonTex: GAMMA_Z_TEX, channels: ["s"], note: "s-channel annihilation: μ⁺μ⁻ → γ* → e⁺e⁻." };
   if (isPair(in1, in2, "e") && isPair(out1, out2, "e") || isPair(in1, in2, "mu") && isPair(out1, out2, "mu"))
-  return { ok: true, topo: "s", boson: "γ / Z⁰", note: "Bhabha-type scattering: both s-channel annihilation and t-channel exchange diagrams contribute; the s-channel diagram is drawn." };
+  return { ok: true, topo: "s", boson: "γ / Z⁰", bosonTex: GAMMA_Z_TEX, channels: ["s", "t"], note: "Bhabha-type scattering: the s-channel annihilation and the t-channel exchange diagrams both contribute and interfere; both are drawn." };
   if (ids === "q,qbar".split(",").sort().join(",") && isPair(out1, out2, "e"))
-  return { ok: true, topo: "s", boson: "γ / Z⁰", note: "Drell–Yan-type process: quark–antiquark annihilation into a lepton pair via a virtual photon or Z⁰." };
+  return { ok: true, topo: "s", boson: "γ / Z⁰", bosonTex: GAMMA_Z_TEX, channels: ["s"], note: "Drell–Yan-type process: quark–antiquark annihilation into a lepton pair via a virtual photon or Z⁰." };
   if (isPair(in1, in2, "e") && ods === "q,qbar".split(",").sort().join(","))
-  return { ok: true, topo: "s", boson: "γ / Z⁰", note: "e⁺e⁻ → q q̄: the basis of hadron production at lepton colliders; the quarks subsequently hadronize into jets." };
+  return { ok: true, topo: "s", boson: "γ / Z⁰", bosonTex: GAMMA_Z_TEX, channels: ["s"], note: "e⁺e⁻ → q q̄: the basis of hadron production at lepton colliders; the quarks subsequently hadronize into jets." };
   if (ids === ods && a.id !== b.id && a.q !== 0 && b.q !== 0)
-  return { ok: true, topo: "t", boson: "γ", note: "t-channel exchange: the two charged particles scatter elastically by exchanging a virtual photon — Møller/Mott-type scattering." };
+  return { ok: true, topo: "t", boson: "γ", bosonTex: "\\gamma", channels: ["t"], note: "t-channel exchange: the two charged particles scatter elastically by exchanging a virtual photon — Mott-type scattering of distinguishable particles." };
   if (ids === ods && a.id === b.id && a.q !== 0)
-  return { ok: true, topo: "t", boson: "γ", note: "Identical-particle scattering: t- and u-channel photon-exchange diagrams both contribute (and interfere); the t-channel diagram is drawn." };
+  return { ok: true, topo: "t", boson: "γ", bosonTex: "\\gamma", channels: ["t", "u"], note: "Møller scattering of identical particles: the t- and u-channel photon-exchange diagrams both contribute and interfere; both are drawn." };
   if ([in1, in2].includes("ph") && [out1, out2].includes("ph") && ids.replace("ph", "") === ods.replace("ph", ""))
-  return { ok: true, topo: "compton", boson: null, note: "Compton scattering: the fermion absorbs and re-emits a photon via an internal fermion propagator." };
+  return { ok: true, topo: "compton", boson: null, bosonTex: null, channels: ["s", "u"], note: "Compton scattering: the fermion absorbs and re-emits a photon via an internal fermion propagator; the direct (s) and crossed (u) orderings are both drawn." };
   if (ids === "ph,ph" || ods === "ph,ph")
   return { ok: false, reason: "A single fermion cannot turn into (or come from) two photons while conserving energy–momentum on-shell, and γγ states require loop-level processes (e.g. H → γγ) not representable as a single tree vertex. Tree-level QED has no γγ ↔ γγ vertex — light-by-light scattering first occurs at one loop." };
   return { ok: false, reason: "No tree-level Standard Model diagram connects these states with a single mediator: the required vertex structure does not exist. Try a particle–antiparticle pair in, and a pair of a (possibly different) flavor out." };
@@ -53,6 +55,18 @@ const FEY_TEMPLATES = [
 
 function feyPhysics(result) {
   if (!result || !result.ok) return null;
+  if (result.topo === "s" && result.channels.length > 1) return {
+    order: "$O(e^2)$ · two diagrams, s and t channel, with a relative minus sign",
+    amp: "\\mathcal{M} \\sim e^2\\left[\\dfrac{\\bar v\\gamma^\\mu u\\;\\bar u\\gamma_\\mu v}{s} - \\dfrac{\\bar u\\gamma^\\mu u\\;\\bar v\\gamma_\\mu v}{t}\\right]",
+    sigma: "\\dfrac{d\\sigma}{d\\Omega} = \\dfrac{\\alpha^2}{2s}\\left[\\dfrac{s^2+u^2}{t^2} + \\dfrac{2u^2}{st} + \\dfrac{t^2+u^2}{s^2}\\right]",
+    sigmaNote: "Massless Bhabha scattering. The $t$-channel pole $1/\\sin^4(\\theta/2)$ dominates at small angles; the $s$-channel term and the interference matter at large angles. The amplitude room draws the three terms."
+  };
+  if (result.topo === "t" && result.channels.length > 1) return {
+    order: "$O(e^2)$ · two diagrams, t and u channel, with a relative minus sign",
+    amp: "\\mathcal{M} \\sim e^2\\left[\\dfrac{1}{t} - \\dfrac{1}{u}\\right]\\ \\text{(spinor structures omitted)}",
+    sigma: "\\dfrac{d\\sigma}{d\\Omega} = \\dfrac{\\alpha^2}{2s}\\left[\\dfrac{s^2+u^2}{t^2} + \\dfrac{2s^2}{tu} + \\dfrac{s^2+t^2}{u^2}\\right]",
+    sigmaNote: "Massless Møller scattering of identical electrons: symmetric under $\\theta \\to \\pi - \\theta$, with a Coulomb pole at both ends. A total cross-section integrates over half the sphere."
+  };
   if (result.topo === "s") return {
     order: "$O(e^2)$ · leading order — one virtual boson",
     amp: "\\mathcal{M} \\sim \\dfrac{e^2}{s}\\,[\\bar v\\,\\gamma^\\mu u]\\,[\\bar u'\\,\\gamma_\\mu v']",
@@ -72,97 +86,6 @@ function feyPhysics(result) {
     sigmaNote: "The Klein–Nishina cross-section; it reduces to the classical Thomson value $\\sigma_T$ as $E_\\gamma \\to 0$ and falls at high energy."
   };
   return null;
-}
-
-function FeynmanSVG({ result, labels }) {
-  // s-channel: two in from left to center-left vertex; wavy propagator; two out from center-right vertex
-  const W = 560,H = 240,v1 = { x: 215, y: 120 },v2 = { x: 345, y: 120 };
-  const wavy = (x1, y1, x2, y2) => {
-    const seg = 16,pts = [];
-    const dx = x2 - x1,dy = y2 - y1,len = Math.hypot(dx, dy),nx = -dy / len,ny = dx / len;
-    for (let i = 0; i <= seg; i++) {
-      const f = i / seg,a = Math.sin(f * Math.PI * 6) * 6;
-      pts.push((x1 + dx * f + nx * a).toFixed(1) + "," + (y1 + dy * f + ny * a).toFixed(1));
-    }
-    return "M" + pts.join(" L");
-  };
-  const fermion = (x1, y1, x2, y2, key, lbl, anti) => {
-    const mx = (x1 + x2) / 2,my = (y1 + y2) / 2;
-    const ang = Math.atan2(y2 - y1, x2 - x1) + (anti ? Math.PI : 0);
-    return (
-      <g key={key}>
-        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={QGA_TOKENS.css("pigment-blue-80")} strokeWidth="1.6" className="fey-line-flow"></line>
-        <polygon points="0,-4 8,0 0,4" fill={QGA_TOKENS.css("pigment-blue-80")}
-        transform={"translate(" + mx + "," + my + ") rotate(" + ang * 180 / Math.PI + ")"}></polygon>
-        <text x={x1 < W / 2 ? x1 - 8 : x1 + 8} y={y1 + 4} fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)"
-        textAnchor={x1 < W / 2 ? "end" : "start"}>{lbl}</text>
-      </g>);
-
-  };
-  if (!result.ok) return null;
-  let body = null;
-  if (result.topo === "s") {
-    body =
-    <g>
-        {fermion(60, 50, v1.x, v1.y, "i1", labels[0], false)}
-        {fermion(60, 190, v1.x, v1.y, "i2", labels[1], true)}
-        {fermion(v2.x, v2.y, 500, 50, "o1", "", false)}
-        {fermion(v2.x, v2.y, 500, 190, "o2", "", true)}
-        <text x="508" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[2]}</text>
-        <text x="508" y="194" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[3]}</text>
-        <path d={wavy(v1.x, v1.y, v2.x, v2.y)} stroke="var(--gold)" strokeWidth="2.0" fill="none" className="fey-wave-flow"></path>
-        <circle className="fey-packet fey-packet-s" r="3.6"></circle>
-        <text x={(v1.x + v2.x) / 2} y={v1.y - 16} fill={QGA_TOKENS.css("pigment-amber-80")} fontSize="13" textAnchor="middle" fontFamily="var(--font-mono)">{result.boson}</text>
-        <circle cx={v1.x} cy={v1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <circle cx={v2.x} cy={v2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <text x={v1.x} y={v1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">vertex</text>
-        <text x={(v1.x + v2.x) / 2} y={v1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">internal propagator</text>
-      </g>;
-
-  } else if (result.topo === "t") {
-    const u1 = { x: 280, y: 70 },u2 = { x: 280, y: 170 };
-    body =
-    <g>
-        {fermion(60, 70, u1.x, u1.y, "i1", labels[0], false)}
-        {fermion(u1.x, u1.y, 500, 70, "o1", "", false)}
-        {fermion(60, 170, u2.x, u2.y, "i2", labels[1], false)}
-        {fermion(u2.x, u2.y, 500, 170, "o2", "", false)}
-        <text x="508" y="74" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[2]}</text>
-        <text x="508" y="174" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels[3]}</text>
-        <path d={wavy(u1.x, u1.y, u2.x, u2.y)} stroke="var(--gold)" strokeWidth="2.0" fill="none" className="fey-wave-flow"></path>
-        <text x={u1.x + 18} y={120} fill="var(--gold)" fontSize="13" fontFamily="var(--font-mono)">{result.boson}</text>
-        <circle className="fey-packet fey-packet-t" r="3.6"></circle>
-        <circle cx={u1.x} cy={u1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <circle cx={u2.x} cy={u2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-      </g>;
-
-  } else if (result.topo === "compton") {
-    const c1 = { x: 230, y: 130 },c2 = { x: 330, y: 130 };
-    body =
-    <g>
-        <path d={wavy(60, 50, c1.x, c1.y)} stroke={QGA_TOKENS.css("pigment-amber-80")} strokeWidth="1.8" fill="none"></path>
-        <text x="52" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" textAnchor="end" fontFamily="var(--font-head)">γ</text>
-        {fermion(60, 200, c1.x, c1.y, "i2", labels.find((l) => l !== "γ"), false)}
-        <line x1={c1.x} y1={c1.y} x2={c2.x} y2={c2.y} stroke={QGA_TOKENS.css("pigment-blue-80")} strokeWidth="1.6" className="fey-line-flow"></line>
-        <circle className="fey-packet fey-packet-c" r="3.4"></circle>
-        <path d={wavy(c2.x, c2.y, 500, 50)} stroke={QGA_TOKENS.css("pigment-amber-80")} strokeWidth="1.8" fill="none"></path>
-        <text x="508" y="54" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">γ</text>
-        {fermion(c2.x, c2.y, 500, 200, "o2", "", false)}
-        <text x="508" y="204" fill={QGA_TOKENS.css("pigment-grey-92")} fontSize="14" fontFamily="var(--font-head)">{labels.find((l) => l !== "γ")}</text>
-        <circle cx={c1.x} cy={c1.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <circle cx={c2.x} cy={c2.y} r="4" fill="var(--acc)" className="fey-vertex"></circle>
-        <text x={(c1.x + c2.x) / 2} y={c1.y + 22} fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" textAnchor="middle" fontFamily="var(--font-mono)">fermion propagator</text>
-      </g>;
-
-  }
-  return (
-    <svg viewBox={"0 0 " + W + " " + H} style={{ width: "100%", display: "block" }} role="img" aria-label="Feynman diagram">
-      <text x="60" y="24" fill={QGA_TOKENS.css("pigment-blue-63")} fontSize="10" fontFamily="var(--font-mono)">time →</text>
-      <line x1="60" y1="30" x2="120" y2="30" stroke={QGA_TOKENS.css("pigment-blue-63")} strokeWidth="1"></line>
-      <polygon points="120,26 128,30 120,34" fill={QGA_TOKENS.css("pigment-blue-63")}></polygon>
-      {body}
-    </svg>);
-
 }
 
 /* ---------- cinematic 3D collision scene for the selected process ----------
@@ -404,7 +327,7 @@ function FeynmanBuilder() {
       <div style={{ padding: "10px 14px" }}>
         {result.ok ?
         <div>
-            <FeynmanSVG result={result} labels={[lbl(in1), lbl(in2), lbl(out1), lbl(out2)]}></FeynmanSVG>
+            <FeynmanDiagramSet result={result} ids={[in1, in2, out1, out2]}></FeynmanDiagramSet>
             <div className="fey-verdict ok"><strong>Allowed at tree level.</strong> {result.note}</div>
             {phys ?
           <div className="fey-phys-grid">
@@ -440,53 +363,6 @@ function FeynmanBuilder() {
     </div>);
 
 }
-
-/* ================= Stage 3 · the amplitude room =================
-   A live 2 → 2 scattering bench. Every number on screen is produced by the
-   pure functions in js/physics.mjs (mirrored in js/physics.jsx):
-   mandelstamKinematics, angularDistribution, breitWignerResonance and
-   qftTotalCrossSection. The animation is presentation only — the readouts
-   are exact functions of (√s, cos θ, x). */
-
-const QFT_M_E = 0.51099895e-3; // GeV — electron rest energy (CODATA)
-
-const QFT_PROCESSES = [
-{
-  id: "s-channel",
-  name: "e⁺e⁻ → μ⁺μ⁻",
-  sub: "s-channel annihilation",
-  in: ["e-", "e+"], out: ["mu-", "mu+"],
-  masses: [0, 0, 0, 0],
-  angleLabel: "cos θ (μ⁻)",
-  shapeLabel: "$1 + \\cos^2\\theta$",
-  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\propto 1 + \\cos^2\\theta",
-  ref: "Peskin & Schroeder, An Introduction to QFT, §5.1",
-  note: "Massless-fermion limit. The 1 + cos²θ shape and the total cross-section σ = 4πα²/3s are the textbook leading-order results."
-},
-{
-  id: "t-channel",
-  name: "e⁻μ⁻ → e⁻μ⁻",
-  sub: "t-channel exchange",
-  in: ["e-", "mu-"], out: ["e-", "mu-"],
-  masses: [0, 0, 0, 0],
-  angleLabel: "cos θ (e⁻)",
-  shapeLabel: "$1/\\sin^4(\\theta/2)$",
-  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} \\sim \\dfrac{\\alpha^2}{4E^2\\sin^4(\\theta/2)}",
-  ref: "Mott (1929); Rutherford (1911) — leading t-channel pole",
-  note: "Only the leading t-channel pole is plotted. The complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are deliberately not drawn."
-},
-{
-  id: "compton",
-  name: "γe⁻ → γe⁻",
-  sub: "Compton scattering",
-  in: ["ph", "e-"], out: ["ph", "e-"],
-  masses: [0, QFT_M_E, 0, QFT_M_E],
-  angleLabel: "cos θ (γ)",
-  shapeLabel: "Klein–Nishina",
-  shapeTex: "\\dfrac{d\\sigma}{d\\Omega} = \\dfrac{\\alpha^2}{2m_e^2}\\left(\\dfrac{E'}{E}\\right)^{2}\\left[\\dfrac{E'}{E} + \\dfrac{E}{E'} - \\sin^2\\theta\\right]",
-  ref: "Klein & Nishina (1929)",
-  note: "x = E_γ/mₑc² is a separate lab-frame slider, decoupled from √s: tying x to a 10 GeV centre-of-mass energy would give x ≈ 2 × 10⁸ and a visually degenerate curve."
-}];
 
 function ModuleQFT({ go }) {
   return (

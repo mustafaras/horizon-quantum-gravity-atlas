@@ -16,6 +16,8 @@ import { PDG } from "../js/science/data/pdg.mjs";
 import { runFromInputs, lambdaBand, instabilityScale, stabilityBoundaries } from "../js/science/higgs-running.mjs";
 import { grNullTrajectory, grPhotonSphereRadius, grCriticalImpactParameter } from "../js/physics.mjs";
 import { pressureCurve, dataBand, ratioBand, idealPressure } from "../js/science/casimir.mjs";
+import { CHANNEL_PROCESSES, totalCrossSection, forwardBackwardAsymmetry, zeroCrossing, DEFAULT_PARAMS } from "../js/science/electroweak.mjs";
+import { LEP_POLE, derivedMuonPoleCrossSection } from "../js/science/data/electroweak.mjs";
 
 const T = buildTokens(parseTokensCss(fs.readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8")));
 setTokenSource(T);
@@ -79,6 +81,10 @@ const cases = {
   qftPhoton: () => plots.qft.photonCrossSectionSpec({ sqrtS: 10 }),
   qftZ: () => plots.qft.zResonanceSpec({ sqrtS: 91.2 }),
   qftZOutside: () => plots.qft.zResonanceSpec({ sqrtS: 10 }),
+  qftEwCrossSection: () => plots.electroweak.crossSectionSpec({ sqrtS: 91.2 }),
+  qftEwCrossSectionOutside: () => plots.electroweak.crossSectionSpec({ sqrtS: 250 }),
+  qftEwAsymmetry: () => plots.electroweak.asymmetrySpec({ sqrtS: 50 }),
+  ...Object.fromEntries(CHANNEL_PROCESSES.map((id) => [`qftChannels-${id}`, () => plots.electroweak.channelsSpec({ processId: id, name: id, sqrtS: id === "s-channel" ? 91.2 : 10, cosTheta: 0.2 })])),
   gwStrainGenerated: () => plots.gw.strainSpec({ mode: "generated", h1: { samples: gwSamples(256, 80), duration: 4, mergerIndex: 217, sampleRate: 64 }, l1: { samples: gwSamples(256, 79) }, playT: 2.1, amax: 1.1 }),
   gwStrainReal: () => plots.gw.strainSpec({ mode: "real", real: { samples: gwSamples(300, 60), duration: 4, start: 1126259462 }, playT: 0.5, amax: 1 }),
   gwSpectrogram: () => plots.gw.spectrogramSpec({ spec: stft, playT: 2, duration: 4, freqTrack: Float32Array.from({ length: 64 }, (_, i) => 30 + i * 3), label: "H1 seed 42" }),
@@ -153,4 +159,34 @@ test("plots reproduce the physics: values are the functions' own outputs", () =>
   assert.ok(Math.max(...ellipse.x) - Math.min(...ellipse.x) > 0.5, "the 1-sigma ellipse spans +-0.27 GeV in m_t");
   assert.equal(stability.marks.filter((m) => m.type === "band").length, 3);
   assert.equal(stability.status, "effective");
+});
+
+test("the electroweak figures draw the model's own values, with the LEP numbers on the data layer and one focal line", () => {
+  const sigma = cases.qftEwCrossSection(), afb = cases.qftEwAsymmetry();
+  for (const spec of [sigma, afb]) {
+    assert.equal(spec.marks.filter((m) => m.focal).length, 1);
+    assert.equal(spec.x.scale.domain[0], 10);
+    assert.equal(spec.x.scale.domain[1], 200);
+    assert.equal(spec.minLeft, afb.minLeft, "stacked figures share the plot rectangle");
+  }
+  assert.equal(sigma.y.scale.type, "log");
+  const sigmaLine = sigma.marks.find((m) => m.focal);
+  sigmaLine.x.forEach((x, i) => { if (i % 60 === 0) assert.equal(sigmaLine.y[i], totalCrossSection(x)); });
+  const afbLine = afb.marks.find((m) => m.focal);
+  afbLine.x.forEach((x, i) => { if (i % 60 === 0) assert.equal(afbLine.y[i], forwardBackwardAsymmetry(x)); });
+  const pole = sigma.marks.find((m) => m.type === "points" && m.layer === "data");
+  assert.equal(pole.y[0], derivedMuonPoleCrossSection().value);
+  const lep = afb.marks.find((m) => m.type === "points" && m.layer === "data");
+  assert.equal(lep.y[0], LEP_POLE.afbMu0.value);
+  const callout = afb.marks.find((m) => m.type === "callout");
+  assert.ok(Math.abs(callout.x - zeroCrossing(DEFAULT_PARAMS, { lo: 60, hi: DEFAULT_PARAMS.mZ })) < 1e-9);
+  assert.equal(sigma.marks.some((m) => m.type === "points" && m.label?.plain === "selected energy"), true);
+  assert.equal(cases.qftEwCrossSectionOutside().marks.some((m) => m.label?.plain === "selected energy"), false);
+});
+
+test("the channel figure draws thin terms and a focal total", () => {
+  const spec = cases["qftChannels-bhabha"]();
+  assert.equal(spec.marks.filter((m) => m.type === "line").length, 4);
+  assert.equal(spec.marks.filter((m) => m.focal).length, 1);
+  assert.equal(cases["qftChannels-t-channel"]().marks.filter((m) => m.type === "line").length, 1);
 });

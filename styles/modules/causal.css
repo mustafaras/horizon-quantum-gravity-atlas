@@ -13,22 +13,6 @@
 .fey-chip-name { font-family: var(--font-head); font-size: 14px; color: var(--head); font-weight: 600; }
 .fey-chip-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; color: var(--text-dim); text-transform: uppercase; }
 
-/* ---- Feynman lab: live diagram animation ---- */
-@keyframes feyFlow { to { stroke-dashoffset: -26; } }
-@keyframes feyVtx { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.55); } }
-@keyframes feyPktS { 0% { transform: translate(215px,120px); opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translate(345px,120px); opacity: 0; } }
-@keyframes feyPktT { 0% { transform: translate(280px,70px); opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translate(280px,170px); opacity: 0; } }
-@keyframes feyPktC { 0% { transform: translate(230px,130px); opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translate(330px,130px); opacity: 0; } }
-@media (prefers-reduced-motion: no-preference) {
-  html[data-motion="balanced"] .fey-line-flow, html[data-motion="full"] .fey-line-flow { stroke-dasharray: 7 7; animation: feyFlow 1.1s linear infinite; }
-  html[data-motion="balanced"] .fey-wave-flow, html[data-motion="full"] .fey-wave-flow { stroke-dasharray: 6 5; animation: feyFlow 0.85s linear infinite; }
-  html[data-motion="balanced"] .fey-vertex, html[data-motion="full"] .fey-vertex { transform-box: fill-box; transform-origin: center; animation: feyVtx 1.5s ease-in-out infinite; }
-  html[data-motion="balanced"] .fey-packet-s, html[data-motion="full"] .fey-packet-s { animation: feyPktS 1.15s linear infinite; }
-  html[data-motion="balanced"] .fey-packet-t, html[data-motion="full"] .fey-packet-t { animation: feyPktT 1.15s linear infinite; }
-  html[data-motion="balanced"] .fey-packet-c, html[data-motion="full"] .fey-packet-c { animation: feyPktC 1.05s linear infinite; }
-}
-.fey-packet { fill: #ffe9b0; filter: drop-shadow(0 0 5px var(--gold)); }
-
 /* ---- Feynman lab: physics panel ---- */
 .fey-phys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
 .fey-phys-card { background: rgba(255,255,255,0.025); border: 1px solid var(--line); border-radius: 11px; padding: 13px 15px; }

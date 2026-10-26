@@ -10,7 +10,7 @@ const VIEWS = [
   { view: "bh", figures: ["bh-kerr-radii", "bh-hawking-spectrum", "bh-page-curve"] },
   { view: "gr", figures: ["gr-effective-potential", "gr-null-geodesics", "gr-lensed-sky"] },
   { view: "rg&rgp=qcd", figures: ["rg-scale-trajectory", "rg-beta-function"] },
-  { view: "qft", figures: ["qft-dispersion", "qft-waterfall", "qft-angular-distribution", "qft-photon-cross-section", "qft-z-resonance"] },
+  { view: "qft", figures: ["qft-dispersion", "qft-waterfall", "qft-angular-channels", "qft-ew-cross-section", "qft-ew-asymmetry"] },
   { view: "exp", figures: ["experiments-dielectron-mass", "gw-strain-generated", "gw-spectrogram"] },
 ];
 

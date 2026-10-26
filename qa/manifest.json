@@ -488,12 +488,12 @@
     {
       "id": "qft-amplitude-room",
       "file": "docs/screenshots/14-qft-amplitude-room.png",
-      "description": "QFT Amplitude Room: scattering plane, interference waterfall, angular distribution, Z⁰ resonance evaluated live.",
+      "description": "QFT Amplitude Room: scattering plane, interference waterfall, angular distribution split into its channels, and the gamma + Z energy scan evaluated live.",
       "view": "qft",
       "url": "?view=qft&qfp=s-channel&qfs=91&qfa=0",
       "viewport": {
         "width": 1440,
-        "height": 1600,
+        "height": 2400,
         "deviceScaleFactor": 1,
         "label": "desktop"
       },
@@ -507,7 +507,7 @@
         "animation-settled"
       ],
       "scientificStatus": "generated",
-      "statusNote": "Leading-order QED/QFT evaluation; t-channel is pole-only and the Z⁰ panel omits γ–Z⁰ interference, as labeled. Viewport height exceeds the 1430 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
+      "statusNote": "Tree-level gamma + Z evaluation with the photon, Z and interference terms and the s, t and u channels drawn as thin lines (S16 closes F-15); no radiation or loops, as labeled. Viewport height exceeds the 2016 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
       "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.02,
@@ -522,7 +522,7 @@
       "url": "?view=qft&qfp=s-channel&qfs=91",
       "viewport": {
         "width": 390,
-        "height": 3200,
+        "height": 4400,
         "deviceScaleFactor": 2,
         "label": "mobile"
       },
@@ -536,7 +536,7 @@
         "animation-settled"
       ],
       "scientificStatus": "generated",
-      "statusNote": "Same instrument as desktop; documents the responsive stack. Viewport height exceeds the 3039 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
+      "statusNote": "Same instrument as desktop; documents the responsive stack. Viewport height exceeds the 4031 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
       "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.03,
@@ -1213,6 +1213,136 @@
       "baseline": {
         "maxDiffPixelRatio": 0.02,
         "note": "WebGL scene on mobile, on a CPU rasterizer; 2% tolerance."
+      }
+    },
+    {
+      "id": "qft-electroweak",
+      "file": "docs/screenshots/38-qft-electroweak.png",
+      "description": "Electroweak scan of e+ e- to mu+ mu-: the tree-level gamma + Z cross-section on a log axis and the forward-backward asymmetry stacked over one energy axis, with the Z pole rule, the LEP pole values and the interference zero crossing.",
+      "view": "qft",
+      "url": "?view=qft&seed=42&qfp=s-channel&qfs=91.2&qfa=0",
+      "viewport": {
+        "width": 1440,
+        "height": 1600,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".qft-room .qft-stack",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".qft-stack",
+          "text": "Forward-backward asymmetry"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Tree-level gamma + Z with a fixed alpha, no radiation and a constant Z width (effective); the LEP points are Z-pole pseudo-observables from Phys. Rep. 427, Table 2.13 (the cross-section one derived from two printed numbers) and are compared with the line only at the pole.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Figure Kit canvas plots from pure functions plus KaTeX text; deterministic, 2% for rasterization."
+      }
+    },
+    {
+      "id": "qft-electroweak-mobile",
+      "file": "docs/screenshots/39-qft-electroweak-mobile.png",
+      "description": "Mobile electroweak scan at 390 px: the cross-section and the forward-backward asymmetry in two stacked figures sharing one energy axis.",
+      "view": "qft",
+      "url": "?view=qft&seed=42&qfp=s-channel&qfs=91.2&qfa=0",
+      "viewport": {
+        "width": 390,
+        "height": 2400,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".qft-room .qft-stack",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".qft-stack",
+          "text": "Forward-backward asymmetry"
+        }
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Same figures as the desktop capture: tree-level gamma + Z (effective) beside the LEP Z-pole values. Viewport height exceeds the target because the app shell scrolls internally.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "Mobile Figure Kit stack with KaTeX text; 3% tolerance."
+      }
+    },
+    {
+      "id": "qft-feynman-diagram",
+      "file": "docs/screenshots/40-qft-feynman-diagram.png",
+      "description": "The Feynman builder's tree diagram of e+ e- to mu+ mu-: arrows at the middle of each fermion line, the photon as a sine of whole half-periods, 3 px vertex dots, momentum arrows beside the legs and KaTeX labels.",
+      "view": "qft",
+      "url": "?view=qft&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1200,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".fey-diagram-set",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled",
+        {
+          "selector": ".fey-diagram-set",
+          "text": "time"
+        }
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "Perturbative bookkeeping, not an observable: the diagram is a schematic of one term of the expansion.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Vector diagram plus KaTeX labels; deterministic, 2% for rasterization."
+      }
+    },
+    {
+      "id": "qft-feynman-diagram-mobile",
+      "file": "docs/screenshots/41-qft-feynman-diagram-mobile.png",
+      "description": "Mobile Feynman builder diagram at 390 px, scaled to the column with its KaTeX labels and momentum arrows.",
+      "view": "qft",
+      "url": "?view=qft&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".fey-diagram-set",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled",
+        {
+          "selector": ".fey-diagram-set",
+          "text": "time"
+        }
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "Perturbative bookkeeping, not an observable.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "Vector diagram plus KaTeX labels on mobile; 3% tolerance."
       }
     }
   ]

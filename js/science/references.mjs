@@ -79,6 +79,7 @@ export const REF = Object.freeze({
   LAMOREAUX_1997: "Lamoreaux, Demonstration of the Casimir force in the 0.6 to 6 μm range, Phys. Rev. Lett. 78, 5 (1997), doi:10.1103/PhysRevLett.78.5",
   JAFFE_2005: "Jaffe, The Casimir effect and the quantum vacuum, Phys. Rev. D 72, 021301 (2005), doi:10.1103/PhysRevD.72.021301, arXiv:hep-th/0503158",
   BORDAG_2001: "Bordag, Mohideen & Mostepanenko, New developments in the Casimir effect, Phys. Rep. 353, 1 (2001), doi:10.1016/S0370-1573(01)00015-1",
+  LEP_SLC_2006: "ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP Electroweak Working Group and SLD Electroweak and Heavy Flavour Groups, Precision electroweak measurements on the Z resonance, Phys. Rep. 427, 257 (2006), doi:10.1016/j.physrep.2005.12.006, arXiv:hep-ex/0509008",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 

@@ -132,7 +132,7 @@ export function buildScene(spec, { width, height: requestedHeight = spec.height,
     return { xt: axisTicks(xDef, sx, measure, tickFont, plotW, false), yt: axisTicks(yDef, sy, measure, tickFont, plotH, true) };
   };
   const solve = (t) => solveLayout({ width, height, measure, font: tickFont, xTicks: t.xt.labels, yTicks: t.yt.labels,
-    xLabel: xDef.label, yLabel: yDef.label, legend, aspect: spec.aspect, maxPlotWidth: spec.maxPlotWidth ?? Infinity });
+    xLabel: xDef.label, yLabel: yDef.label, legend, aspect: spec.aspect, maxPlotWidth: spec.maxPlotWidth ?? Infinity, minLeft: spec.minLeft ?? 0 });
   let layout = solve(pass(Math.max(60, width - 56), Math.max(60, height - 70)));
   let t = pass(layout.plot.w, layout.plot.h);
   layout = solve(t);

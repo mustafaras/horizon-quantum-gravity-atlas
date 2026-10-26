@@ -44,6 +44,7 @@
   font: 500 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
   transition: color 0.14s, border-color 0.14s, background 0.14s;
 }
+.kerr-chip .katex { text-transform: none; }
 .kerr-chip:hover { color: var(--text); border-color: rgba(148,176,224,0.42); }
 .kerr-chip.on {
   color: #eaf5ff; border-color: rgba(84,174,255,0.72);
@@ -209,6 +210,7 @@
   color: var(--text-dim);
 }
 .kerr-readout-label .in-unit { color: rgba(148,176,224,0.72); }
+.kerr-readout-label .katex { text-transform: none; font-size: 1.05em; }
 .kerr-readout-value {
   margin-top: 4px; font: 400 14.5px/1.15 var(--font-mono); color: var(--head);
   font-variant-numeric: tabular-nums; white-space: nowrap;

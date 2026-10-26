@@ -39,8 +39,9 @@ export function layoutLegend(entries, maxWidth, measure, font) {
  *   legend          array of entries or null (laid out under the plot)
  *   aspect          plot width / height; the plot is then sized from its width and `height` is derived
  *   maxPlotWidth    upper bound of the plot width (with aspect)
+ *   minLeft         least left margin, so stacked figures with different tick labels share one plot rectangle
  */
-export function solveLayout({ width, height, measure, font, xTicks = [], yTicks = [], xLabel = null, yLabel = null, legend = null, aspect = null, maxPlotWidth = Infinity }) {
+export function solveLayout({ width, height, measure, font, xTicks = [], yTicks = [], xLabel = null, yLabel = null, legend = null, aspect = null, maxPlotWidth = Infinity, minLeft = 0 }) {
   if (!(width > 0) || !(height > 0)) throw new RangeError(`layout: invalid size ${width}x${height}`);
   const lineH = Math.ceil(parseFloat(/([\d.]+)px/.exec(font)?.[1] ?? "12") * 1.35);
   const yTickW = yTicks.length ? Math.max(...yTicks.map((t) => Math.ceil(measure(t, font)))) : 0;
@@ -48,7 +49,7 @@ export function solveLayout({ width, height, measure, font, xTicks = [], yTicks 
   const xLastHalf = xTicks.length ? Math.ceil(measure(xTicks[xTicks.length - 1], font) / 2) : 0;
 
   const yLabelW = yLabel ? TITLE_LINE : 0;
-  const left = Math.max(EDGE_PAD + yLabelW + (yLabelW ? 4 : 0) + yTickW + TICK_GAP + TICK_LENGTH, EDGE_PAD + xFirstHalf);
+  const left = Math.max(EDGE_PAD + yLabelW + (yLabelW ? 4 : 0) + yTickW + TICK_GAP + TICK_LENGTH, EDGE_PAD + xFirstHalf, minLeft);
   const right = Math.max(EDGE_PAD, xLastHalf + 2);
   let plotW = Math.min(maxPlotWidth, Math.max(MIN_PLOT, width - left - right));
 

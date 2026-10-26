@@ -262,7 +262,7 @@ No screenshot should imply that conjectural physics is experimentally observed.
 <sub><strong>Mobile analysis theatre</strong> — transport, strain, and time–frequency panels stack without horizontal overflow; playback, scrubbing, and the seeded simulation remain fully usable offline.</sub>
 </td>
 <td width="50%">
-<img src="docs/screenshots/14-qft-amplitude-room.png" alt="QFT amplitude room showing the scattering-plane animation, spacetime interference waterfall, angular distribution plot, and Z-zero Breit-Wigner resonance panel with live Mandelstam readouts" width="100%" />
+<img src="docs/screenshots/14-qft-amplitude-room.png" alt="QFT amplitude room showing the scattering-plane animation, spacetime interference waterfall, angular distribution plot split into channels, and the gamma plus Z cross-section and asymmetry scan with live Mandelstam readouts" width="100%" />
 <br/>
 <sub><strong>QFT amplitude room</strong> — a live 2 → 2 scattering bench. The Mandelstam variables, the angular distribution, the photon 1/s cross-section, and the Z⁰ Breit–Wigner shape are evaluated from the pure physics functions on every frame; the transport bar scrubs a normalised collision phase, and the identity residual is shown rather than hidden.</sub>
 </td>
@@ -642,9 +642,7 @@ The **Amplitude Room** in the app evaluates these relations live. It reports $s$
 
 **Limit:** the path integral measure is formal except in special rigorously defined cases.
 
-**Limit:** the t-channel curve shows only the leading pole $1/\sin^4(\theta/2)$. The full Møller and Bhabha amplitudes also contain $s$- and $u$-channel terms and their interference, which the app does not draw.
-
-**Limit:** the $Z^0$ panel shows the Breit-Wigner shape alone, not the $\gamma$–$Z^0$ interference term.
+**Limit:** the electroweak scan of $e^+e^-\to\mu^+\mu^-$ is tree level with a fixed $\alpha$ and a constant $Z$ width: no initial-state radiation (which lowers and broadens the peak at LEP) and no loop corrections. The LEP points are $Z$-pole pseudo-observables and are compared with the line only at the pole.
 
 **Limit:** the scattering-plane and spacetime canvases are schematic animations, not solutions of the QED amplitude.
 
@@ -1301,7 +1299,7 @@ The **Kerr Black Hole Observatory** animates its equatorial coordinate map rathe
 
 The official API source used is https://gwosc.org/api/, with v2 documentation and schema at https://gwosc.org/api/v2/docs (schema: `/api/v2/schema`).
 
-The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the Mandelstam variables from the four-momenta, the angular differential cross-section, the photon 1/s total cross-section, and the Z⁰ Breit–Wigner shape on every frame, using the pure functions in `js/physics.mjs` (mirrored in `js/physics.jsx` for the browser). Three processes are offered: s-channel e⁺e⁻ → μ⁺μ⁻ (1 + cos²θ), t-channel e⁻μ⁻ → e⁻μ⁻ (leading pole 1/sin⁴(θ/2)), and Compton γe⁻ → γe⁻ (Klein–Nishina). The transport bar scrubs a normalised collision phase τ ∈ [0, 1] with play/pause, replay, and 0.5–4× speed; the animation is presentation only and the readouts do not depend on it. Playback is disabled when the OS requests reduced motion. Each of the four instrument panels carries a titled header bar, and the transport strip reports the live collision phase (incoming / interaction / outgoing) next to the clock, so the schematic canvases are always labelled as schematic. The t-channel curve deliberately plots only the leading pole — the complete Møller and Bhabha amplitudes also carry s- and u-channel terms and their interference, which are not drawn. The Z⁰ panel shows the Breit–Wigner shape alone, not the γ–Z⁰ interference term. The Compton slider x = E_γ/mₑc² is a lab-frame ratio and is deliberately decoupled from √s. The Mandelstam and observable readout captions are typeset with KaTeX, so the defining relation under each number is real mathematics rather than a Unicode approximation.
+The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the Mandelstam variables from the four-momenta, the angular differential cross-section split into its channels, and the tree-level γ + Z cross-section and forward-backward asymmetry from 10 to 200 GeV beside the LEP Z-pole values on every frame, using the pure functions in `js/science/electroweak.mjs` and `js/physics.mjs`. Five processes are offered: e⁺e⁻ → μ⁺μ⁻ through a photon and a Z (photon, Z and interference terms), Bhabha e⁺e⁻ → e⁺e⁻ (s channel, t channel and interference), Møller e⁻e⁻ → e⁻e⁻ (t, u and interference), e⁻μ⁻ → e⁻μ⁻ (the complete massless t-channel result) and Compton γe⁻ → γe⁻ (Klein–Nishina). The Feynman builder above it draws every tree diagram of the process (both channels for Bhabha, Møller and Compton) with the geometry of `js/visualizations/qft/feynman-svg.mjs`. The transport bar scrubs a normalised collision phase τ ∈ [0, 1] with play/pause, replay, and 0.5–4× speed; the animation is presentation only and the readouts do not depend on it. Playback is disabled when the OS requests reduced motion. Each of the four instrument panels carries a titled header bar, and the transport strip reports the live collision phase (incoming / interaction / outgoing) next to the clock, so the schematic canvases are always labelled as schematic. The scan is tree level: no initial-state radiation, no loop corrections, a fixed α and a constant Z width; the LEP points are Z-pole pseudo-observables compared with the line only at the pole. The Compton slider x = E_γ/mₑc² is a lab-frame ratio and is deliberately decoupled from √s. The Mandelstam and observable readout captions are typeset with KaTeX, so the defining relation under each number is real mathematics rather than a Unicode approximation.
 
 The GR **Causal Spacetime Laboratory** is an exact 1+1D special-relativistic instrument using diagram units `c = 1 light-second per second` and metric signature `(−,+,+,+)`. It evaluates `Δs² = −(Δct)² + Δx²`, `γ`, the Lorentz-transformed event pair, causal-order verdicts, simultaneity-frame β, and timelike proper time from the pure helpers in `js/physics.mjs` and the browser mirror in `js/physics.jsx`. Five documented presets cover timelike, spacelike, null, relativity-of-simultaneity, and twin-style piecewise-inertial examples. The twin path uses two inertial legs and an explicitly schematic instantaneous turnaround; it does not model acceleration. Exact readouts always use the target β, while eased boosted axes and A′/B′ ghosts are presentation only. URL keys `grp`, `grb`, `grat`, `grax`, `grbt`, and `grbx` restore the preset, frame, and two events. β is restricted to `[-0.95, 0.95]`, coordinates to `[-4, 4]`, and invalid or out-of-range URL values fall back to the documented defaults. JSON export records the flat-spacetime model, established-special-relativity status, dimensionality, conventions, scope, implementation files, and standard references. The interval-classification, residual, and β-bound captions in the readout deck are typeset with KaTeX, with the interval sign built from the live computed value.
 
@@ -1369,7 +1367,7 @@ The screenshot set emphasizes visual and animated modules:
 | `12-gw-theatre.png` | `exp` | GW analysis theatre mid-playback: dual strain, playhead, STFT + chirp track, transport |
 | `12b-gw-theatre-real.png` | `exp` | GWOSC real-observation mode with provenance |
 | `13-gw-theatre-mobile.png` | `exp` | mobile GW theatre, stacked instrument panels |
-| `14-qft-amplitude-room.png` | `qft` | amplitude room: scattering plane, interference waterfall, angular plot, Z⁰ resonance |
+| `14-qft-amplitude-room.png` | `qft` | amplitude room: scattering plane, interference waterfall, angular plot by channel, γ + Z energy scan |
 | `15-qft-amplitude-room-mobile.png` | `qft` | mobile amplitude room, single-column instrument stack |
 | `16-causal-spacetime-lab.png` | `gr` | causal laboratory at `?view=gr&grp=simultaneity&grb=0.4&grat=-0.8&grax=-2.4&grbt=0.8&grbx=1.6`, 1440 × 1200 |
 | `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
@@ -2178,8 +2176,6 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | causal diagram is flat and 1+1D | it cannot represent curvature, gravity, expansion, or geodesic deviation | causal-laboratory validity panel and export metadata |
 | twin path omits acceleration history | an instantaneous turnaround is not a complete physical twin-paradox trajectory | twin preset labels the path piecewise inertial and schematic |
 | diagrams can mislead | virtual particles are not observed trajectories | QFT caption |
-| t-channel curve is pole-only | the full Møller/Bhabha amplitude includes s- and u-channel interference | amplitude-room validity note |
-| Z⁰ panel omits γ–Z⁰ interference | the plotted shape is the resonance alone, not the full cross-section | amplitude-room validity note |
 | holography is background-specific | AdS/CFT is not automatically our universe | holography caption |
 | collider energies far below Planck scale | null results are indirect | experiment module |
 | no unique theory ranking | programs solve different subproblems | theory comparator |
@@ -2408,7 +2404,7 @@ Each screenshot also has a caveat.
 | `07-gravitational-wave-inspiral.png` | shows strong-field GR observation | not a quantum-gravity detection |
 | `08-theory-constellation.png` | compares research programs | no winner implied |
 | `09-mobile-black-hole-lab.png` | documents responsive visual layout | mobile crop is documentation, not hero art |
-| `14-qft-amplitude-room.png` | shows the Feynman rules evaluated as live numbers | scattering plane and waterfall are schematic; t-channel is pole-only; Z⁰ panel omits γ–Z⁰ interference |
+| `14-qft-amplitude-room.png` | shows the Feynman rules evaluated as live numbers | scattering plane and waterfall are schematic; the cross-section and asymmetry are tree level (no radiation or loops) |
 | `15-qft-amplitude-room-mobile.png` | documents the responsive amplitude-room layout | mobile crop is documentation, not hero art |
 | `16-causal-spacetime-lab.png` | demonstrates invariant and Lorentz readouts tied to the Minkowski diagram | exact only for flat 1+1D inertial special relativity |
 | `17-causal-spacetime-lab-mobile.png` | documents 44 px controls and contained diagram scrolling | mobile viewport shows only part of the horizontally scrollable diagram |
