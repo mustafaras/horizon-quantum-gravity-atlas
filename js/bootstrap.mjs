@@ -233,6 +233,23 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Casimir lab (S15): the ideal-plate pressure, the regularised mode sum and the reported bands behind js/labs/casimir-lab.jsx; the
+    // scene loads on demand with the first scene that builds it.
+    const casimirScience = await import("./science/casimir.mjs");
+    const casimirData = await import("./science/data/casimir.mjs");
+    const casimirGeometry = await import("./visualizations/qft/casimir-geometry.mjs");
+    Object.defineProperty(window, "QGA_CASIMIR", {
+      value: Object.freeze({
+        science: Object.freeze({ ...casimirScience }), data: casimirData.CASIMIR_DATA, sources: casimirData.CASIMIR_SOURCES,
+        view: Object.freeze({
+          gapRange: casimirGeometry.GAP_RANGE, gapFromLog: casimirGeometry.gapFromLog, logFromGap: casimirGeometry.logFromGap,
+          gapTex: casimirGeometry.gapTex, pressureTex: casimirGeometry.pressureTex,
+        }),
+        loadScene: () => import("./visualizations/qft/casimir-cavity.mjs"),
+      }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

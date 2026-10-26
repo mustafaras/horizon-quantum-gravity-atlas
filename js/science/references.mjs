@@ -75,6 +75,10 @@ export const REF = Object.freeze({
   DASHEN_1974: "Dashen, Hasslacher & Neveu, Nonperturbative methods and extended-hadron models in field theory. II. Two-dimensional models and extended hadrons, Phys. Rev. D 10, 4130 (1974), doi:10.1103/PhysRevD.10.4130",
   BUTTAZZO_2013: "Buttazzo, Degrassi, Giardino, Giudice, Sala, Salvio & Strumia, Investigating the near-criticality of the Higgs boson, JHEP 12 (2013) 089, doi:10.1007/JHEP12(2013)089, arXiv:1307.3536",
   NIST_CONSTANTS:"NIST Reference on Constants, Units, and Uncertainty (CODATA recommended values: Fermi coupling constant, atomic mass constant), retrieved 2026-10-24, https://physics.nist.gov/cgi-bin/cuu/Value?gf",
+  BRESSI_2002: "Bressi, Carugno, Onofrio & Ruoso, Measurement of the Casimir force between parallel metallic surfaces, Phys. Rev. Lett. 88, 041804 (2002), doi:10.1103/PhysRevLett.88.041804, arXiv:quant-ph/0203002",
+  LAMOREAUX_1997: "Lamoreaux, Demonstration of the Casimir force in the 0.6 to 6 μm range, Phys. Rev. Lett. 78, 5 (1997), doi:10.1103/PhysRevLett.78.5",
+  JAFFE_2005: "Jaffe, The Casimir effect and the quantum vacuum, Phys. Rev. D 72, 021301 (2005), doi:10.1103/PhysRevD.72.021301, arXiv:hep-th/0503158",
+  BORDAG_2001: "Bordag, Mohideen & Mostepanenko, New developments in the Casimir effect, Phys. Rep. 353, 1 (2001), doi:10.1016/S0370-1573(01)00015-1",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 

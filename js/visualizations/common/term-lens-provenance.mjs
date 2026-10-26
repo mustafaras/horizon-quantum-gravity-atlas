@@ -57,6 +57,19 @@ export const FORMULA_LENS_PROVENANCE = Object.freeze({
     layers: [{ name: "Hamiltonian-density terms on the lattice", class: "model" }, { name: "Lattice surface shading outside the field", class: "decoration" }],
     seed: "URL state seed for the vacuum sample; the terms themselves are closed forms of the state",
   },
+  "formula-lens-casimir-cavity": {
+    model: "The terms of P = -pi^2 hbar c / (240 a^4) in the Casimir cavity scene: the gap a is outlined between the plates, and hbar and c show the mark P proportional to hbar c under the pressure readout drawn in the scene, with the value of the focused term on its card",
+    status: "schematic",
+    assumptions: [
+      "The outline marks where the gap is; the drawn width is a log map of the true gap, not its length",
+      "hbar and c are not places in the scene: they mark the readout, which is where they enter the number, with the proportionality P ~ hbar c",
+    ],
+    validity: ["The values are evaluations of the Formula Core terms at the gap of the slider, CODATA 2018 constants"],
+    numericalMethod: "Evaluations of the Formula Core terms in float64 (js/formula/lens.mjs); nothing is simulated",
+    references: [CODATA],
+    layers: [{ name: "Gap outline and pressure readout", class: "model" }, { name: "Plates and grids", class: "decoration" }],
+    seed: "none: closed forms only",
+  },
   "formula-lens-planck-descent": {
     model: "Each physical constant of l_P = sqrt(hbar G / c^3) is associated with the decade gate of the descent where its physics first governs: hbar at the atomic gate, c at the nuclear gate, G at the Planck gate",
     status: "schematic",

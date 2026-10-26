@@ -126,10 +126,14 @@ test("webgl2: captures are non-blank without preserveDrawingBuffer, with and wit
     await configure(fresh, mode === "shared" ? { forceBackend: "webgl2", stage: "shared" } : { forceBackend: "webgl2" });
     const errors = observe(p);
     await gotoReady(p, "/?view=qft&seed=42", READINESS);
-    await expect.poll(async () => (await phases(p)).length >= 2 && (await phases(p)).every((e) => e.phase === "ready"), { timeout: 90_000 }).toBe(true);
+    // The QFT view has five scenes (S15 added the Casimir cavity) and the pool holds four: the one nobody has scrolled to waits, suspended.
+    await expect.poll(async () => {
+      const entries = await phases(p);
+      return entries.length >= 2 && entries.every((e) => ["ready", "suspended"].includes(e.phase)) && entries.filter((e) => e.phase === "ready").length >= 2;
+    }, { timeout: 90_000 }).toBe(true);
     await p.waitForTimeout(1500);
-    const stats = await captureStats(p);
-    expect(stats.length, `${mode}: registered scenes`).toBeGreaterThanOrEqual(1);
+    const stats = (await captureStats(p)).filter((st) => st.captured);
+    expect(stats.length, `${mode}: scenes that hold a drawn frame`).toBeGreaterThanOrEqual(2);
     for (const st of stats) {
       expect(st.captured, `${mode}: capture() returned a canvas`).toBe(true);
       expect(st.distinct, `${mode}: distinct colours`).toBeGreaterThan(8);
@@ -195,7 +199,8 @@ test("default: the shared stage is on without any option, and ?stage=legacy give
     await expect.poll(async () => { const e = await phases(page); return e.length >= 4 && e.every((x) => ["ready", "suspended"].includes(x.phase)); }, { timeout: 120_000 }).toBe(true);
     const stages = await allStages(page);
     expect(stages.length > 0, `${name}: stage registered`).toBe(expectStage);
-    expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), `${name}: live renderers`).toBeLessThanOrEqual(4);
+    // The shared stage keeps the pool's 4; the legacy escape hatch gives each of the QFT view's five scenes (S15) its own renderer.
+    expect(await page.evaluate(() => QGA_RENDER.renderDiagnostics.liveRenderers()), `${name}: live renderers`).toBeLessThanOrEqual(expectStage ? 4 : 5);
     expect(errors, name).toEqual([]);
     await context.close();
   }

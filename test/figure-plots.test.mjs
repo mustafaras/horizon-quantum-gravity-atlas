@@ -15,6 +15,7 @@ import { defaultParams } from "../js/science/data/nufit.mjs";
 import { PDG } from "../js/science/data/pdg.mjs";
 import { runFromInputs, lambdaBand, instabilityScale, stabilityBoundaries } from "../js/science/higgs-running.mjs";
 import { grNullTrajectory, grPhotonSphereRadius, grCriticalImpactParameter } from "../js/physics.mjs";
+import { pressureCurve, dataBand, ratioBand, idealPressure } from "../js/science/casimir.mjs";
 
 const T = buildTokens(parseTokensCss(fs.readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8")));
 setTokenSource(T);
@@ -82,6 +83,14 @@ const cases = {
   gwStrainReal: () => plots.gw.strainSpec({ mode: "real", real: { samples: gwSamples(300, 60), duration: 4, start: 1126259462 }, playT: 0.5, amax: 1 }),
   gwSpectrogram: () => plots.gw.spectrogramSpec({ spec: stft, playT: 2, duration: 4, freqTrack: Float32Array.from({ length: 64 }, (_, i) => 30 + i * 3), label: "H1 seed 42" }),
   invariantMass: () => plots.gw.invariantMassSpec({ bins: Array.from({ length: 40 }, (_, i) => (i > 18 && i < 22 ? 30 : 2)), imMin: 60, imMax: 120, binWidth: 1.5, mZ: 91.1876 }),
+  casimirPressure: () => plots.casimir.pressureSpec({
+    curve: pressureCurve({ min: 1e-8, max: 1e-5, count: 61 }),
+    bressi: dataBand("bressi2002", [0.5e-6, 1e-6, 2e-6, 3e-6]), lamoreaux: dataBand("lamoreaux1997", [0.6e-6, 1.5e-6, 6e-6]),
+    probe: { gap: 1e-6, pressure: -idealPressure(1e-6) },
+  }),
+  casimirAgreement: () => plots.casimir.agreementSpec({
+    bressi: ratioBand(dataBand("bressi2002", [0.5e-6, 1e-6, 2e-6, 3e-6])), lamoreaux: ratioBand(dataBand("lamoreaux1997", [0.6e-6, 1.5e-6, 6e-6])),
+  }),
   invariantMassEmpty: () => plots.gw.invariantMassSpec({ bins: new Array(40).fill(0), imMin: 60, imMax: 120, binWidth: 1.5, mZ: 91.1876 }),
 };
 

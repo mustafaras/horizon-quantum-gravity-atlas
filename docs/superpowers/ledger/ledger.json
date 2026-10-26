@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-25",
+  "updated": "2026-10-26",
   "statuses": [
     "todo",
     "claimed",
@@ -960,20 +960,36 @@
         "S14"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
+      "branch": "claude/s15-qft-casimir",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/80",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-25",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 932/933 pass, 1 skipped (new: test/casimir.test.mjs 10, casimir-geometry 7, figure-plots +2 cases, formula-core +1 formula; baseline 913/914)",
+          "npm run validate: passed (59 provenance entries, 54 before); npm run qa:verify: 38 captures valid; npm run perf:audit: <VizCaption 30 -> 34 (18 -> 20 files), needsUpdate sites 30 -> 30, files over 800 lines 12 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1",
+          "qa/specs/casimir-lab.spec.mjs 7/7 (node renderer WebGL2)",
+          "affected browser specs run locally (casimir-lab, lattice-lab, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, shared-stage, esm-runtime, render-contracts, visual): 151 pass, 36 fail, 2 skipped; the same specs on a clean checkout of main (9285e1c) on the same machine: 32 fail (lattice-lab 2, provenance-layers 1, shared-stage 1, visual 28), the same tests; the other four were figure-kit qft and exp (pass alone, timeouts under load) and shared-stage 2, fixed (D-088), and pass alone; the full qa:test is CI's job (D-089)"
+        ],
+        "screenshots": [
+          "docs/screenshots/36-qft-casimir-lab.png",
+          "docs/screenshots/37-qft-casimir-lab-mobile.png",
+          "qa/baselines/qft-casimir-lab.png",
+          "qa/baselines/qft-casimir-lab-mobile.png"
+        ],
+        "measurements": [
+          "P(1 um) = -1.30013e-3 Pa vs the plan's 1.3001e-3 Pa; P(100 nm) = -13.0013 Pa vs 13.001 Pa",
+          "K = pi^2 hbar c / 240 = 1.30013e-27 N m^2 vs Bressi et al.'s printed 1.3e-27 N m^2; their measured K = (1.22 +- 0.18)e-27, ratio 0.94 (band 0.80 to 1.08)",
+          "mode sum (E_in - E_out)/(-pi hbar c / 24a) - 1 = -5.00e-4, -1.25e-4, -3.12e-5 at Lambda = 10, 20, 40 times pi c / a, against the analytic eps^2/20 (eps = 1/10, 1/20, 1/40): the remainder falls by four per doubling",
+          "casimir-plates-pressure float32 error 1.9e-7 (geometric units) and 1.3e-7 (SI) vs the 1e-4 tolerance: GPU safe",
+          "js/mod-qft.jsx 695 -> 625 lines (+8 / -78); new files 56 to 169 lines each (limit 600)"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Casimir cavity lab in the QFT view; closes no finding."
     },
     {
       "id": "S16",
@@ -2060,6 +2076,69 @@
       "prompt": "S14",
       "decision": "Baselines: qa/baselines/qft-field-lab.png and docs/screenshots/28-qft-field-lab.png are refreshed because the section they show changed by design (the membrane of S08 gave way to the lattice laboratory); the capture now targets .lt-lab at 1600 x 2400 so the sticky header does not cover the tall lab, on the CPU rasterizer where the lattice is 128 x 128 and at rest under reduced motion. qft-field-lab-mobile (docs 35) is new. Local verification was narrowed to the changed area as agreed for S11 to S13: npm test, validate, qa:verify, perf:audit, perf:collect, and the specs named in the evidence; the full qa:test is left to CI. A local full-suite run of S13 earlier showed six failures that a clean archive of main reproduces (gwosc and one each of a11y and gw-instrument); they were not looked at again.",
       "rationale": "The prompt asks for a one-line justification per updated baseline; the browser suite is CI's job on every PR that touches qa/."
+    },
+    {
+      "id": "D-081",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "Sources, read from the papers (retrieved 2026-10-25). Bressi et al. from the arXiv v1 PDF (quant-ph/0203002; the published Letter was not read): K_C = (1.22 +- 0.18)e-27 N m^2 (eq. 4), 15% precision, 0.5 to 3.0 um, their ideal pi h c / 480 = 1.3e-27. Lamoreaux from the Letter's PDF: 'Agreement with theory at the level of 5%', 0.6 to 6 um, sphere and plate through the proximity force theorem, delta = 0.01 +- 0.05 with a conductivity correction of at most 3% by his estimate. Jaffe's title, journal reference and abstract from arxiv.org/abs/hep-th/0503158. The three DOIs match Crossref (title, authors, journal, volume, year). Nothing differs from the plan's numbers. The bands: Bressi is K/a^4 over its range, Lamoreaux is the ideal line times 1 +- 0.05 over its range (the stated agreement level about the ideal line, not his fitted 1.01).",
+      "rationale": "The plan asks for the reported agreement as cited bands; the source wins and the two readings of 'band' are stated in the provenance."
+    },
+    {
+      "id": "D-082",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "No measured point is digitised. The American Physical Society states that it grants permission to republish graphs case by case and that 'Blanket permissions are not granted' (journals.aps.org/copyrightFAQ.html, read 2026-10-25); no permission was requested. Only numbers printed in the text and abstracts are committed (js/science/data/casimir.mjs digitisedPoints, recorded in the data module, the caption and the figure provenance).",
+      "rationale": "The plan allows digitised points only if the licence permits; it does not permit it without a request."
+    },
+    {
+      "id": "D-083",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "The mode sum, defined exactly: a Dirichlet scalar in 1+1D, omega_n = n pi c / a, regulator f(omega / Lambda) = exp(-omega / Lambda); E_out is the same regulated energy of free space over the same length a, hbar a Lambda^2 / (2 pi c), because outside the modes are dense enough that their sum is the integral over the density of states a / (pi c). Lambda is given in units of the fundamental frequency (10, 20, 40). The sum is added term by term, compensated, to n eps = 45 with a 5e6-term budget. The limit is the 1+1D scalar energy and is not the 3-D pressure; the lab says so.",
+      "rationale": "The plan asks for the regulator and the continuum to be written down; the 1+1D limit differing from the 3-D result is stated rather than left to be read as the pressure."
+    },
+    {
+      "id": "D-084",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "A new Formula Core formula casimir-plates-pressure (signed, with a, hbar and c addressable) instead of reusing S03's casimir-pressure, which is the unsigned magnitude with terms that cannot be addressed and is used nowhere. gpuSafe is true in geometric units (1.9e-7) and in SI (1.3e-7), so no reason for it not to be needs writing.",
+      "rationale": "Reusing the S03 formula would have changed its sign and its test; the lens needed the terms."
+    },
+    {
+      "id": "D-085",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "A second Figure Kit figure, qft-casimir-agreement (the two bands as a ratio to the ideal line), beside the plan's log-log P(a): on fourteen decades of pressure the 5% and 15% bands are one to three pixels thick and could not be seen in the capture. The first figure keeps them, the caption says they are thin, the second shows them. Provenance entries added: qft-casimir-cavity, qft-casimir-mode-sum, qft-casimir-pressure, qft-casimir-agreement, formula-lens-casimir-cavity (54 -> 59).",
+      "rationale": "The bands had to be legible; widening them would have misreported the agreement, so a ratio figure was added."
+    },
+    {
+      "id": "D-086",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "Scene readings the plan leaves open: the drawn gap is a log map of the true gap onto 2.2 to 7.0 scene units; eight modes; amplitude 1/sqrt(n) in units of the first mode's (the true amplitude also scales as sqrt(a)); outside, three lines per level at 30% opacity; the in-scene status says SCHEMATIC. The Formula Lens hbar and c show a 'P ~ hbar c' mark under the pressure readout, because a lens label starts hidden and the readout must stay visible; an in-scene gap label was removed after the screenshots showed it covering the status label and n = 1 (the gap is in the slider and the readouts). The camera and the label heights were set from the desktop and 390 px screenshots at 10 nm and 10 um.",
+      "rationale": "Each is a reading of a sentence the plan leaves open, or follows from what the screenshots showed."
+    },
+    {
+      "id": "D-087",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "js/mod-qft.jsx 695 -> 625 lines (+8 / -78): QftComputeLab ('Vacuum fluctuations, computed') moves unchanged to js/labs/qft-compute-lab.jsx so that the new section does not grow the module; the CSS adds cv- selectors to the lab blocks of styles/figure.css and a rule that keeps KaTeX out of the readout labels' text-transform: uppercase (which had turned Lambda = 10 pi c/a into Pi C/A).",
+      "rationale": "The rule is net <= 0 lines for js/mod-*.jsx."
+    },
+    {
+      "id": "D-088",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "qa/specs/shared-stage.spec.mjs: the QFT view has five scenes since this prompt and the pool holds four. The capture test now accepts suspended scenes and checks that at least two hold a frame; the default/legacy test keeps 4 live renderers for the shared stage and allows 5 for the legacy stage, one renderer per scene. Both pass on this branch (3.4 and 3.2 minutes; 3.3 and 2.7 on main). The scene was not made lazy: the shared stage already parks the unseen scene and gives it a context when scrolled to, which casimir-lab.spec.mjs checks.",
+      "rationale": "The scene count is a fact of the view; the contract (4 live renderers on the shared stage) is unchanged."
+    },
+    {
+      "id": "D-089",
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "decision": "Verification, narrowed to the changed area as in D-080: npm test, validate, qa:verify, perf:audit, the new spec and the affected specs named in the evidence; the full qa:test is CI's job. Only the two new baselines were written (qa/baselines/qft-casimir-lab.png and its mobile twin, with docs/screenshots 36 and 37); no existing baseline was refreshed. The local failures on this machine reproduce on a clean checkout of main (9285e1c): lattice-lab (2), provenance-layers (sm), shared-stage (the QFT contexts test) and 28 visual captures; they were not looked at again. The six failures the task named (gwosc 4, a11y 1, gw-instrument 1) were not part of the specs run.",
+      "rationale": "The browser suite is CI's job on every PR that touches qa/."
     }
   ],
   "log": [
@@ -2377,6 +2456,20 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "done",
       "detail": "PR 78 merged as 70c6e29950f1478fce338e5493563042fece15ad; CI (Browser QA 4m29s, Validate) green. No finding closed."
+    },
+    {
+      "date": "2026-10-25",
+      "prompt": "S15",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "claimed",
+      "detail": "Branch claude/s15-qft-casimir from main 9285e1c."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "review",
+      "detail": "PR 80 opened; evidence and decisions D-081 to D-089 recorded. No finding closed."
     }
   ]
 }
