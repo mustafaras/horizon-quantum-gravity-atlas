@@ -2,9 +2,20 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  photonGeometry, gluonGeometry, arrowAt, momentumArrow, layoutDiagram, diagramToSvg, ARROW_POINTS, VERTEX_RADIUS,
+  photonGeometry, gluonGeometry, arrowAt, momentumArrow, layoutDiagram, diagramToSvg, ARROW_POINTS, VERTEX_RADIUS, EDGE_KINDS,
 } from "../js/visualizations/qft/feynman-svg.mjs";
-import { diagramFor, DIAGRAM_SIZE } from "../js/visualizations/qft/feynman-diagrams.mjs";
+import { diagramFor, legendDiagram, DIAGRAM_SIZE } from "../js/visualizations/qft/feynman-diagrams.mjs";
+
+test("the legend draws every edge kind once, each with a label, inside the canvas", () => {
+  const def = legendDiagram();
+  const layout = layoutDiagram(def);
+  assert.deepEqual(layout.paths.map((p) => p.kind).sort(), [...EDGE_KINDS].sort());
+  assert.equal(layout.labels.length, EDGE_KINDS.length);
+  assert.equal(layout.arrows.length, 2); // fermion and antifermion
+  assert.ok(layout.paths.find((p) => p.kind === "scalar").dash);
+  for (const v of def.vertices) assert.ok(v.x >= 0 && v.x <= DIAGRAM_SIZE.width && v.y >= 0 && v.y <= DIAGRAM_SIZE.height);
+  for (const l of layout.labels) assert.ok(l.x >= 0 && l.x <= DIAGRAM_SIZE.width && l.y >= 0 && l.y <= DIAGRAM_SIZE.height, l.tex);
+});
 
 const close = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} vs ${b}`);
 const A = { x: 10, y: 20 };

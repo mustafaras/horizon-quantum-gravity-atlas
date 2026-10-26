@@ -507,7 +507,7 @@
         "animation-settled"
       ],
       "scientificStatus": "generated",
-      "statusNote": "Tree-level gamma + Z evaluation with the photon, Z and interference terms and the s, t and u channels drawn as thin lines (S16 closes F-15); no radiation or loops, as labeled. Viewport height exceeds the 2016 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
+      "statusNote": "Tree-level gamma + Z evaluation with the photon, Z and interference terms and the s, t and u channels drawn as thin lines (S16 closes F-15); no radiation or loops, as labeled. Viewport height exceeds the 2103 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
       "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.02,
@@ -536,7 +536,7 @@
         "animation-settled"
       ],
       "scientificStatus": "generated",
-      "statusNote": "Same instrument as desktop; documents the responsive stack. Viewport height exceeds the 4031 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
+      "statusNote": "Same instrument as desktop; documents the responsive stack. Viewport height exceeds the 4168 px target because the app shell scrolls internally; a shorter viewport renders the lower panels below the fold as blank background.",
       "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.03,

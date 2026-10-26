@@ -33,7 +33,8 @@ const MOMENTUM_OFFSET = 13;
 const MOMENTUM_MAX_HALF_LENGTH = 17;
 const MOMENTUM_LABEL_GAP = 11;
 const LABEL_GAP = 12;
-const STROKE = Object.freeze({ fermion: 1.6, antifermion: 1.6, photon: 1.5, boson: 1.7, gluon: 1.5, scalar: 1.5, momentum: 1 });
+// Constant pixel widths of the art direction: 1 to 1.5 px for engraved geometry.
+const STROKE = Object.freeze({ fermion: 1.5, antifermion: 1.5, photon: 1.5, boson: 1.5, gluon: 1.5, scalar: 1.5, momentum: 1 });
 const SCALAR_DASH = "5 4";
 
 const num = (v) => v.toFixed(2);

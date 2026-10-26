@@ -76,7 +76,7 @@ Ticks are nice 1-2-5 numbers inside the domain; log axes label decades as 10^n a
 | `bh-hawking-spectrum`, `bh-page-curve`, `bh-kerr-radii` | `mod-blackholes.jsx` | emitter line and band; two curves and a rule; nested circles |
 | `gr-effective-potential`, `gr-null-geodesics`, `gr-lensed-sky` | `mod-gr.jsx` | GR and Newtonian curves with turning points and a live marker; rays and circles; ring chrome over the rendered sky |
 | `rg-scale-trajectory`, `rg-beta-function` | `mod-gauge-rg.jsx` | trajectory, fixed-point rules, selected-scale marker; beta curve with phase-line triangles |
-| `qft-dispersion`, `qft-waterfall`, `qft-angular-distribution`, `qft-photon-cross-section`, `qft-z-resonance` | `mod-qft.jsx` | lines, diverging heat map, log axis |
+| `qft-dispersion`, `qft-waterfall`, `qft-angular-distribution`, `qft-angular-channels`, `qft-ew-cross-section`, `qft-ew-asymmetry` | `mod-qft.jsx`, `labs/amplitude-room.jsx` | lines, diverging heat map, log and symlog axes; the two energy figures are stacked over one plot rectangle (`minLeft`) |
 | `experiments-dielectron-mass`, `gw-strain-generated` / `gw-strain-observation`, `gw-spectrogram` | `mod-experiments.jsx` | step and points with Poisson errors; ghost and revealed traces with phase bands; magma heat map with the chirp track |
 
 Plot data come from the same functions as before (`js/physics.mjs`); `test/figure-plots.test.mjs` checks values against the closed forms.

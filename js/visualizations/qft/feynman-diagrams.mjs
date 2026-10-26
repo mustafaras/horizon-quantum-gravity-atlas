@@ -75,6 +75,24 @@ function compton(ends, channel) {
   };
 }
 
+const LEGEND_ROWS = Object.freeze([
+  ["fermion", "\\mathrm{fermion}"], ["antifermion", "\\mathrm{antifermion}"], ["photon", "\\mathrm{photon}"],
+  ["boson", "W,\\ Z\\ \\mathrm{boson}"], ["gluon", "\\mathrm{gluon}"], ["scalar", "\\mathrm{scalar}"],
+]);
+const LEGEND_X = [190, 500];
+const LEGEND_TOP = 30, LEGEND_STEP = 36;
+
+/** One line of every kind the drawing knows, labelled at its left end: the key to the conventions of the diagrams above it. */
+export function legendDiagram() {
+  const vertices = [], edges = [];
+  LEGEND_ROWS.forEach(([kind, label], i) => {
+    const y = LEGEND_TOP + i * LEGEND_STEP;
+    vertices.push(external(`l${i}`, LEGEND_X[0], y), external(`r${i}`, LEGEND_X[1], y));
+    edges.push({ from: `l${i}`, to: `r${i}`, kind, label });
+  });
+  return { vertices, edges };
+}
+
 export function diagramFor({ topo, channel, boson, ends }) {
   if (topo === "compton") return compton(ends, channel);
   if (topo === "s" && channel === "s") return sChannel(ends, boson);
