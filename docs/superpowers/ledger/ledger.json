@@ -960,19 +960,22 @@
         "S14"
       ],
       "findings": [],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s15-qft-casimir",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/80",
-      "commits": [],
+      "commits": [
+        "dcf7b1c44ead18c0b19368f6693d91da428a4be6"
+      ],
       "startedAt": "2026-10-25",
-      "completedAt": null,
+      "completedAt": "2026-10-26",
       "evidence": {
         "tests": [
           "npm test: 932/933 pass, 1 skipped (new: test/casimir.test.mjs 10, casimir-geometry 7, figure-plots +2 cases, formula-core +1 formula; baseline 913/914)",
           "npm run validate: passed (59 provenance entries, 54 before); npm run qa:verify: 38 captures valid; npm run perf:audit: <VizCaption 30 -> 34 (18 -> 20 files), needsUpdate sites 30 -> 30, files over 800 lines 12 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1",
           "qa/specs/casimir-lab.spec.mjs 7/7 (node renderer WebGL2)",
-          "affected browser specs run locally (casimir-lab, lattice-lab, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, shared-stage, esm-runtime, render-contracts, visual): 151 pass, 36 fail, 2 skipped; the same specs on a clean checkout of main (9285e1c) on the same machine: 32 fail (lattice-lab 2, provenance-layers 1, shared-stage 1, visual 28), the same tests; the other four were figure-kit qft and exp (pass alone, timeouts under load) and shared-stage 2, fixed (D-088), and pass alone; the full qa:test is CI's job (D-089)"
+          "affected browser specs run locally (casimir-lab, lattice-lab, compute-labs, a11y, smoke, provenance-layers, figure-kit, formula-lens, formula-gpu, shared-stage, esm-runtime, render-contracts, visual): 151 pass, 36 fail, 2 skipped; the same specs on a clean checkout of main (9285e1c) on the same machine: 32 fail (lattice-lab 2, provenance-layers 1, shared-stage 1, visual 28), the same tests; the other four were figure-kit qft and exp (pass alone, timeouts under load) and shared-stage 2, fixed (D-088), and pass alone; the full qa:test is CI's job (D-089)",
+          "CI on PR 80: Browser QA (full qa:test, 5m52s) and Validate green"
         ],
         "screenshots": [
           "docs/screenshots/36-qft-casimir-lab.png",
@@ -2470,6 +2473,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "review",
       "detail": "PR 80 opened; evidence and decisions D-081 to D-089 recorded. No finding closed."
+    },
+    {
+      "date": "2026-10-26",
+      "prompt": "S15",
+      "agent": "local: Claude Code (claude-sonnet-5-5)",
+      "event": "done",
+      "detail": "PR 80 merged as dcf7b1c44ead18c0b19368f6693d91da428a4be6; CI (Browser QA 5m52s, Validate) green. No finding closed."
     }
   ]
 }
