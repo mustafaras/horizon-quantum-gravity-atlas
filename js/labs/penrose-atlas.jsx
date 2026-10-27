@@ -116,6 +116,8 @@ function PenroseAtlas() {
           fallback={<div className="lab-fallback">The diagrams need WebGL. The readouts below are computed without it.</div>}></Scene3D>
       </div>
 
+      <p className="pn-note">{C.RN_SCHEMATIC.note}</p>
+
       <VizCaption provenanceId="gr-penrose-atlas" status="established">
         Three conformal diagrams, drawn from the coordinate maps of <Eq tex="js/science/conformal.mjs"></Eq> and
         evaluated in the browser. Left, flat Minkowski spacetime: <Eq tex="U=\arctan(t-r)"></Eq>,{" "}

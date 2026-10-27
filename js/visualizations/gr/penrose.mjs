@@ -256,13 +256,6 @@ export async function buildPenroseAtlas(ctx) {
   }
   ctx.mountOverlay(headerRow);
 
-  // The schematic note belongs to the whole atlas, not to one panel, and it is the one piece of text whose position
-  // must not depend on the projection: a projected label is offset by its own height, so where it lands relative to a
-  // drawn edge depends on the frame. It goes in the stage's overlay, pinned under the band by CSS.
-  const rnNoteEl = document.createElement("p");
-  rnNoteEl.className = "s3d-label pn-note";
-  rnNoteEl.textContent = RN_SCHEMATIC.note;
-  ctx.mountOverlay(rnNoteEl);
 
   /* ---- region markers: what the pointer and the keyboard report on ---- */
   const markers = [];

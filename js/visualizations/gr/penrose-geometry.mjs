@@ -167,9 +167,9 @@ export function fromScene(panel, [x, , z]) {
  * Room above and below the drawn band, in scene units, for the panels' titles and the schematic note. The framing
  * counts it as part of the picture, so a title is never cropped by the edge of the stage.
  */
-export const LABEL_PAD = 1.6;
+export const LABEL_PAD = 0.75;
 /** The gap between a panel's drawn bottom edge and its title, in scene units, as a fraction of LABEL_PAD. */
-export const TITLE_DROP = 0.75;
+export const TITLE_DROP = 0.95;
 
 /**
  * The width-to-height ratio of the drawn atlas. Three conformal diagrams side by side are three 2:1 panels, so the
@@ -186,7 +186,7 @@ export function atlasAspect(panels = PANELS) {
  * band, so a tall stage would leave most of itself empty. The height follows the drawn aspect of the atlas and is
  * clamped so it stays legible on a phone and does not become a letterbox on a desktop.
  */
-export function stageHeight(width, { min = 260, max = 560 } = {}) {
+export function stageHeight(width, { min = 250, max = 470 } = {}) {
   if (!(width > 0)) throw new RangeError(`stageHeight: width must be positive, received ${width}`);
   return Math.round(Math.min(max, Math.max(min, width / frameAspect())));
 }

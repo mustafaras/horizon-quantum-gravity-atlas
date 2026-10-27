@@ -1157,17 +1157,39 @@
       "findings": [
         "F-16"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "branch": "claude/s19-gr-penrose-atlas",
-      "pr": null,
+      "pr": "pending",
       "commits": [],
       "startedAt": "2026-10-27",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1060 pass, 1 skipped, 0 fail (baseline after S18: 1031 pass, 1 skipped, 0 fail; new: test/conformal.test.mjs 19, test/penrose-geometry.test.mjs 9, test/formula-core.test.mjs +1 including the Kruskal cross-check)",
+          "npm run validate: passed, 71 provenance entries (67 before: 4 new, gr-penrose-atlas, -minkowski, -schwarzschild, -reissner-nordstrom)",
+          "npm run qa:verify: 48 captures valid (46 before), README-consistent",
+          "npm run perf:audit: passed; files over 800 lines 12 -> 12 (js/mod-gr.jsx 1285 -> 1225), ShaderMaterial 8 -> 8 (no new GLSL; no new GPU code at all, the scene is engraved lines), Math.random 1 -> 1",
+          "qa/specs/penrose-atlas.spec.mjs 7/7 (node renderer WebGL2, 33 s): the three panels and their registered status, the focal worldline' crossing and its ticks on the curve, the r0 slider and the readouts against the closed form, the release cursor snapping under reduced motion, region keyboard cycling, 44 px targets and KaTeX text-transform at 1280 and 390 px"
+        ],
+        "screenshots": [
+          "docs/screenshots/46-gr-penrose-atlas.png",
+          "docs/screenshots/47-gr-penrose-atlas-mobile.png",
+          "qa/baselines/gr-penrose-atlas.png",
+          "qa/baselines/gr-penrose-atlas-mobile.png"
+        ],
+        "measurements": [
+          "null rays are at 45 degrees: worst |dT - dR| over every sampled ray of both kinds 1.1e-13, against the plan's 1e-9",
+          "the horizon maps to the diagonal: |T - R| at the crossing 0 (closed form), and the interpolated crossing point agrees with T = R to 1e-7 (the samples straddle rho = 0)",
+          "the free-fall closed form against quadrature: agreement to 1.3e-13 at 40000 steps to 0.98 eta_H, for r0 = 4, 6, 10, 30; against finite differences of the geodesic equation 4e-11 (eta = pi skipped, where dr/dtau is 0/0)",
+          "the Kruskal identity UV = rho(r) in all four regions: 1e-13 to 1e-15",
+          "the Schwarzschild diagram's bounding box, measured: T in [-3.1396, 3.1396], R in [-3.1396, 3.1396], max (|T| + |R|) = 3.1416 = pi, consistent with the published extents T = pi/2 and R = pi",
+          "the static observer at r0 = 4M ends exactly at (pi/2, pi/2) = region I's i+",
+          "the atlas band at a common drawn height: 43.24 scene units wide, 8.17 tall, aspect 5.29 (13.03 before the change in ledger D-113); the framed picture with the label pad is 4.99:1",
+          "the label rows on the desktop stage: titles at y = 9..31 px of a 250 px stage, drawn band 56..204, schematic note below the stage in the lab's flow, all clear of each other and of the stage's controls at x >= 844",
+          "the tick spacing is even in proper time: spread between consecutive gaps below 1e-9, and every tick's distance to the drawn polyline below 1e-9 (the ticks are interpolated between rows, so they lie on the chords)",
+          "the readouts for the default r0 = 2.6M: crossing (1.2382, 1.2382), tau = 4.657 M, eta_H = 1.0022, all from freeFallFromRest"
+        ]
       },
       "blockers": [],
       "notes": ""
@@ -2381,6 +2403,83 @@
       "prompt": "S18",
       "decision": "The 3-D scene handle in Scene3D now forwards a build's optional state() readout to window.__qgaActiveScenes, and the silk's state() reports its kernel length, ring count and the number of trajectory points it last wrote. Nothing else about the handle changed; scenes without state() return null.",
       "rationale": "The lab's own assertions (kernel length at the detail tier, one focal trajectory, two rings) are live values; reading them from a forwarded hook beats scraping the DOM for them."
+    },
+    {
+      "id": "D-113",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The Penrose atlas draws its three panels at a common DRAWN HEIGHT rather than at one common scene scale. penrose-geometry.mjs layout() scales each panel so that all three are equally tall, and the scale stays uniform WITHIN each panel, so a null ray is still exactly 45 degrees on screen.",
+      "rationale": "A conformal diagram is one coordinate system, so its R and T extents are set by the physics and the three diagrams are different shapes (Minkowski square, Schwarzschild two to one, the Reissner-Nordstrom block wider). One common scale made a band 13.03 units wide per unit tall; the desktop stage is about 5.7:1, so the framing could not fit it and most of the frame was empty. At a common drawn height the band is 5.29:1 and fits. The relative size of the panels means nothing because they are conformal pictures of different manifolds."
+    },
+    {
+      "id": "D-114",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "Region III's time arrow is the image of region I's under the isometry (U, V) -> (-U, -V) of the extension's Killing field, so its i+ sits at (-pi/2, -pi/2) in the diagram, not at (+pi/2, -pi/2). schwarzschildBoundaries() places every edge and labelled point of all four regions accordingly.",
+      "rationale": "The first draft put region III's future infinity in the corner its R coordinate suggested rather than the corner its time coordinate reaches; the diagram then had two future infinities on the same side. Fixing the corner is what makes the boundary labels agree with the region tests in schwarzschildRegionAt()."
+    },
+    {
+      "id": "D-115",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The plan cites Penrose's conformal-infinity paper (10.1098/rspa.1965.0058) as the source of the diagrams. That DOI resolves to 'Zero rest-mass fields including gravitation: asymptotic behaviour' (Proc. R. Soc. A 284, 159), not to the singularity theorem. The module cites Penrose, PRL 14 (1965) 57, 10.1103/PhysRevLett.14.57 instead, verified on Crossref on 2026-10-27.",
+      "rationale": "The plan's rule is that the source wins over the prompt when they disagree, and both papers are Penrose 1965, so the mistake is easy to make and easy to check. The conformal-infinity paper is not where causal diagrams are introduced; the singularity-theorem letter is."
+    },
+    {
+      "id": "D-116",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "Minkowski's r is the SIGNED spatial coordinate of the 1+1-dimensional chart, not a radius: sampleCoordinateLines() sweeps a constant-t line over [-hi, hi] and draws a constant-r line as the pair of branches at +-r. The module header states the convention and test/conformal.test.mjs asserts the four polylines that two radii produce.",
+      "rationale": "With r >= 0 only, every constant-t line covered the right half of the diamond and the left i0 did not exist, so the picture was a triangle pretending to be a diamond. Signed r is also what gives the constant-r lines the familiar hyperbola shape, since a fixed radius in 1+1 dimensions means r^2 = x^2."
+    },
+    {
+      "id": "D-117",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The Reissner-Nordstrom panel draws its block as a chain of three regions along the axis -- the triangle 0 < r < r- against the singularity, the diamond r- < r < r+, and the diamond r > r+ onto i0 -- and mirrors the whole chain through R = 0. Its extent is measured from the vertices it draws rather than quoted.",
+      "rationale": "The first build drew each surface independently from a null-line helper and the result was four disconnected X shapes, with the singularity floating free. Building regions and deriving their shared edges is what makes the horizon crossings actual crossings. The extent has to be measured because the scene scales a panel to a common drawn height: an extent of 1.0 where the block reaches 1.55 blew the panel up to four times its correct size."
+    },
+    {
+      "id": "D-118",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The coordinate families are drawn in the chart of EACH of Schwarzschild's four regions, and sampleCoordinateLines() takes region-aware sweep defaults: r in [1e-6, 0.999*2M] inside the horizon and [1.01*2M, 22M] outside it.",
+      "rationale": "The sampler defaulted to rMin = 2.004M for every region, so the constant-t lines of regions II and IV -- where r < 2M by definition -- were drawn with r > 2M and landed in region I. A test now asserts that every coordinate line of a chart stays inside that chart (schwarzschildRegionAt(p) === region)."
+    },
+    {
+      "id": "D-119",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The lab derives its stage height from the drawn aspect of the atlas (geometry.stageHeight(width)) instead of a fixed 520 px, and the framing reserves LABEL_PAD of scene units above the band for the panel titles.",
+      "rationale": "A fixed 520 px stage with a 5.3:1 band left about 60 percent of the frame empty above and below it. Three projected labels also need a row of their own: a projected label is offset upward by -130 percent of its own height, so a title placed at the band's edge hung above the stage. Counting the pad in framing() is what keeps a title inside the picture."
+    },
+    {
+      "id": "D-120",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The panel titles and the schematic note are DOM in the stage overlay, laid out by CSS, not projected labels. The titles are placed at the fractions the drawn band occupies (penrose-geometry.mjs screenFractions), and the note is a caption line in the lab's own flow under the stage.",
+      "rationale": "Projected labels know nothing about their neighbours: at 390 px the three headers overlapped each other and ran off both edges, and a note pinned over the canvas collided with the diagrams whenever the stage was short. Fractions from the projection are exact at every width, because the band is a flat plane facing the camera and the projection is linear across it."
+    },
+    {
+      "id": "D-121",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The r0 slider drives the scene in place through setStartRadius() and is NOT a deps entry of Scene3D; the lab publishes its handle as window.__qgaPenroseAtlas for the QA suite.",
+      "rationale": "Making r0 a rebuild trigger tore down and rebuilt the whole scene on every slider step, which was both wasteful and the source of test races: a poll could read the outgoing scene, or no scene at all. With the slider redrawing in place, qa/specs/penrose-atlas.spec.mjs runs in 33 s instead of 3 min. The lab's own hook is also unambiguous: window.__qgaActiveScenes can briefly hold two entries during a rebuild, and the last one is not always the live one."
+    },
+    {
+      "id": "D-122",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "The default infall radius is 2.6M, the bottom of the slider's range, not 10M.",
+      "rationale": "A fall from rest at a large radius crosses the horizon within a hair of i+ in the diagram: at r0 = 10M the curve's interior leg is 6e-3 of a diagram unit, so it draws as a line hugging the corner and reads as a mistake. At 2.6M the curve's shape is legible and the slider shows how the crossing moves out toward i+ as r0 grows."
+    },
+    {
+      "id": "D-123",
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "decision": "Baseline justification, gr-penrose-atlas and gr-penrose-atlas-mobile: both are first baselines, recorded at 2 percent and 3 percent pixel tolerance. The desktop figure is static engraved lines from exact maps with KaTeX labels, so it is deterministic and the tolerance covers rasterisation of the 1 px grid; the mobile figure is the same content in one column at 390 px, where the per-panel titles are hidden because each diagram is a thumbnail and the captions name all three.",
+      "rationale": "The plan forbids refreshing a baseline to make a test pass and requires a one-line justification for each one updated. These are new, not updated, and the tolerances are stated with the reason."
     }
   ],
   "log": [
@@ -2810,6 +2909,13 @@
       "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "event": "claimed",
       "detail": "Branch claude/s19-gr-penrose-atlas cut from origin/main a11b0f0 (S18 merged)."
+    },
+    {
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
+      "event": "review",
+      "detail": "Conformal maps, geometry, scene, lab, provenance, Formula Lens, QA spec, two captures and docs/render/gr-penrose-atlas.md. npm test 1060 pass / 1 skipped / 0 fail; validate 71 entries; 48 captures; the new spec 7/7. Decisions D-113 to D-123 recorded."
     }
   ]
 }

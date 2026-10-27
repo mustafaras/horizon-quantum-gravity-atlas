@@ -114,9 +114,13 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .pn-lab .pn-range .katex, .pn-lab .readout-label .katex, .pn-lab .readout-value .katex { text-transform: none; }
 .pn-lab .pn-release { min-width: 44px; min-height: 44px; }
 .pn-regions { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: 12px 14px 14px; border-top: 1px solid var(--rule); }
-.pn-region-list { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+/* two columns of region buttons on a wide stage: eight buttons stacked one per row would push the readouts off the
+   screen and leave the overlay beside them empty */
+.pn-region-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
 .pn-region-list:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; border-radius: 4px; }
-.pn-region { display: flex; gap: 8px; align-items: baseline; min-height: 44px; padding: 6px 10px; text-align: left; }
+.pn-region { display: flex; gap: 8px; align-items: baseline; min-height: 44px; padding: 6px 10px; text-align: left;
+  min-width: 0; }
+.pn-region .pn-region-name { min-width: 0; }
 .pn-region .pn-region-id { font: var(--step--2) var(--font-mono); color: var(--ink-dim); }
 .pn-region.on { border-color: var(--ink-strong); }
 .pn-region.on .pn-region-id { color: var(--ink-strong); }
@@ -140,13 +144,12 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .pn-lab .pn-head-status { display: block; font: 9px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
 .pn-lab .pn-head-status[data-status="established"] { color: var(--status-established); }
 .pn-lab .pn-head-status[data-status="schematic"] { color: var(--status-schematic); }
-.pn-lab .s3d-labels { overflow: visible; }
-.pn-lab .pn-note { top: auto; bottom: 30px; left: 50%; transform: translateX(-50%); margin: 0;
-  width: max-content; max-width: calc(100% - 24px); font: var(--step--2) var(--font-mono); color: var(--ink-dim);
-  white-space: normal; text-align: center; }
+/* The schematic note is a caption line under the stage, in the lab's own flow: an overlay element pinned over the
+   canvas collides with the diagrams as soon as the stage is short. */
+.pn-lab .pn-note { margin: 8px 0 0; font: var(--step--2) var(--font-mono); color: var(--ink-dim); text-align: center; }
 @media (max-width: 700px) {
   .pn-lab .pn-heads { display: none; }
-  .pn-lab .pn-note { max-width: calc(100% - 24px); }
   .pn-regions { grid-template-columns: minmax(0, 1fr); }
+  .pn-region-list { grid-template-columns: minmax(0, 1fr); }
   .pn-overlay { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 10px; }
 }
