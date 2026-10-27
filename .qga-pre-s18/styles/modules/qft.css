@@ -1,0 +1,127 @@
+/* styles/modules/qft.css — compute labs, QFT amplitude room.
+   Extracted verbatim from index.html (S02); stylesheets are linked in original cascade order. */
+/* ---------- Prompt 07 compute labs (QFT vacuum / Hawking horizon / RG field) ---------- */
+.lab-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.lab-readout {
+  font: 10.5px "IBM Plex Mono", monospace; color: rgba(157,208,255,0.85);
+  letter-spacing: 0.02em; padding: 4px 10px; border: 1px solid rgba(90,185,255,0.22);
+  border-radius: 8px; background: rgba(10,18,32,0.55);
+}
+.lab-fallback {
+  padding: 26px 18px; text-align: center; font: 11px "IBM Plex Mono", monospace;
+  color: rgba(148,176,224,0.7); border: 1px dashed rgba(90,185,255,0.3); border-radius: 10px;
+}
+
+/* ---------- QFT amplitude room ---------- */
+.qft-room { display: flex; flex-direction: column; gap: 12px; }
+.qft-stage, .qft-plots { display: grid; gap: 12px; }
+.qft-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.qft-plots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.qft-panel {
+  margin: 0; display: flex; flex-direction: column; position: relative; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+}
+.qft-panel::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; z-index: 1;
+  background: linear-gradient(90deg, rgba(84,174,255,0.6), rgba(70,212,224,0.24) 44%, transparent 80%);
+}
+.qft-panel-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  background: rgba(10,16,28,0.72);
+}
+.qft-panel-title {
+  display: flex; align-items: center; gap: 7px; flex: none;
+  font: 600 10px/1 var(--font-mono); letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--head);
+}
+.qft-panel-title::before {
+  content: ""; width: 5px; height: 5px; flex: none; border-radius: 1px;
+  background: var(--acc); box-shadow: 0 0 7px rgba(84,174,255,0.75);
+}
+.qft-panel-note {
+  font: 400 10px/1.35 var(--font-mono); letter-spacing: 0.06em;
+  color: rgba(148,176,224,0.72); text-align: right;
+}
+.qft-panel-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; }
+.qft-panel canvas { width: 100%; display: block; background: rgba(5,8,14,0.55); border-radius: 7px; }
+.qft-scatter { height: 268px; }
+.qft-waterfall { height: 268px; }
+.qft-angular { height: 196px; }
+.qft-resonance { height: 196px; }
+.qft-formula {
+  padding: 7px 10px; border: 1px solid rgba(148,176,224,0.12); border-radius: 7px;
+  background: rgba(6,10,18,0.6); overflow-x: auto;
+}
+.qft-formula .eq-display { margin: 0; font-size: 13px; }
+.eq-inline .katex { font-size: 1em; }
+.qft-transport-strip {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
+}
+.qft-transport-label {
+  display: flex; align-items: center; gap: 7px; flex: none;
+  font: 500 10px/1 var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(148,176,224,0.72);
+}
+.qft-transport-label::before {
+  content: ""; width: 5px; height: 5px; flex: none; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 8px rgba(70,212,224,0.8);
+}
+.qft-transport-strip .gw-transport {
+  flex: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none;
+}
+.qft-phase-chip {
+  flex: none; padding: 4px 9px; border-radius: 3px;
+  border: 1px solid rgba(84,174,255,0.32); background: rgba(84,174,255,0.08);
+  font: 500 10px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(190,222,255,0.95);
+}
+.qft-identity {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  padding: 10px 14px; border: 1px solid var(--line); border-left: 2px solid rgba(84,174,255,0.6);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13,23,39,0.6), rgba(7,11,19,0.85));
+}
+.qft-identity-note {
+  font: 400 10px/1.5 var(--font-mono); letter-spacing: 0.02em;
+  color: rgba(148,176,224,0.72);
+}
+.qft-room .kerr-instrument-bar .ctl-row { min-width: 200px; }
+@media (max-width: 860px) {
+  .qft-stage, .qft-plots { grid-template-columns: 1fr; }
+  .qft-scatter, .qft-waterfall { height: 232px; }
+  .qft-angular, .qft-resonance { height: 180px; }
+}
+@media (max-width: 760px) {
+  .qft-panel-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .qft-panel-note { text-align: left; }
+  .qft-room .kerr-instrument-bar .ctl-row { min-width: 0; width: 100%; }
+  .qft-transport-strip { flex-direction: column; align-items: stretch; gap: 8px; }
+  .qft-transport-strip .gw-transport { flex-wrap: wrap; }
+  .qft-transport-strip .gw-time { min-width: 0; flex: 1; text-align: right; }
+  .qft-transport-label { justify-content: space-between; }
+}
+
+
+/* Touch targets of the amplitude room and the Feynman builder (S16): every control is at least 44 px in both directions. The look is unchanged:
+   the slider track and the progress bar keep their thin drawn size inside a taller hit area. */
+.qft-room .kerr-chip, .qft-room .gw-play-btn, .qft-room .gw-replay-btn { min-width: 44px; min-height: 44px; }
+.qft-room .gw-speed .kerr-chip { padding: 3px 8px; }
+.fey-row select, .qft-room select { min-height: 44px; }
+.qft-room .kerr-validity summary { min-height: 44px; box-sizing: border-box; }
+.qft-room .kerr-control-group { max-width: 100%; box-sizing: border-box; }
+.qft-room .kerr-control-group .ctl-row { max-width: 100%; box-sizing: border-box; }
+.qft-room input[type="range"] { height: 44px; background: transparent; }
+.qft-room input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.qft-room input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
+.qft-room input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.qft-room .gw-progress { position: relative; height: 44px; overflow: visible; background: none; border: 0; border-radius: 0; }
+.qft-room .gw-progress::before { content: ""; position: absolute; left: 0; right: 0; top: 17px; height: 10px; border-radius: 5px; background: var(--ink-faint); opacity: 0.45; }
+.qft-room .gw-progress-fill { position: absolute; left: 0; top: 17px; height: 10px; }
+
+/* Figure Kit panels in the amplitude room. */
+.qft-stack { display: grid; gap: 12px; }
+.qft-formula + .fig, .qft-stack .fig { margin-top: 0; }

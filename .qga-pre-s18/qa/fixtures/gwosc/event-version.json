@@ -1,0 +1,7 @@
+{
+  "name": "GW150914",
+  "version": 3,
+  "release": "GWTC-1",
+  "gps": 1126259462.4,
+  "fixture": "synthetic — see README.md in this directory; not real GWOSC data"
+}

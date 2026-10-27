@@ -1,0 +1,127 @@
+{
+  "schema": "horizon-perf/v1",
+  "date": "2026-10-22",
+  "environment": {
+    "chromium": "145.0.7632.6",
+    "platform": "linux",
+    "node": "v22.22.0",
+    "webgpu": "not disabled",
+    "webgl2": true,
+    "gpuString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "gpuVendor": "Google Inc. (Google)",
+    "navigatorGpu": true,
+    "webgpuAdapter": {
+      "vendor": "google",
+      "architecture": "swiftshader",
+      "timestampQuery": true
+    }
+  },
+  "config": {
+    "durationMs": 5000,
+    "renderOptions": {
+      "stage": "shared"
+    },
+    "gpuProbeFrames": 120,
+    "launchArgs": [
+      "--no-sandbox",
+      "--enable-unsafe-webgpu",
+      "--use-webgpu-adapter=swiftshader",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+      "--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan",
+      "--disable-gpu-sandbox"
+    ],
+    "readyStableMs": 1500,
+    "viewports": [
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "deviceScaleFactor": 1
+      }
+    ]
+  },
+  "results": [
+    {
+      "viewport": "desktop",
+      "view": "qft",
+      "ok": true,
+      "scrolledTo": ".s3d-stage",
+      "renderers": 2,
+      "scenes": [
+        {
+          "label": "Atlas backdrop",
+          "phase": "ready",
+          "backend": "webgpu",
+          "rendererPath": "nodes",
+          "softwareRasterizer": true
+        },
+        {
+          "label": "Interactive three-dimensional scalar field membrane; click to excite the field",
+          "phase": "ready",
+          "backend": "webgpu",
+          "rendererPath": "nodes",
+          "softwareRasterizer": true
+        },
+        {
+          "label": "Three-dimensional waterfall of a free quantum field vacuum built from Fourier modes; the view switches between field amplitude, equal-time correlation and a schematic flux tube",
+          "phase": "ready",
+          "backend": "webgpu",
+          "rendererPath": "nodes",
+          "softwareRasterizer": true
+        },
+        {
+          "label": "Cinematic three-dimensional animation of the collision e-|e+|mu-|mu+|s",
+          "phase": "ready",
+          "backend": "webgpu",
+          "rendererPath": "nodes",
+          "softwareRasterizer": true
+        }
+      ],
+      "programs": {
+        "total": 34,
+        "perRenderer": [
+          22,
+          12
+        ]
+      },
+      "rendererStats": [
+        {
+          "rendererPath": "nodes",
+          "backend": "webgpu",
+          "programs": 22,
+          "dpr": 1
+        },
+        {
+          "rendererPath": "nodes",
+          "backend": "webgpu",
+          "programs": 12,
+          "dpr": 1
+        }
+      ],
+      "cpuFrameMs": {
+        "n": 21,
+        "p50": 233.4,
+        "p95": 300,
+        "max": 316.5
+      },
+      "gpuFrameMs": {
+        "n": 120,
+        "p50": 112.387,
+        "p95": 137.649,
+        "max": 142.574
+      },
+      "gpuNote": "reference probe (fixed scene), not the view's own scenes",
+      "firstFrameMs": 9760,
+      "jsBytes": 10983841,
+      "jsRequests": 131,
+      "babelMs": 3741,
+      "gpuAdapter": {
+        "vendor": "google",
+        "architecture": "swiftshader",
+        "description": ""
+      },
+      "pageErrors": []
+    }
+  ]
+}

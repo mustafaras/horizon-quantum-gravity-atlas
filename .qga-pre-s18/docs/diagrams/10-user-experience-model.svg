@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 640" width="1120" height="640" role="img" aria-label="User Experience Model">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#05080f"/><stop offset="1" stop-color="#10162a"/></linearGradient>
+  <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#46d4e0"/></marker>
+</defs>
+<rect width="100%" height="100%" rx="18" fill="url(#bg)"/>
+<text x="40" y="48" fill="#e8eef8" font-family="Space Grotesk,Segoe UI,Arial" font-size="26" font-weight="700">User Experience Model</text>
+<text x="40" y="76" fill="#93a1ba" font-family="IBM Plex Mono,Consolas,monospace" font-size="13">questions map to modules rather than marketing sections</text>
+<rect x="430" y="115" width="260" height="64" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="560" y="143" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">What am I trying</text>
+<text x="560" y="161" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">to understand?</text>
+<rect x="90" y="260" width="180" height="70" rx="12" fill="#0f172a" stroke="#5ee6a8" stroke-width="1.6"/>
+<text x="180" y="291" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Known fields</text>
+<text x="180" y="309" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">SM + QFT</text>
+<line x1="560" y1="179" x2="180" y2="260" stroke="#5ee6a8" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="330" y="260" width="180" height="70" rx="12" fill="#0f172a" stroke="#46d4e0" stroke-width="1.6"/>
+<text x="420" y="291" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Spacetime</text>
+<text x="420" y="309" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">geometry</text>
+<line x1="560" y1="179" x2="420" y2="260" stroke="#46d4e0" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="570" y="260" width="180" height="70" rx="12" fill="#0f172a" stroke="#ffb454" stroke-width="1.6"/>
+<text x="660" y="291" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">QFT / GR</text>
+<text x="660" y="309" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">conflict</text>
+<line x1="560" y1="179" x2="660" y2="260" stroke="#ffb454" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="810" y="260" width="180" height="70" rx="12" fill="#0f172a" stroke="#b388ff" stroke-width="1.6"/>
+<text x="900" y="291" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Candidate</text>
+<text x="900" y="309" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">programs</text>
+<line x1="560" y1="179" x2="900" y2="260" stroke="#b388ff" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/><rect x="450" y="470" width="180" height="70" rx="12" fill="#0f172a" stroke="#ff7b72" stroke-width="1.6"/>
+<text x="540" y="501" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">Experimental</text>
+<text x="540" y="519" text-anchor="middle" fill="#e8eef8" font-family="Inter,Segoe UI,Arial" font-size="14" font-weight="600">constraints</text>
+<line x1="560" y1="179" x2="540" y2="470" stroke="#ff7b72" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/></svg>

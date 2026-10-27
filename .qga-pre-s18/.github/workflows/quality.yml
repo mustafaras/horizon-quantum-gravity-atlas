@@ -1,0 +1,112 @@
+name: Repository Quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run the full browser QA suite
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate README, assets, and metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install pinned test dependencies
+        run: npm ci
+
+      - name: Run physics and renderer contract tests
+        run: npm test
+
+      - name: Run repository validation
+        run: npm run validate
+
+  browser:
+    name: Browser QA (Playwright, pinned Chromium)
+    # Pinned: Playwright 1.58 has no browser build for ubuntu 26.04, which
+    # `ubuntu-latest` now resolves to. Keep this on a supported image.
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          # The merge commit and its first parent: what scripts/ci/browser-scope.mjs compares.
+          fetch-depth: 2
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # A change to documents only (the ledger, notes, screenshots) needs no browser run. The job still runs and
+      # reports success, so a required "Browser QA" check is satisfied. Scheduled and manual runs run everything.
+      - name: Decide what this change needs
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/ci/browser-scope.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned Chromium
+        if: steps.scope.outputs.code == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify capture manifest
+        run: npm run qa:verify
+
+      # Only a renderer, three.js, QA harness, package or workflow change can move the native WebGPU boundary.
+      - name: Verify native renderer boundary first
+        if: steps.scope.outputs.render == 'true'
+        env:
+          # Surface pinned Chromium/GPU-process stderr for software WebGPU triage.
+          DEBUG: pw:browser
+        run: npm run qa:test -- qa/specs/render-backends.spec.mjs --grep "real WebGPU API on a software adapter"
+
+      - name: Preserve native renderer evidence
+        if: always() && steps.scope.outputs.render == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-renderer-evidence
+          path: |
+            qa/test-results/**/*.json
+            qa/test-results/**/sm-native-webgpu-software.png
+          retention-days: 7
+
+      # PRs and pushes gate on the critical subset; the full suite runs weekly or on demand.
+      - name: Run critical browser QA
+        if: steps.scope.outputs.code == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request' || !inputs.full)
+        run: npm run qa:critical
+
+      - name: Run full browser QA suite
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full)
+        run: npm run qa:test -- --grep-invert "real WebGPU API on a software adapter"
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa-failure
+          path: |
+            qa/test-results/
+            qa/output/
+          retention-days: 7

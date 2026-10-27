@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="HORIZON favicon">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#101a31"/>
+      <stop offset="55%" stop-color="#070b14"/>
+      <stop offset="100%" stop-color="#02040a"/>
+    </radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffda8a"/>
+      <stop offset="34%" stop-color="#ffb454"/>
+      <stop offset="66%" stop-color="#4b2507"/>
+      <stop offset="100%" stop-color="#02040a"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <circle cx="64" cy="64" r="48" fill="none" stroke="#54aeff" stroke-width="2.5" opacity="0.34"/>
+  <circle cx="64" cy="64" r="33" fill="none" stroke="#46d4e0" stroke-width="3" opacity="0.56"/>
+  <ellipse cx="64" cy="64" rx="45" ry="15" fill="none" stroke="#ffb454" stroke-width="4" opacity="0.86" filter="url(#glow)" transform="rotate(-18 64 64)"/>
+  <circle cx="64" cy="64" r="19" fill="#02040a"/>
+  <circle cx="64" cy="64" r="19" fill="url(#core)" opacity="0.78"/>
+  <circle cx="64" cy="64" r="12" fill="#02040a"/>
+  <circle cx="102" cy="52" r="6" fill="#54aeff" filter="url(#glow)"/>
+  <circle cx="29" cy="77" r="3.5" fill="#e8eef8" opacity="0.85"/>
+  <path d="M18 98 C43 84, 83 86, 110 103" fill="none" stroke="#54aeff" stroke-width="1.6" opacity="0.28"/>
+</svg>
