@@ -1114,7 +1114,7 @@
       "status": "review",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s18-rg-asymptotic-safety",
-      "pr": "PENDING",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/88",
       "commits": [],
       "startedAt": "2026-10-26",
       "completedAt": null,
