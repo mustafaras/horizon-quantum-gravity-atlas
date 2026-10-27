@@ -9,7 +9,8 @@ import * as casimir from "./casimir.mjs";
 import * as electroweak from "./electroweak.mjs";
 import * as gaugeRunning from "./gauge-running.mjs";
 import * as asymptoticSafety from "./asymptotic-safety.mjs";
+import * as penrose from "./penrose.mjs";
 
 /** Every library formula by camelCase name. */
-export const library = Object.freeze({ ...blackHoles, ...planckCasimir, ...gravitationalWaves, ...relativity, ...neutrino, ...higgs, ...qft, ...casimir, ...electroweak, ...gaugeRunning, ...asymptoticSafety });
+export const library = Object.freeze({ ...blackHoles, ...planckCasimir, ...gravitationalWaves, ...relativity, ...neutrino, ...higgs, ...qft, ...casimir, ...electroweak, ...gaugeRunning, ...asymptoticSafety, ...penrose });
 export default library;

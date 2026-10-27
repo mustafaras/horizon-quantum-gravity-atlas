@@ -294,6 +294,7 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     chirpMass: { M: 1 }, newtonianGwFrequency: { T: -1 }, casimirPressure: { M: 1, L: -1, T: -2 }, flammEmbedding: { L: 1 }, lorentzGamma: {}, newtonianPotential: {},
     twoFlavourOscillation: {}, matterPotential: { M: 1, L: 2, T: -2 }, higgsPotentialReduced: {}, higgsQuarticTree: {}, phi4HamiltonianDensity: {},
     casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {}, gaugeRunningOneLoop: {}, asBetaG: {}, asBetaLambda: {},
+    penroseTortoise: { L: 1 }, penroseKruskalU: {}, penroseKruskalV: {}, penroseCompactT: {}, penroseCompactR: {},
   };
   assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
   for (const [name, f] of Object.entries(library)) {
@@ -313,6 +314,43 @@ test("the one-loop gauge-running formula gives the Planck-scale couplings of the
   close(f.evaluate(env(29.585, -19 / 6)), 49.46, 5e-4, "alpha_2^-1 at M_Pl");
   close(f.evaluate(env(8.475, -7)), 52.41, 5e-4, "alpha_3^-1 at M_Pl");
   assert.match(f.tex, /htmlData/);
+});
+
+test("the Kruskal relations of the library equal the conformal maps to 1e-12 and expose the relations the lens binds", async () => {
+  const conformal = await import("../js/science/conformal.mjs");
+  // The tortoise coordinate is the same function in both places, on both sides of the horizon.
+  for (const r of [2.01, 2.5, 3, 6, 20, 60]) {
+    close(library.penroseTortoise.evaluate({ r, M: 1 }), conformal.tortoiseRadius(r, 1), 1e-12, `r* at r = ${r}`);
+  }
+  // U = -e^(-(t - r*)/4M) and V = e^((t + r*)/4M) reproduce the Kruskal chart of the science module in region I.
+  for (const rStar of [-6, -1, 0, 2.5, 9]) {
+    for (const t of [-8, -1, 0, 3, 7]) {
+      const U = library.penroseKruskalU.evaluate({ t, rStar, M: 1 });
+      close(U, -Math.exp(-(t - rStar) / 4), 1e-12, `U at t = ${t}, r* = ${rStar}`);
+      close(library.penroseKruskalV.evaluate({ t, rStar, M: 1 }), Math.exp((t + rStar) / 4), 1e-12, "V");
+      // and the compactification is the science module's own
+      const { T, R } = conformal.kruskalCompact(U, Math.exp((t + rStar) / 4));
+      close(library.penroseCompactT.evaluate({ U, V: Math.exp((t + rStar) / 4) }), T, 1e-12, "T");
+      close(library.penroseCompactR.evaluate({ U, V: Math.exp((t + rStar) / 4) }), R, 1e-12, "R");
+    }
+  }
+  // The atlas rests on this: a null ray holds one Kruskal coordinate fixed, so the compactified T and R move equal amounts.
+  for (const U of [-3, -0.7, -0.1]) {
+    for (const V of [1, 4, 30]) {
+      const dT = library.penroseCompactT.evaluate({ U, V: V * 1.0001 }) - library.penroseCompactT.evaluate({ U, V });
+      const dR = library.penroseCompactR.evaluate({ U, V: V * 1.0001 }) - library.penroseCompactR.evaluate({ U, V });
+      // The two are equal to the rounding of a difference of two nearly equal arctangents: a few ulp of 5e-5.
+      assert.ok(Math.abs(dT - dR) < 1e-18 * 1000, `dT - dR = ${dT - dR} when only V moves: a null ray at 45 degrees`);
+      close(dT / dR, 1, 1e-10, "so dT/dR = 1 to ten digits");
+    }
+  }
+  assert.deepEqual([...library.penroseTortoise.termIds], ["r_star"]);
+  assert.deepEqual([...library.penroseCompactT.termIds], ["T"]);
+  assert.match(library.penroseCompactT.tex, /htmlData/, "the term is addressable, so the lens can bind it");
+  for (const f of [library.penroseTortoise, library.penroseKruskalU, library.penroseKruskalV, library.penroseCompactT, library.penroseCompactR]) {
+    assert.equal(f.status, "established", `${f.id} is textbook general relativity`);
+    assert.equal(f.references.length >= 1, true, `${f.id} cites its source`);
+  }
 });
 
 test("the Einstein-Hilbert beta functions of the library equal the science module to 1e-12 and are GPU safe on their domain", async () => {
