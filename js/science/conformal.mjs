@@ -40,7 +40,14 @@ export function halfSum(U, V) {
 
 /* ---------- Minkowski ---------- */
 
-/** Null coordinates of a Minkowski event: u = t - r, v = t + r. */
+/**
+ * Null coordinates of a Minkowski event: u = t - r, v = t + r.
+ *
+ * `r` is the SIGNED spatial coordinate of the 1+1-dimensional chart, which is what makes the conformal diagram the full
+ * diamond: with r >= 0 only, constant-t lines would cover the right half only and the left i0 would not exist. The same
+ * convention gives the constant-r lines their familiar hyperbola shape, since r^2 = x^2 is what a fixed radius means
+ * in 1+1 dimensions (ledger D-116).
+ */
 export function minkowskiNull({ t, r }) {
   if (!Number.isFinite(t) || !Number.isFinite(r)) throw new RangeError("minkowski: t and r must be finite numbers");
   return { u: t - r, v: t + r };
@@ -261,7 +268,9 @@ export function regions(spacetime) {
  * Kruskal coordinate moves by e^(t/4M) times sqrt|rho|.
  */
 function timeHalfRange(r, M, spacetime) {
-  if (spacetime === "minkowski") return Math.abs(r) + 20;
+  // Minkowski: a constant-r line is the half-hyperbola t^2 - r^2 = const, whose ends approach the light cone; t has to
+  // run well past r for the drawn branch to reach its corner of the diamond.
+  if (spacetime === "minkowski") return 3 * Math.abs(r) + 24;
   const magnitude = Math.abs(kruskalRho(r, M));
   return magnitude === 0 ? 72 * M : 4 * M * (0.5 * Math.log(magnitude) + 18);
 }
@@ -280,21 +289,35 @@ function radii(rMin, rMax, samples) {
 export function sampleCoordinateLines(spacetime, { tValues = [], rValues = [], M = 1, samples = 121, region = "I", rMin, rMax } = {}) {
   assertSpacetime(spacetime);
   if (spacetime === "reissner-nordstrom") throw new RangeError("conformal: the Reissner-Nordstrom block is schematic and has no coordinate lines");
-  const lo = rMin ?? (spacetime === "schwarzschild" ? 2 * M * 1.004 : 0);
-  const hi = rMax ?? (spacetime === "schwarzschild" ? 40 * M : 10);
+  // The sweep of a constant-t line has to stay inside the wedge of its own chart: regions II and IV have r < 2M, so a
+  // sweep starting just outside the horizon would put every sample of those charts in another region.
+  const interior = region === "II" || region === "IV";
+  const lo = rMin ?? (spacetime === "minkowski" ? 0 : interior ? 1e-6 : 2 * M * 1.004);
+  const hi = rMax ?? (spacetime === "minkowski" ? 10 : interior ? 2 * M * 0.996 : 40 * M);
   const map = spacetime === "minkowski"
     ? (t, r) => minkowskiMap({ t, r })
     : (t, r) => schwarzschildMap({ t, r, M, region });
   const toPoint = (mapped) => point(mapped.T, mapped.R);
 
-  const rLines = rValues.map((r) => {
+  // In Minkowski the spatial coordinate is signed, so a constant-t line is swept over [-hi, hi] and a constant-r line
+  // is the pair of branches at +-r: together they are the two halves of the hyperbola r^2 = const.
+  const sweep = spacetime === "minkowski" ? radii(0, hi, Math.ceil(samples / 2)) : radii(lo, hi, samples);
+  const rLines = [];
+  for (const r of rValues) {
     const half = timeHalfRange(r, M, spacetime);
-    const pts = [];
-    for (let i = 0; i < samples; i += 1) pts.push(toPoint(map(-half + (2 * half * i) / (samples - 1), r)));
-    return Object.freeze({ value: r, kind: "r", points: Object.freeze(pts) });
-  });
+    for (const branch of spacetime === "minkowski" ? [1, -1] : [1]) {
+      const pts = [];
+      for (let i = 0; i < samples; i += 1) pts.push(toPoint(map(-half + (2 * half * i) / (samples - 1), branch * r)));
+      rLines.push(Object.freeze({ value: branch * r, kind: "r", points: Object.freeze(pts) }));
+    }
+  }
   const tLines = tValues.map((t) => Object.freeze({
-    value: t, kind: "t", points: Object.freeze(radii(lo, hi, samples).map((r) => toPoint(map(t, r)))),
+    value: t, kind: "t",
+    points: Object.freeze(
+      spacetime === "minkowski"
+        ? [...sweep.map((r) => toPoint(map(t, -r))).reverse(), ...sweep.map((r) => toPoint(map(t, r)))]
+        : sweep.map((r) => toPoint(map(t, r))),
+    ),
   }));
   return Object.freeze({ tLines: Object.freeze(tLines), rLines: Object.freeze(rLines) });
 }
@@ -431,65 +454,110 @@ export function radialNullRay({ kind = "outgoing", nullValue = 0, M = 1, samples
 
 /* ---------- Reissner-Nordstrom: one block, schematic ---------- */
 
-/**
- * The null lines R = R0 +- T that cross at (0, R0): the local shape of a horizon in these diagrams. Every segment it
- * returns makes 45 degrees with the axes, which is what "built in the same mapping style" means here.
- */
-function horizonX(R0, reach, n = 17) {
-  return Object.freeze([
-    segment(0, R0, reach, R0 + reach, n),
-    segment(0, R0, -reach, R0 + reach, n),
-    segment(0, R0, reach, R0 - reach, n),
-    segment(0, R0, -reach, R0 - reach, n),
-  ]);
-}
+/** Mirror a polyline through R = 0, keeping its traversal order, so the two halves of the block match. */
+const mirrored = (points) => Object.freeze(points.map((p) => Object.freeze({ T: p.T, R: -p.R })));
 
-// The block, in the (R, T) layout the exact diagrams use. Each apex is 2 * reach above the crossing below it, so
-// every null edge runs at 45 degrees: this is checked in test/conformal.test.mjs.
-const RN_REACH = 0.7;
-const RN_OUTER = 0.85;      // the outer horizon r = r+ crosses the axis here
-const RN_INNER = -0.55;     // the inner (Cauchy) horizon r = r- crosses it here
-const RN_SCRI = RN_OUTER + 2 * RN_REACH;
-const RN_SINGULARITY_R = RN_INNER - 2 * RN_REACH;
-const RN_SINGULARITY_HALF = 2 * RN_REACH;
+/** One drawn edge: the null segment from `a` to `b`. */
+const edge = (a, b) => Object.freeze([a, b]);
+
+/**
+ * The drawn geometry of the Reissner-Nordstrom block, before it is frozen with its labels and its extent.
+ *
+ * One block of the maximal extension, on the right of the timelike singularity, is a chain of three regions. Every
+ * boundary is null, so every drawn edge is at exactly 45 degrees:
+ *
+ *   0 < r < r-     the TRIANGLE whose inner edge is the singularity, a vertical segment at R = 0, and whose other two
+ *                  edges are the inner horizon r = r-: the two null lines through the crossing on the axis, which is
+ *                  why they meet the two ENDS of the singularity.
+ *   r- < r < r+    the diamond between the two horizons' axis crossings.
+ *   r > r+         the diamond whose right vertex is spatial infinity i0.
+ *
+ * The left half is the mirror image through R = 0 and shares that vertical edge, which is what makes the singularity
+ * timelike: it runs up the middle of the picture instead of capping it off as Schwarzschild's spacelike one does. A
+ * horizon is drawn once, as the two edges each of its two neighbouring regions contributes at the crossing.
+ */
+const RN_GEOMETRY = (() => {
+  const R_MINUS = 1.0;  // where the inner horizon r = r- crosses the axis; also half the singularity's height
+  const R_PLUS = 1.9;   // where the outer horizon r = r+ crosses it
+  const I0 = 3.1;       // spatial infinity: the exterior's right vertex
+  const atR = (R) => Object.freeze({ T: 0, R });
+  const top = (from, to) => Object.freeze({ T: (to - from) / 2, R: (from + to) / 2 });
+  const bottom = (from, to) => Object.freeze({ T: -(to - from) / 2, R: (from + to) / 2 });
+
+  // the vertices of each region on the right of the singularity: left, top, right, bottom
+  const singularityTop = Object.freeze({ T: R_MINUS, R: 0 });
+  const singularityBottom = Object.freeze({ T: -R_MINUS, R: 0 });
+  const atMinus = atR(R_MINUS);
+  const atPlus = atR(R_PLUS);
+  const betweenTop = top(R_MINUS, R_PLUS);
+  const betweenBottom = bottom(R_MINUS, R_PLUS);
+  const exteriorTop = top(R_PLUS, I0);
+  const exteriorBottom = bottom(R_PLUS, I0);
+
+  // the two edges of a region that meet at its left vertex, and the two that meet at its right vertex
+  const leftEdges = ([left, topv, , bottomv]) => [edge(left, topv), edge(bottomv, left)];
+  const rightEdges = ([, topv, right, bottomv]) => [edge(topv, right), edge(right, bottomv)];
+
+  const inside = [singularityTop, atMinus, singularityBottom];
+  const between = [atMinus, betweenTop, atPlus, betweenBottom];
+  const exterior = [atPlus, exteriorTop, atR(I0), exteriorBottom];
+  const insideRight = [edge(singularityTop, atMinus), edge(atMinus, singularityBottom)];
+
+  const innerRight = [...insideRight, ...leftEdges(between)];
+  const outerRight = [...rightEdges(between), ...leftEdges(exterior)];
+  const infinityRight = rightEdges(exterior);
+  const bothSides = (right) => Object.freeze([...right, ...right.map(mirrored)]);
+
+  return {
+    singularity: Object.freeze([Object.freeze([singularityBottom, singularityTop])]),
+    innerHorizon: bothSides(innerRight),
+    outerHorizon: bothSides(outerRight),
+    nullInfinity: bothSides(infinityRight),
+    // The closed outline of each region, as polygons. This is `polygons`, not `regions`: `regions` on this object is
+    // the hover/focus descriptor list that regions("reissner-nordstrom") returns.
+    polygons: Object.freeze({
+      inside: Object.freeze(inside), between: Object.freeze(between), exterior: Object.freeze(exterior),
+    }),
+    anchors: Object.freeze({
+      exterior: atR((R_PLUS + I0) / 2),
+      between: atR((R_MINUS + R_PLUS) / 2),
+      inside: atR(R_MINUS / 2),
+    }),
+    // The block's own bounding box, measured from the vertices it draws. It has to be measured rather than guessed:
+    // the scene scales a panel to a common drawn height, so an extent that did not match the drawn geometry would size
+    // the whole panel wrongly, and an extent that was too small would clip the horizon crossings.
+    extent: Object.freeze((() => {
+      const drawn = [...inside, ...between, ...exterior];
+      return {
+        T: Math.max(...drawn.map((p) => Math.abs(p.T))),
+        R: Math.max(...drawn.map((p) => Math.abs(p.R))),
+      };
+    })()),
+  };
+})();
 
 /**
  * One block of the maximal extension of Reissner-Nordstrom with 0 < |Q| < M, drawn from explicit polylines in the same
- * (R, T) layout as the exact diagrams, with every null edge at 45 degrees.
+ * (R, T) layout as the exact diagrams, with every null edge at exactly 45 degrees.
  *
  * It is a SCHEMATIC and says so: the three surfaces and their nesting are the textbook ones, but nothing here comes
  * from a coordinate map, and the maximal extension is an infinite chain of such blocks rather than the single block
- * drawn. Read from the outside in: the exterior diamond (r > r+) closed below by the outer horizon r = r+ and above
- * by null infinity; the diamond between the horizons (r- < r < r+); the inner horizon r = r-; and the triangle beyond
- * it (0 < r < r-), closed on the left by the singularity. The singularity is TIMELIKE, a vertical line where
- * Schwarzschild's is spacelike, and r- is a Cauchy horizon: data on it does not determine the future of this block.
+ * drawn. The block is symmetric about its timelike singularity. Read it from the singularity outward, on either side:
+ * the interior (0 < r < r-) against the singularity; the region between the horizons (r- < r < r+) reached across the
+ * inner horizon r = r-; and the exterior (r > r+), a wedge opening to i0 beyond the outer horizon r = r+. The
+ * singularity is TIMELIKE, a vertical line where Schwarzschild's is spacelike, and r- is a Cauchy horizon: data on it
+ * does not determine the future of the block.
  */
 export const RN_SCHEMATIC = Object.freeze({
   status: "schematic",
   note: "one block of an infinite chain · r- is a Cauchy horizon · schematic, not a coordinate map",
-  extent: Object.freeze({ T: RN_SCRI, R: RN_SCRI }),
-  singularity: Object.freeze([segment(-RN_SINGULARITY_HALF, RN_SINGULARITY_R, RN_SINGULARITY_HALF, RN_SINGULARITY_R, 33)]),
-  innerHorizon: horizonX(RN_INNER, RN_REACH),
-  outerHorizon: horizonX(RN_OUTER, RN_REACH),
-  nullInfinity: Object.freeze([
-    segment(RN_REACH, RN_OUTER + RN_REACH, 0, RN_SCRI, 17),
-    segment(-RN_REACH, RN_OUTER + RN_REACH, 0, RN_SCRI, 17),
-  ]),
-  exterior: Object.freeze([Object.freeze([
-    point(0, RN_OUTER), point(RN_REACH, RN_OUTER + RN_REACH), point(0, RN_SCRI), point(-RN_REACH, RN_OUTER + RN_REACH),
-  ])]),
-  between: Object.freeze([Object.freeze([
-    point(0, RN_INNER), point(RN_REACH, RN_INNER + RN_REACH), point(0, RN_OUTER), point(-RN_REACH, RN_INNER + RN_REACH),
-  ])]),
-  inside: Object.freeze([Object.freeze([
-    point(0, RN_INNER), point(RN_SINGULARITY_HALF, RN_SINGULARITY_R), point(-RN_SINGULARITY_HALF, RN_SINGULARITY_R),
-  ])]),
+  ...RN_GEOMETRY,
   regions: Object.freeze([
-    region("E", "Exterior, r > r+", "reissner-nordstrom", 0, 1.5,
+    region("E", "Exterior, r > r+", "reissner-nordstrom", RN_GEOMETRY.anchors.exterior.T, RN_GEOMETRY.anchors.exterior.R,
       "r+ = M + sqrt(M^2 - Q^2). The region a distant observer sees; the geometry repels a neutral test particle that falls in."),
-    region("C", "Between the horizons, r- < r < r+", "reissner-nordstrom", 0, 0.15,
+    region("C", "Between the horizons, r- < r < r+", "reissner-nordstrom", RN_GEOMETRY.anchors.between.T, RN_GEOMETRY.anchors.between.R,
       "r- = M - sqrt(M^2 - Q^2). r is a time between two null horizons, and crossing r- is where predictability fails."),
-    region("S", "Timelike singularity, r = 0", "reissner-nordstrom", 0, -1.95,
+    region("S", "Timelike singularity, r = 0", "reissner-nordstrom", RN_GEOMETRY.anchors.inside.T, RN_GEOMETRY.anchors.inside.R,
       "A vertical boundary at r = 0. Unlike Schwarzschild's spacelike singularity it can be avoided, and the extension continues past it into another block."),
   ]),
 });

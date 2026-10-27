@@ -282,6 +282,19 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Conformal diagrams (S19): the exact maps, the RN schematic and the scene geometry behind the Penrose atlas. The
+    // three.js scene loads with the lab that builds it.
+    const conformal = await import("./science/conformal.mjs");
+    const penroseGeometry = await import("./visualizations/gr/penrose-geometry.mjs");
+    Object.defineProperty(window, "QGA_CONFORMAL", {
+      value: Object.freeze({
+        ...conformal,
+        geometry: Object.freeze({ ...penroseGeometry }),
+        loadAtlas: () => import("./visualizations/gr/penrose.mjs"),
+      }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

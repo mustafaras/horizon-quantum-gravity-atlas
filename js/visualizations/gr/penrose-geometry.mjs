@@ -11,10 +11,14 @@
 
 import { RN_SCHEMATIC, SCHWARZSCHILD_EXTENT, MINKOWSKI_EXTENT } from "../../science/conformal.mjs";
 
-/** Scene units per diagram unit: large enough that a 1 px engraved line resolves a 45-degree edge cleanly. */
+/**
+ * Scene units per diagram unit for the TALLEST diagrams: large enough that a 1 px engraved line resolves a 45-degree
+ * edge cleanly. The other panels are scaled up to the same drawn height (see `layout`), so this is the scale of the
+ * panels whose T extent is `halfHeight` of the atlas.
+ */
 export const DIAGRAM_SCALE = 2.6;
 /** Gap between the panels, in scene units. */
-export const PANEL_GAP = 1.9;
+export const PANEL_GAP = 1.2;
 /** How deep the zig-zag of a drawn singularity swings, in diagram units. */
 const ZIGZAG_AMPLITUDE = 0.055;
 /** The zig-zag's period, in diagram units along the singularity. */
@@ -34,30 +38,50 @@ const halfWidth = (panel) => panel.extent.R;
 const halfHeight = (panel) => panel.extent.T;
 
 /**
- * The layout. Each panel gets an equally wide slot, so the atlas is symmetric about x = 0 and the middle diagram sits
- * at the origin; a panel narrower than its slot is centred in it, which keeps the widest diagram from crowding its
- * neighbours and keeps the whole picture balanced. Widths follow from the extents the science module publishes.
+ * The layout: three diagrams side by side, packed edge to edge with one gap between neighbours and the whole band
+ * centred on x = 0.
+ *
+ * The panels do NOT share a scale. A conformal diagram's axes are one coordinate system, so its `R` extent and its `T`
+ * extent are set by the physics and the three diagrams come out different shapes: Minkowski is square, Schwarzschild
+ * two to one, the Reissner-Nordstrom block wider still. Drawing them all at one scale would make the atlas thirteen
+ * times wider than it is tall, which no frame can show. Instead every panel is scaled so that all three are the SAME
+ * DRAWN HEIGHT, the convention of a plate of diagrams: the scale is uniform within a panel (so a null ray is still
+ * exactly 45 degrees on screen, which is the one thing a conformal diagram has to get right) and differs between
+ * panels, whose relative size means nothing because they are conformal pictures of different manifolds.
  */
 export function layout(panels = PANELS) {
-  const widths = panels.map((panel) => 2 * halfWidth(panel) * DIAGRAM_SCALE);
-  const slot = Math.max(...widths);
-  const total = slot * panels.length + PANEL_GAP * (panels.length - 1);
-  const placed = panels.map((panel, i) => Object.freeze({
-    ...panel,
-    cx: -total / 2 + slot / 2 + i * (slot + PANEL_GAP),
-    width: widths[i], slot, halfWidth: halfWidth(panel), halfHeight: halfHeight(panel),
-  }));
+  const tallest = Math.max(...panels.map(halfHeight));
+  const drawnHalfHeight = tallest * DIAGRAM_SCALE;
+  const placed0 = panels.map((panel) => {
+    const scale = drawnHalfHeight / halfHeight(panel);
+    return {
+      panel, scale,
+      // the width is whatever this panel's own R extent comes to at the scale that gives it the common height
+      width: 2 * halfWidth(panel) * scale,
+    };
+  });
+  const total = placed0.reduce((sum, p) => sum + p.width, 0) + PANEL_GAP * (panels.length - 1);
+  let cursor = -total / 2;
+  const placed = placed0.map(({ panel, scale, width }) => {
+    const cx = cursor + width / 2;
+    cursor += width + PANEL_GAP;
+    return Object.freeze({
+      ...panel,
+      cx, scale, width, slot: width, halfWidth: halfWidth(panel), halfHeight: drawnHalfHeight,
+    });
+  });
   return Object.freeze({
     panels: Object.freeze(placed),
     halfWidth: total / 2,
-    halfHeight: Math.max(...panels.map(halfHeight)),
-    width: total, slot,
+    halfHeight: drawnHalfHeight,
+    width: total,
   });
 }
 
-/** The scene position of a point of one panel's diagram: R to the right, T up the screen. */
+/** The scene position of a point of one panel's diagram: R to the right, T up the screen, at that panel's scale. */
 export function toScene(panel, { T, R }) {
-  return [panel.cx + R * DIAGRAM_SCALE, 0, -T * DIAGRAM_SCALE];
+  const scale = panel.scale ?? DIAGRAM_SCALE;
+  return [panel.cx + R * scale, 0, -T * scale];
 }
 
 /** A flat xyz polyline of a diagram polyline inside one panel. */
@@ -129,20 +153,78 @@ export function closedLoop(panel, points) {
  * half width, or null in a gap. This is what lets a pointer over a region say which diagram it is over.
  */
 export function panelAtX(x, panels) {
-  for (const panel of panels) if (Math.abs(x - panel.cx) <= panel.slot / 2) return panel;
+  for (const panel of panels) if (Math.abs(x - panel.cx) <= panel.width / 2) return panel;
   return null;
 }
 
 /** The diagram point under a scene position of one panel, if any (the inverse of toScene). */
 export function fromScene(panel, [x, , z]) {
-  return { T: -z / DIAGRAM_SCALE, R: (x - panel.cx) / DIAGRAM_SCALE };
+  const scale = panel.scale ?? DIAGRAM_SCALE;
+  return { T: -z / scale, R: (x - panel.cx) / scale };
+}
+
+/**
+ * Room above and below the drawn band, in scene units, for the panels' titles and the schematic note. The framing
+ * counts it as part of the picture, so a title is never cropped by the edge of the stage.
+ */
+export const LABEL_PAD = 1.6;
+/** The gap between a panel's drawn bottom edge and its title, in scene units, as a fraction of LABEL_PAD. */
+export const TITLE_DROP = 0.75;
+
+/**
+ * The width-to-height ratio of the drawn atlas. Three conformal diagrams side by side are three 2:1 panels, so the
+ * atlas is a wide band, and the stage has to take its height from this ratio or it wastes most of the frame above and
+ * below the band.
+ */
+export function atlasAspect(panels = PANELS) {
+  const { width, halfHeight } = layout(panels);
+  return width / (2 * halfHeight);
+}
+
+/**
+ * The stage height that shows the atlas without wasting the frame: three conformal diagrams side by side are a wide
+ * band, so a tall stage would leave most of itself empty. The height follows the drawn aspect of the atlas and is
+ * clamped so it stays legible on a phone and does not become a letterbox on a desktop.
+ */
+export function stageHeight(width, { min = 260, max = 560 } = {}) {
+  if (!(width > 0)) throw new RangeError(`stageHeight: width must be positive, received ${width}`);
+  return Math.round(Math.min(max, Math.max(min, width / frameAspect())));
+}
+
+/** The aspect of the framed picture, which is the band plus the label room above and below it. */
+export function frameAspect(panels = PANELS) {
+  const { width, halfHeight } = layout(panels);
+  return width / (2 * (halfHeight + LABEL_PAD));
+}
+
+/**
+ * Where each panel lands across the stage, as fractions of its width, for a camera at `distance` with field of view
+ * `fovDeg` in a frame of `aspect`: { band: [left, right], panels: [{ id, left, right }] }.
+ *
+ * The projection is the perspective one, but the atlas is a flat plane facing the camera, so a scene x maps linearly
+ * across the frame and the fractions follow from the half width the frustum covers at that distance. This is what lets
+ * an overlay element sit exactly over its diagram without measuring anything in the browser.
+ */
+export function screenFractions(fovDeg, aspect, distance, panels = PANELS) {
+  const half = Math.tan((fovDeg * Math.PI) / 360) * distance;
+  const halfWidth = half * Math.max(0.2, aspect);
+  const fraction = (x) => 0.5 + x / (2 * halfWidth);
+  const { panels: placed, halfWidth: bandHalf } = layout(panels);
+  return Object.freeze({
+    band: Object.freeze([fraction(-bandHalf), fraction(bandHalf)]),
+    panels: Object.freeze(placed.map((panel) => Object.freeze({
+      id: panel.id,
+      left: fraction(panel.cx - panel.width / 2),
+      right: fraction(panel.cx + panel.width / 2),
+    }))),
+  });
 }
 
 /** The camera distance that fits the whole atlas in a frame of `aspect` at field of view `fovDeg`. */
-export function framing(fovDeg, aspect, { margin = 1.12 } = {}) {
+export function framing(fovDeg, aspect, { margin = 1.06 } = {}) {
   const half = Math.tan((fovDeg * Math.PI) / 360);
   const { halfWidth, halfHeight } = layout();
-  const needHeight = (halfHeight * margin) / half;
+  const needHeight = ((halfHeight + LABEL_PAD) * margin) / half;
   const needWidth = (halfWidth * margin) / (half * Math.max(0.2, aspect));
   return Math.round(Math.max(needHeight, needWidth));
 }

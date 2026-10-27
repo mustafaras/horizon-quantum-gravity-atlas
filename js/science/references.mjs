@@ -56,6 +56,15 @@ export const REF = Object.freeze({
   PEREZ_2013: "Perez, The spin-foam approach to quantum gravity, Living Rev. Relativ. 16, 3 (2013), doi:10.12942/lrr-2013-3",
   MAGGIORE: "Maggiore, Gravitational Waves, vol. 1: Theory and Experiments (Oxford University Press, 2007), doi:10.1093/acprof:oso/9780198570745.001.0001",
   CARTER_1968: "Carter, Global structure of the Kerr family of gravitational fields, Phys. Rev. 174, 1559 (1968), doi:10.1103/PhysRev.174.1559",
+  // Conformal diagrams (S19). Every volume, page and year below was looked up on Crossref on 2026-10-27 and matches.
+  // The atlas plan cited Penrose's conformal-infinity paper as doi:10.1098/rspa.1965.0058; the paper it draws on for the
+  // diagram technique is the 1965 singularity theorem, and the two are different works (ledger D-115).
+  KRUSKAL_1960: "Kruskal, Maximal extension of Schwarzschild metric, Phys. Rev. 119, 1743 (1960), doi:10.1103/PhysRev.119.1743",
+  PENROSE_1965: "Penrose, Gravitational collapse and space-time singularities, Phys. Rev. Lett. 14, 57 (1965), doi:10.1103/PhysRevLett.14.57",
+  REISSNER_1916: "Reissner, \u00dcber die Eigengravitation des elektrischen Feldes nach der Einsteinschen Theorie, Ann. Phys. 355, 106 (1916), doi:10.1002/andp.19163550905",
+  GRAVES_BRILL_1960: "Graves & Brill, Oscillatory character of Reissner-Nordstr\u00f6m metric for an ideal charged wormhole, Phys. Rev. 120, 1507 (1960), doi:10.1103/PhysRev.120.1507",
+  HAWKING_ELLIS: "Hawking & Ellis, The Large Scale Structure of Space-Time (Cambridge University Press, 1973), doi:10.1017/CBO9780511524646",
+  GRIFFITHS_PODOLSKY: "Griffiths & Podolsk\u00fd, Exact Space-Times in Einstein's General Relativity (Cambridge University Press, 2009), doi:10.1017/CBO9780511635397",
   PAGE_THORNE: "Page & Thorne, Disk-accretion onto a black hole. Time-averaged structure of accretion disk, Astrophys. J. 191, 499 (1974), doi:10.1086/152990",
   GRALLA_LUPSASCA_MARRONE: "Gralla, Lupsasca & Marrone, The shape of the black hole photon ring: a precise test of strong-field general relativity, Phys. Rev. D 102, 124004 (2020), doi:10.1103/PhysRevD.102.124004",
   BLANDFORD_ZNAJEK: "Blandford & Znajek, Electromagnetic extraction of energy from Kerr black holes, Mon. Not. R. Astron. Soc. 179, 433 (1977), doi:10.1093/mnras/179.3.433",

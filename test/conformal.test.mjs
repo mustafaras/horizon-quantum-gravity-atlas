@@ -302,7 +302,10 @@ test("the four worldlines of the atlas come from one call and stay inside the di
 test("coordinate lines are polylines of the same map, and constant t stays inside the light cone", () => {
   const { tLines, rLines } = sampleCoordinateLines("minkowski", { tValues: [-2, 0, 3], rValues: [0.5, 3], samples: 61 });
   assert.equal(tLines.length, 3);
-  assert.equal(rLines.length, 2);
+  // r is the signed spatial coordinate (ledger D-116), so a fixed radius is the PAIR of branches at +-r: four
+  // polylines for two radii, which is what makes the constant-r line the full hyperbola instead of half of one.
+  assert.equal(rLines.length, 4);
+  assert.deepEqual(rLines.map((l) => l.value), [0.5, -0.5, 3, -3]);
   for (const line of [...tLines, ...rLines]) {
     assert.ok(line.points.length >= 60, "each line is sampled");
     for (const p of line.points) assert.ok(Math.abs(p.T) + Math.abs(p.R) <= H + 1e-12, "inside the diamond");
@@ -311,6 +314,17 @@ test("coordinate lines are polylines of the same map, and constant t stays insid
   const [line] = tLines.filter((l) => l.value === 0);
   for (const p of line.points) close(p.T, 0, 1e-12, "the t = 0 slice is the horizontal axis");
   assert.deepEqual(sampleCoordinateLines("schwarzschild", { tValues: [0], rValues: [3, 5], samples: 41 }).rLines.map((l) => l.value), [3, 5]);
+  // a chart's coordinate lines stay inside that chart: regions II and IV have r < 2M, and a sweep that started just
+  // outside the horizon would draw their families in region I
+  for (const id of ["I", "II", "III", "IV"]) {
+    const interior = id === "II" || id === "IV";
+    const { tLines, rLines } = sampleCoordinateLines("schwarzschild", {
+      tValues: [0], rValues: [interior ? 1 : 4], region: id, samples: 41,
+    });
+    for (const line of [...tLines, ...rLines]) {
+      for (const p of line.points) assert.equal(schwarzschildRegionAt(p), id, `region ${id}'s ${line.kind} line stays in ${id}`);
+    }
+  }
   assert.throws(() => sampleCoordinateLines("reissner-nordstrom", {}), RangeError, "the schematic has no coordinate lines");
 });
 
@@ -362,9 +376,56 @@ test("the Reissner-Nordstrom block is a schematic: explicit polylines, all at 45
       }
     }
   }
-  // the singularity is timelike: a vertical line, where Schwarzschild's is horizontal
+  // the block is a chain of three regions along the axis, each one a closed null-edged polygon, and the horizons are
+  // the edges where consecutive regions meet: that is what makes the singularity timelike and r- a Cauchy horizon
+  const { inside, between, exterior } = RN_SCHEMATIC.polygons;
+  assert.equal(inside.length, 3, "0 < r < r- is a triangle against the singularity");
+  assert.equal(between.length, 4, "r- < r < r+ is a diamond between two crossings");
+  assert.equal(exterior.length, 4, "r > r+ is a diamond opening onto i0");
+  for (const [name, polygon] of [["inside", inside], ["between", between], ["exterior", exterior]]) {
+    for (let i = 0; i < polygon.length; i += 1) {
+      const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+      const dT = Math.abs(b.T - a.T), dR = Math.abs(b.R - a.R);
+      // the interior's last edge is the singularity itself, which is timelike: every OTHER edge is null
+      if (name === "inside" && i === polygon.length - 1) {
+        assert.ok(dT > 1e-12 && dR < 1e-12, "the singularity is the interior's timelike edge");
+        continue;
+      }
+      assert.ok(Math.abs(dT - dR) < 1e-12, `${name}'s edge ${i} is null: |dT| = ${dT}, |dR| = ${dR}`);
+    }
+  }
+  // the three regions share their crossings, so the block is continuous rather than three separate pictures
+  assert.ok(inside.some((p) => p.R === RN_SCHEMATIC.polygons.between[0].R), "the interior meets the middle at r-");
+  assert.ok(between.some((p) => p.R === exterior[0].R), "the middle meets the exterior at r+");
+  // and it spans the axis outward from the singularity, which is at R = 0
+  const alongAxis = [inside[0].R, between[2].R, exterior[2].R];
+  assert.deepEqual(alongAxis, [0, Math.max(...between.map((p) => p.R)), RN_SCHEMATIC.extent.R], "the chain runs out to i0");
+  // the singularity is timelike: a vertical line at fixed R, where Schwarzschild's is horizontal at fixed T
   const vertical = RN_SCHEMATIC.singularity[0];
-  assert.ok(vertical.every((p) => Math.abs(p.R - vertical[0].R) < 1e-12), "r = 0 is a vertical line here");
+  assert.ok(vertical.every((p) => Math.abs(p.R) < 1e-12), "r = 0 is the vertical line R = 0 here");
+  assert.ok(vertical[vertical.length - 1].T > vertical[0].T, "and it spans a range of T, which is what makes it timelike");
+  // the extent is derived from the drawn geometry, so a change to a corner cannot leave a label outside the frame
+  const all = [...RN_SCHEMATIC.singularity, ...RN_SCHEMATIC.innerHorizon, ...RN_SCHEMATIC.outerHorizon,
+    ...RN_SCHEMATIC.nullInfinity, ...Object.values(RN_SCHEMATIC.polygons)].flat().flat();
+  for (const p of all) {
+    assert.ok(Math.abs(p.T) <= RN_SCHEMATIC.extent.T + 1e-12, `T = ${p.T} inside the extent`);
+    assert.ok(Math.abs(p.R) <= RN_SCHEMATIC.extent.R + 1e-12, `R = ${p.R} inside the extent`);
+  }
+  // each region's anchor lies on the axis, between the crossings that bound it
+  const anchors = Object.fromEntries(RN_SCHEMATIC.regions.map((r) => [r.id, r.at]));
+  assert.ok(anchors.E.R > anchors.C.R && anchors.C.R > anchors.S.R, "the anchors run outward to inward in R");
+  // the block is symmetric about its timelike singularity: the drawn surfaces come in mirrored pairs, so the panel is
+  // centred on R = 0 rather than occupying only its right half
+  for (const key of ["innerHorizon", "outerHorizon", "nullInfinity"]) {
+    assert.equal(RN_SCHEMATIC[key].length % 2, 0, `${key} is drawn on both sides`);
+    const mirrorOf = (polyline) => polyline.map((p) => ({ T: p.T, R: -p.R }));
+    for (const polyline of RN_SCHEMATIC[key].slice(0, RN_SCHEMATIC[key].length / 2)) {
+      const mirrored = mirrorOf(polyline);
+      const found = RN_SCHEMATIC[key].some((candidate) => candidate.length === mirrored.length
+        && candidate.every((p, i) => Math.abs(p.T - mirrored[i].T) < 1e-12 && Math.abs(p.R - mirrored[i].R) < 1e-12));
+      assert.ok(found, `${key} has the mirror image of every polyline it draws`);
+    }
+  }
   const horizontal = schwarzschildBoundaries().find((b) => b.id === "s-singularity-future").points;
   assert.ok(horizontal.every((p) => Math.abs(p.T - H) < 1e-12), "and a horizontal one in Schwarzschild");
   // three regions, each with a name, an anchor and a meaning

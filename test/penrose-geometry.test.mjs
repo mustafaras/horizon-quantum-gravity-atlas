@@ -19,28 +19,39 @@ test("the layout places the three panels left to right, separated by the gap and
   assert.equal(panels.length, 3);
   assert.deepEqual(panels.map((p) => p.id), ["minkowski", "schwarzschild", "reissner-nordstrom"]);
   for (let i = 1; i < panels.length; i += 1) {
-    const previousEdge = panels[i - 1].cx + panels[i - 1].slot / 2;
-    const thisEdge = panels[i].cx - panels[i].slot / 2;
+    const previousEdge = panels[i - 1].cx + panels[i - 1].width / 2;
+    const thisEdge = panels[i].cx - panels[i].width / 2;
     close(thisEdge - previousEdge, PANEL_GAP, 1e-12, `the gap between ${panels[i - 1].id} and ${panels[i].id}`);
     assert.ok(panels[i].cx > panels[i - 1].cx, "panels run left to right");
-    // a narrow panel is centred in its own slot, so it cannot touch its neighbour
-    assert.ok(panels[i].width <= panels[i].slot + 1e-12, `${panels[i].id} fits its slot`);
   }
-  // the whole atlas is centred on the origin
-  close(panels[1].cx, 0, 1e-12, "the middle panel is centred at x = 0");
-  close(panels[0].cx + panels[2].cx, 0, 1e-12, "and the outer two are symmetric about it");
+  // the band is centred on the origin: the panels are not symmetric about it (their widths differ), but the atlas is
+  const left = panels[0].cx - panels[0].width / 2;
+  const right = panels[2].cx + panels[2].width / 2;
+  close(left + right, 0, 1e-12, "the drawn band is centred on the origin");
+  close(right - left, width, 1e-12, "and spans exactly the layout's width");
   close(width, 2 * halfWidth, 1e-12, "the width is twice the half width");
-  // each panel is as wide as its own diagram, and no wider
-  for (const panel of panels) close(panel.width, 2 * panel.halfWidth * DIAGRAM_SCALE, 1e-12, `${panel.id}'s width`);
+  // every panel is drawn at the same HEIGHT, which is what keeps the atlas inside a frame: the three diagrams are
+  // different shapes, so a common scale would make the band thirteen times wider than it is tall
+  for (const panel of panels) {
+    close(2 * panel.halfHeight, 2 * layout().halfHeight, 1e-12, `${panel.id} is drawn at the common height`);
+    close(panel.width, 2 * panel.halfWidth * panel.scale, 1e-12, `${panel.id}'s width follows its own scale`);
+    // the scale is uniform within a panel, so a null ray is still at 45 degrees on screen
+    const a = toScene(panel, { T: 0, R: 0 });
+    const b = toScene(panel, { T: 0.5, R: -0.5 });
+    close(Math.abs(b[0] - a[0]), Math.abs(b[2] - a[2]), 1e-12, `${panel.id}: a null step is the same length in x and z`);
+  }
+  // the tallest panel is drawn at the module's scale, and the atlas comes out a band a frame can hold
+  assert.ok(panels.some((p) => Math.abs(p.scale - DIAGRAM_SCALE) < 1e-12), "one panel is drawn at DIAGRAM_SCALE");
+  assert.ok(width / (2 * layout().halfHeight) < 8, "the atlas is not absurdly wide");
 });
 
 test("toScene sends R to the right and T up the screen, so a null ray stays at 45 degrees", () => {
   const { panels } = layout();
-  const [minkowski] = panels;
+  const minkowski = panels.find((p) => p.id === "minkowski");
   const a = toScene(minkowski, { T: 0, R: 0 });
   const b = toScene(minkowski, { T: 1, R: 1 });
-  close(b[0] - a[0], DIAGRAM_SCALE, 1e-12, "dR = 1 moves +x by the scale");
-  close(b[2] - a[2], -DIAGRAM_SCALE, 1e-12, "dT = 1 moves up the screen, which is -z");
+  close(b[0] - a[0], minkowski.scale, 1e-12, "dR = 1 moves +x by the scale");
+  close(b[2] - a[2], -minkowski.scale, 1e-12, "dT = 1 moves up the screen, which is -z");
   // the 45-degree property: for a null step, the two displacements are equal in magnitude
   close(Math.abs(b[0] - a[0]), Math.abs(b[2] - a[2]), 1e-12, "a null step is the same length in x and z");
   // a panel's own origin sits at its centre, on the ground plane
@@ -113,8 +124,8 @@ test("panelAtX finds the panel under a pointer and nothing in the gaps", () => {
   assert.equal(panelAtX(panels[0].cx, panels).id, "minkowski");
   assert.equal(panelAtX(panels[1].cx, panels).id, "schwarzschild");
   assert.equal(panelAtX(panels[2].cx, panels).id, "reissner-nordstrom");
-  // just outside a panel's slot, in the gap, there is no panel
-  const edge = panels[1].cx + panels[1].slot / 2;
+  // just outside a panel's own width, in the gap, there is no panel
+  const edge = panels[1].cx + panels[1].width / 2;
   assert.equal(panelAtX(edge + PANEL_GAP * 0.5, panels), null, "the gap between panels belongs to no diagram");
   assert.equal(panelAtX(1000, panels), null, "and neither does the space beyond the atlas");
 });
