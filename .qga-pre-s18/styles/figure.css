@@ -1,0 +1,94 @@
+/* Figure Kit (js/figure): title bar, plot box, KaTeX overlay, crosshair, summary, data table. */
+.fig { margin: 0; background: var(--surface-1); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.fig-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--rule); font-family: var(--font-mono); font-size: var(--step--2); }
+.fig-kicker { color: var(--ink-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+.fig-id { color: var(--ink-dim); }
+.fig-title { color: var(--ink); flex: 1 1 auto; min-width: 0; }
+.fig-plot { position: relative; outline: none; touch-action: pan-x pan-y; }
+.fig-plot:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.fig-canvas { display: block; }
+.fig-tex { position: absolute; inset: 0; pointer-events: none; font-family: var(--font-mono); }
+.fig-tex-item { position: absolute; white-space: nowrap; line-height: 1.2; }
+.fig-tex-item .katex { font-size: 1em; }
+.fig-cross { position: absolute; inset: 0; pointer-events: none; }
+.fig-cross-v { position: absolute; width: 1px; background: var(--ink-dim); opacity: 0.6; }
+.fig-cross-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 2px solid var(--ink-strong); background: var(--surface-0); }
+.fig-readout { min-height: 1.4em; padding: 2px 12px 0; font: var(--step--2) var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.fig-summary { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.fig-data { padding: 0 12px; }
+.fig-data > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--ink-dim); font: var(--step--2) var(--font-mono); }
+.fig-data > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fig-table-wrap { max-height: 260px; overflow: auto; margin-bottom: 10px; }
+.fig-table { border-collapse: collapse; width: 100%; font: var(--step--2) var(--font-mono); font-variant-numeric: tabular-nums; }
+.fig-table th, .fig-table td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--rule); }
+.fig-table th { position: sticky; top: 0; background: var(--surface-1); color: var(--ink-dim); font-weight: 500; }
+.fig-note { margin: 4px 0 8px; color: var(--ink-dim); font: var(--step--2) var(--font-mono); }
+.fig-caption { padding: 8px 12px 12px; border-top: 1px solid var(--rule); font-size: var(--step--1); color: var(--ink-dim); }
+.fig-live-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 2px solid var(--ink-strong); background: var(--ink-strong); pointer-events: none; }
+
+/* Provenance drawer (S11): the status chip of a caption opens the registry entry of its figure. */
+button.badge.prov-chip { position: relative; appearance: none; cursor: pointer; font-family: inherit; }
+button.badge.prov-chip::before { content: ""; position: absolute; inset: -14px -8px; }
+button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focus-visible, .prov-drawer:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prov-drawer { position: fixed; z-index: 320; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); overflow-y: auto; padding: 16px 18px 24px; background: var(--surface-2); color: var(--ink); border-left: 1px solid var(--rule-strong); font: var(--step--1) var(--font-mono); }
+.prov-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.prov-head-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.prov-id { color: var(--ink-dim); overflow-wrap: anywhere; }
+.prov-close { min-width: 44px; min-height: 44px; border: 1px solid var(--rule); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; font-size: 20px; }
+.prov-model { margin: 12px 0 4px; font-size: var(--step-0); font-weight: 600; color: var(--ink-strong); }
+.prov-section h4 { margin: 14px 0 4px; font-size: var(--step--2); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+.prov-section ul { margin: 0; padding-left: 18px; }
+.prov-section p { margin: 0; }
+.prov-link { margin-left: 8px; color: var(--accent); text-decoration: underline; display: inline-block; min-height: 24px; }
+.prov-layers { width: 100%; border-collapse: collapse; }
+.prov-layers th, .prov-layers td { padding: 5px 6px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.prov-class { display: inline-block; padding: 0 6px; margin-right: 4px; border: 1px solid var(--rule-strong); border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.prov-class-data { color: var(--accent-2); }
+.prov-class-model { color: var(--accent); }
+.prov-class-decoration { color: var(--ink-dim); }
+@media (prefers-reduced-motion: no-preference) { .prov-drawer { animation: prov-in var(--dur-quick) var(--ease-out-quart); } }
+@keyframes prov-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Neutrino lab (S12): the delta_CP dial, the control rows and the readouts. */
+.nu-bar, .hg-bar, .lt-bar, .cv-bar { gap: 10px; }
+.btn.nu-btn, .btn.hg-btn, .btn.lt-btn, .btn.cv-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
+.nu-btn .katex { font-size: 1em; }
+.nu-controls, .hg-controls, .lt-controls, .cv-controls { align-items: flex-start; }
+.nu-sliders, .hg-sliders, .lt-sliders, .cv-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.nu-dial-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nu-dial { width: 132px; height: 132px; cursor: pointer; touch-action: none; border-radius: 50%; }
+.nu-dial:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.nu-dial-ring { fill: none; stroke: var(--ink-faint); stroke-width: 1; }
+.nu-dial-tick { stroke: var(--ink-dim); stroke-width: 0.8; }
+.nu-dial-tick.major { stroke: var(--ink); stroke-width: 1.2; }
+.nu-dial-label { fill: var(--ink-dim); font: 8px var(--font-mono); }
+.nu-dial-band { fill: none; stroke: var(--accent-2); stroke-width: 3; opacity: 0.55; }
+.nu-dial-hand { stroke: var(--accent); stroke-width: 1.4; }
+.nu-dial-knob { fill: var(--surface-2); stroke: var(--accent); stroke-width: 2; }
+.nu-dial-readout { font: var(--step--1) var(--font-mono); color: var(--ink); }
+.nu-readouts, .hg-readouts, .lt-readouts, .cv-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
+.nu-cards, .hg-cards, .lt-cards, .cv-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
+.lt-readouts .lt-note { flex: 1 1 100%; margin: 0; }
+.lt-note, .cv-note { margin: 4px 14px; font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+.cv-btn .katex { font-size: 1em; }
+.cv-sums { border-top: 1px solid var(--rule); }
+
+/* Unification lab (S17): toggles, the coupling selector, the two ranges and the readouts. */
+.ug-bar { gap: 10px; flex-wrap: wrap; }
+.btn.ug-btn { min-height: 44px; min-width: 44px; text-transform: none; letter-spacing: 0.04em; }
+.ug-btn .katex, .ug-readouts .readout-label .katex, .ug-range .ctl-label .katex { font-size: 1em; text-transform: none; }
+.ug-btn.on { border-color: var(--accent); color: var(--ink-strong); }
+.ug-focus { display: flex; gap: 6px; flex-wrap: wrap; }
+.ug-group { margin-left: 6px; font: var(--step--2) var(--font-mono); color: var(--ink-dim); }
+.ug-controls { align-items: flex-start; }
+.ug-sliders { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.ug-range input[type="range"] { height: 44px; flex: 1 1 140px; min-width: 0; background: transparent; }
+.ug-range input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.ug-range input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
+.ug-range input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
+.ug-range.off { opacity: 0.45; }
+.ug-readouts { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); }
+.ug-readouts .readout { flex: 1 1 200px; }
+.ug-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
+.ug-fig-note { font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+.cv-readouts .readout-label .katex { text-transform: none; }

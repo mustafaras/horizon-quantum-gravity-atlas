@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HORIZON — Quantum Gravity Atlas</title>
+<meta name="description" content="Interactive scientific atlas of quantum gravity with WebGL black-hole thermodynamics, QFT scattering, spacetime curvature, holography, and experimental constraints.">
+<meta name="author" content="Mustafa Ras">
+<meta name="robots" content="index,follow">
+<meta name="application-name" content="HORIZON">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HORIZON">
+<link rel="canonical" href="https://mustafaras.github.io/horizon-quantum-gravity-atlas/">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="./docs/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./docs/icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./docs/icons/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#05080f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HORIZON">
+<meta property="og:url" content="https://mustafaras.github.io/horizon-quantum-gravity-atlas/">
+<meta property="og:title" content="HORIZON — Quantum Gravity Atlas">
+<meta property="og:description" content="A cinematic, equation-aware scientific atlas from quantum fields to dynamical spacetime.">
+<meta property="og:image" content="https://mustafaras.github.io/horizon-quantum-gravity-atlas/docs/social/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HORIZON Quantum Gravity Atlas social preview with black-hole accretion disk, scientific badges, and field equations.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HORIZON — Quantum Gravity Atlas">
+<meta name="twitter:description" content="Interactive scientific atlas of quantum gravity, black holes, QFT, spacetime curvature, holography, and experimental constraints.">
+<meta name="twitter:image" content="https://mustafaras.github.io/horizon-quantum-gravity-atlas/docs/social/og-image.png">
+<meta name="twitter:image:alt" content="HORIZON Quantum Gravity Atlas social preview with black-hole accretion disk, scientific badges, and field equations.">
+<!-- All third-party assets are self-hosted under vendor/ for archival stability. -->
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+/* Critical first-paint guard (<4 KB): the dark canvas, no scrollbars, the full-height root.
+   Everything else is in styles/*.css, linked below in original cascade order. */
+html, body { margin: 0; padding: 0; height: 100%; }
+body { background: var(--surface-0); color: var(--ink); overflow: hidden; }
+#root { height: 100vh; }
+</style>
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/modules/kerr.css">
+<link rel="stylesheet" href="styles/modules/gw.css">
+<link rel="stylesheet" href="styles/modules/qft.css">
+<link rel="stylesheet" href="styles/modules/standard-model.css">
+<link rel="stylesheet" href="styles/modules/reference.css">
+<link rel="stylesheet" href="styles/components-scene.css">
+<link rel="stylesheet" href="styles/shell.css">
+<link rel="stylesheet" href="styles/modules/causal.css">
+<link rel="stylesheet" href="styles/modules/overview.css">
+<link rel="stylesheet" href="styles/modules/workbench.css">
+<link rel="stylesheet" href="styles/modules/cinematic.css">
+<link rel="stylesheet" href="styles/rg-flow.css">
+<link rel="stylesheet" href="styles/figure.css">
+</head>
+<body>
+<div id="root"></div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/webgpu": "./vendor/three/build/three.webgpu.js",
+    "three/tsl": "./vendor/three/build/three.tsl.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+<script src="vendor/react/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="vendor/react/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="vendor/babel/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="application/x-qga-jsx" src="tweaks-panel.jsx"></script>
+<script type="application/x-qga-jsx" src="js/physics.jsx"></script>
+<script type="application/x-qga-jsx" src="js/state.jsx"></script>
+<script type="application/x-qga-jsx" src="js/state-runtime.jsx"></script>
+<script type="application/x-qga-jsx" src="js/core.jsx"></script>
+<script type="application/x-qga-jsx" src="js/figure/katex-overlay.jsx"></script>
+<script type="application/x-qga-jsx" src="js/figure/Figure.jsx"></script>
+<script type="application/x-qga-jsx" src="js/scene3d.jsx"></script>
+<script type="application/x-qga-jsx" src="js/search/command-palette.jsx"></script>
+<script type="application/x-qga-jsx" src="js/compare/compare-view.jsx"></script>
+<script type="application/x-qga-jsx" src="js/snapshots/snapshot-panel.jsx"></script>
+<script type="application/x-qga-jsx" src="js/annotations/annotation-layer.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/ads-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/collider-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/lens-cards.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/provenance-drawer.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/neutrino-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/higgs-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/null-geodesic-panel.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/field-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/amplitude-room.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/lattice-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/qft-compute-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/casimir-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/feynman-diagram.jsx"></script>
+<script type="application/x-qga-jsx" src="js/labs/unification-lab.jsx"></script>
+<script type="application/x-qga-jsx" src="js/atlas-stage.jsx"></script>
+<script type="application/x-qga-jsx" src="js/data.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-standard-model.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-qft.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-gauge-rg.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-rg-stage3.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-gr.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-planck.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-approaches.jsx"></script>
+<script type="application/x-qga-jsx" src="js/visualizations/kerr/kerr-controls.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-blackholes.jsx"></script>
+<script type="application/x-qga-jsx" src="js/mod-experiments.jsx"></script>
+<script type="application/x-qga-jsx" src="js/extras.jsx"></script>
+<script type="application/x-qga-jsx" src="js/app.jsx"></script>
+<script type="module" src="js/bootstrap.mjs"></script>
+</body>
+</html>

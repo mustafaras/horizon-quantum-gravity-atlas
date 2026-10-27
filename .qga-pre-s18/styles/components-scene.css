@@ -1,0 +1,169 @@
+/* styles/components-scene.css — Feynman builder, inline term, scale ladder, 3D stage, bridges, focus, print.
+   Extracted verbatim from index.html (S02); stylesheets are linked in original cascade order. */
+/* ---------- Feynman builder ---------- */
+.fey-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+select {
+  background: var(--panel-solid); color: var(--head); border: 1px solid var(--line-strong);
+  border-radius: 7px; font-family: var(--font-mono); font-size: 12.5px; padding: 7px 10px; outline: none; cursor: pointer;
+}
+select:focus { border-color: var(--acc); }
+.fey-verdict { font-size: 13px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); margin-top: 12px; }
+.fey-verdict.ok { border-color: oklch(0.78 0.1 160 / 0.4); background: oklch(0.78 0.1 160 / 0.06); }
+.fey-verdict.bad { border-color: oklch(0.8 0.1 85 / 0.4); background: oklch(0.8 0.1 85 / 0.05); }
+
+/* Diagrams (S16): feynman-svg.mjs draws the lines; the labels are KaTeX spans positioned over the SVG in percent of its viewBox. */
+.fey-diagram-set { display: grid; gap: 12px; }
+.fey-diagram-pair { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.fey-diagram-fig { margin: 0; min-width: 0; }
+.fey-diagram-cap { font: var(--step--2) var(--font-mono); letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 4px; }
+.fey-legend { margin-top: 10px; }
+.fey-legend summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font: var(--step--2) var(--font-mono); letter-spacing: 0.08em; color: var(--text-dim); }
+.fey-legend summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fey-diagram { position: relative; }
+.fey-diagram svg { display: block; width: 100%; height: auto; }
+.fey-tex-layer { position: absolute; inset: 0; pointer-events: none; }
+.fey-tex { position: absolute; white-space: nowrap; line-height: 1; font-size: var(--step-0); color: var(--head); }
+.fey-tex-momentum { font-size: var(--step--1); color: var(--text-dim); }
+
+/* ---------- Inline term ---------- */
+.term { border-bottom: 1px dashed rgba(148,176,224,0.45); cursor: help; }
+
+/* ---------- Scale ladder ---------- */
+.ladder-stops { display: flex; flex-direction: column; gap: 2px; }
+.ladder-stop { display: flex; gap: 12px; align-items: baseline; padding: 7px 10px; border-radius: 7px; border: 1px solid transparent; transition: all 0.2s; }
+.ladder-stop.on { border-color: var(--line-strong); background: rgba(148,176,224,0.06); }
+.ladder-stop .ls-len { font-family: var(--font-mono); font-size: 11px; color: var(--cyan); flex: 0 0 84px; }
+.ladder-stop .ls-name { font-size: 13px; color: var(--text); }
+.ladder-stop.on .ls-name { color: var(--head); }
+
+/* ---------- 3D scene stage ---------- */
+.s3d-stage { position: relative; width: 100%; outline: none; background: radial-gradient(120% 100% at 50% 0%, rgba(20,30,52,0.5), rgba(5,8,14,0.9)); overflow: hidden; }
+.s3d-stage:focus-visible { box-shadow: inset 0 0 0 2px var(--acc); }
+.s3d-canvas { display: block; width: 100%; height: 100%; }
+.s3d-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.s3d-label {
+  position: absolute; top: 0; left: 0; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em;
+  color: #dde6f5; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7);
+  padding: 2px 7px; border-radius: 5px; background: rgba(7,11,19,0.55);
+  border: 1px solid rgba(148,176,224,0.18); backdrop-filter: blur(3px);
+  will-change: transform;
+}
+.s3d-label.s3d-strong { font-family: var(--font-head); font-size: 12.5px; font-weight: 600; color: var(--head); }
+.s3d-label.s3d-quiet { background: none; border: none; color: rgba(170,195,230,0.75); }
+.s3d-annot { color: var(--gold); border-color: oklch(0.8 0.1 85 / 0.3); }
+/* Formula Lens (S10): a label the focused term points at, and the key of a painted field. Static: nothing animates. */
+/* The label layer and the canvas are both z-index: auto and the canvas comes later, so lens items need their own level to sit over opaque pixels. */
+.s3d-label.s3d-lens-on, .s3d-label.s3d-lens-note { z-index: 2; }
+.s3d-label.s3d-lens-on { color: var(--ink-strong); border-color: var(--ink-strong); box-shadow: 0 0 0 1px var(--ink-strong); }
+.term-lens-legend {
+  position: absolute; z-index: 2; left: 12px; bottom: 32px; display: grid; gap: 6px; max-width: min(260px, 70%); padding: 10px 12px;
+  background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; pointer-events: none;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+}
+.term-lens-legend[hidden] { display: none; }
+.term-lens-legend-eq { color: var(--ink-strong); overflow: hidden; }
+.term-lens-legend-body { display: flex; gap: 8px; height: 64px; }
+.term-lens-legend-bar { width: 12px; height: 100%; border-radius: 3px; }
+.term-lens-legend-scale { display: flex; flex-direction: column; justify-content: space-between; color: var(--ink-strong); }
+.term-lens-legend-note { color: var(--gold); }
+.s3d-hud {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  display: flex; gap: 6px;
+}
+.s3d-hud-btn {
+  width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+  background: rgba(10,15,25,0.72); color: var(--text); border: 1px solid var(--line-strong);
+  font-size: 12px; line-height: 1; backdrop-filter: blur(6px);
+  transition: border-color 0.15s, color 0.15s;
+}
+.s3d-hud-btn:hover, .s3d-hud-btn:focus-visible { border-color: var(--acc); color: var(--head); }
+.s3d-hint {
+  position: absolute; left: 12px; bottom: 10px; z-index: 5; pointer-events: none;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(148,176,224,0.78);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.6);
+}
+.s3d-fallback { padding: 0; }
+.s3d-fallback-note { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.s3d-legend {
+  position: absolute; left: 12px; top: 10px; z-index: 5; pointer-events: none;
+  display: flex; flex-direction: column; gap: 4px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.05em;
+}
+.s3d-legend .pt-legend-item { pointer-events: none; }
+
+/* ---------- selection readout under 3D scenes ---------- */
+.s3d-detail { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; padding: 12px 14px; border-top: 1px solid var(--line); font-size: 13px; }
+.s3d-detail b { font-family: var(--font-head); color: var(--head); font-weight: 600; }
+
+/* ---------- concept bridges ---------- */
+.bridge {
+  margin-top: 44px; border: 1px solid var(--line-strong); border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--acc-soft), rgba(7,10,17,0.6));
+  padding: 18px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  justify-content: space-between;
+}
+.bridge-text { flex: 1 1 380px; }
+.bridge-kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--acc); margin-bottom: 5px; }
+.bridge-text p { font-size: 13.5px; margin: 0; }
+.bridge-go {
+  font-family: var(--font-head); font-size: 13.5px; font-weight: 600;
+  background: rgba(148,176,224,0.08); color: var(--head); border: 1px solid var(--line-strong);
+  border-radius: 8px; padding: 11px 18px; cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.bridge-go:hover, .bridge-go:focus-visible { border-color: var(--acc); background: var(--acc-soft); }
+
+/* ---------- pathway selector ---------- */
+.pathway-box { margin: 14px 8px 0 8px; padding: 12px 0 0 0; border-top: 1px solid var(--line); }
+.pathway-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+.pathway-seg { display: flex; border: 1px solid var(--line-strong); border-radius: 7px; overflow: hidden; }
+.pathway-seg button {
+  flex: 1; background: none; border: none; cursor: pointer; padding: 7px 2px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-dim); transition: background 0.15s, color 0.15s;
+}
+.pathway-seg button + button { border-left: 1px solid var(--line); }
+.pathway-seg button.on { background: var(--acc-soft); color: var(--head); }
+
+/* ---------- status legend ---------- */
+.status-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.status-legend-item { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--text-dim); }
+
+/* ---------- glossary related chips ---------- */
+.gloss-related { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.gloss-chip {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  background: rgba(148,176,224,0.06); color: var(--cyan); border: 1px solid var(--line);
+  border-radius: 99px; padding: 3px 10px; cursor: pointer; transition: border-color 0.15s;
+}
+.gloss-chip:hover, .gloss-chip:focus-visible { border-color: var(--cyan); }
+
+/* ---------- module enter transition ---------- */
+/* Transform-only entrance: paused/hidden state never hides content (no blank screen). */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion="balanced"] .content-inner, html[data-motion="full"] .content-inner {
+    animation: qgaModuleIn 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+@keyframes qgaModuleIn {
+  from { transform: translateY(22px) scale(0.992); }
+  to { transform: none; }
+}
+
+/* ---------- focus visibility ---------- */
+.nav-item:focus-visible, .btn:focus-visible, .fc-head:focus-visible, .gloss-head:focus-visible,
+.pt-cell:focus-visible, .gauge-sector:focus-visible, .menu-btn:focus-visible, .bridge-go:focus-visible {
+  outline: 2px solid var(--acc); outline-offset: 1px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(148,176,224,0.16); border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media print {
+  body { overflow: visible; }
+  .sidebar, .topbar, .starfield-canvas, .atlas-stage, .horizon-intro { display: none; }
+}
+

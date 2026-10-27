@@ -2789,6 +2789,13 @@
       "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "event": "done",
       "detail": "PR 88 merged as 77c7cf4; Validate (21 s) and Browser QA (15 m 42 s) both green on the last commit. F-14 was already closed by S17 (D-104) and stays closed: this prompt supplied its second half, the computed fixed point instead of a toy. Still open and not closable here: the plan's attribution of the numbers to Litim (D-105, both schemes are printed instead); the silk's low detail tier uses L = 16 where the plan named only 24 and 40; the plan's lambda domain stopped at 0.49 and cut through the singular line it asked to draw (D-106)."
+    },
+    {
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
+      "event": "follow-up",
+      "detail": "Local visual regression measured twice: this branch fails 27 of 46 captures, and a clean extract of d387f79 (the commit before S18) fails the same 27 with the same pixel counts (symbols-atlas 16090 px, whitepaper 16243 px, bh-kerr-hero 43202 px, rg-flow-landscape-qcd 1476->1612 px in both), so the drift is this machine's, not S18's. The two S18 captures pass their own baselines: rg-gravity-flow and rg-gravity-flow-mobile, 2/2. Two captures that S18 does change were not refreshed, because refreshing them here would bake in the local drift rather than the new content: rg-flow-field-3d grows 809 -> 925 px (the model selector row and the longer section paragraph; on clean main it was already 809 -> 806) and rg-flow-landscape-mobile-toy grows 7800 -> 7968 px (the renamed preset's longer note, D-110). Both are recorded rather than blessed, and both remain red locally before and after. Also corrected: README still named the old preset in four places after the rename; the earlier S18 done-ledger commit also went straight to main instead of through a PR, which this follow-up branch restores as the pattern."
     }
   ]
 }

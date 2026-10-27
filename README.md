@@ -293,16 +293,16 @@ No screenshot should imply that conjectural physics is experimentally observed.
 </tr>
 <tr>
 <td width="50%">
-<img src="docs/screenshots/19-rg-flow-landscape-mobile.png" alt="Mobile RG Flow Landscape with stacked documented presets, 44-pixel controls, scrollable scale plot, and conjectural asymptotic-safety-style toy disclosure" width="100%" />
+<img src="docs/screenshots/19-rg-flow-landscape-mobile.png" alt="Mobile RG Flow Landscape with stacked documented presets, 44-pixel controls, scrollable scale plot, and the conjectural pedagogical toy disclosure" width="100%" />
 <br/>
-<sub><strong>Mobile RG instrument</strong> — documented presets and controls retain 44 px targets; the wide scale graph scrolls inside its panel, while the asymptotic-safety-style preset remains explicitly conjectural and illustrative.</sub>
+<sub><strong>Mobile RG instrument</strong> — documented presets and controls retain 44 px targets; the wide scale graph scrolls inside its panel, while the polynomial preset is labelled a pedagogical toy and the computed asymptotic-safety lab sits below it as a separate, conjectural figure.</sub>
 </td>
 <td width="50%">
 <strong>RG screenshot state</strong>
 <br/><br/>
 Desktop: one-loop QCD with five active flavours.
 <br/><br/>
-Mobile: asymptotic-safety-style polynomial toy.
+Mobile: the pedagogical polynomial toy (the old "asymptotic-safety style" preset, same id).
 <br/><br/>
 The paired captures deliberately keep perturbative and conjectural layers visually and textually distinct.
 </td>
@@ -1303,7 +1303,7 @@ The QFT **Amplitude Room** is a live 2 → 2 scattering bench. It evaluates the 
 
 The GR **Causal Spacetime Laboratory** is an exact 1+1D special-relativistic instrument using diagram units `c = 1 light-second per second` and metric signature `(−,+,+,+)`. It evaluates `Δs² = −(Δct)² + Δx²`, `γ`, the Lorentz-transformed event pair, causal-order verdicts, simultaneity-frame β, and timelike proper time from the pure helpers in `js/physics.mjs` and the browser mirror in `js/physics.jsx`. Five documented presets cover timelike, spacelike, null, relativity-of-simultaneity, and twin-style piecewise-inertial examples. The twin path uses two inertial legs and an explicitly schematic instantaneous turnaround; it does not model acceleration. Exact readouts always use the target β, while eased boosted axes and A′/B′ ghosts are presentation only. URL keys `grp`, `grb`, `grat`, `grax`, `grbt`, and `grbx` restore the preset, frame, and two events. β is restricted to `[-0.95, 0.95]`, coordinates to `[-4, 4]`, and invalid or out-of-range URL values fall back to the documented defaults. JSON export records the flat-spacetime model, established-special-relativity status, dimensionality, conventions, scope, implementation files, and standard references. The interval-classification, residual, and β-bound captions in the readout deck are typeset with KaTeX, with the interval sign built from the live computed value.
 
-The **RG Flow Landscape** records preset (`rgp`), originating preset (`rgpo`), model (`rgm`), initial coupling (`rgg`), reference scale (`rgmu`), logarithmic bounds (`rglo`, `rghi`), flavour count (`rgnf`), toy coefficients (`rga`, `rgb`, `rggs`), and current scale (`rgc`). Editing any control sets `rgp=custom` while `rgpo` retains the preset being edited, so **Reset preset** returns to that preset rather than an unrelated default; when `rgpo` is absent or incompatible with the model it is derived deterministically, keeping older links valid. Scientific status follows the active model and originating preset rather than the literal preset, so a customised asymptotic-safety-style flow keeps its conjectural badge and caveat. Ranges are validated on load; incompatible preset/model pairs resolve to the documented preset model, QED is clamped to `rgnf >= 1`, and invalid narrow ranges revert to the QCD defaults. Back/forward restores the complete instrument. The export adds the β convention, model parameters, fixed points, RK4 method and step, numerical/root tolerances, IR and UV termination status, validity disclosures, implementation provenance, and standard references.
+The **RG Flow Landscape** records preset (`rgp`), originating preset (`rgpo`), model (`rgm`), initial coupling (`rgg`), reference scale (`rgmu`), logarithmic bounds (`rglo`, `rghi`), flavour count (`rgnf`), toy coefficients (`rga`, `rgb`, `rggs`), and current scale (`rgc`). Editing any control sets `rgp=custom` while `rgpo` retains the preset being edited, so **Reset preset** returns to that preset rather than an unrelated default; when `rgpo` is absent or incompatible with the model it is derived deterministically, keeping older links valid. Scientific status follows the active model and originating preset rather than the literal preset, so a customised toy flow keeps its conjectural badge and caveat. Ranges are validated on load; incompatible preset/model pairs resolve to the documented preset model, QED is clamped to `rgnf >= 1`, and invalid narrow ranges revert to the QCD defaults. Back/forward restores the complete instrument. The export adds the β convention, model parameters, fixed points, RK4 method and step, numerical/root tolerances, IR and UV termination status, validity disclosures, implementation provenance, and standard references.
 
 Curve morphing lasts a bounded 520 ms and then writes the exact target geometry. The flow tracer and current-point pulse each run once. Under `prefers-reduced-motion: reduce`, the trajectory snaps directly to the final points and all decorative motion remains static; no scientific state or control depends on animation.
 
@@ -1372,7 +1372,7 @@ The screenshot set emphasizes visual and animated modules:
 | `16-causal-spacetime-lab.png` | `gr` | causal laboratory at `?view=gr&grp=simultaneity&grb=0.4&grat=-0.8&grax=-2.4&grbt=0.8&grbx=1.6`, 1440 × 1200 |
 | `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
 | `18-rg-flow-landscape.png` | `rg` | QCD preset at `?view=rg&rgp=qcd`, 1440 × 1200 |
-| `19-rg-flow-landscape-mobile.png` | `rg` | asymptotic-safety-style toy at `?view=rg&rgp=asymptotic-safety&rgm=asymptotic-safety&rgg=0.3&rgmu=0&rglo=-4&rghi=5&rgnf=0&rga=0.9&rgb=0.9&rgc=4`, 390 × 844 |
+| `19-rg-flow-landscape-mobile.png` | `rg` | pedagogical toy at `?view=rg&rgp=asymptotic-safety&rgm=asymptotic-safety&rgg=0.3&rgmu=0&rglo=-4&rghi=5&rgnf=0&rga=0.9&rgb=0.9&rgc=4`, 390 × 844 |
 | `44-rg-gravity-flow.png` | `rg` | Einstein–Hilbert flow silk, trajectory figure, readouts and scheme table at `?view=rg&seed=42`, 1440 × 2500 |
 | `45-rg-gravity-flow-mobile.png` | `rg` | the same lab in one column at `?view=rg&seed=42`, 390 × 3200 |
 | `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |

@@ -1,0 +1,48 @@
+{
+  "name": "horizon-quantum-gravity-atlas",
+  "version": "1.1.0",
+  "description": "An interactive, scientifically rigorous atlas of quantum gravity — live simulations and cinematic 3D scenes from the Standard Model to the Planck frontier.",
+  "homepage": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mustafaras/horizon-quantum-gravity-atlas.git"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "dev": "npx --yes serve .",
+    "serve": "python3 -m http.server 8000",
+    "test": "node --test test/*.test.mjs",
+    "validate": "node scripts/validate-repo.mjs && node scripts/audit-provenance.mjs",
+    "check": "npm run validate",
+    "benchmark:kerr": "node scripts/benchmark-kerr.mjs",
+    "perf:collect": "node scripts/perf/collect.mjs",
+    "perf:audit": "node scripts/perf/static-audit.mjs",
+    "qa:verify": "node qa/verify-manifest.mjs",
+    "qa:capture": "node qa/capture.mjs",
+    "qa:update": "node qa/capture.mjs --update",
+    "qa:test": "playwright test --config qa/playwright.config.mjs",
+    "qa:critical": "playwright test --config qa/playwright.config.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs qa/specs/render-contracts.spec.mjs",
+    "qa:test:live": "QGA_QA_LIVE=1 playwright test --config qa/playwright.config.mjs qa/specs/live.spec.mjs"
+  },
+  "keywords": [
+    "physics",
+    "quantum-gravity",
+    "quantum-field-theory",
+    "general-relativity",
+    "standard-model",
+    "visualization",
+    "threejs",
+    "webgl",
+    "education",
+    "interactive"
+  ],
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.0"
+  }
+}
