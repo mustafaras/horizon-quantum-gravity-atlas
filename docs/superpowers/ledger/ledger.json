@@ -1160,7 +1160,7 @@
       "status": "review",
       "owner": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "branch": "claude/s19-gr-penrose-atlas",
-      "pr": "pending",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/91",
       "commits": [],
       "startedAt": "2026-10-27",
       "completedAt": null,
