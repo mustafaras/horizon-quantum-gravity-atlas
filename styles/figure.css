@@ -91,4 +91,17 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .ug-readouts .readout { flex: 1 1 200px; }
 .ug-cards { display: grid; gap: 14px; padding: 14px; border-top: 1px solid var(--rule); }
 .ug-fig-note { font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+
+/* Gravity flow lab (S18): the trajectory presets, the two start ranges, the readouts and the scheme table. */
+.gf-lab .ug-readouts .readout-label .katex { text-transform: none; }
+.gf-lab .ug-readouts .readout-value { line-height: 1.35; }
+.gf-lab .ug-sliders { gap: 6px; }
+.gf-schemes { padding: 12px 14px 14px; border-top: 1px solid var(--rule); overflow-x: auto; }
+.gf-schemes .fig-table caption { text-align: left; padding: 0 0 6px; font: var(--step--2) var(--font-mono); color: var(--ink-dim); }
+.gf-schemes .fig-table th { text-align: left; }
+.gf-schemes .fig-table td { text-align: right; }
+.gf-fig-note { display: block; margin: 4px 0 0; font: var(--step--1) var(--font-mono); color: var(--ink-dim); }
+/* The status label of the silk is longer than the stage at phone width: let it wrap inside the frame instead of being clipped by the canvas. */
+.gf-lab .s3d-label { max-width: calc(100% - 20px); white-space: normal; text-align: center; line-height: 1.35; }
+.gf-lab .gf-silk-status { position: absolute; left: 10px; top: 10px; z-index: 2; max-width: calc(100% - 20px); text-align: left; }
 .cv-readouts .readout-label .katex { text-transform: none; }

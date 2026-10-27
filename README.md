@@ -482,7 +482,7 @@ It is deliberately conservative: strong visuals are not allowed to upgrade the e
 |---|---|---|---|
 | Standard Model | particle architecture and interaction map | Established physics | gravity is explicitly outside the Standard Model gauge group |
 | Quantum Field Theory | field excitation and scattering laboratory | Established / Effective theory | diagrams are perturbative terms, not literal particle movies |
-| Gauge Symmetry and RG Flow | local symmetry, running couplings, phase lines, and fixed points | Established / Effective / Schematic / Conjectural | one-loop QED/QCD, two-loop Standard-Model gauge couplings with the MSSM as a conjectural variant, numerical integration, teaching toys, and asymptotic-safety-style illustration are separately labeled |
+| Gauge Symmetry and RG Flow | local symmetry, running couplings, phase lines, and fixed points | Established / Effective / Schematic / Conjectural | one-loop QED/QCD, two-loop Standard-Model gauge couplings with the MSSM as a conjectural variant, the Einstein–Hilbert flow of asymptotic safety with its two schemes, numerical integration, and teaching toys are separately labeled |
 | General Relativity | curvature, geodesics, lensing, gravitational waves | Established physics | rubber-sheet scenes are spatial slices, not full spacetime |
 | Planck Frontier | scale ladder and Planck foam rendering | Schematic / Open problem | Planck-scale structure is not presented as observed |
 | Theory Comparator | string theory, LQG, asymptotic safety, EFT, holography | Conjectural / Effective theory | no candidate program is ranked as experimentally confirmed |
@@ -715,13 +715,13 @@ With $t=\ln\mu$ increasing toward the ultraviolet, $\beta'(g_*)<0$ is UV-attract
 
 The live trajectory is integrated in both directions from $\mu_0$ by deterministic fixed-step fourth-order Runge-Kutta with $\Delta\ln\mu=0.02$. Non-finite stages, iteration limits, and the coupling boundary terminate explicitly. Analytic roots are cross-checked by a bounded bisection scan at tolerance $10^{-9}$.
 
-The Gaussian, UV-attractive, and IR-attractive presets are pedagogical one-coupling systems. The asymptotic-safety-style polynomial
+The Gaussian, UV-attractive, and IR-attractive presets are pedagogical one-coupling systems, and the polynomial preset
 
 ```math
 \beta(g)=a g-b g^3
 ```
 
-is an explicitly conjectural illustration whose interacting UV fixed point is built into the chosen toy function. It is not evidence for quantum-gravity asymptotic safety.
+is labelled a pedagogical toy whose interacting UV fixed point is built into the chosen coefficients. The asymptotic-safety lab below the landscape does not take a fixed point on trust: it integrates the Einstein–Hilbert beta functions of the dimensionless Newton coupling and cosmological constant with two published cutoffs, finds the Gaussian and the non-Gaussian fixed point by Newton iteration, and prints the critical exponents the equations give.
 
 Gravity differs because Newton's constant has mass dimension $-2$ in four dimensions:
 
@@ -1373,6 +1373,8 @@ The screenshot set emphasizes visual and animated modules:
 | `17-causal-spacetime-lab-mobile.png` | `gr` | null-separation causal laboratory at `?view=gr&grp=null&grb=-0.55&grat=-2&grax=-2&grbt=2&grbx=2`, 390 × 844 |
 | `18-rg-flow-landscape.png` | `rg` | QCD preset at `?view=rg&rgp=qcd`, 1440 × 1200 |
 | `19-rg-flow-landscape-mobile.png` | `rg` | asymptotic-safety-style toy at `?view=rg&rgp=asymptotic-safety&rgm=asymptotic-safety&rgg=0.3&rgmu=0&rglo=-4&rghi=5&rgnf=0&rga=0.9&rgb=0.9&rgc=4`, 390 × 844 |
+| `44-rg-gravity-flow.png` | `rg` | Einstein–Hilbert flow silk, trajectory figure, readouts and scheme table at `?view=rg&seed=42`, 1440 × 2500 |
+| `45-rg-gravity-flow-mobile.png` | `rg` | the same lab in one column at `?view=rg&seed=42`, 390 × 3200 |
 | `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |
 | `26-collider-event-lab.png` | `sm` | synthetic collider lab at `?view=sm&clc=h2gg&seed=42`: tracks, towers, jets, missing energy |
 | `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges |
@@ -1432,7 +1434,9 @@ It shows how renormalization turns scale into a physical variable.
 
 Its RG Flow Landscape integrates $dg/d\ln\mu=\beta(g)$ deterministically in both directions from a reference scale and displays the coupling trajectory beside the generating beta function.
 
-The QED and QCD presets are one-loop perturbative results with explicit Landau-pole and infrared strong-coupling caveats. The Gaussian and linear fixed-point systems are pedagogical. The asymptotic-safety-style polynomial is conjectural and illustrative, not evidence for a gravitational ultraviolet fixed point.
+The QED and QCD presets are one-loop perturbative results with explicit Landau-pole and infrared strong-coupling caveats. The Gaussian and linear fixed-point systems are pedagogical, and the polynomial preset is labelled a pedagogical toy: its ultraviolet fixed point is built into its coefficients.
+
+The asymptotic-safety lab computes instead of illustrating. It integrates the beta functions of the dimensionless Newton coupling $g$ and cosmological constant $\lambda$ in the Einstein–Hilbert truncation, from Reuter & Saueressig (2012) with the optimised cutoff and from Litim (2004) in harmonic gauge, and finds $g_* = 0.7073$, $\lambda_* = 0.1932$ with $\theta = 1.475 \pm 3.043\,i$ in the first scheme and different exponents in the second. The flow is drawn as a line-integral convolution of its direction, with rings at the two fixed points, the separatrix between them, the singular line $\lambda = \tfrac12$, and the trajectory through a chosen start as the one focal line; the couplings along that trajectory are plotted against $\ln k$ and classified Type Ia, IIa or IIIa by their infrared fate. This is a truncation of an infinite tower, so its numbers move with the cutoff and the gauge — a conjectural framework, not evidence that gravity possesses such a fixed point.
 
 Analytic fixed points, numerical roots, derivatives, stability labels, current substitutions, method/step/tolerance diagnostics, and validity termination are shown live.
 
@@ -1716,6 +1720,7 @@ Completed since the first release:
 - a Causal Spacetime Laboratory with draggable and keyboard-accessible events, exact Lorentz and invariant readouts, five reproducible presets, bounded frame/signal motion, reduced-motion snapping, URL/export state, focused physics tests, and desktop/mobile captures.
 - a cinematic direction system (`js/cinematic/`): validated per-view shot manifests with singularity-safe camera poses, a deterministic eased timeline, a scroll-driven narrative that never fights the user (orbit input hands control back instantly), deep-linked `shot` state with exact back-navigation restore, a WebGL2 lens-transition overlay with crossfade fallback, and a reduced-motion-respecting cinema bar; a plain visit to a view keeps each scene's own default framing until the tour is engaged.
 - a gauge-coupling unification lab: the three Standard-Model couplings run at two loops from the Z mass to the Planck scale with their input bands, the MSSM above a chosen threshold as a conjectural variant, the magnified triangle where the lines nearly meet, and a one-loop formula whose terms light the matching marks of the plot (`docs/render/rg-unification.md`);
+- an asymptotic-safety flow lab: the two-coupling Einstein–Hilbert truncation of (g, λ) with the optimised cutoff and Litim's harmonic gauge side by side, its fixed points and critical exponents, the separatrix and the Reuter–Weyer trajectory classes, the flow drawn as a GPU line-integral-convolution silk whose vector field is the tested Formula Core expression, and the couplings along the chosen trajectory as a Figure Kit figure (`docs/render/rg-asymptotic-safety.md`);
 - a Renormalisation-Group Flow Landscape with one-loop QED/QCD presets, pedagogical and conjectural fixed-point models, deterministic bounded bidirectional RK4 integration, synchronized scale/phase-line plots, analytic/numeric root diagnostics, full URL/export state, reduced-motion snapping, focused tests, and desktop/mobile captures.
 - Stage 5 pure-physics test coverage: the GR perihelion and light-deflection observables, Planck units and probe energy, and the black-hole evaporation, Page-curve, and Hawking-spectrum helpers moved into `js/physics.mjs`, mirrored through the browser bridge, wired into the GR/Planck/black-hole modules, and anchored to literature values (Mercury 42.98″/century, solar-limb 1.75″, CODATA Planck units, 2.1×10⁶⁷ yr evaporation, Wien peak u ≈ 2.8214).
 - Stage 6 notation and citation: a Symbol Atlas reference view (`?view=symbols`) — a searchable, category-filtered registry of 27 symbols across 33 contexts that disambiguates reused letters (β = v/c vs β(g); metric g_μν vs coupling g vs fixed point g★), typesets every glyph and defining equation live with KaTeX, states each entry's unit and home module with deep links, and makes the atlas' metric-signature and natural-unit conventions explicit — plus a schema-validated `CITATION.cff` (CFF 1.2.0, no unverified identifiers) with a Node test suite keeping it consistent with `package.json` and `LICENSE`.
@@ -2184,7 +2189,8 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 | gauge-coupling near-unification is a coincidence of coefficients | the MSSM triangle shrinks by orders of magnitude, but its size depends on the omitted thresholds and Yukawa terms and on $M_{\mathrm{SUSY}}$, and no superpartner has been seen | the MSSM lines and captions are labeled conjectural and the bands are stated to hold only the three input uncertainties |
 | QED Landau pole is only a formal extrapolation | a one-loop singularity far beyond the controlled domain is not an observation | the pole is labeled as a warning; the numerical curve stops earlier |
 | QCD becomes strongly coupled in the infrared | perturbative running cannot describe confinement | the trajectory terminates visibly at $\alpha_s=1$ without claiming a physical divergence |
-| fixed-point toys are not empirical flows | chosen polynomial beta functions can build in the desired stability | toy and asymptotic-safety-style presets carry schematic/conjectural labels in the instrument and export |
+| fixed-point toys are not empirical flows | chosen polynomial beta functions can build in the desired stability | the polynomial preset is labelled a pedagogical toy and the asymptotic-safety lab computes its fixed point from the published beta functions instead |
+| an asymptotic-safety fixed point is a truncation result | the numbers move with the cutoff scheme and the gauge, and the full tower is not solved | the lab prints both schemes side by side, labels the picture conjectural in-canvas and in the registry, and states the truncation and the scheme in the caption |
 | pure-physics coverage is complete for every exported helper | scene integrators and renderers stay outside unit tests by design | `test/physics.test.mjs` covers all shared helpers, including the Stage 5 GR, Planck, and black-hole thermodynamics additions |
 
 ### Appendix Q — Academic README Rubric

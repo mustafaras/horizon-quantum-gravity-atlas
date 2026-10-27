@@ -646,6 +646,8 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       element: mount,
       cameraSpace: "orbit",
       capture: () => session.capture(),
+      // A scene may expose a small QA readout (live uniforms, counts) through `state` in the object it returns from build.
+      state: () => built.state?.() ?? null,
       getPose: hudStateRef.current.getPose,
       flyTo: hudStateRef.current.flyTo,
       projectPoint(point) {

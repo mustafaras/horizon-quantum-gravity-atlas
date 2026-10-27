@@ -293,7 +293,7 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     kerrOuterHorizon: { L: 1 }, photonSphere: { L: 1 }, criticalImpact: { L: 1 }, planckLength: { L: 1 },
     chirpMass: { M: 1 }, newtonianGwFrequency: { T: -1 }, casimirPressure: { M: 1, L: -1, T: -2 }, flammEmbedding: { L: 1 }, lorentzGamma: {}, newtonianPotential: {},
     twoFlavourOscillation: {}, matterPotential: { M: 1, L: 2, T: -2 }, higgsPotentialReduced: {}, higgsQuarticTree: {}, phi4HamiltonianDensity: {},
-    casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {}, gaugeRunningOneLoop: {},
+    casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {}, gaugeRunningOneLoop: {}, asBetaG: {}, asBetaLambda: {},
   };
   assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
   for (const [name, f] of Object.entries(library)) {
@@ -313,6 +313,23 @@ test("the one-loop gauge-running formula gives the Planck-scale couplings of the
   close(f.evaluate(env(29.585, -19 / 6)), 49.46, 5e-4, "alpha_2^-1 at M_Pl");
   close(f.evaluate(env(8.475, -7)), 52.41, 5e-4, "alpha_3^-1 at M_Pl");
   assert.match(f.tex, /htmlData/);
+});
+
+test("the Einstein-Hilbert beta functions of the library equal the science module to 1e-12 and are GPU safe on their domain", async () => {
+  const { betaFunctions } = await import("../js/science/asymptotic-safety.mjs");
+  assert.deepEqual([...library.asBetaG.termIds].sort(), ["beta_g", "eta"]);
+  assert.deepEqual([...library.asBetaLambda.termIds].sort(), ["beta_lambda", "eta"]);
+  for (const f of [library.asBetaG, library.asBetaLambda]) {
+    const report = f.gpuSafe();
+    assert.ok(report.ok && report.skipped === 0, `${f.id}: float32 error ${report.maxRelError}`);
+  }
+  for (let i = 0; i < 30; i++) {
+    const g = 0.04 * i, lam = -0.4 + 0.0233 * i;
+    const [bg, bl] = betaFunctions(g, lam);
+    close(library.asBetaG.evaluate({ g, lam }), bg, 1e-12, `beta_g at (${g}, ${lam})`);
+    close(library.asBetaLambda.evaluate({ g, lam }), bl, 1e-12, `beta_lambda at (${g}, ${lam})`);
+  }
+  close(library.asBetaG.evaluate({ g: 0.7073208809868445, lam: 0.19320050715078563 }), 0, 1e-9, "beta_g at the NGFP");
 });
 
 test("the electroweak formulas reproduce the Z-pole couplings and the pole asymmetry", () => {

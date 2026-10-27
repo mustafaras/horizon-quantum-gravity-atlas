@@ -82,6 +82,8 @@ export const REF = Object.freeze({
   LEP_SLC_2006: "ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP Electroweak Working Group and SLD Electroweak and Heavy Flavour Groups, Precision electroweak measurements on the Z resonance, Phys. Rep. 427, 257 (2006), doi:10.1016/j.physrep.2005.12.006, arXiv:hep-ex/0509008",
   STEINHAUSER_1998: "Steinhauser, Leptonic contribution to the effective electromagnetic coupling constant up to three loops, Phys. Lett. B 429, 158 (1998), doi:10.1016/S0370-2693(98)00503-6, arXiv:hep-ph/9803313",
   MARTIN_VAUGHN_1994: "Martin & Vaughn, Two-loop renormalization group equations for soft supersymmetry-breaking couplings, Phys. Rev. D 50, 2282 (1994), doi:10.1103/PhysRevD.50.2282, arXiv:hep-ph/9311340",
+  REUTER_SAUERESSIG_2012: "Reuter & Saueressig, Quantum Einstein gravity, New J. Phys. 14, 055022 (2012), doi:10.1088/1367-2630/14/5/055022, arXiv:1202.2274",
+  LITIM_2004: "Litim, Fixed points of quantum gravity, Phys. Rev. Lett. 92, 201301 (2004), doi:10.1103/PhysRevLett.92.201301, arXiv:hep-th/0312114",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
 });
 
