@@ -28,9 +28,9 @@ const RG_PRESETS = {
     note: "Linear illustrative flow into an interacting infrared fixed point.",
   },
   "asymptotic-safety": {
-    title: "Asymptotic-safety style", model: "asymptotic-safety", g0: 0.3, mu0: 0, lo: -4, hi: 5,
+    title: "pedagogical toy (schematic)", model: "asymptotic-safety", g0: 0.3, mu0: 0, lo: -4, hi: 5,
     nf: 0, a: 0.9, b: 0.9, gStar: 1, current: 4, badge: "conjectural",
-    note: "Illustrative polynomial toy only — not evidence for quantum-gravity asymptotic safety.",
+    note: "A pedagogical toy: a polynomial flow with an ultraviolet fixed point built in. The Einstein–Hilbert flow below is the computed one, and it is still a truncation — not evidence that quantum gravity is asymptotically safe.",
   },
 };
 
@@ -378,7 +378,7 @@ function RGFlowLandscape() {
         <section><Badge kind={isAsymptoticSafety ? "conjectural" : "schematic"}></Badge>
           <h4>Quantum-gravity claim boundary</h4>
           <p>{isAsymptoticSafety
-            ? "This asymptotic-safety-style polynomial is explicitly illustrative. Its interacting UV fixed point is built into the toy β function and is not evidence that gravity possesses such a fixed point."
+            ? "This polynomial preset is a pedagogical toy: its interacting UV fixed point is built into the coefficients and is not evidence of anything about gravity. The Einstein–Hilbert flow in the section below is the computed truncation, with the fixed point the equations give."
             : "Fixed-point arrows report the selected mathematical model only. No preset establishes ultraviolet completion of quantum gravity."}</p>
         </section>
         <section><Badge kind="established"></Badge>

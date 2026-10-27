@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "statuses": [
     "todo",
     "claimed",
@@ -1111,20 +1111,39 @@
       "findings": [
         "F-14"
       ],
-      "status": "claimed",
+      "status": "review",
       "owner": "local: Claude Code (claude-sonnet-5-5) for mustafaras",
       "branch": "claude/s18-rg-asymptotic-safety",
-      "pr": null,
+      "pr": "PENDING",
       "commits": [],
       "startedAt": "2026-10-26",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1031 pass, 1 skipped, 0 fail (baseline after S17: 1025 pass, 1 skipped; new: test/asymptotic-safety.test.mjs 8, test/gravity-plots.test.mjs 5, test/lic-cpu.test.mjs 5, test/silk-geometry.test.mjs 6, test/rg-flow-3d.test.mjs +6, test/formula-core.test.mjs +1)",
+          "npm run validate: passed (67 provenance entries, 66 before); npm run qa:verify: 46 captures valid (44 before); npm run perf:audit: VizCaption 37 -> 39 (21 -> 22 files), registerVisualization sites 12 -> 13, needsUpdate 30 -> 30, files over 800 lines 12 -> 12, ShaderMaterial 8 -> 8, Math.random 1 -> 1",
+          "qa/specs/gravity-flow-lab.spec.mjs 9/9 (node renderer WebGL2, 1.5 min): status and provenance, the plot's focal line and labels, the three presets, the silk's kernel and rings and its freeze under reduced motion, the trajectory reaching the silk, the Einstein-Hilbert mode of the 3-D field, keyboard, 44 px targets and KaTeX text-transform at 1280 and 390 px",
+          "qa/specs/formula-gpu.spec.mjs webgl2: 23 formulas compared, asBetaG and asBetaLambda both max relative error 0 against evaluateF32; webgpu is skipped in this environment (no adapter)",
+          "affected browser specs: rg, motion, state, compute-labs 15/15 pass; a11y, figure-kit, provenance-layers 88 pass, 1 fail — provenance-layers 'sm: every status chip opens its own drawer by keyboard' expects the drawer to show the raw provenance text while it shows the KaTeX-typeset equation, a pre-existing mismatch on clean main (same assertion, same figure)"
+        ],
+        "screenshots": [
+          "docs/screenshots/44-rg-gravity-flow.png",
+          "docs/screenshots/45-rg-gravity-flow-mobile.png",
+          "qa/baselines/rg-gravity-flow.png",
+          "qa/baselines/rg-gravity-flow-mobile.png"
+        ],
+        "measurements": [
+          "fixed points, optimised cutoff: GFP (0, 0) with theta = (-2, +2); NGFP g* = 0.7073208809868444, lambda* = 0.19320050715078568, theta = 1.4753024 +- 3.0432058 i, against the plan's 0.707, 0.193 and 1.475 +- 3.043 i (tolerance 2e-3)",
+          "fixed points, Litim 2004 harmonic gauge: NGFP g* = 0.015625, lambda* = 0.25, theta = 1.6666667 +- 4.3076160 i, against his eq. (10) 1.667 +- 4.308 i; g* = (lambda* - 1/2)^2 / d exactly",
+          "LIC coherence on a uniform rotation field, 128^2 image, Hann kernel of 24 steps: mean variance along streamlines 6.03e-4, across them 5.26e-3, ratio 0.115 (the plan asks for under 0.2)",
+          "trajectory classes at the presets: (0.4, -0.1) Type Ia to canonical scaling; (0.5, 0.1) Type IIIa, ending on the eta pole at t_term = -0.9448 (k_term/k_0 = 0.389); the separatrix start Type IIa into the Gaussian fixed point. The separatrix integrates from (1e-6, 4e-8) to the NGFP in 1213 RK4 steps",
+          "3-D gravity field at seed 42 and 40 streamlines: 37 drawn, 6 stop on the truncation boundary, 0 on a validity wall (that wall belongs to the perturbative models), 2 fixed points, 1 separatrix",
+          "the silk's plane at 390 px is 308 px wide; the status chip measures 288 x 40 px inside the stage after the move, and was clipping 132 px off the left edge before it (ledger D-109)",
+          "the two-coupling box is 1.4 x 0.89 couplings; at the one-coupling scale of 1.5 scene units per coupling the 3-D scene drew a 1.3-unit sliver, so the gravity mode uses 4.6"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Einstein-Hilbert asymptotic safety with both published schemes, the GPU LIC silk, the trajectory figure, the 3-D gravity mode, 9 browser tests and two new captures. Two items the plan asked for were not met as written and are recorded: the plan's attribution of the fixed point and its exponents to Litim (D-105), and its lambda domain, which cut through the singular line it asked to draw (D-106)."
     },
     {
       "id": "S19",
@@ -2304,6 +2323,62 @@
       "prompt": "S17",
       "decision": "F-14 is set to closed with S17's done commit on the user's instruction. The ledger lists S17 and S18 in closedBy: S17 delivers the Standard-Model gauge-coupling running to two loops with a quantified near-unification; the toy fixed-point presets of the RG landscape are unchanged until S18. README Appendix P has no row for F-14 as such; the row 'one-loop RG omits thresholds and higher orders' is kept (still true for the QED and QCD presets) and now names what the unification lab omits, and a row on near-unification being a coincidence of coefficients is added.",
       "rationale": "The instruction is explicit; the remaining half of the finding is stated so that closing it does not hide it."
+    },
+    {
+      "id": "D-105",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The plan quotes g* = 0.707, lambda* = 0.193 and theta = 1.475 +- 3.043 i as Litim (2004). Read from the arXiv sources, they are the optimised-cutoff values of Reuter & Saueressig (2012) eq. (4.15)-(4.20); Litim's own eq. (4)-(5) in harmonic gauge give lambda* = 0.25 and theta = 1.667 +- 4.308 i. The source wins: the science module implements both schemes, tests Litim's scheme against its own closed forms (lambda* = 0.25, theta = (5 +- i sqrt(167))/3), reproduces the plan's numbers with the optimised cutoff to 2e-3, and the lab's scheme table prints both side by side.",
+      "rationale": "The plan's numbers are correct physics and wrong attribution; printing them under Litim's name would put a citation behind values its equations do not give."
+    },
+    {
+      "id": "D-106",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The silk's domain is g in [-0.2, 1.2] x lambda in [-0.4, 0.55], not the plan's [-0.4, 0.49]: the singular line at lambda = 1/2 and the hatched band beyond it are then inside the picture, which the plan asks the overlays to show. The field is evaluated below lambda = 0.499 and the hatched region carries no flow values.",
+      "rationale": "A singular line has to be visible to be a warning; the plan's upper bound cut exactly through the thing it asked to draw."
+    },
+    {
+      "id": "D-107",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The 3-D flow field gains the Einstein-Hilbert flow as a fourth model, not as a second scene. In that mode the second horizontal axis is the cosmological constant in place of the teaching mass-like coupling r, its streamlines come from integrateFlow (the silk's own adaptive RK4) rather than the fixed-step stepper, its box is the silk's domain drawn at 4.6 scene units per coupling instead of 1.5, the singular plane lambda = 1/2 replaces the two validity walls, and the separatrix is an engraved line. The scene carries its own provenance entry, rg-flow-field-3d-gravity, conjectural.",
+      "rationale": "Reusing the scene keeps the context budget and the shared-stage tests untouched, and reusing the science means the 2-D and the 3-D picture cannot disagree; the scale had to change because the two-coupling box is 1.4 by 0.89 couplings wide and the one-coupling scale drew a sliver."
+    },
+    {
+      "id": "D-108",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The gravity lab is js/labs/gravity-flow-lab.jsx and the moved 3-D lab is js/labs/rg-flow-field-lab.jsx; js/mod-rg-stage3.jsx went from 150 to 110 lines (net -40) and js/mod-gauge-rg.jsx keeps its line count. The model selector of the 3-D field lives in the lab, not in the shared state: it does not change the landscape's preset and is not in the URL.",
+      "rationale": "The plan requires js/mod-*.jsx to shrink and new labs to live in js/labs/; a scene-local model choice that silently rewrote the landscape's preset would be a worse instrument."
+    },
+    {
+      "id": "D-109",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The silk's in-canvas status is DOM mounted over the stage (ctx.mountOverlay) at 10 px from its corner, not a world-space label. Measured: at 390 px the plane is 308 px wide and the status text is 299 px, so a world label anchored on the plane was clipped 132 px off the left edge; the fixed chip is fully inside the stage at both 1280 and 390 px. The four science labels (GFP, NGFP, the singular line, the separatrix) stay world-anchored and were moved inward until all four were inside the stage at both widths.",
+      "rationale": "The art direction asks for the status in the canvas; measured overflow is a defect, not a tolerance."
+    },
+    {
+      "id": "D-110",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The old 'Asymptotic-safety style' preset is renamed 'pedagogical toy (schematic)' and its note, the landscape's claim-boundary paragraph and the README now point at the computed Einstein-Hilbert flow instead of saying the RG can only illustrate. The preset id, model id and URL parameter are unchanged, so every existing link resolves as before.",
+      "rationale": "The plan asks for the rename if the toy is kept; changing the ids would break the published links and the state tests for no gain."
+    },
+    {
+      "id": "D-111",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "Two baselines were created, not refreshed: qa/baselines/rg-gravity-flow.png and qa/baselines/rg-gravity-flow-mobile.png (and their docs/screenshots copies 44- and 45-). No existing baseline was touched. Both captures are reduced-motion, so the LIC ripple is frozen and the picture is the plain convolution.",
+      "rationale": "New figures need a reference; refreshing an old one to make a test pass is forbidden."
+    },
+    {
+      "id": "D-112",
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "decision": "The 3-D scene handle in Scene3D now forwards a build's optional state() readout to window.__qgaActiveScenes, and the silk's state() reports its kernel length, ring count and the number of trajectory points it last wrote. Nothing else about the handle changed; scenes without state() return null.",
+      "rationale": "The lab's own assertions (kernel length at the detail tier, one focal trajectory, two rings) are live values; reading them from a forwarded hook beats scraping the DOM for them."
     }
   ],
   "log": [
@@ -2698,6 +2773,13 @@
       "agent": "local: Claude Code (claude-sonnet-5-5)",
       "event": "follow-up",
       "detail": "Units in the lab's readouts now use a thin space (art direction); the two captures stay within their tolerance, no baseline refreshed. Still open and not closable here: Machacek & Vaughn 1983 not read (paywall, D-100); the GUT hatch is class decoration in the provenance but a model mark in the Figure Kit, which has no decoration layer (D-103); the shared provenance chips are 21 px; the MSSM cross-fade rebuilds the figure spec on each of its frames for 420 ms."
+    },
+    {
+      "date": "2026-10-27",
+      "prompt": "S18",
+      "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
+      "event": "review",
+      "detail": "Resumed the interrupted S18 session on claude/s18-rg-asymptotic-safety (claim commit 6127f28, uncommitted science and scene work in the tree, one red FormulaCard test). Finished it: the lab is mounted in the RG module, the 3-D field gained the Einstein-Hilbert mode, the 9-test spec and the two captures exist, and the docs and ledger are written. npm test 1031/1032 (1 skipped), validate 67 entries, qa:verify 46 captures, formula-gpu 23 formulas incl. both beta functions, 9/9 in the new spec. Decisions D-105 to D-112."
     }
   ]
 }

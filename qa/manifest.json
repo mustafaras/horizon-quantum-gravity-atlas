@@ -1,6 +1,6 @@
 {
   "schema": "horizon-qga-capture-manifest/v1",
-  "version": "2026-10-07",
+  "version": "2026-10-27",
   "app": {
     "entry": "index.html",
     "basePath": "/",
@@ -1409,6 +1409,72 @@
       "baseline": {
         "maxDiffPixelRatio": 0.03,
         "note": "Mobile Figure Kit stack with KaTeX text; 3% tolerance."
+      }
+    },
+    {
+      "id": "rg-gravity-flow",
+      "file": "docs/screenshots/44-rg-gravity-flow.png",
+      "description": "The Einstein-Hilbert truncation of asymptotic safety as a GPU line-integral-convolution silk: streaks follow the (g, lambda) flow, colour is the sign of beta_g, rings mark the Gaussian and the non-Gaussian fixed point, the brighter line is the separatrix and the hatched band beyond lambda = 1/2 is where the truncation is not defined; below it the trajectory plot, the readouts and the scheme table.",
+      "view": "rg",
+      "url": "?view=rg&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2500,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".gf-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".gf-lab",
+          "text": "Einstein–Hilbert truncation"
+        }
+      ],
+      "scientificStatus": "conjectural",
+      "statusNote": "Two couplings of an infinite tower, d = 4, optimised cutoff: g* = 0.7073, lambda* = 0.1932, exponents 1.475 +- 3.043 i. Litim's harmonic-gauge equations give different exponents, and the in-canvas caption says so. A conjectural framework, not a result about nature.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "A TSL line-integral convolution over seeded white noise plus a Figure Kit plot; deterministic at seed 42, 2% for rasterization."
+      }
+    },
+    {
+      "id": "rg-gravity-flow-mobile",
+      "file": "docs/screenshots/45-rg-gravity-flow-mobile.png",
+      "description": "Mobile gravity flow lab at 390 px: the presets, the silk, the start ranges, the readouts, the trajectory plot and the two formula cards stacked in one column.",
+      "view": "rg",
+      "url": "?view=rg&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 3200,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".gf-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".gf-lab",
+          "text": "Einstein–Hilbert truncation"
+        }
+      ],
+      "scientificStatus": "conjectural",
+      "statusNote": "Same figures as the desktop capture. Viewport height exceeds the target because the app shell scrolls internally.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "Same content in one column at 390 px; 3% tolerance for the narrower layout."
       }
     }
   ]

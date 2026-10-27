@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  RG_FLOW_3D_VIEW_ID, RG_FLOW_3D_DEFAULTS, RG_VALIDITY_G,
+  RG_FLOW_3D_VIEW_ID, RG_FLOW_3D_DEFAULTS, RG_VALIDITY_G, GRAVITY_MODEL, GRAVITY_SPAN,
   rgBetaR, rgFlow3dRhs, rgFlow3dFixedPoints, integrateStreamline3d,
   seedStreamlines3d, separatrixCurves3d, registerRgFlow3dProvenance,
-  rgFlow3dExportMetadata, massAnomalousDimension,
+  rgFlow3dExportMetadata, massAnomalousDimension, integrateGravityStreamline3d,
+  gravityFlow3dFixedPoints, gravitySeparatrixCurve, classifyGravityRun,
 } from "../js/science/rg-flow-3d.mjs";
+import { betaFunctions, fixedPoints as gravityFixedPoints, SINGULAR_LAMBDA } from "../js/science/asymptotic-safety.mjs";
 import { getVisualizationProvenance } from "../js/science/provenance.mjs";
 import { rgBeta, rgFixedPoints } from "../js/physics.mjs";
 
@@ -107,4 +109,63 @@ test("export metadata reports fixed points and the log scale", () => {
   assert.equal(meta.rgFlowField3d.validityBoundaryG, RG_VALIDITY_G);
   assert.ok(Array.isArray(meta.rgFlowField3d.fixedPoints));
   assert.equal(meta.rgFlowField3d.runtime.streamlines, 40);
+});
+
+/* ---------- S18: the Einstein-Hilbert flow as the second axis ---------- */
+
+test("gravity: the second axis is the cosmological constant and the field is the science module's, not a copy", () => {
+  for (const [g, lambda] of [[0.05, -0.3], [0.5, 0.1], [1.1, 0.4], [0.7073208809868444, 0.19320050715078563]]) {
+    assert.deepEqual(rgFlow3dRhs([g, lambda], { model: GRAVITY_MODEL }), betaFunctions(g, lambda));
+  }
+  assert.ok(Number.isNaN(rgFlow3dRhs([0.3, 0.6], { model: GRAVITY_MODEL })[0]), "above the singular line the field is undefined");
+});
+
+test("gravity: the fixed points are the Newton fixed points of the Einstein-Hilbert truncation", () => {
+  const field = gravityFlow3dFixedPoints();
+  const science = gravityFixedPoints();
+  assert.equal(field.length, science.length);
+  assert.deepEqual(field.map((p) => [p.gaussian, p.g, p.lambda]), science.map((p) => [p.gaussian, p.g, p.lambda]));
+  const ngfp = field.find((p) => !p.gaussian);
+  assert.ok(Math.abs(ngfp.g - 0.707) < 2e-3 && Math.abs(ngfp.lambda - 0.193) < 2e-3, "Litim's quoted numbers to 2e-3");
+});
+
+test("gravity: a streamline never crosses the singular line and says where it stopped", () => {
+  const run = integrateGravityStreamline3d({ g0: 0.3, lambda0: 0.42, direction: -1 });
+  assert.ok(run.points.length > 2);
+  for (const p of run.points) {
+    assert.ok(Number.isFinite(p.g) && Number.isFinite(p.r) && Number.isFinite(p.t));
+    assert.ok(p.r < SINGULAR_LAMBDA, "stays below lambda = 1/2");
+    assert.ok(p.g >= GRAVITY_SPAN.g[0] - 1e-9 && p.g <= GRAVITY_SPAN.g[1] + 1e-9, "stays inside the silk's g range");
+  }
+  assert.ok(["truncation-boundary", "singular-line", "fixed-point", "canonical-scaling", "out-of-box", "t-window", "step-limit"].includes(run.terminated), run.terminated);
+});
+
+test("gravity: a Type Ia run integrates toward the infrared and a non-Gaussian run toward the ultraviolet", () => {
+  const ir = integrateGravityStreamline3d({ g0: 0.9, lambda0: 0.3, direction: -1 });
+  const uv = integrateGravityStreamline3d({ g0: 0.9, lambda0: 0.3, direction: 1 });
+  assert.ok(ir.points.at(-1).t < 0 && uv.points.at(-1).t > 0);
+  assert.equal(classifyGravityRun({ g0: 0.9, lambda0: 0.3 }).type, "Ia");
+  assert.equal(uv.terminated, "fixed-point");
+  assert.ok(Math.hypot(uv.points.at(-1).g - 0.70732, uv.points.at(-1).r - 0.19320) < 1e-2, "toward the ultraviolet it reaches the non-Gaussian fixed point");
+});
+
+test("gravity: the seeded field is deterministic, finite and thinned to a drawable picture", () => {
+  const a = seedStreamlines3d({ model: GRAVITY_MODEL, seed: 42, count: 16 });
+  const b = seedStreamlines3d({ model: GRAVITY_MODEL, seed: 42, count: 16 });
+  assert.deepEqual(a, b);
+  assert.equal(a.length, 16);
+  const usable = a.filter((run) => run.points.length > 1);
+  assert.ok(usable.length >= 12, `${usable.length} of ${a.length} runs drawn`);
+  for (const run of usable) {
+    for (const p of run.points) assert.ok(Number.isFinite(p.g) && Number.isFinite(p.r) && Number.isFinite(p.t));
+  }
+  assert.ok(a.every((run) => Number.isFinite(run.seed.r)), "the seeds carry lambda in the r slot");
+});
+
+test("gravity: the separatrix runs from the Gaussian fixed point to the non-Gaussian one", () => {
+  const sep = gravitySeparatrixCurve();
+  assert.equal(sep.terminated, "fixed-point");
+  const first = sep.points[0], last = sep.points.at(-1);
+  assert.ok(Math.hypot(first.g, first.lambda) < 1e-4, "starts at the Gaussian fixed point");
+  assert.ok(Math.abs(last.g - 0.70732) < 1e-2 && Math.abs(last.lambda - 0.19320) < 1e-2, "ends at the non-Gaussian fixed point");
 });

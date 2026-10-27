@@ -274,6 +274,14 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Asymptotic safety (S18): the Einstein-Hilbert flow, the separatrix and the trajectory classes; the GPU silk loads with the first scene that builds it.
+    const asymptoticSafety = await import("./science/asymptotic-safety.mjs");
+    const silkGeometry = await import("./visualizations/rg/silk-geometry.mjs");
+    Object.defineProperty(window, "QGA_GRAVITY", {
+      value: Object.freeze({ ...asymptoticSafety, silk: silkGeometry, loadSilk: () => import("./visualizations/rg/lic-field.mjs") }),
+      configurable: true,
+    });
+
     // Provenance (S11): every entry is registered before the JSX modules mount, so a caption always finds its entry.
     const { registerAllProvenance } = await import("./provenance-index.mjs");
     const provenanceRegistry = await import("./science/provenance.mjs");

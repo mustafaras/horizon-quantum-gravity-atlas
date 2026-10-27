@@ -1,57 +1,4 @@
-// Stage 3 composition for the RG flow landscape.
-/* ---------- Prompt 07: three-dimensional RG flow field ---------- */
-function RgFlowFieldLab() {
-  const [state] = useQGAState();
-  const params = {
-    nf: state.rgNf, a: state.rgA, b: state.rgB, gStar: state.rgGStar,
-  };
-
-  const build = async (ctx) => {
-    const LABS = window.QGA_LABS;
-    if (!LABS) throw new Error("Compute-lab module unavailable");
-    const { createRgFlowFieldRuntime } = await LABS.loadRgFlowField();
-    ctx.scene.fog = new ctx.THREE.FogExp2(QGA_TOKENS.hex("pigment-grey-12-c01"), 0.014);
-    const runtime = createRgFlowFieldRuntime({ model: state.rgModel, params, seed: 42, engraved: ctx.engraved });
-    ctx.scene.add(runtime.mesh);
-    ctx.label("EFFECTIVE · g-runs via the shared beta function; r-direction γ(g)=g²/(1+g²) is a disclosed teaching model",
-    () => ({ x: -4.6, y: 5.2, z: 0 }), "s3d-strong");
-    ctx.label("UV ↑  t = ln μ  ↓ IR", () => ({ x: 0, y: 5.6, z: 0 }), "s3d-strong");
-    ctx.label("streamlines stop at the validity wall g = √(4π)",
-    () => ({ x: 5.6, y: -1.8, z: 0 }), "s3d-quiet");
-    return {
-      update: (t) => {
-        runtime.sync({ time: t, motion: ctx.motion() === 0 ? 0 : 1 });
-        window.__qgaRgFlow3d = { kind: runtime.kind, ...runtime.stats() };
-      },
-      prepare: (renderer) => runtime.prepare(renderer),
-      compute: (renderer, dt) => runtime.compute(renderer, dt),
-      dispose: () => {
-        runtime.dispose();
-        delete window.__qgaRgFlow3d;
-      },
-      recoverable: () => false,
-    };
-  };
-
-  return (
-    <div className="viz-frame">
-      <Scene3D animated="motion" nodeKit height={460} aria="Three-dimensional renormalization-group flow field: streamlines in the coupling-mass plane running vertically in log energy scale, with fixed points, gold separatrices and validity walls"
-      initial={{ radius: 13.5, theta: 0.7, phi: 1.15, minR: 5, maxR: 34, bloom: { strength: 0.55, radius: 0.45, threshold: 0.22 } }}
-      build={build} deps={[state.rgModel, state.rgNf, state.rgA, state.rgB, state.rgGStar]}
-      fallback={<div className="lab-fallback">The 3-D flow field needs WebGL; the 2-D landscape above carries the same trajectories.</div>}></Scene3D>
-      <VizCaption provenanceId="rg-flow-field-3d" status="effective">
-        The same beta function that drives the 2-D landscape now flows in a third dimension: vertical position
-        is the shared log scale t = ln μ (UV up, IR down), horizontal axes are the gauge coupling g and a
-        mass-like coupling r with β_r = (2 − γ(g))·r. Cyan runs integrate toward the UV, amber toward the IR,
-        gold curves are the separatrices through the fixed points (same analytic fixed points as the landscape),
-        and the red walls mark g = √(4π) (α = 1), where the perturbative model stops and every streamline
-        visibly terminates — no segment past the wall is drawn as if it were trustworthy. The anomalous
-        dimension γ(g) = g²/(1+g²) is a transparent teaching model, not a computed exponent; the g-direction
-        running is exactly the shared model selected above.
-      </VizCaption>
-    </div>);
-
-}
+// Stage 3 composition for the RG flow landscape. The three-dimensional field lives in js/labs/rg-flow-field-lab.jsx (S18).
 
 function ModuleRGStage3({ go }) {
   return (
@@ -78,6 +25,17 @@ function ModuleRGStage3({ go }) {
         <UnificationLab></UnificationLab>
       </Section>
 
+      <Section title="Does gravity flow to a fixed point?">
+        <p>
+          Newton's constant is not dimensionless in four dimensions, so the question of quantum gravity becomes a question about the flow of
+          its dimensionless version <Eq tex="g=k^2G_k"></Eq> and of the dimensionless cosmological constant <Eq tex="\lambda=\bar\lambda_k/k^2"></Eq>.
+          Asymptotic safety proposes that this flow has a non-Gaussian ultraviolet fixed point, so that gravity stays predictive to arbitrarily
+          high scales. Below is the Einstein–Hilbert truncation of that flow — two couplings kept out of an infinite tower — drawn as a line
+          integral convolution of its direction, with the fixed points, the separatrix and the region where the truncation breaks down.
+        </p>
+        <GravityFlowLab></GravityFlowLab>
+      </Section>
+
       <Section title="The flow field in three dimensions">
         <p>
           A beta function is a vector field, so the landscape's curves are really projections of a flow in
@@ -85,7 +43,9 @@ function ModuleRGStage3({ go }) {
           coupling r span the horizontal plane, and the vertical axis is the log energy scale t = ln μ that the
           shared numerics already use. Streamlines are integrated with the same RK4 stepper as every other RG
           computation on the site, seeded deterministically, and they stop — visibly — at the perturbative
-          validity wall. Change the model or its parameters above and the whole field re-integrates.
+          validity wall. Change the model with the buttons above the field: the Einstein–Hilbert mode swaps the
+          mass-like coupling for the cosmological constant and draws the plane where the truncation is singular.
+          The parameters of the one-coupling models come from the landscape above.
         </p>
         <RgFlowFieldLab></RgFlowFieldLab>
       </Section>
