@@ -18,6 +18,9 @@ function PenroseAtlas() {
   const [focused, setFocused] = useState(null);
   const [event, setEvent] = useState(null);
   const [intro, setIntro] = useState(false);
+  const reduced = usePRM();
+  const settings = useAtlasSettings();
+  const introDisabled = reduced || settings.motion === "reduced";
   const wrap = useRef(null), atlas = useRef(null);
   const introSeen = useRef(false);
   const [width, setWidth] = useState(0);
@@ -120,7 +123,7 @@ function PenroseAtlas() {
         <div className="pn-axis pn-axis-bottom">PAST</div>
       </div>
       <div className="pn-legend"><span><i className="pn-key-light"></i> light path</span><span><i className="pn-key-world"></i> observer</span><span><i className="pn-key-boundary"></i> boundary</span><span>shaded area: causal future</span><span>↗ radial light travels at 45°</span></div>
-      {view === "minkowski" && !compare && <div className="pn-intro-control"><span>See how an observer and a light ray approach infinity on a finite map.</span><button className="btn" type="button" onClick={() => intro ? atlas.current?.skipIntro() : atlas.current?.playIntro()}>{intro ? "Skip intro" : "Watch infinity"}</button></div>}
+      {view === "minkowski" && !compare && <div className="pn-intro-control"><span>{introDisabled ? "Reduced motion is on; the final map is shown without the introduction." : "Watch sample events change coordinates, then see an observer and light approach infinity on the finite map."}</span><button className="btn" type="button" disabled={introDisabled} onClick={() => intro ? atlas.current?.skipIntro() : atlas.current?.playIntro()}>{intro ? "Skip intro" : "Watch the map"}</button></div>}
       <div className="pn-actions" role="group" aria-label="Explore the diagram">
         <button type="button" className={"pn-action" + (mode === "signal" ? " on" : "")} aria-pressed={mode === "signal"} onClick={() => selectMode("signal")}>Send a light signal</button>
         <button type="button" className={"pn-action" + (mode === "observer" ? " on" : "")} aria-pressed={mode === "observer"} onClick={() => selectMode("observer")}>Follow an observer</button>

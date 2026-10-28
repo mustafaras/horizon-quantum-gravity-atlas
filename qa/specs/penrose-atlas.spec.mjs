@@ -26,6 +26,8 @@ async function choose(page, name, id) {
 test("one large exact map is visible by default and clicks select a real event", async ({ page, context }) => {
   const errors = await open(page, context);
   expect((await state(page)).visiblePanels).toEqual(["minkowski"]);
+  await expect(page.getByRole("button", { name: "Watch the map" })).toBeDisabled();
+  await expect(page.locator(".pn-intro-control")).toContainText("Reduced motion is on");
   await expect(page.locator(".pn-stage-meta")).toContainText("EXACT MAP");
   const canvas = page.locator(`${LAB} .s3d-canvas`);
   const box = await canvas.boundingBox();
@@ -83,7 +85,7 @@ test("observer controls seek by proper time, snap on reduced motion, and radius 
 test("full-motion signal and observer playback can pause and resume", async ({ page, context }) => {
   const errors = await open(page, context, "no-preference");
   if (await page.getByRole("button", { name: "Skip intro" }).isVisible()) await page.getByRole("button", { name: "Skip intro" }).click();
-  await page.getByRole("button", { name: "Watch infinity" }).click();
+  await page.getByRole("button", { name: "Watch the map" }).click();
   await expect.poll(async () => (await state(page))?.introRunning).toBe(true);
   await page.getByRole("button", { name: "Skip intro" }).click();
   expect((await state(page)).introRunning).toBe(false);

@@ -182,6 +182,15 @@ export function horizonProgress(fall) {
   return (eta + Math.sin(eta)) / Math.PI;
 }
 
+/** A finite Minkowski null-coordinate sample, from linear display coordinates to arctan compactification. */
+export function compactificationSample(u, v, progress, limit = 6) {
+  if (![u, v, progress, limit].every(Number.isFinite) || !(limit > 0) || Math.abs(u) > limit || Math.abs(v) > limit) throw new RangeError("invalid compactification sample");
+  const a = Math.max(0, Math.min(1, progress)), scale = Math.atan(limit) / limit;
+  const U = (1 - a) * u * scale + a * Math.atan(u);
+  const V = (1 - a) * v * scale + a * Math.atan(v);
+  return { T: (U + V) / 2, R: (V - U) / 2 };
+}
+
 /** Frame one or more existing panels without changing their internal scale. */
 export function observatoryFrame(ids, width, height, fovDeg = 13) {
   const selected = layout().panels.filter((p) => ids.includes(p.id));

@@ -24,7 +24,7 @@ import {
 } from "../../science/conformal.mjs";
 import {
   closedLoop, layout, lightConeSegments, panelAtX, polyline,
-  properTimeIndex, futureLightRays, futureCausalRegion, schematicRegionAt, fromScene, toScene, zigzag,
+  properTimeIndex, compactificationSample, futureLightRays, futureCausalRegion, schematicRegionAt, fromScene, toScene, zigzag,
 } from "./penrose-geometry.mjs";
 
 /** Field of view of the flat-map framing. */
@@ -319,9 +319,16 @@ export async function buildPenroseAtlas(ctx, { visiblePanels = ["minkowski"], on
   };
   const pointerRay = new THREE.Raycaster();
   const intersection = new THREE.Vector3();
-  // Two exact Minkowski trajectories illustrate how timelike and null infinity become finite edges.
+  // A finite set of events changes coordinates first; then two exact trajectories approach infinity.
   const flatPanel = panelOf.minkowski;
   const introGroup = new THREE.Group(); groups.minkowski.add(introGroup); introGroup.visible = false;
+  const sampleGroup = new THREE.Group(); introGroup.add(sampleGroup);
+  const introSamples = [];
+  for (const u of [-6, -2, 2, 6]) for (const v of [-6, -2, 2, 6]) {
+    const start = compactificationSample(u, v, 0), end = compactificationSample(u, v, 1);
+    const marker = engraved.line(ringPolyline(flatPanel, { T: 0, R: 0 }, 0.035), { color: "accent-2", widthPx: WIDTH.boundary, layer: "model" });
+    sampleGroup.add(marker); introSamples.push({ marker, start, end });
+  }
   const introObserver = engraved.line(ringPolyline(flatPanel, { T: 0, R: 0 }, 0.07), { color: "ink-strong", widthPx: WIDTH.focal, layer: "model" });
   const introLight = engraved.line(ringPolyline(flatPanel, { T: 0, R: 0 }, 0.07), { color: "accent-2", widthPx: WIDTH.focal, layer: "model" });
   introGroup.add(introObserver, introLight);
@@ -390,8 +397,17 @@ export async function buildPenroseAtlas(ctx, { visiblePanels = ["minkowski"], on
     onScreenDrag: pickEvent,
     update: (t, dt) => {
       if (introRunning) {
-        introTime = ctx.motion() <= 0 ? 1 : Math.min(1, introTime + dt / 4);
-        const time = 30 * introTime / (1.03 - introTime);
+        introTime = ctx.motion() <= 0 ? 1 : Math.min(1, introTime + dt / 7);
+        const morph = Math.min(1, introTime / 0.45);
+        sampleGroup.visible = introTime < 0.45;
+        introObserver.visible = introLight.visible = introTime >= 0.45;
+        for (const sample of introSamples) {
+          const T = sample.start.T + (sample.end.T - sample.start.T) * morph;
+          const R = sample.start.R + (sample.end.R - sample.start.R) * morph;
+          sample.marker.position.set(R * flatPanel.scale, 0, -T * flatPanel.scale);
+        }
+        const flight = Math.max(0, (introTime - 0.45) / 0.55);
+        const time = 30 * flight / (1.03 - flight);
         const observerT = Math.atan(time), lightT = Math.atan(2 * time) / 2;
         introObserver.position.set(0, 0, -observerT * flatPanel.scale);
         introLight.position.set(lightT * flatPanel.scale, 0, -lightT * flatPanel.scale);
@@ -439,7 +455,7 @@ export async function buildPenroseAtlas(ctx, { visiblePanels = ["minkowski"], on
     seek(progress) { cursor.t = Math.max(0, Math.min(1, progress)) * RELEASE_SECONDS; released = false; moveCursor(properTimeIndex(worldline.fall.rows, cursor.t / RELEASE_SECONDS)); onProgress(cursor.t / RELEASE_SECONDS); },
     placeEvent,
     setInteractionMode(mode) { interactionMode = mode; if (introRunning && mode !== "signal") stopIntro(); eventGroup.visible = !!event && mode === "signal" && !introRunning; comparisonGroup.visible = !!comparisonEvent && mode === "signal"; for (const button of regionLabelButtons) { button.style.pointerEvents = mode === "regions" ? "auto" : "none"; button.tabIndex = mode === "regions" ? 0 : -1; } ctx.invalidate(); },
-    playIntro() { if (!visiblePanels.includes("minkowski")) return false; if (ctx.motion() <= 0) { stopIntro(); return false; } introTime = 0; introRunning = true; introGroup.visible = true; eventGroup.visible = false; onIntro(true); ctx.invalidate(); return true; },
+    playIntro() { if (!visiblePanels.includes("minkowski")) return false; if (ctx.motion() <= 0) { stopIntro(); return false; } introTime = 0; introRunning = true; introGroup.visible = true; sampleGroup.visible = true; introObserver.visible = introLight.visible = false; eventGroup.visible = false; onIntro(true); ctx.invalidate(); return true; },
     skipIntro: stopIntro,
     sendSignal() { if (!event) return false; if (introRunning) stopIntro(); signalTime = ctx.motion() <= 0 ? 1 : 0; signalRunning = signalTime < 1; rayA.scale.setScalar(signalTime); rayB.scale.setScalar(signalTime); comparisonA.scale.setScalar(signalTime); comparisonB.scale.setScalar(signalTime); ctx.invalidate(); return true; },
     focusRegion: (id) => setFocused(id),
