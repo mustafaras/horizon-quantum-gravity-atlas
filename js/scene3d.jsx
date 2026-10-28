@@ -131,7 +131,7 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
      shared        false opts a scene out of the shared stage (it then keeps its own renderer)
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false, nodeKit = false }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false, nodeKit = false, fixedView = false }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
@@ -211,6 +211,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     scene = new THREE.Scene();
     const fov = initial.fov || 45;
     const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 600);
+    if (fixedView) camera.up.set(0, 0, -1);
     const target = new THREE.Vector3(...(initial.target || [0, 0, 0]));
     const renderFrame = (dt = 0, now = performance.now(), sample = false, frameMs = dt * 1000) => session.render(dt, now, sample, frameMs);
 
@@ -478,6 +479,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y;
       ptr.x = e.clientX; ptr.y = e.clientY;
       ptr.moved += Math.abs(dx) + Math.abs(dy);
+      if (fixedView) { built.onScreenDrag?.(ndc(e), e); markInteract(); return; }
       orbit.vTheta = -dx * 0.0042;
       orbit.vPhi = -dy * 0.0042;
       orbit.theta += orbit.vTheta;
@@ -526,6 +528,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
     const onKeyDown = (e) => {
       const step = 0.12;
       let used = true;
+      if (fixedView && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
       if (e.key === "ArrowLeft") orbit.theta -= step;
       else if (e.key === "ArrowRight") orbit.theta += step;
       else if (e.key === "ArrowUp") orbit.phi = Math.max(0.08, orbit.phi - step);
@@ -752,7 +755,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
         orbit.radius = home.radius * (1.45 - 0.45 * k);
       }
       // inertia
-      if (!ptr.down && mo > 0 && !easing) {
+      if (!fixedView && !ptr.down && mo > 0 && !easing) {
         orbit.theta += orbit.vTheta;
         orbit.phi = Math.max(0.08, Math.min(Math.PI - 0.08, orbit.phi + orbit.vPhi));
         orbit.vTheta *= 0.9; orbit.vPhi *= 0.9;
@@ -908,7 +911,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   return (
     <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application" aria-busy={phase !== "ready"}
       data-qga-anchor="primary-scene"
-      aria-label={(aria || "Interactive 3D scientific visualization") + ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen."}>
+      aria-label={(aria || "Interactive 3D scientific visualization") + (fixedView ? ". Click to select; scroll to zoom, R to reset camera, F for fullscreen." : ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen.")}>
       {/* adaptive material prewarms no longer republish "prewarming" (they keep
           the last frame on screen), so this overlay only appears for the first
           setup and true pipeline swaps */}
@@ -916,14 +919,14 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       <div className="s3d-hud" data-omelette-chrome="">
         <button className="s3d-hud-btn" title="Reset camera (R)" aria-label="Reset camera"
           onClick={() => hudStateRef.current.reset && hudStateRef.current.reset()}>⌖</button>
-        <button className="s3d-hud-btn" title={playing ? "Pause simulation (space)" : "Play simulation (space)"}
+        {!fixedView && <button className="s3d-hud-btn" title={playing ? "Pause simulation (space)" : "Play simulation (space)"}
           aria-label={playing ? "Pause simulation" : "Play simulation"}
-          onClick={() => setPlaying(!playing)}>{playing ? "❚❚" : "▶"}</button>
+          onClick={() => setPlaying(!playing)}>{playing ? "❚❚" : "▶"}</button>}
         <button className="s3d-hud-btn s3d-hud-full" title={full ? "Exit fullscreen (Esc)" : "Expand to fullscreen"}
           aria-label={full ? "Exit fullscreen" : "Expand to fullscreen"}
           onClick={() => setFull((v) => !v)}>{full ? "✕" : "⛶"}</button>
       </div>
-      <div className="s3d-hint" aria-hidden="true">{full ? "drag · zoom · click · esc to exit" : "drag · zoom · click · ⛶ fullscreen"}</div>
+      <div className="s3d-hint" aria-hidden="true">{fixedView ? (full ? "click · zoom · esc to exit" : "click · zoom · ⛶ fullscreen") : (full ? "drag · zoom · click · esc to exit" : "drag · zoom · click · ⛶ fullscreen")}</div>
       {overlay}
     </div>
   );

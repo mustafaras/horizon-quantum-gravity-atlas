@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-27",
+  "updated": "2026-10-28",
   "statuses": [
     "todo",
     "claimed",
@@ -2931,6 +2931,13 @@
       "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "event": "done",
       "detail": "Merged in 5539696 (PR #91). F-16 stays open for S20: the conformal-diagram part is delivered, the rubber-sheet well and the observational tests are still owed. npm test 1060 pass / 1 skipped / 0 fail on the merge."
+    },
+    {
+      "date": "2026-10-28",
+      "prompt": "S19",
+      "agent": "local: Codex for mustafaras",
+      "event": "follow-up",
+      "detail": "Replaced the three-panel S19 layout with the Spacetime Observatory: one enlarged exact map, optional comparison, computed causal-future and null-ray interaction, proper-time transport, region selection and progressive formulas. Refreshed only gr-penrose-atlas and gr-penrose-atlas-mobile visual baselines and documentation captures because the user requested this deliberate redesign; the old three-panel images no longer represent the interface. F-16 remains open for S20."
     }
   ]
 }

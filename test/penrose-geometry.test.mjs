@@ -7,13 +7,53 @@ import assert from "node:assert/strict";
 
 import {
   DIAGRAM_SCALE, PANEL_GAP, PANELS, closedLoop, framing, fromScene, layout, lightCone, lightConeSegments,
-  panelAtX, polyline, properTimeIndex, toScene, zigzag,
+  panelAtX, polyline, properTimeIndex, horizonProgress, observatoryFrame, futureLightRays, futureCausalRegion, schematicRegionAt, toScene, zigzag,
 } from "../js/visualizations/gr/penrose-geometry.mjs";
 import { freeFallFromRest } from "../js/science/conformal.mjs";
 
 const close = (actual, expected, tolerance, what) => {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${what}: ${actual} is not within ${tolerance} of ${expected}`);
 };
+
+test("future light rays remain null, stop at the boundary, and reject invalid or schematic events", () => {
+  for (const [id, point] of [["minkowski", {T: 0, R: 0}], ["schwarzschild", {T: 0, R: 1.2}], ["schwarzschild", {T: 0.9, R: 0.15}]]) {
+    const rays = futureLightRays(id, point);
+    for (const end of [rays.left, rays.right]) {
+      close(end.T - point.T, Math.abs(end.R - point.R), 1e-12, "null slope");
+      assert.ok(end.T > point.T);
+    }
+    if (id === "minkowski") for (const end of [rays.left, rays.right]) close(Math.abs(end.T) + Math.abs(end.R), Math.PI / 2, 1e-12, "diamond edge");
+    if (point.T === 0.9) for (const end of [rays.left, rays.right]) close(end.T, Math.PI / 2, 1e-12, "future singularity");
+    const region = futureCausalRegion(id, point);
+    assert.ok(region.length >= 3 && region.length <= 8);
+    for (const vertex of region) assert.ok(vertex.T - point.T + 1e-12 >= Math.abs(vertex.R - point.R), "the shaded point is causally reachable");
+  }
+  assert.equal(futureLightRays("minkowski", {T: 2, R: 0}), null);
+  assert.equal(futureLightRays("reissner-nordstrom", {T: 0, R: 0}), null);
+});
+
+test("observatory camera frames the selected panels on desktop and mobile", () => {
+  for (const ids of [["minkowski"], ["schwarzschild"], ["reissner-nordstrom"], ["minkowski", "schwarzschild"]]) {
+    for (const [width, height] of [[1000, 620], [310, 360]]) {
+      const frame = observatoryFrame(ids, width, height);
+      const halfHeight = Math.tan(13 * Math.PI / 360) * frame.radius;
+      const halfWidth = halfHeight * width / height;
+      for (const panel of layout().panels.filter(p => ids.includes(p.id))) {
+        assert.ok(Math.abs(panel.cx - frame.targetX) + panel.width / 2 < halfWidth);
+        assert.ok(panel.halfHeight < halfHeight);
+      }
+    }
+  }
+});
+
+test("schematic region picking matches the three drawn RN regions on both sides", () => {
+  for (const sign of [-1, 1]) {
+    assert.equal(schematicRegionAt({ T: 0, R: sign * 0.5 }), "S");
+    assert.equal(schematicRegionAt({ T: 0, R: sign * 1.45 }), "C");
+    assert.equal(schematicRegionAt({ T: 0, R: sign * 2.5 }), "E");
+  }
+  assert.equal(schematicRegionAt({ T: 2, R: 0 }), null);
+});
 
 test("the animation follows equal increments of proper time, including the endpoints", () => {
   const { rows, properTimeEnd } = freeFallFromRest({ r0: 2.6, M: 1, samples: 361 });
@@ -25,6 +65,9 @@ test("the animation follows equal increments of proper time, including the endpo
   }
   assert.equal(properTimeIndex(rows, -1), 0);
   assert.equal(properTimeIndex(rows, 2), rows.length - 1);
+  const crossing = horizonProgress(freeFallFromRest({ r0: 2.6, M: 1, samples: 361 }));
+  const index = properTimeIndex(rows, crossing), i = Math.floor(index), w = index - i;
+  close(rows[i].r + (rows[i + 1].r - rows[i].r) * w, 2, 1e-4, "proper time at horizon");
 });
 
 test("the layout places the three panels left to right, separated by the gap and as wide as their diagrams", () => {
@@ -101,14 +144,14 @@ test("the zig-zag stays inside its amplitude and turns sharply", () => {
   const spacelike = zigzag({ axis: "T", fixed: 0.5, from: -1, to: 1, amplitude: 0.05, period: 0.2 });
   assert.ok(spacelike.length > 30, "the zig-zag is sampled");
   for (const p of spacelike) {
-    close(p.T, 0.5, 0, "a spacelike singularity holds T fixed");
-    assert.ok(Math.abs(p.R) <= 1 + 0.05 + 1e-12, "and stays within its amplitude of the surface");
+    assert.ok(Math.abs(p.T - 0.5) <= 0.05 + 1e-12, "the engraved mark stays close to the spacelike boundary");
+    assert.ok(Math.abs(p.R) <= 1 + 1e-12, "it stays within the boundary's endpoints");
   }
-  assert.ok(new Set(spacelike.map((p) => p.R.toFixed(4))).size > 10, "it really does move");
+  assert.ok(spacelike.some((p) => Math.abs(p.T - 0.5) > 0.01), "it visibly crosses the boundary");
   // the timelike case swaps the roles, which is what Reissner-Nordstrom needs
   const timelike = zigzag({ axis: "R", fixed: -1.2, from: -0.5, to: 0.5, amplitude: 0.04, period: 0.15 });
-  for (const p of timelike) close(p.R, -1.2, 0, "a timelike singularity holds R fixed");
-  assert.ok(timelike.some((p) => Math.abs(p.T) > 0.01), "and moves in T");
+  for (const p of timelike) assert.ok(Math.abs(p.R + 1.2) <= 0.04 + 1e-12, "the engraved mark stays close to the timelike boundary");
+  assert.ok(timelike.some((p) => Math.abs(p.R + 1.2) > 0.01), "it visibly crosses the boundary");
   // the endpoints are the requested range, so the zig-zag meets the corners of the diagram
   close(spacelike[0].R, -1, 0.06, "it starts at the requested end");
   close(spacelike[spacelike.length - 1].R, 1, 0.06, "and stops at the other");
