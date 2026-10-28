@@ -1212,12 +1212,12 @@
       "findings": [
         "F-16"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Codex for mustafaras",
+      "branch": "codex/s20-gr-tidal-embedding",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-28",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -2945,6 +2945,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "follow-up",
       "detail": "Completed the Observatory introduction with a finite sample interpolating from linear null coordinates to the arctan map, followed by the existing approach to infinity. Refreshed only the two Penrose screenshots and baselines again because the introduction control and reduced-motion explanation intentionally changed; the coordinate demo is explicitly limited to a finite sample."
+    },
+    {
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "claimed",
+      "detail": "Branch codex/s20-gr-tidal-embedding cut from origin/main 564ecea9; S19 is done."
     }
   ]
 }
