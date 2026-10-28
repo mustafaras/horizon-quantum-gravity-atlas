@@ -1,243 +1,150 @@
-// penrose-atlas.jsx — conformal diagrams from exact coordinate maps (S19).
-//
-// The science is js/science/conformal.mjs (window.QGA_CONFORMAL), the picture is js/visualizations/gr/penrose.mjs, and
-// this file holds the slider, the release button, the region overlay and the formula cards. Every number shown is
-// computed by that module; nothing here invents one.
-
-/** The stage height is derived from the drawn aspect of the atlas, so a wide stage is not mostly empty. */
-const PN_FALLBACK_WIDTH = 1100;
-/** Infall radii the slider offers, in units of M. Below 2.6M the fall is over almost at once. */
-const PN_R0 = Object.freeze({ min: 2.6, max: 30, step: 0.2 });
-/**
- * A fall from rest at a large radius crosses the horizon within a hair of i+ in the diagram, because the map compresses
- * the whole exterior into the wedge beside it: at r0 = 10M the curve's interior leg is six thousandths of a diagram
- * unit long. 2.6M — just outside the horizon — is where the fall is legible as a curve rather than as a line hugging a
- * corner, and the slider is there to show how the crossing moves out toward i+ as r0 grows.
- */
+// Penrose Observatory: exact diagrams, computed light paths and a proper-time explorer.
 const PN_DEFAULT_R0 = 2.6;
-/** A small field of view from far away: the diagrams are a flat map, so the projection has to stay close to orthographic. */
 const PN_FOV = 13;
+const PN_VIEWS = [
+  { id: "minkowski", title: "Minkowski", label: "Flat spacetime", status: "established" },
+  { id: "schwarzschild", title: "Schwarzschild", label: "Uncharged black hole", status: "established" },
+  { id: "reissner-nordstrom", title: "Reissner–Nordström", label: "Charged black hole", status: "schematic" },
+];
 
 function PenroseAtlas() {
   const C = window.QGA_CONFORMAL;
+  const [view, setView] = useState("minkowski");
+  const [compare, setCompare] = useState(false);
+  const [mode, setMode] = useState("signal");
   const [r0, setR0] = useState(PN_DEFAULT_R0);
-  const [focused, setFocused] = useState(null);
+  const [progress, setProgress] = useState(0);
   const [released, setReleased] = useState("idle");
-  const reduced = usePRM();
-  const wrap = useRef(null);
+  const [focused, setFocused] = useState(null);
+  const [event, setEvent] = useState(null);
+  const [intro, setIntro] = useState(false);
+  const wrap = useRef(null), atlas = useRef(null);
+  const introSeen = useRef(false);
   const [width, setWidth] = useState(0);
-  const atlas = useRef(null);
-  const latest = useRef({ r0 });
+  const latest = useRef({});
+  const selected = PN_VIEWS.find((item) => item.id === view);
+  const other = view === "minkowski" ? "schwarzschild" : "minkowski";
+  const visible = compare ? [view, other] : [view];
+  latest.current = { r0, view, compare, progress, mode };
 
   useEffect(() => {
     const el = wrap.current;
     if (!el) return undefined;
     const ro = new ResizeObserver((entries) => setWidth(Math.floor(entries[0].contentRect.width)));
-    ro.observe(el);
-    setWidth(Math.floor(el.getBoundingClientRect().width));
+    ro.observe(el); setWidth(Math.floor(el.getBoundingClientRect().width));
     return () => ro.disconnect();
   }, []);
 
-  const geometry = C.geometry;
   const fall = useMemo(() => C.freeFallFromRest({ r0, M: 1, samples: 361 }), [r0]);
-  const regionsById = useMemo(() => {
-    const out = {};
-    for (const id of ["minkowski", "schwarzschild", "reissner-nordstrom"]) for (const region of C.regions(id)) out[region.id] = region;
-    return out;
-  }, []);
-  const regionList = useMemo(() => Object.values(regionsById), [regionsById]);
-  const active = focused ? regionsById[focused] ?? null : null;
-
-  // The scene rebuilds whenever the frame changes (that is what `deps` means), and a rebuilt scene starts from its own
-  // defaults. Everything the controls show therefore has to be replayed into it, or the picture and the readouts would
-  // disagree: `latest` is the state the controls are in, read by `build`.
-  latest.current = { r0, released };
-
-  // The scene reports the region under the pointer or the keyboard back to the overlay.
-  useEffect(() => {
-    const handle = atlas.current;
-    if (!handle?.onFocusChange) return undefined;
-    return handle.onFocusChange(setFocused);
-  }, [atlas.current]);
-
+  const panelRegions = useMemo(() => C.regions(view), [view]);
+  const active = PN_VIEWS.flatMap((v) => C.regions(v.id)).find((r) => r.id === focused) ?? null;
   const stage = useMemo(() => {
-    const span = width || PN_FALLBACK_WIDTH;
-    const height = geometry.stageHeight(span);
-    return { height, radius: geometry.framing(PN_FOV, span / height) };
-  }, [width, geometry]);
-
-  // The slider drives the live scene in place, so changing the radius does not rebuild it.
-  useEffect(() => {
-    if (!atlas.current) return;
-    atlas.current.setStartRadius(r0);
-    setReleased("idle");
-  }, [r0]);
+    const w = width || 900;
+    const h = Math.round(Math.max(360, Math.min(620, w * 0.64)));
+    return { height: h, ...C.geometry.observatoryFrame(visible, w, h, PN_FOV) };
+  }, [width, view, compare]);
 
   const build = async (ctx) => {
     const { buildPenroseAtlas } = await C.loadAtlas();
-    const handle = await buildPenroseAtlas(ctx);
+    const state = latest.current;
+    const ids = state.compare ? [state.view, state.view === "minkowski" ? "schwarzschild" : "minkowski"] : [state.view];
+    const handle = await buildPenroseAtlas(ctx, {
+      visiblePanels: ids,
+      onEvent: setEvent,
+      onIntro: setIntro,
+      onRegion: (id) => { setMode("regions"); setFocused(id); },
+      onProgress: (value) => {
+        setProgress((old) => Math.abs(old - value) >= 0.015 || value === 0 || value === 1 ? value : old);
+        if (value >= 1) setReleased("complete");
+      },
+    });
     atlas.current = handle;
-    // Replay the controls into the new scene: the radius the reader chose, and the cursor if it had been run.
-    handle.setStartRadius(latest.current.r0);
-    if (latest.current.released !== "idle") handle.release();
+    handle.setStartRadius(state.r0);
+    if (state.progress > 0) handle.seek(state.progress);
+    const defaultId = state.view === "reissner-nordstrom" ? null : state.view;
+    if (defaultId) handle.placeEvent(defaultId, defaultId === "minkowski" ? { T: 0, R: 0 } : { T: 0, R: 1.2 });
+    handle.setInteractionMode(state.mode);
+    if (state.view === "minkowski" && !state.compare && !introSeen.current) { introSeen.current = true; handle.playIntro(); }
     handle.onFocusChange?.(setFocused);
-    // QA hook, like window.__qgaRgFlow3d: qa/specs/penrose-atlas.spec.mjs reads the atlas it is looking at, rather
-    // than guessing which entry of the shared scene registry is the current one.
     window.__qgaPenroseAtlas = handle;
     return handle;
   };
 
-  const release = () => {
-    const result = atlas.current?.release?.() ?? "idle";
-    setReleased(result);
-  };
+  useEffect(() => {
+    atlas.current?.setStartRadius(r0); setProgress(0); setReleased("idle");
+  }, [r0]);
+  useEffect(() => { atlas.current?.setInteractionMode(mode); }, [mode]);
 
-  const showPanel = (id) => {
-    const inner = wrap.current;
-    const scroller = inner?.parentElement;
-    if (!inner || !scroller) return;
-    const fractions = geometry.screenFractions(PN_FOV, width / stage.height, stage.radius);
-    const panel = fractions.panels.find((item) => item.id === id);
-    if (panel) scroller.scrollLeft = ((panel.left + panel.right) / 2) * width - scroller.clientWidth / 2;
+  const selectView = (id) => { setView(id); setIntro(false); setFocused(null); setEvent(null); setProgress(0); setReleased("idle"); };
+  const selectMode = (id) => { setMode(id); if (id === "observer" && view !== "schwarzschild") selectView("schwarzschild"); };
+  const play = () => {
+    if (released === "running") { atlas.current?.pause(); setReleased("paused"); return; }
+    const result = atlas.current?.release() ?? "idle"; setReleased(result === "snapped" ? "complete" : result);
   };
-
-  // Keyboard cycling of the regions: the overlay is a real control, not a decoration.
-  const cycle = (event) => {
-    if (!regionList.length) return;
-    const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1;
-    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(event.key)) return;
-    event.preventDefault();
-    const index = regionList.findIndex((region) => region.id === focused);
-    const next = (index + step + regionList.length) % regionList.length;
-    setFocused(regionList[next].id);
-    atlas.current?.focusRegion(regionList[next].id);
+  const placePreset = (where) => {
+    const p = where === "interior" ? { T: 0.9, R: 0.15 } : { T: 0, R: 1.2 };
+    atlas.current?.placeEvent("schwarzschild", p); atlas.current?.focusRegion(where === "interior" ? "II" : "I");
   };
-
-  const status = (id) => (id === "gr-penrose-reissner-nordstrom" ? "schematic" : "established");
+  const moveEvent = (dT, dR) => { if (event) atlas.current?.placeEvent(event.id, { T: event.T + dT, R: event.R + dR }); };
+  const eventText = !event ? "Choose an event on the map to explore its future." : event.id === "minkowski"
+    ? "Both radial light signals can reach future null infinity in this flat spacetime."
+    : event.region === "II" ? "Inside the black-hole region, both future-directed radial light paths end at the singularity."
+    : event.region === "I" ? "Outside the future horizon, an outgoing light signal can reach future null infinity."
+    : event.region === "III" ? "In the other exterior, the outward radial signal can reach that exterior’s future null infinity."
+    : "This event lies in the white-hole region of the ideal maximal extension.";
 
   return (
-    <div className="viz-frame pn-lab">
-      <div className="pn-intro">
-        <p className="pn-eyebrow">A guide to causal structure</p>
-        <h3>Read the shape of spacetime</h3>
-        <p>These maps bring infinitely distant events onto a finite page. They show which events can communicate,
-          not their physical size or the time between them.</p>
-        <div className="pn-key" aria-label="How to read the diagrams">
-          <div><strong>↑ Future</strong><span>Time runs upward.</span></div>
-          <div><strong>↗ Light</strong><span>Diagonal lines are paths light can follow.</span></div>
-          <div><strong>— Falling observer</strong><span>The bright curve traces a fall in the middle diagram.</span></div>
-        </div>
-        <p className="pn-reading-note">In the middle map, diagonal horizons separate the regions; the zigzag edges mark
-          the singularities. The four regions describe a mathematical extension, not four places in a collapsing star.</p>
-        <p className="pn-scroll-hint">Choose a diagram below or scroll sideways to explore all three maps.</p>
+    <div className="viz-frame pn-lab pn-observatory">
+      <div className="pn-hero">
+        <div><p className="pn-eyebrow">HORIZON / INTERACTIVE ATLAS</p><h3>Spacetime observatory</h3>
+          <p>Where can a signal go? Explore the geometry of cause and effect.</p></div>
+        <span className="pn-hero-index">GR / 04</span>
       </div>
-      <div className="pn-jump" role="group" aria-label="Choose a diagram to bring into view">
-        <span>View diagram</span>
-        <button className="btn" type="button" onClick={() => showPanel("minkowski")}>Minkowski</button>
-        <button className="btn" type="button" onClick={() => showPanel("schwarzschild")}>Schwarzschild</button>
-        <button className="btn" type="button" onClick={() => showPanel("reissner-nordstrom")}>Reissner–Nordström</button>
+      <div className="pn-viewbar" role="group" aria-label="Choose spacetime">
+        {PN_VIEWS.map((item) => <button key={item.id} type="button" className={"pn-view-btn" + (view === item.id ? " on" : "")}
+          aria-pressed={view === item.id} onClick={() => selectView(item.id)}><strong>{item.title}</strong><span>{item.label}</span></button>)}
+        <button type="button" className={"pn-compare" + (compare ? " on" : "")} aria-pressed={compare} onClick={() => { setCompare(!compare); setIntro(false); setEvent(null); }}>Compare {compare ? "on" : "off"}</button>
       </div>
-      <div className="pn-stage-scroll" role="region" aria-label="Conformal diagrams, scroll sideways to see all three" tabIndex={0}>
-      <div className="pn-stage-inner" ref={wrap}>
-        <Scene3D animated={false} height={stage.height} deps={[stage.radius]}
-          aria="Three conformal diagrams side by side. Left: flat Minkowski spacetime on its causal diamond, with the infinity points i-minus, i-zero and i-plus and the null-infinity edges. Middle: the maximally extended Schwarzschild solution, with regions one and three the two exteriors, region two the black-hole interior, region four the white-hole interior, the four horizons on the diagonals, the two singularities at r = 0 along the top and bottom edges, and the free fall from rest at r-zero as the heavy curve. Right: one block of the Reissner-Nordstrom extension, drawn as a labelled schematic."
-          initial={{ radius: stage.radius, theta: 0, phi: 0.02, fov: PN_FOV, minR: stage.radius * 0.55, maxR: stage.radius * 1.8, target: [0, 0, 0] }}
-          build={build}
-          fallback={<div className="lab-fallback">The diagrams need WebGL. The readouts below are computed without it.</div>}></Scene3D>
+      <div className="pn-stage-wrap" ref={wrap}>
+        <div className="pn-stage-meta"><span>{compare ? "COMPARE" : selected.title}</span>
+          <span className={"pn-status " + selected.status}>{compare && visible.includes("reissner-nordstrom") ? "RN SCHEMATIC" : selected.status === "schematic" ? "SCHEMATIC" : "EXACT MAP"}</span></div>
+        {compare && C.geometry.layout().panels.filter((p) => visible.includes(p.id)).map((p) => {
+          const halfWidth = Math.tan(PN_FOV * Math.PI / 360) * stage.radius * (width || 900) / stage.height;
+          return <div className="pn-compare-label" key={p.id} style={{ left: `${(0.5 + (p.cx - stage.targetX) / (2 * halfWidth)) * 100}%` }}>{p.title}{p.id === "reissner-nordstrom" ? " · schematic" : ""}</div>;
+        })}
+        <Scene3D fixedView animated={false} height={stage.height} deps={[stage.radius, stage.targetX, view, compare]}
+          aria="Conformal spacetime diagram. Select an event to see its future light paths. The Reissner–Nordström view is schematic."
+          initial={{ radius: stage.radius, theta: 0, phi: 0, fov: PN_FOV, minR: stage.radius * 0.8, maxR: stage.radius * 1.6, target: [stage.targetX, 0, 0] }}
+          build={build} fallback={<div className="lab-fallback">The interactive diagram needs WebGL. The explanations and formulas remain available below.</div>}></Scene3D>
+        <div className="pn-axis pn-axis-top">FUTURE ↑</div>
+        <div className="pn-axis pn-axis-bottom">PAST</div>
       </div>
-
+      <div className="pn-legend"><span><i className="pn-key-light"></i> light path</span><span><i className="pn-key-world"></i> observer</span><span><i className="pn-key-boundary"></i> boundary</span><span>shaded area: causal future</span><span>↗ radial light travels at 45°</span></div>
+      {view === "minkowski" && !compare && <div className="pn-intro-control"><span>See how an observer and a light ray approach infinity on a finite map.</span><button className="btn" type="button" onClick={() => intro ? atlas.current?.skipIntro() : atlas.current?.playIntro()}>{intro ? "Skip intro" : "Watch infinity"}</button></div>}
+      <div className="pn-actions" role="group" aria-label="Explore the diagram">
+        <button type="button" className={"pn-action" + (mode === "signal" ? " on" : "")} aria-pressed={mode === "signal"} onClick={() => selectMode("signal")}>Send a light signal</button>
+        <button type="button" className={"pn-action" + (mode === "observer" ? " on" : "")} aria-pressed={mode === "observer"} onClick={() => selectMode("observer")}>Follow an observer</button>
+        <button type="button" className={"pn-action" + (mode === "regions" ? " on" : "")} aria-pressed={mode === "regions"} onClick={() => selectMode("regions")}>Explore regions</button>
       </div>
-      <div className="pn-panel-guide" aria-label="The three diagrams">
-        <p><strong>Minkowski</strong><span>Flat spacetime, without gravity.</span></p>
-        <p><strong>Schwarzschild</strong><span>An ideal uncharged black hole; follow the bright falling path.</span></p>
-        <p><strong>Reissner–Nordström · schematic</strong><span>A charged black-hole solution, shown as a simplified block.</span></p>
+      <div className="pn-insight" aria-live="polite">
+        {mode === "signal" ? <React.Fragment><div><span className="pn-kicker">CAUSAL CONNECTION</span><h4>Choose an event</h4>
+          <p>{view === "reissner-nordstrom" && !compare ? "This view is a schematic. Choose an exact map to send a computed light signal." : eventText + " Click or drag on the map, or use the movement controls below."}{compare && " Comparison shows independent example events; select either exact map to move its event."}</p></div>
+          <div className="pn-insight-actions"><button className="btn" type="button" disabled={!event} onClick={() => atlas.current?.sendSignal()}>Send light again</button>
+            {visible.includes("schwarzschild") && <React.Fragment><button className="btn" type="button" onClick={() => placePreset("exterior")}>Outside horizon</button><button className="btn" type="button" onClick={() => placePreset("interior")}>Inside horizon</button></React.Fragment>}</div>
+          {event && <div className="pn-event-controls" role="group" aria-label="Move the selected event"><span>Move event</span><button className="btn" aria-label="Move event into the past" onClick={() => moveEvent(-0.1, 0)}>↓</button><button className="btn" aria-label="Move event left" onClick={() => moveEvent(0, -0.1)}>←</button><button className="btn" aria-label="Move event right" onClick={() => moveEvent(0, 0.1)}>→</button><button className="btn" aria-label="Move event into the future" onClick={() => moveEvent(0.1, 0)}>↑</button><span><Eq tex={pnPointTex(event)}></Eq></span></div>}</React.Fragment>
+        : mode === "observer" ? <React.Fragment><div><span className="pn-kicker">RADIAL FREE FALL / SCHWARZSCHILD</span><h4>Follow the observer</h4><p>The marker follows the calculated worldline in the observer’s proper time. The horizon is crossed once; the trajectory ends at the singularity.</p></div>
+          <div className="pn-transport"><button className="btn pn-release" type="button" onClick={play}>{released === "running" ? "Pause" : progress >= 1 ? "Replay fall" : "Play fall"}</button>
+            <label>Proper time <input type="range" min="0" max="1000" value={Math.round(progress * 1000)} aria-label="Observer proper time" onChange={(e) => { atlas.current?.seek(Number(e.target.value) / 1000); setReleased("paused"); }} /></label>
+            <span>{Math.round(progress * 100)}%</span></div>
+          <div className="pn-timeline-notes"><span>Start</span><span>Horizon · {Math.round(C.geometry.horizonProgress(fall) * 100)}% of proper time</span><span>Singularity</span></div>
+          <div className="pn-start"><label>Starting radius <Eq tex="r_0"></Eq><input type="range" min="2.6" max="30" step="0.2" value={r0} aria-label="infall start radius in units of M" onChange={(e) => setR0(Number(e.target.value))} /></label><span className="ctl-value"><Eq tex={String.raw`${r0.toFixed(1)}M`}></Eq></span></div>
+          <p className="pn-milestone">Start at rest · horizon at <Eq tex={pnPointTex(fall.horizonCrossing)}></Eq> · end at <Eq tex={String.raw`\tau=${fall.properTimeEnd.toFixed(3)}\,M`}></Eq></p></React.Fragment>
+        : <React.Fragment><div><span className="pn-kicker">SELECT A REGION</span><h4>{active ? active.name : "Explore the map"}</h4><p>{active ? active.meaning : "Select a region to see what it represents. The maximal Schwarzschild extension is an ideal mathematical solution."}</p></div>
+          <div className="pn-region-list" role="group" aria-label="Regions of the diagram">{panelRegions.map((region) => <button key={region.id} type="button" className={"btn pn-region" + (focused === region.id ? " on" : "")} aria-pressed={focused === region.id} onClick={() => { setFocused(region.id); atlas.current?.focusRegion(region.id); }}><span className="pn-region-id">{region.id}</span> {region.name}</button>)}</div></React.Fragment>}
       </div>
-      <p className="pn-note">{C.RN_SCHEMATIC.note}</p>
-
-      <VizCaption provenanceId="gr-penrose-atlas" status="established">
-        Left, flat Minkowski spacetime: <Eq tex="U=\arctan(t-r)"></Eq>,{" "}
-        <Eq tex="V=\arctan(t+r)"></Eq>, so the whole of spacetime becomes a diamond and every light ray is at 45 degrees.
-        Middle, the Schwarzschild solution in Kruskal–Szekeres coordinates from the tortoise{" "}
-        <Eq tex="r^*=r+2M\ln|r/2M-1|"></Eq>: four regions meet at the horizons on the diagonals, and the singularity at{" "}
-        <Eq tex="r=0"></Eq> is the two horizontal edges. The heavy curve is a radial free fall from rest at{" "}
-        <Eq tex={String.raw`r_0=${r0.toFixed(1)}M`}></Eq>, and the small crosses along it are light cones at equal steps of
-        proper time: they crowd where the diagram compresses the fall, not where the fall speeds up. Right, one block of
-        the Reissner–Nordström extension, drawn as a labelled <strong>schematic</strong>: it is not computed.
-      </VizCaption>
-
-      <div className="viz-toolbar pn-bar" role="group" aria-label="Infall">
-        <div className="pn-range">
-          <span className="ctl-label">Starting radius <Eq tex="r_0"></Eq></span>
-          <input type="range" min={PN_R0.min} max={PN_R0.max} step={PN_R0.step} value={r0}
-            aria-label="infall start radius in units of M"
-            onChange={(e) => setR0(parseFloat(e.target.value))}></input>
-          <span className="ctl-value"><Eq tex={String.raw`${r0.toFixed(1)}M`}></Eq></span>
-        </div>
-        <button type="button" className="btn pn-release" onClick={release} disabled={reduced && released === "snapped"}>
-          {released === "idle" ? "Release the observer" : released === "snapped" ? "Fall complete" : "Replay fall"}
-        </button>
-      </div>
-      <p className="pn-control-help">Change the starting radius, then release the observer. The ring follows the bright
-        curve in the Schwarzschild diagram; its motion represents the observer’s own elapsed time. With reduced motion,
-        it moves directly to the end. M is the mass expressed as a length in geometric units; larger starting radii
-        compress the final part of the path toward a corner of this map.</p>
-
-      <div className="pn-regions">
-        <div className="pn-region-list" role="group" aria-label="Regions of the diagrams" tabIndex={0} onKeyDown={cycle}>
-          {regionList.map((region) => (
-            <button key={region.id} type="button" className={"btn pn-region" + (focused === region.id ? " on" : "")}
-              aria-pressed={focused === region.id}
-              onMouseEnter={() => { setFocused(region.id); atlas.current?.focusRegion(region.id); }}
-              onFocus={() => { setFocused(region.id); atlas.current?.focusRegion(region.id); }}
-              onClick={() => { setFocused(region.id); atlas.current?.focusRegion(region.id); }}>
-              <span className="pn-region-id">{region.id}</span>
-              <span className="pn-region-name">{region.name}</span>
-            </button>
-          ))}
-        </div>
-        <div className="pn-overlay" role="status" aria-live="polite">
-          {active ? (
-            <React.Fragment>
-              <div className="pn-overlay-title"><Eq tex={regionTex(active)}></Eq>{active.name}</div>
-              <p className="pn-overlay-body">{active.meaning}</p>
-            </React.Fragment>
-          ) : (
-            <p className="pn-overlay-body pn-overlay-hint">
-              Point at a region, or use the arrow keys here, to read what each one means. Arrow keys cycle; the
-              regions are also buttons.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="pn-readouts" role="status" aria-live="polite">
-        <div className="readout"><div className="readout-label">horizon crossing</div>
-          <div className="readout-value"><Eq tex={pnPointTex(fall.horizonCrossing)}></Eq></div></div>
-        <div className="readout"><div className="readout-label">proper time to <Eq tex="r=0"></Eq></div>
-          <div className="readout-value"><Eq tex={String.raw`\tau=${fall.properTimeEnd.toFixed(3)}\,M`}></Eq></div></div>
-        <div className="readout"><div className="readout-label"><Eq tex="\eta"></Eq> at the horizon</div>
-          <div className="readout-value"><Eq tex={String.raw`${fall.etaHorizon.toFixed(4)}`}></Eq></div></div>
-        <div className="readout"><div className="readout-label">coordinate time <Eq tex="t"></Eq> at <Eq tex="r_0"></Eq></div>
-          <div className="readout-value"><Eq tex={String.raw`0`}></Eq><span className="unit">the fall starts at rest</span></div></div>
-      </div>
-
-      <VizCaption provenanceId="gr-penrose-schwarzschild" status="established">
-        The Schwarzschild panel's numbers. The free fall crosses the horizon at a finite point of the diagram —{" "}
-        <Eq tex={pnPointTex(fall.horizonCrossing)}></Eq> — because the Kruskal coordinates are smooth there even though the
-        exterior coordinate time <Eq tex="t"></Eq> diverges; that divergence is why the curve is carried by{" "}
-        <Eq tex="U"></Eq> and <Eq tex="V"></Eq> rather than by <Eq tex="t"></Eq>. It then meets the singularity at{" "}
-        <Eq tex="r=0"></Eq>, which is the edge <Eq tex="T=\pi/2"></Eq>, and ends there. The proper time to the singularity is{" "}
-        <Eq tex={String.raw`\tau=\sqrt{r_0^3/8M}\,(\eta+\sin\eta)`}></Eq> evaluated at <Eq tex="\eta=\pi"></Eq>. The crossing
-        moves toward the corner as <Eq tex={String.raw`r_0`}></Eq> grows and toward the centre of the diagram as it shrinks:
-        everything the fall does is set by the ratio <Eq tex={String.raw`r_0/M`}></Eq>.
-      </VizCaption>
-
-      <div className="pn-formula-intro">
-        <h4>How the map is made</h4>
-        <p>First stretch the radial coordinate near the horizon. Then use light-ray coordinates U and V to cross it.
-          Finally compress those coordinates into T and R, the vertical and horizontal axes of the diagram. In the
-          Formula Lens, selecting U or V highlights the corresponding family of light rays.</p>
-      </div>
+      <VizCaption provenanceId="gr-penrose-atlas" status="established">Minkowski and Schwarzschild are drawn from exact conformal maps. Radial light follows the diagonal null directions; diagram distances are not physical distances. Reissner–Nordström is a labelled schematic, not a calculated coordinate map.</VizCaption>
+      <details className="pn-math"><summary><span><span className="pn-kicker">THE EQUATIONS</span><strong>How is spacetime mapped?</strong><small>Open the formulas and connect their terms to the diagram</small></span><b aria-hidden="true">+</b></summary>
+        <p>First stretch the radial coordinate near the horizon. Then form the light coordinates <Eq tex="u=t-r^*,\\quad v=t+r^*"></Eq> and their Kruskal counterparts U and V. Finally compress them into the diagram coordinates T and R. Select U or V in the Schwarzschild view to highlight its family of light rays.</p>
       <div className="formula-grid">
         <FormulaCard title="Tortoise coordinate" formulaId="penrose-tortoise" status="established"
           symbols={[
@@ -255,6 +162,12 @@ function PenroseAtlas() {
           ]}
           meaning="The chart in which the horizon is not a coordinate singularity: $U$ and $V$ are smooth across it. Compactifying both with the same arctan turns the infinite Kruskal plane into the finite diagram and keeps every light ray at 45 degrees."
           limits="The compactification is not a physical change: $T$ and $R$ have no units of time or length, and distances on the diagram are not proper distances."></FormulaCard>
+        <FormulaCard title="Outgoing light coordinate U" formulaId="penrose-kruskal-u" status="established"
+          meaning="In region I, U stays constant along an outgoing radial light ray. Kruskal coordinates extend smoothly across the horizon."
+          limits="The displayed exponential uses the exterior region I sign convention; the full extension uses different signs in other regions."></FormulaCard>
+        <FormulaCard title="Ingoing light coordinate V" formulaId="penrose-kruskal-v" status="established"
+          meaning="In region I, V stays constant along an ingoing radial light ray."
+          limits="The displayed exponential uses the exterior region I sign convention; the full extension uses different signs in other regions."></FormulaCard>
         <FormulaCard title="Compactified radial coordinate" formulaId="penrose-compact-r" status="established"
           symbols={[
             { s: "R", d: "The compactified radial coordinate, $R=\\arctan V-\\arctan U$." },
@@ -275,28 +188,10 @@ function PenroseAtlas() {
         black holes with <Eq tex="|Q|"></Eq> comparable to <Eq tex="M"></Eq> are not expected to exist in the sky — the
         surrounding plasma neutralises them — so this panel is about the structure of the solution, not about an object.
       </VizCaption>
+      </details>
     </div>
   );
 }
 
-/** The (T, R) of a diagram point as TeX, to three decimals: the readouts above show exactly these numbers. */
-function pnPointTex(point) {
-  return String.raw`T=${point.T.toFixed(3)},\quad R=${point.R.toFixed(3)}`;
-}
-
-/** A region's defining relation as TeX, for the overlay title. */
-function regionTex(region) {
-  switch (region.id) {
-    case "I": return String.raw`\text{I}`;
-    case "II": return String.raw`\text{II}`;
-    case "III": return String.raw`\text{III}`;
-    case "IV": return String.raw`\text{IV}`;
-    case "M": return String.raw`\text{M}`;
-    case "E": return String.raw`r>r_+`;
-    case "C": return String.raw`r_-<r<r_+`;
-    case "S": return String.raw`r=0`;
-    default: return String.raw`\text{${region.id}}`;
-  }
-}
-
+function pnPointTex(point) { return String.raw`T=${point.T.toFixed(3)},\quad R=${point.R.toFixed(3)}`; }
 window.PenroseAtlas = PenroseAtlas;

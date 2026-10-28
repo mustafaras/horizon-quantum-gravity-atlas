@@ -1,6 +1,6 @@
 # The Penrose atlas: conformal diagrams from exact maps (S19)
 
-The GR module now shows causal structure the way the subject draws it: three conformal diagrams side by side, computed from exact coordinate maps rather than sketched. Closes the third part of finding F-16 (no Penrose diagrams); the rubber-sheet well and the observational tests are S20's.
+The Spacetime Observatory shows one large conformal diagram at a time, with optional comparison. Minkowski and Schwarzschild are computed from exact maps; Reissner–Nordström is a labelled schematic. F-16 remains open for S20, including the rubber-sheet well and observational tests.
 
 ```text
 js/science/
@@ -39,19 +39,14 @@ A labelled **schematic**, and it says so in the canvas. One block of the maximal
 
 Nothing here comes from a coordinate map, the exact extension is an infinite chain of such blocks rather than the one drawn, and charged black holes with `|Q|` comparable to `M` are not expected to exist in the sky — the surrounding plasma neutralises them. So the panel is about the structure of the solution, not about an object.
 
-## The picture
+## The observatory
 
-* Three panels on the shared stage, drawn flat (`R` right, `T` up the screen, `z = −T·scale`) with a small field of view from far away, so the projection is as close to orthographic as a `PerspectiveCamera` gets.
-* **The panels do not share a scale.** A conformal diagram is one coordinate system, so its `R` and `T` extents are set by the physics and the three diagrams come out different shapes: Minkowski square, Schwarzschild two to one, the RN block wider. Drawing them all at one scale makes a band thirteen times wider than it is tall, which no frame can show. Instead every panel is scaled to the **same drawn height**, the convention of a plate of diagrams; the scale stays uniform *within* a panel, so a null ray is still exactly 45° on screen (ledger D-121).
-* Coordinate lines `t = const` and `r = const` at 1 px `--ink-faint`, drawn in the chart of **each** of Schwarzschild's four regions: a coordinate grid only exists inside one wedge, and drawing region I's grid across the horizon would put `r > 2M` lines in the interior. The interiors get two lines each so the families are seen to continue without hatching the middle of the picture.
-* Horizons and the `r = 0` surfaces at 1.5 px in the status colour of their diagram (`--status-established`, `--status-schematic`). The singularities are **generated** zig-zag polylines — a triangle wave in the geometry module, never a texture — so they read as surfaces and not as another grid line.
-* One 2.5 px focal curve: the free fall, with a light-cone glyph (two short 45° engraved segments) at every proper-time tick. The ticks are evenly spaced in `τ`, so they *crowd* where the map compresses the fall; that crowding is the diagram's own statement about the coordinate, not about the fall.
-* The region overlay is a real control: eight buttons, arrow-key cycling on the list, `aria-pressed` state and a `role="status"` readout of what each region means. Every readout is a tested closed form from `js/science/conformal.mjs`.
-* The Formula Lens binds `U` and `V` to their null-ray families (`js/formula/library/penrose.mjs`, five established definitions, all GPU-safe).
-
-### Readability follow-up
-
-The lab introduces the reading directions, light paths and the falling observer before the figure, with a short explanation of each spacetime and the coordinate transformations. On narrow screens the diagram retains its width inside a keyboard-focusable horizontal scroller; buttons bring each panel into view. The release cursor is centred on the computed worldline and its animation advances uniformly in proper time by interpolating the sampled trajectory. The Formula Lens highlights computed outgoing and ingoing null rays for U and V, respectively, rather than the unrelated constant-time and constant-radius grid. Reduced motion still snaps the cursor to the endpoint.
+* One large selected diagram fits the available viewport. Compare displays the selected diagram alongside Minkowski (or Schwarzschild when Minkowski is selected), with independent event selection; coordinate scales are uniform within each diagram and are not a physical comparison of size.
+* A click, drag, or keyboard-accessible movement buttons places an event on an exact map. Its two future radial null rays are clipped to that spacetime's boundary. The shaded region is the intersection of the diagram with the event's future light cone, obtained by clipping the diagram polygon against the two null half-planes. RN is schematic and does not support computed light signals.
+* The Minkowski introduction follows two calculated paths toward their finite diagram boundaries: a stationary observer and a radial light ray. It can be skipped or replayed; reduced motion does not animate it. This illustrates approaching infinity, not an animation of a change of coordinates.
+* The Schwarzschild observer runs along the computed free-fall worldline at constant proper-time progress. Play, pause, replay and scrubbing work with the starting-radius control. The horizon milestone is computed from the same free-fall parameterization.
+* Region controls highlight a region anchor and show its description. The Formula Lens links U and V to computed outgoing and ingoing null rays; it is intended for the Schwarzschild view. The mathematical cards are available in the expandable equations section.
+* A fixed camera orientation keeps the diagram plane and its null directions readable; zoom and fullscreen remain available. Screen-space text and controls remain outside the Three.js scene. Line and surface colours use the established tokens.
 
 ## Numbers on screen
 
@@ -59,17 +54,9 @@ The four readouts are the crossing point in the diagram, the proper time to `r =
 
 The default radius is 2.6M rather than 10M on purpose. A fall from rest at a large radius crosses the horizon within a hair of `i⁺` — at `r0 = 10M` the curve's interior leg is six thousandths of a diagram unit long — so the plot would be a line hugging a corner. The slider exists to show that movement.
 
-## Rules the lab keeps
+## Verification
 
-* Status label and a registered provenance entry on every panel; two established, one schematic, and the schematic note is a caption line under the stage in the lab's own flow (pinned over the canvas it collides with the diagrams as soon as the stage is short).
-* Colours and fonts from tokens only; lines 1 px / 1.5 px / 2.5 px; no colour or font literal in the new files.
-* Keyboard reachable, visible focus, 44 px targets, `prefers-reduced-motion` snaps the release cursor to its end instead of animating it.
-* The scene is static: it draws on demand through the shared stage and calls `invalidate()` on change. The only animated thing is the release cursor, and the `r0` slider redraws in place rather than rebuilding the scene.
-* `js/mod-gr.jsx` shrank 1285 → 1225 (the causal lab's model moved to `js/labs/`); every new file is under 600 lines.
-
-## Tests
-
-`test/conformal.test.mjs` (19: the plan's four assertions — null rays at 45°, the horizon on the diagonal, the infalling worldline crossing at finite `(T, R)` and ending on the singularity, the static observer approaching `i⁺` — plus the closed form against quadrature and finite differences, `UV = ρ` in all four regions, the region tiling, every drawn edge at 45°, the RN chain, and each chart's grid staying inside its own wedge), `test/penrose-geometry.test.mjs` (9: the layout, the diagram-to-scene map and its inverse, the uniform scale within a panel, the generated zig-zag, the light-cone glyph, the panel hit test, the framing), `test/formula-core.test.mjs` (+1: the Kruskal relations equal the science module and are GPU safe), and `qa/specs/penrose-atlas.spec.mjs` (7, node renderer WebGL2). Captures `gr-penrose-atlas` and `gr-penrose-atlas-mobile`.
+The science tests cover the null maps, worldlines and exact crossing. Geometry tests cover the future-light-cone polygon, null-ray boundary clipping, viewport framing, RN schematic hit-testing, proper-time scrubbing and the transverse zig-zag mark. The browser spec exercises scene picking, accessible event controls, outside/inside horizon outcomes, full- and reduced-motion playback, comparison, region selection, formula focus, and mobile layout. Captures `gr-penrose-atlas` and `gr-penrose-atlas-mobile` record the intentional new single-map layout.
 
 ## Limits
 

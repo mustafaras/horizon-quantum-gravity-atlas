@@ -1157,13 +1157,8 @@ function ModuleGR({ go }) {
 
       <Section title="Conformal diagrams">
         <p>
-          A conformal map rescales the metric by a positive factor, so it bends lengths and durations but leaves every
-          light ray at 45 degrees. That is the whole trick behind these diagrams: on a finite piece of paper they show
-          the entire causal structure of a spacetime — what can signal what, where worldlines end, and what infinity
-          looks like from inside. The three panels below are drawn from the coordinate maps themselves, not from a
-          picture of them. Flat spacetime folds into a diamond; the Schwarzschild solution opens into four regions
-          joined at horizons that are now ordinary diagonal lines; and the Reissner–Nordström block is a labelled
-          schematic, because its exact global structure is an infinite chain of such blocks.
+          Where can light go? Explore exact conformal maps of flat spacetime and Schwarzschild, then compare them with
+          a labelled schematic of a charged black-hole solution.
         </p>
         <PenroseAtlas></PenroseAtlas>
       </Section>

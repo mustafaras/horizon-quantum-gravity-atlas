@@ -23,8 +23,8 @@ import {
   staticObserver,
 } from "../../science/conformal.mjs";
 import {
-  LABEL_PAD, PANELS, TITLE_DROP, closedLoop, framing, layout, lightConeSegments, panelAtX, polyline, screenFractions,
-  properTimeIndex, toScene, zigzag,
+  closedLoop, layout, lightConeSegments, panelAtX, polyline,
+  properTimeIndex, futureLightRays, futureCausalRegion, schematicRegionAt, fromScene, toScene, zigzag,
 } from "./penrose-geometry.mjs";
 
 /** Field of view of the flat-map framing. */
@@ -124,23 +124,28 @@ function ringPolyline(panel, { T, R }, radius = START_RING, segments = 20) {
  * @returns the scene handle. `setStartRadius(r0)` redraws the focal worldline; `release(playing)` runs the proper-time
  *          cursor; `focusRegion(id | null)` reports the region under a pointer or the keyboard; `state()` is the QA hook.
  */
-export async function buildPenroseAtlas(ctx) {
+export async function buildPenroseAtlas(ctx, { visiblePanels = ["minkowski"], onEvent = () => {}, onProgress = () => {}, onIntro = () => {}, onRegion = () => {} } = {}) {
   const { THREE, scene } = ctx;
   const engraved = ctx.engraved;
   const atlas = layout();
   const M = 1;
   const panelOf = Object.fromEntries(atlas.panels.map((panel) => [panel.id, panel]));
+  const groups = Object.fromEntries(atlas.panels.map((p) => {
+    const group = new THREE.Group(); group.visible = visiblePanels.includes(p.id); scene.add(group); return [p.id, group];
+  }));
 
-  const pickables = [];
   let currentR0 = 6;
+  const ownerFor = (x) => atlas.panels.find((p) => Math.abs(x - p.cx) <= p.width / 2 + 1e-4);
   const add = (points, options) => {
     const line = engraved.line(points, { layer: "model", ...options });
-    scene.add(tag(line, "model"));
+    const owner = ownerFor(points[0]);
+    (groups[owner?.id] ?? scene).add(tag(line, options?.layer ?? "model"));
     return line;
   };
   const addSegments = (pairs, options) => {
     const line = engraved.segments(pairs, { layer: "model", ...options });
-    scene.add(tag(line, "model"));
+    const owner = ownerFor(pairs[0]);
+    (groups[owner?.id] ?? scene).add(tag(line, options?.layer ?? "model"));
     return line;
   };
 
@@ -155,19 +160,10 @@ export async function buildPenroseAtlas(ctx) {
   }
 
   /* ---- boundaries, at the status colour of the diagram ---- */
-  const boundaryLines = [];
   for (const edge of [...minkowskiBoundaries(), ...schwarzschildBoundaries()]) {
     const panel = panelOf[edge.where];
     const status = PANEL_STATUS[edge.where];
-    const drawn = edge.points.length >= 2
-      ? add(flat(panel, edge.points), { color: status.color, widthPx: WIDTH.boundary, opacity: 0.95 })
-      : null;
-    if (drawn) boundaryLines.push({ edge, line: drawn });
-    // every boundary is also a place: a marker so hover and the lens have something to point at
-    const marker = markerAt(panel, edge.points[0], status.status);
-    marker.userData.edge = edge.id;
-    marker.userData.panel = edge.where;
-    pickables.push(marker);
+    if (edge.points.length >= 2 && edge.kind !== "singularity") add(flat(panel, edge.points), { color: status.color, widthPx: WIDTH.boundary, opacity: 0.95 });
   }
 
   /* ---- singularities: generated zig-zags, never a texture ---- */
@@ -202,82 +198,19 @@ export async function buildPenroseAtlas(ctx) {
   let observerLine = add(worldline.observerPoints, { color: "ink-dim", widthPx: WIDTH.boundary, opacity: 0.8 });
   let fallLine = null;
   let tickGlyphs = [];
-
+  const retiredLines = [];
   const redrawWorldline = (r0) => {
-    if (fallLine) scene.remove(fallLine);
-    for (const glyph of tickGlyphs) scene.remove(glyph);
-    tickGlyphs = [];
     worldline = schwarzschildWorldlinePolylines(panel, { r0, M });
-    fallLine = add(worldline.fallPoints, focalStyle);
-    for (const { glyph } of worldline.ticks) {
-      const line = addSegments(glyph, { color: "ink-dim", widthPx: WIDTH.glyph, opacity: 0.9, layer: "decoration" });
-      tickGlyphs.push(line);
+    if (fallLine) engraved.update(fallLine, worldline.fallPoints); else fallLine = add(worldline.fallPoints, focalStyle);
+    if (tickGlyphs.length !== worldline.ticks.length) {
+      for (const glyph of tickGlyphs) { glyph.removeFromParent(); retiredLines.push(glyph); }
+      tickGlyphs = worldline.ticks.map(({ glyph }) => addSegments(glyph, { color: "ink-dim", widthPx: WIDTH.glyph, opacity: 0.9, layer: "decoration" }));
+    } else {
+      worldline.ticks.forEach(({ glyph }, i) => engraved.update(tickGlyphs[i], glyph));
     }
-    scene.remove(observerLine);
-    observerLine = add(worldline.observerPoints, { color: "ink-dim", widthPx: WIDTH.boundary, opacity: 0.8 });
+    engraved.update(observerLine, worldline.observerPoints);
     ctx.invalidate();
   };
-
-  /* ---- labels: the diagram titles, the status word, and what each diagram is ---- */
-  // One header per panel, in the stage's own overlay rather than as a projected label. A projected label is offset by
-  // its own height and knows nothing about its neighbours, so at a phone's width the three of them overlap and run off
-  // the frame. As overlay children laid out by CSS they wrap, shrink to the panel and stay inside the stage at any
-  // width, and the titles stay above their diagrams because that is where the grid puts them.
-  // The cells are spaced to the fractions the drawn band actually occupies, so a title is centred over its own diagram
-  // at every stage width rather than over the panel's share of the scene coordinates.
-  // The scene is built before the camera has been placed, so the fraction helper is given the same distance the lab's
-  // `initial` would ask for at this aspect: any distance gives the same fractions, since the band is flat at z = 0 and
-  // the projection is linear across it, but passing one keeps the result finite and the code honest.
-  const frameAspect = ctx.camera?.aspect || 3.8;
-  const fractions = screenFractions(PENROSE_FOV, frameAspect, framing(PENROSE_FOV, frameAspect));
-  const headerRow = document.createElement("div");
-  headerRow.className = "pn-heads";
-  headerRow.style.left = `${fractions.band[0] * 100}%`;
-  headerRow.style.right = `${(1 - fractions.band[1]) * 100}%`;
-  const bandSpan = fractions.band[1] - fractions.band[0];
-  for (const [index, p] of atlas.panels.entries()) {
-    const status = PANEL_STATUS[p.id];
-    const span = fractions.panels[index];
-    const cell = document.createElement("div");
-    cell.className = "pn-head";
-    // Each cell is placed at its own diagram's extent, as a fraction of the row: absolute placement from the projection
-    // is exact at every width, where flex would depend on content width and on how a browser rounds the shrink.
-    cell.style.left = `${((span.left - fractions.band[0]) / bandSpan) * 100}%`;
-    cell.style.width = `${((span.right - span.left) / bandSpan) * 100}%`;
-    const title = document.createElement("span");
-    title.className = "pn-head-title";
-    title.textContent = p.title;
-    const word = document.createElement("span");
-    word.className = "pn-head-status";
-    word.dataset.status = status.status;
-    word.textContent = status.status;
-    cell.append(title, word);
-    headerRow.appendChild(cell);
-  }
-  ctx.mountOverlay(headerRow);
-
-
-  /* ---- region markers: what the pointer and the keyboard report on ---- */
-  const markers = [];
-  function markerAt(panelRef, at, status) {
-    const material = new THREE.MeshBasicMaterial({ color: tokenHex(PANEL_STATUS[panelRef.id]?.color ?? "ink-dim"), transparent: true, opacity: 0.001 });
-    const mesh = new THREE.Mesh(new THREE.CircleGeometry(0.42, 12), material);
-    const [x, y, z] = toScene(panelRef, at);
-    mesh.position.set(x, y, z + 0.005);
-    mesh.userData.panel = panelRef.id;
-    mesh.userData.layer = "data";
-    scene.add(mesh);
-    return mesh;
-  }
-  for (const id of ["minkowski", "schwarzschild", "reissner-nordstrom"]) {
-    for (const region of regions(id)) {
-      const marker = markerAt(panelOf[id], region.at);
-      marker.userData.region = region.id;
-      marker.userData.status = PANEL_STATUS[id].status;
-      pickables.push(marker);
-      markers.push(marker);
-    }
-  }
 
   /* ---- the Formula Lens: the Kruskal relations, with U and V bound to their coordinate lines ---- */
   const uLines = [];
@@ -321,41 +254,155 @@ export async function buildPenroseAtlas(ctx) {
   redrawWorldline(currentR0);
   moveCursor(0);
 
+  /* An event and its future-directed null rays. The RN panel has no coordinate map and cannot emit computed rays. */
+  const eventGroup = new THREE.Group();
+  scene.add(eventGroup);
+  eventGroup.visible = false;
+  const eventRing = engraved.line(ringPolyline({ cx: 0, scale: 1 }, { T: 0, R: 0 }, 0.13), { color: "accent-2", widthPx: 2.5, layer: "model" });
+  const rayA = engraved.line(new Float32Array([0, 0, 0, 1, 0, -1]), { color: "accent-2", widthPx: 2.5, layer: "model" });
+  const rayB = engraved.line(new Float32Array([0, 0, 0, -1, 0, -1]), { color: "accent-2", widthPx: 2.5, layer: "model" });
+  const futureGeometry = new THREE.BufferGeometry();
+  const futurePositions = new Float32Array(54);
+  futureGeometry.setAttribute("position", new THREE.BufferAttribute(futurePositions, 3));
+  const futureMaterial = new THREE.MeshBasicMaterial({ color: tokenHex("accent-2"), transparent: true, opacity: 0.09, side: THREE.DoubleSide, depthWrite: false });
+  const futureMesh = new THREE.Mesh(futureGeometry, futureMaterial);
+  futureMesh.frustumCulled = false;
+  futureMesh.position.y = -0.02;
+  eventGroup.add(eventRing, rayA, rayB, tag(futureMesh, "model"));
+  const comparisonGroup = new THREE.Group(); scene.add(comparisonGroup); comparisonGroup.visible = false;
+  const comparisonRing = engraved.line(ringPolyline({ cx: 0, scale: 1 }, { T: 0, R: 0 }, 0.13), { color: "accent-2", widthPx: WIDTH.boundary, layer: "model" });
+  const comparisonA = engraved.line(new Float32Array([0, 0, 0, 1, 0, -1]), { color: "accent-2", widthPx: WIDTH.boundary, layer: "model" });
+  const comparisonB = engraved.line(new Float32Array([0, 0, 0, -1, 0, -1]), { color: "accent-2", widthPx: WIDTH.boundary, layer: "model" });
+  comparisonGroup.add(comparisonRing, comparisonA, comparisonB);
+  const eventPoints = {};
+  let comparisonEvent = null;
+  let event = null, interactionMode = "signal", signalTime = 1, signalRunning = false;
+  const placeEvent = (id, point) => {
+    if (!visiblePanels.includes(id)) return false;
+    const rays = futureLightRays(id, point);
+    if (!rays) return false;
+    const p = panelOf[id];
+    const [x, y, z] = toScene(p, point);
+    eventGroup.position.set(x, y, z);
+    const fill = (line, end) => ctx.engraved.update(line, new Float32Array([0, 0, 0, (end.R - point.R) * p.scale, 0, -(end.T - point.T) * p.scale]));
+    fill(rayA, rays.right); fill(rayB, rays.left);
+    eventPoints[id] = { T: point.T, R: point.R };
+    const otherId = visiblePanels.find((item) => item !== id && item !== "reissner-nordstrom");
+    comparisonEvent = null;
+    if (otherId) {
+      const q = panelOf[otherId];
+      const otherPoint = eventPoints[otherId] ?? (otherId === "minkowski" ? { T: 0, R: 0 } : { T: 0, R: 1.2 });
+      const otherRays = futureLightRays(otherId, otherPoint);
+      const [ox, oy, oz] = toScene(q, otherPoint);
+      comparisonGroup.position.set(ox, oy, oz);
+      const fillOther = (line, end) => ctx.engraved.update(line, new Float32Array([0, 0, 0, (end.R - otherPoint.R) * q.scale, 0, -(end.T - otherPoint.T) * q.scale]));
+      fillOther(comparisonA, otherRays.right); fillOther(comparisonB, otherRays.left);
+      comparisonEvent = { id: otherId, ...otherPoint, rays: otherRays };
+    }
+    comparisonGroup.visible = !!comparisonEvent && interactionMode === "signal";
+    const polygon = futureCausalRegion(id, point);
+    let vertex = 0;
+    for (let i = 1; i < polygon.length - 1; i += 1) {
+      for (const v of [polygon[0], polygon[i], polygon[i + 1]]) {
+        futurePositions[vertex++] = (v.R - point.R) * p.scale;
+        futurePositions[vertex++] = 0;
+        futurePositions[vertex++] = -(v.T - point.T) * p.scale;
+      }
+    }
+    futureGeometry.setDrawRange(0, vertex / 3);
+    futureGeometry.attributes.position.needsUpdate = true;
+    eventGroup.visible = interactionMode === "signal";
+    rayA.scale.setScalar(1); rayB.scale.setScalar(1); comparisonA.scale.setScalar(1); comparisonB.scale.setScalar(1);
+    signalTime = 1; signalRunning = false;
+    event = { id, T: point.T, R: point.R, region: id === "schwarzschild" ? schwarzschildRegionAt(point) : "M", rays };
+    onEvent(event); ctx.invalidate(); return true;
+  };
+  const pointerRay = new THREE.Raycaster();
+  const intersection = new THREE.Vector3();
+  // Two exact Minkowski trajectories illustrate how timelike and null infinity become finite edges.
+  const flatPanel = panelOf.minkowski;
+  const introGroup = new THREE.Group(); groups.minkowski.add(introGroup); introGroup.visible = false;
+  const introObserver = engraved.line(ringPolyline(flatPanel, { T: 0, R: 0 }, 0.07), { color: "ink-strong", widthPx: WIDTH.focal, layer: "model" });
+  const introLight = engraved.line(ringPolyline(flatPanel, { T: 0, R: 0 }, 0.07), { color: "accent-2", widthPx: WIDTH.focal, layer: "model" });
+  introGroup.add(introObserver, introLight);
+  let introRunning = false, introTime = 0;
+  const stopIntro = () => { introRunning = false; introGroup.visible = false; eventGroup.visible = !!event && interactionMode === "signal"; onIntro(false); ctx.invalidate(); };
+
   /* ---- focus, hover and keyboard ---- */
+  const regionHighlights = Object.fromEntries(atlas.panels.map((p) => {
+    const ring = engraved.line(ringPolyline(p, { T: 0, R: 0 }, 0.15), { color: "accent-2", widthPx: WIDTH.focal, layer: "model" });
+    ring.visible = false; groups[p.id].add(tag(ring, "model")); return [p.id, ring];
+  }));
   let focused = null;
   const focusListeners = new Set();
   const setFocused = (id) => {
     if (id === focused) return;
     focused = id;
+    for (const ring of Object.values(regionHighlights)) ring.visible = false;
+    for (const p of atlas.panels) {
+      const region = regions(p.id).find((item) => item.id === id);
+      if (!region) continue;
+      const ring = regionHighlights[p.id];
+      ring.position.set(region.at.R * p.scale, 0, -region.at.T * p.scale); ring.visible = true;
+    }
     for (const listener of focusListeners) listener(id);
     ctx.invalidate();
   };
-  const regionFromObject = (object) => {
-    if (!object) return null;
-    let node = object;
-    while (node) {
-      if (node.userData?.region) return { panel: node.userData.panel, region: node.userData.region };
-      node = node.parent;
+  const regionLabelButtons = [];
+  for (const p of atlas.panels.filter((item) => visiblePanels.includes(item.id) && item.id !== "minkowski")) {
+    for (const region of regions(p.id)) {
+      const [x, y, z] = toScene(p, region.at);
+      const position = { x, y, z };
+      const label = ctx.label("", () => position, "pn-region-label");
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "pn-map-region"; button.textContent = region.id;
+      button.style.pointerEvents = "none"; button.tabIndex = -1; regionLabelButtons.push(button);
+      button.setAttribute("aria-label", `Explore ${region.name}`);
+      button.addEventListener("click", () => { setFocused(region.id); onRegion(region.id); });
+      label.el.appendChild(button);
     }
-    return null;
-  };
+  }
 
+
+  const pickEvent = (ndc) => {
+      if (interactionMode === "observer") return;
+      if (introRunning) stopIntro();
+      pointerRay.setFromCamera(ndc, ctx.camera);
+      const ray = pointerRay.ray;
+      if (Math.abs(ray.direction.y) < 1e-9) return;
+      const distance = -ray.origin.y / ray.direction.y;
+      if (distance < 0) return;
+      intersection.copy(ray.origin).addScaledVector(ray.direction, distance);
+      const panelRef = panelAtX(intersection.x, atlas.panels);
+      if (!panelRef || !visiblePanels.includes(panelRef.id)) return;
+      const point = fromScene(panelRef, [intersection.x, intersection.y, intersection.z]);
+      if (interactionMode === "regions") {
+        if (panelRef.id === "schwarzschild" && futureLightRays(panelRef.id, point)) setFocused(schwarzschildRegionAt(point));
+        if (panelRef.id === "minkowski" && futureLightRays(panelRef.id, point)) setFocused("M");
+        if (panelRef.id === "reissner-nordstrom") setFocused(schematicRegionAt(point));
+        return;
+      }
+      if (placeEvent(panelRef.id, point)) setFocused(panelRef.id === "schwarzschild" ? schwarzschildRegionAt(point) : "M");
+  };
   return {
     autoRotate: false,
-    pickables,
-    onHover: (object) => setFocused(regionFromObject(object)?.region ?? null),
-    onPick: (object) => setFocused(regionFromObject(object)?.region ?? null),
-    onScreenPick: (ndc) => {
-      // A pointer over a diagram with no marker under it still says which panel it is over, so the overlay is never
-      // blank inside a panel: the nearest region of that panel is reported instead.
-      const panelRef = panelAtX(ndc.x * (atlas.halfWidth + 1) * 2.2, atlas.panels);
-      if (!panelRef) return setFocused(null);
-      const nearest = regions(panelRef.id)
-        .map((region) => ({ region, d: Math.hypot(region.at.T + ndc.y * panelRef.extent.T * 2, region.at.R) }))
-        .sort((a, b) => a.d - b.d)[0];
-      setFocused(nearest ? nearest.region.id : null);
-    },
+    onScreenPick: pickEvent,
+    onScreenDrag: pickEvent,
     update: (t, dt) => {
+      if (introRunning) {
+        introTime = ctx.motion() <= 0 ? 1 : Math.min(1, introTime + dt / 4);
+        const time = 30 * introTime / (1.03 - introTime);
+        const observerT = Math.atan(time), lightT = Math.atan(2 * time) / 2;
+        introObserver.position.set(0, 0, -observerT * flatPanel.scale);
+        introLight.position.set(lightT * flatPanel.scale, 0, -lightT * flatPanel.scale);
+        if (introTime >= 1) stopIntro(); else ctx.invalidate();
+      }
+      if (signalRunning) {
+        signalTime = ctx.motion() <= 0 ? 1 : Math.min(1, signalTime + dt / 1.4);
+        rayA.scale.setScalar(signalTime); rayB.scale.setScalar(signalTime);
+        comparisonA.scale.setScalar(signalTime); comparisonB.scale.setScalar(signalTime);
+        signalRunning = signalTime < 1; ctx.invalidate();
+      }
       if (!released) return;
       const motion = ctx.motion();
       if (motion <= 0) {
@@ -366,9 +413,10 @@ export async function buildPenroseAtlas(ctx) {
       cursor.t += dt;
       const progress = Math.min(1, cursor.t / RELEASE_SECONDS);
       moveCursor(properTimeIndex(worldline.fall.rows, progress));
+      onProgress(progress);
       if (progress >= 1) released = false;
     },
-    isAnimated: () => released,
+    isAnimated: () => released || signalRunning || introRunning,
     /** The lab's r0 slider: redraw the free fall from the new radius and park the cursor at the start. */
     setStartRadius(r0) {
       currentR0 = r0;
@@ -376,22 +424,31 @@ export async function buildPenroseAtlas(ctx) {
       moveCursor(0);
       cursor.t = 0;
       released = false;
+      onProgress(0);
       return worldline.fall.etaHorizon;
     },
     /** Run the proper-time cursor along the worldline. Under reduced motion it snaps to the end and says so. */
     release() {
-      if (ctx.motion() <= 0) { moveCursor((worldline.fall?.rows.length ?? 1) - 1); ctx.invalidate(); return "snapped"; }
-      cursor.t = 0;
+      if (ctx.motion() <= 0) { moveCursor((worldline.fall?.rows.length ?? 1) - 1); cursor.t = RELEASE_SECONDS; onProgress(1); ctx.invalidate(); return "snapped"; }
+      if (cursor.t >= RELEASE_SECONDS) cursor.t = 0;
       released = true;
       ctx.invalidate();
       return "running";
     },
+    pause() { released = false; ctx.invalidate(); },
+    seek(progress) { cursor.t = Math.max(0, Math.min(1, progress)) * RELEASE_SECONDS; released = false; moveCursor(properTimeIndex(worldline.fall.rows, cursor.t / RELEASE_SECONDS)); onProgress(cursor.t / RELEASE_SECONDS); },
+    placeEvent,
+    setInteractionMode(mode) { interactionMode = mode; if (introRunning && mode !== "signal") stopIntro(); eventGroup.visible = !!event && mode === "signal" && !introRunning; comparisonGroup.visible = !!comparisonEvent && mode === "signal"; for (const button of regionLabelButtons) { button.style.pointerEvents = mode === "regions" ? "auto" : "none"; button.tabIndex = mode === "regions" ? 0 : -1; } ctx.invalidate(); },
+    playIntro() { if (!visiblePanels.includes("minkowski")) return false; if (ctx.motion() <= 0) { stopIntro(); return false; } introTime = 0; introRunning = true; introGroup.visible = true; eventGroup.visible = false; onIntro(true); ctx.invalidate(); return true; },
+    skipIntro: stopIntro,
+    sendSignal() { if (!event) return false; if (introRunning) stopIntro(); signalTime = ctx.motion() <= 0 ? 1 : 0; signalRunning = signalTime < 1; rayA.scale.setScalar(signalTime); rayB.scale.setScalar(signalTime); comparisonA.scale.setScalar(signalTime); comparisonB.scale.setScalar(signalTime); ctx.invalidate(); return true; },
     focusRegion: (id) => setFocused(id),
     onFocusChange: (listener) => { focusListeners.add(listener); return () => focusListeners.delete(listener); },
-    dispose: () => { for (const marker of markers) marker.material.dispose(); },
+    dispose() { for (const line of retiredLines) line.traverse((item) => { item.geometry?.dispose(); item.material?.dispose(); }); },
     // QA hook: qa/specs/penrose-atlas.spec.mjs reads the atlas without touching scene internals
     state: () => ({
       panels: atlas.panels.map((p) => p.id),
+      visiblePanels, event, comparisonEvent, signalRunning, introRunning,
       r0: currentR0,
       focused,
       released,

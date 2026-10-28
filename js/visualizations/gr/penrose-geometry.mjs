@@ -99,8 +99,8 @@ export function polyline(panel, points) {
  * than as another grid line. It is generated, never a texture, and it stays within `amplitude` of the surface so it
  * does not stray into a neighbouring region.
  *
- * `axis: "T"` is a spacelike singularity (a horizontal line at fixed T, as in Schwarzschild): the zig-zag moves in R.
- * `axis: "R"` is a timelike one (a vertical line at fixed R, as in Reissner-Nordstrom): the zig-zag moves in T.
+ * `axis: "T"` follows a spacelike boundary in R with a small transverse T excursion.
+ * `axis: "R"` follows a timelike boundary in T with a small transverse R excursion.
  */
 export function zigzag({ axis = "T", fixed, from, to, amplitude = ZIGZAG_AMPLITUDE, period = ZIGZAG_PERIOD } = {}) {
   if (axis !== "T" && axis !== "R") throw new RangeError(`zigzag: axis must be "T" or "R", received ${axis}`);
@@ -113,8 +113,8 @@ export function zigzag({ axis = "T", fixed, from, to, amplitude = ZIGZAG_AMPLITU
     // a triangle wave in [-1, 1] of the given period, so the turns are sharp corners rather than a smooth wiggle
     const phase = ((s - from) / period) % 1;
     const triangle = phase < 0.5 ? 4 * phase - 1 : 3 - 4 * phase;
-    const offset = amplitude * triangle;
-    out.push(axis === "T" ? Object.freeze({ T: fixed, R: s + offset }) : Object.freeze({ T: s + offset, R: fixed }));
+    const offset = i === 0 || i === steps ? 0 : amplitude * triangle;
+    out.push(axis === "T" ? Object.freeze({ T: fixed + offset, R: s }) : Object.freeze({ T: s, R: fixed + offset }));
   }
   return Object.freeze(out);
 }
@@ -174,6 +174,81 @@ export function properTimeIndex(rows, progress) {
   }
   const span = rows[hi].tau - rows[lo].tau;
   return lo + (span > 0 ? (target - rows[lo].tau) / span : 0);
+}
+
+/** Fraction of elapsed proper time at the future-horizon crossing of a fall from rest. */
+export function horizonProgress(fall) {
+  const eta = fall.etaHorizon;
+  return (eta + Math.sin(eta)) / Math.PI;
+}
+
+/** Frame one or more existing panels without changing their internal scale. */
+export function observatoryFrame(ids, width, height, fovDeg = 13) {
+  const selected = layout().panels.filter((p) => ids.includes(p.id));
+  if (!selected.length || !(width > 0) || !(height > 0)) throw new RangeError("observatory: invalid frame");
+  const left = Math.min(...selected.map((p) => p.cx - p.width / 2));
+  const right = Math.max(...selected.map((p) => p.cx + p.width / 2));
+  const halfHeight = Math.max(...selected.map((p) => p.halfHeight));
+  const tangent = Math.tan(fovDeg * Math.PI / 360);
+  const radius = Math.max((halfHeight + LABEL_PAD) / tangent, ((right - left) / 2 + LABEL_PAD) / (tangent * width / height)) * 1.08;
+  return { targetX: (left + right) / 2, radius };
+}
+
+/** The two future-directed radial null segments through an event in an exact diagram. */
+export function futureLightRays(id, { T, R }) {
+  if (!Number.isFinite(T) || !Number.isFinite(R)) return null;
+  const H = Math.PI / 2;
+  if (id === "minkowski") {
+    if (Math.abs(T) + Math.abs(R) >= H) return null;
+    const right = (H - T - R) / 2, left = (H - T + R) / 2;
+    return { origin: { T, R }, right: { T: T + right, R: R + right }, left: { T: T + left, R: R - left } };
+  }
+  if (id === "schwarzschild") {
+    if (Math.abs(T) >= H || Math.abs(T) + Math.abs(R) >= Math.PI) return null;
+    const right = Math.min(H - T, (Math.PI - T - R) / 2);
+    const left = Math.min(H - T, (Math.PI - T + R) / 2);
+    return { origin: { T, R }, right: { T: T + right, R: R + right }, left: { T: T + left, R: R - left } };
+  }
+  return null; // RN is a schematic, not a computed coordinate chart.
+}
+
+/** Clip the finite diagram by the two future null half-planes of an event. */
+export function futureCausalRegion(id, event) {
+  if (!futureLightRays(id, event)) return null;
+  const H = Math.PI / 2;
+  let polygon = id === "minkowski"
+    ? [{ T: -H, R: 0 }, { T: 0, R: H }, { T: H, R: 0 }, { T: 0, R: -H }]
+    : [{ T: 0, R: -Math.PI }, { T: -H, R: -H }, { T: -H, R: H }, { T: 0, R: Math.PI }, { T: H, R: H }, { T: H, R: -H }];
+  for (const sign of [-1, 1]) {
+    const next = [];
+    const f = (p) => p.T - event.T + sign * (p.R - event.R);
+    for (let i = 0; i < polygon.length; i += 1) {
+      const a = polygon[i], b = polygon[(i + 1) % polygon.length], fa = f(a), fb = f(b);
+      if (fa >= 0) next.push(a);
+      if ((fa < 0 && fb > 0) || (fa > 0 && fb < 0)) {
+        const t = fa / (fa - fb);
+        next.push({ T: a.T + t * (b.T - a.T), R: a.R + t * (b.R - a.R) });
+      }
+    }
+    polygon = next;
+  }
+  return polygon;
+}
+
+/** Hit-test the labelled RN drawing only; this does not calculate an RN coordinate map. */
+export function schematicRegionAt({ T, R }) {
+  if (!Number.isFinite(T) || !Number.isFinite(R)) return null;
+  const x = Math.abs(R), y = T;
+  for (const [name, id] of [["inside", "S"], ["between", "C"], ["exterior", "E"]]) {
+    const vertices = RN_SCHEMATIC.polygons[name];
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const a = vertices[i], b = vertices[j];
+      if ((a.T > y) !== (b.T > y) && x < (b.R - a.R) * (y - a.T) / (b.T - a.T) + a.R) inside = !inside;
+    }
+    if (inside) return id;
+  }
+  return null;
 }
 
 /**

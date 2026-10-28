@@ -1480,7 +1480,7 @@
     {
       "id": "gr-penrose-atlas",
       "file": "docs/screenshots/46-gr-penrose-atlas.png",
-      "description": "The Penrose atlas: flat Minkowski on its causal diamond, the maximally extended Schwarzschild solution in Kruskal-Szekeres coordinates with its four regions and the two singularities on the top and bottom edges, and one schematic block of Reissner-Nordstrom; the heavy curve is a radial free fall from rest at 2.6M with a light-cone glyph at every proper-time tick, and the slider, the release button, the region overlay and the readouts sit below it.",
+      "description": "The Penrose Observatory opens on a large Minkowski diagram with computed future light paths and causal region; Schwarzschild, the schematic Reissner-Nordstrom block, comparison, proper-time playback and formula exploration are selectable.",
       "view": "gr",
       "url": "?view=gr&seed=42",
       "viewport": {
@@ -1503,7 +1503,7 @@
         }
       ],
       "scientificStatus": "established",
-      "statusNote": "Minkowski and Schwarzschild are computed from exact coordinate maps (u = t - r, v = t + r; the tortoise r* = r + 2M ln|r/2M - 1| and the Kruskal pair, compactified with arctan). The Reissner-Nordstrom panel is a labelled SCHEMATIC: the nesting of its surfaces is the textbook one, but nothing there comes from a coordinate map, and the in-canvas note says so.",
+      "statusNote": "The default scene is the exact Minkowski map. Schwarzschild uses the exact Kruskal map; the separate Reissner-Nordstrom view is explicitly schematic.",
       "readme": false,
       "baseline": {
         "maxDiffPixelRatio": 0.02,
@@ -1513,7 +1513,7 @@
     {
       "id": "gr-penrose-atlas-mobile",
       "file": "docs/screenshots/47-gr-penrose-atlas-mobile.png",
-      "description": "Mobile Penrose atlas at 390 px: the three diagrams scaled into one band, with the slider, the release button, the region buttons and the readouts stacked in one column.",
+      "description": "The Penrose Observatory on a phone: one large responsive Minkowski diagram, with spacetime selection, light-signal controls and progressive explanations.",
       "view": "gr",
       "url": "?view=gr&seed=42",
       "viewport": {
@@ -1536,7 +1536,7 @@
         }
       ],
       "scientificStatus": "established",
-      "statusNote": "Same diagrams as the desktop capture. The stage takes its height from the drawn aspect of the atlas at this width, and the per-panel titles are hidden because at 390 px each diagram is a thumbnail and the captions below name all three.",
+      "statusNote": "The default exact Minkowski map fits the screen; Schwarzschild and the labelled schematic Reissner-Nordstrom view are separately selectable.",
       "readme": false,
       "baseline": {
         "maxDiffPixelRatio": 0.03,
