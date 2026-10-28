@@ -153,6 +153,44 @@ test("the release cursor snaps to the end under reduced motion", async ({ page, 
   expect(errors).toEqual([]);
 });
 
+test("the visible release cursor follows the worldline and can be replayed", async ({ page, context }) => {
+  const errors = await open(page, context);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect.poll(() => atlasState(page), { timeout: 90_000 }).not.toBeNull();
+  const verifyPosition = async () => {
+    const state = await atlasState(page);
+    const point = await page.evaluate(({ r0, index }) => {
+      const rows = window.QGA_CONFORMAL.freeFallFromRest({ r0, M: 1, samples: 361 }).rows;
+      const lo = Math.floor(index), hi = Math.min(rows.length - 1, lo + 1), w = index - lo;
+      return { T: rows[lo].T + (rows[hi].T - rows[lo].T) * w, R: rows[lo].R + (rows[hi].R - rows[lo].R) * w };
+    }, { r0: state.r0, index: state.cursorIndex });
+    expect(state.cursorPoint.T).toBeCloseTo(point.T, 9);
+    expect(state.cursorPoint.R).toBeCloseTo(point.R, 9);
+  };
+  await verifyPosition();
+  await page.locator(`${LAB} .pn-release`).click();
+  await expect.poll(async () => (await atlasStateOrNull(page))?.cursorIndex ?? 0, { timeout: 15_000 }).toBeGreaterThan(1);
+  await verifyPosition();
+  await expect.poll(async () => (await atlasStateOrNull(page))?.released, { timeout: 20_000 }).toBe(false);
+  await verifyPosition();
+  await expect(page.locator(`${LAB} .pn-release`)).toHaveText("Replay fall");
+  expect(errors).toEqual([]);
+});
+
+test("the Kruskal formula connects U and V to their null-ray highlights", async ({ page, context }) => {
+  const errors = await open(page, context);
+  await expect.poll(() => atlasState(page), { timeout: 90_000 }).not.toBeNull();
+  const formula = page.locator('[data-qga-formula="Kruskal coordinates"]');
+  for (const term of ["U", "V"]) {
+    const target = formula.locator(`[data-term="${term}"]`);
+    await expect(target).toHaveAttribute("role", "button");
+    await target.focus();
+    await expect.poll(() => page.evaluate(() => window.__qgaTermLens), { timeout: 10_000 })
+      .toMatchObject({ sceneId: "gr-penrose", formulaId: "penrose-compact-t", termId: term, kind: "object" });
+  }
+  expect(errors).toEqual([]);
+});
+
 test("the regions are keyboard reachable and the overlay follows the focus", async ({ page, context }) => {
   const errors = await open(page, context);
   await expect.poll(() => atlasState(page), { timeout: 90_000 }).not.toBeNull();
@@ -198,6 +236,14 @@ test.describe("at 390 px", () => {
     const fit = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, inner: innerWidth, lab: document.querySelector(".pn-lab").getBoundingClientRect().width }));
     expect(fit.scroll).toBeLessThanOrEqual(fit.inner);
     expect(fit.lab).toBeLessThanOrEqual(fit.inner);
+    const scroll = page.locator(`${LAB} .pn-stage-scroll`);
+    expect(await scroll.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+    await scroll.evaluate(el => { el.scrollLeft = el.scrollWidth; });
+    expect(await scroll.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+    await page.getByRole("button", { name: "Minkowski", exact: true }).click();
+    expect(await scroll.evaluate(el => el.scrollLeft)).toBe(0);
+    await page.getByRole("button", { name: "Schwarzschild", exact: true }).click();
+    expect(await scroll.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
     for (const box of await page.evaluate(() => [...document.querySelectorAll(".pn-lab .btn, .pn-lab input[type=range]")].map((el) => {
       const r = el.getBoundingClientRect();
       return { name: (el.getAttribute("aria-label") || el.textContent || el.className).trim().slice(0, 30), w: Math.round(r.width), h: Math.round(r.height) };

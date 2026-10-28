@@ -179,7 +179,7 @@ async function attachCasimirCavity(ctx, { gapGroup, outline, readout, gap, noteP
 /**
  * The two Kruskal relations of the atlas, with each null coordinate bound to the family of coordinate lines it is
  * constant along: U is constant on an outgoing null ray and V on an ingoing one, so focusing U lifts the outgoing
- * family and focusing V the ingoing family. The two families are the t = const and r = const lines the scene draws.
+ * family and focusing V the ingoing family. These families are null rays, not the t = const and r = const grid.
  *
  * @param uLines   flat xyz polylines of the lines U is constant along
  * @param vLines   the same for V
