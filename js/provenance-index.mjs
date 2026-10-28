@@ -5,6 +5,7 @@
 import { registerFigureProvenance } from "./figure/provenance.mjs";
 import { registerGaugeRunningProvenance } from "./science/gauge-running-provenance.mjs";
 import { registerAsymptoticSafetyProvenance } from "./science/asymptotic-safety-provenance.mjs";
+import { registerConformalProvenance } from "./science/conformal-provenance.mjs";
 import { registerAdsLabProvenance } from "./science/ads-geometry.mjs";
 import { registerColliderLabProvenance } from "./science/collider-kinematics.mjs";
 import { registerHawkingLabProvenance } from "./science/hawking.mjs";
@@ -20,6 +21,7 @@ const REGISTRARS = Object.freeze([
   registerFigureProvenance,
   registerGaugeRunningProvenance,
   registerAsymptoticSafetyProvenance,
+  registerConformalProvenance,
   registerViewProvenance,
   registerAdsLabProvenance,
   registerColliderLabProvenance,

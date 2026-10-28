@@ -174,7 +174,40 @@ async function attachCasimirCavity(ctx, { gapGroup, outline, readout, gap, noteP
   return handle;
 }
 
+/* ---------- Penrose atlas: the Kruskal relations on the diagram ---------- */
+
+/**
+ * The two Kruskal relations of the atlas, with each null coordinate bound to the family of coordinate lines it is
+ * constant along: U is constant on an outgoing null ray and V on an ingoing one, so focusing U lifts the outgoing
+ * family and focusing V the ingoing family. The two families are the t = const and r = const lines the scene draws.
+ *
+ * @param uLines   flat xyz polylines of the lines U is constant along
+ * @param vLines   the same for V
+ * @param r0       () => the infall radius the lab's slider sets, so the focused term reports the value in the diagram
+ */
+async function attachPenroseAtlas(ctx, { uLines = [], vLines = [], r0 = () => 10 }) {
+  const { freeFallFromRest } = await import("../../science/conformal.mjs");
+  const handle = await createTermLens({
+    sceneId: "gr-penrose", formulaId: "penrose-compact-t", ctx,
+    termTargets: { U: { kind: "object", objectName: "u-lines" }, V: { kind: "object", objectName: "v-lines" } },
+    objects: {
+      // A term bound to a whole family highlights every line of it, at the focal width and with the halo the lens uses.
+      "u-lines": { outline: uLines.length ? uLines : [new Float32Array(6)] },
+      "v-lines": { outline: vLines.length ? vLines : [new Float32Array(6)] },
+    },
+    live: () => {
+      const fall = freeFallFromRest({ r0: r0(), samples: 61 });
+      const start = fall.rows[0];
+      // U and V at the start of the fall: the two numbers the compactified diagram is built from
+      return { env: { U: start.U, V: start.V }, unit: `(region I, at the start of the fall, r_0 = ${r0().toFixed(2)}M)` };
+    },
+  });
+  ctx.onDispose?.(handle.dispose);
+  return handle;
+}
+
 const ATTACHERS = Object.freeze({
+  "gr-penrose": attachPenroseAtlas,
   "casimir-cavity": attachCasimirCavity,
   "kerr-observatory": attachKerrObservatory,
   "gr-well": attachCurvatureWell,

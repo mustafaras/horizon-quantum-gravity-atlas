@@ -1476,6 +1476,72 @@
         "maxDiffPixelRatio": 0.03,
         "note": "Same content in one column at 390 px; 3% tolerance for the narrower layout."
       }
+    },
+    {
+      "id": "gr-penrose-atlas",
+      "file": "docs/screenshots/46-gr-penrose-atlas.png",
+      "description": "The Penrose atlas: flat Minkowski on its causal diamond, the maximally extended Schwarzschild solution in Kruskal-Szekeres coordinates with its four regions and the two singularities on the top and bottom edges, and one schematic block of Reissner-Nordstrom; the heavy curve is a radial free fall from rest at 2.6M with a light-cone glyph at every proper-time tick, and the slider, the release button, the region overlay and the readouts sit below it.",
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".pn-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".pn-lab",
+          "text": "Kruskal"
+        }
+      ],
+      "scientificStatus": "established",
+      "statusNote": "Minkowski and Schwarzschild are computed from exact coordinate maps (u = t - r, v = t + r; the tortoise r* = r + 2M ln|r/2M - 1| and the Kruskal pair, compactified with arctan). The Reissner-Nordstrom panel is a labelled SCHEMATIC: the nesting of its surfaces is the textbook one, but nothing there comes from a coordinate map, and the in-canvas note says so.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Static engraved lines and KaTeX labels from the exact maps; deterministic, 2% for rasterization of the 1 px grid."
+      }
+    },
+    {
+      "id": "gr-penrose-atlas-mobile",
+      "file": "docs/screenshots/47-gr-penrose-atlas-mobile.png",
+      "description": "Mobile Penrose atlas at 390 px: the three diagrams scaled into one band, with the slider, the release button, the region buttons and the readouts stacked in one column.",
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 3200,
+        "deviceScaleFactor": 2,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".pn-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "canvas-nonblank",
+        "animation-settled",
+        {
+          "selector": ".pn-lab",
+          "text": "Kruskal"
+        }
+      ],
+      "scientificStatus": "established",
+      "statusNote": "Same diagrams as the desktop capture. The stage takes its height from the drawn aspect of the atlas at this width, and the per-panel titles are hidden because at 390 px each diagram is a thumbnail and the captions below name all three.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "Same content in one column at 390 px; 3% tolerance for the narrower layout."
+      }
     }
   ]
 }
