@@ -163,6 +163,19 @@ export function fromScene(panel, [x, , z]) {
   return { T: -z / scale, R: (x - panel.cx) / scale };
 }
 
+/** Fractional position in a monotone worldline, sampled at a fraction of elapsed proper time. */
+export function properTimeIndex(rows, progress) {
+  if (rows.length < 2) return 0;
+  const target = rows[0].tau + Math.max(0, Math.min(1, progress)) * (rows[rows.length - 1].tau - rows[0].tau);
+  let lo = 0, hi = rows.length - 1;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (rows[mid].tau < target) lo = mid; else hi = mid;
+  }
+  const span = rows[hi].tau - rows[lo].tau;
+  return lo + (span > 0 ? (target - rows[lo].tau) / span : 0);
+}
+
 /**
  * Room above and below the drawn band, in scene units, for the panels' titles and the schematic note. The framing
  * counts it as part of the picture, so a title is never cropped by the edge of the stage.

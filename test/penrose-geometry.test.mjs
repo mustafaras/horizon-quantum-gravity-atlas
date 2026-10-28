@@ -7,12 +7,25 @@ import assert from "node:assert/strict";
 
 import {
   DIAGRAM_SCALE, PANEL_GAP, PANELS, closedLoop, framing, fromScene, layout, lightCone, lightConeSegments,
-  panelAtX, polyline, toScene, zigzag,
+  panelAtX, polyline, properTimeIndex, toScene, zigzag,
 } from "../js/visualizations/gr/penrose-geometry.mjs";
+import { freeFallFromRest } from "../js/science/conformal.mjs";
 
 const close = (actual, expected, tolerance, what) => {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${what}: ${actual} is not within ${tolerance} of ${expected}`);
 };
+
+test("the animation follows equal increments of proper time, including the endpoints", () => {
+  const { rows, properTimeEnd } = freeFallFromRest({ r0: 2.6, M: 1, samples: 361 });
+  for (const progress of [0, 0.1, 0.5, 0.9, 1]) {
+    const index = properTimeIndex(rows, progress);
+    const lo = Math.floor(index), hi = Math.min(rows.length - 1, lo + 1), weight = index - lo;
+    const tau = rows[lo].tau + weight * (rows[hi].tau - rows[lo].tau);
+    close(tau, progress * properTimeEnd, 1e-12, `proper time at ${progress}`);
+  }
+  assert.equal(properTimeIndex(rows, -1), 0);
+  assert.equal(properTimeIndex(rows, 2), rows.length - 1);
+});
 
 test("the layout places the three panels left to right, separated by the gap and as wide as their diagrams", () => {
   const { panels, width, halfWidth } = layout();

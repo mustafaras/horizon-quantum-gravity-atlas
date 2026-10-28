@@ -107,6 +107,30 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
 .cv-readouts .readout-label .katex { text-transform: none; }
 
 /* Penrose atlas (S19): the infall range and release, the region overlay and its readouts. */
+.pn-intro { padding: 20px 20px 16px; border-bottom: 1px solid var(--rule); }
+.pn-intro .pn-eyebrow { margin: 0 0 6px; color: var(--accent-2); font: var(--step--2) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.pn-intro h3 { margin: 0 0 8px; color: var(--ink-strong); font-family: var(--font-head); }
+.pn-intro > p:not(.pn-eyebrow) { max-width: 74ch; margin: 0; color: var(--ink); line-height: 1.55; }
+.pn-key { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.pn-key > div { border-top: 1px solid var(--rule-strong); padding-top: 9px; }
+.pn-key strong, .pn-key span, .pn-panel-guide strong, .pn-panel-guide span { display: block; }
+.pn-key strong, .pn-panel-guide strong { color: var(--ink-strong); font: var(--step--1) var(--font-head); }
+.pn-key span, .pn-panel-guide span { margin-top: 4px; color: var(--ink-dim); font: var(--step--1) var(--font-body); line-height: 1.45; }
+.pn-intro .pn-scroll-hint { display: none; margin-top: 14px !important; color: var(--ink-dim) !important; font: var(--step--1) var(--font-body); }
+.pn-intro .pn-reading-note { margin-top: 14px !important; color: var(--ink-dim) !important; font: var(--step--1) var(--font-body); }
+.pn-stage-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.pn-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--rule); }
+.pn-jump > span { color: var(--ink-dim); font: var(--step--2) var(--font-mono); }
+.pn-jump .btn { min-height: 44px; min-width: 44px; }
+.pn-stage-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pn-stage-inner { min-width: 850px; }
+.pn-panel-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 14px 20px; border-top: 1px solid var(--rule); }
+.pn-panel-guide p { margin: 0; }
+.pn-control-help, .pn-formula-intro { padding: 0 14px 14px; color: var(--ink-dim); font: var(--step--1) var(--font-body); line-height: 1.5; }
+.pn-control-help { margin: 0; }
+.pn-formula-intro { padding-top: 14px; border-top: 1px solid var(--rule); }
+.pn-formula-intro h4 { margin: 0 0 6px; color: var(--ink-strong); font-family: var(--font-head); }
+.pn-formula-intro p { margin: 0; max-width: 80ch; }
 .pn-lab .pn-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--rule); }
 .pn-lab .pn-range { display: flex; gap: 10px; align-items: center; flex: 1 1 260px; min-width: 0; }
 .pn-lab .pn-range input[type="range"] { flex: 1 1 auto; min-width: 120px; height: 44px; }
@@ -148,7 +172,8 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
    canvas collides with the diagrams as soon as the stage is short. */
 .pn-lab .pn-note { margin: 8px 0 0; font: var(--step--2) var(--font-mono); color: var(--ink-dim); text-align: center; }
 @media (max-width: 700px) {
-  .pn-lab .pn-heads { display: none; }
+  .pn-intro .pn-scroll-hint { display: block; }
+  .pn-key, .pn-panel-guide { grid-template-columns: minmax(0, 1fr); }
   .pn-regions { grid-template-columns: minmax(0, 1fr); }
   .pn-region-list { grid-template-columns: minmax(0, 1fr); }
   .pn-overlay { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 10px; }

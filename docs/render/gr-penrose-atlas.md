@@ -47,7 +47,11 @@ Nothing here comes from a coordinate map, the exact extension is an infinite cha
 * Horizons and the `r = 0` surfaces at 1.5 px in the status colour of their diagram (`--status-established`, `--status-schematic`). The singularities are **generated** zig-zag polylines — a triangle wave in the geometry module, never a texture — so they read as surfaces and not as another grid line.
 * One 2.5 px focal curve: the free fall, with a light-cone glyph (two short 45° engraved segments) at every proper-time tick. The ticks are evenly spaced in `τ`, so they *crowd* where the map compresses the fall; that crowding is the diagram's own statement about the coordinate, not about the fall.
 * The region overlay is a real control: eight buttons, arrow-key cycling on the list, `aria-pressed` state and a `role="status"` readout of what each region means. Every readout is a tested closed form from `js/science/conformal.mjs`.
-* The Formula Lens binds `U`, `V` and the compactified `T`, `R` to the drawn coordinate families (`js/formula/library/penrose.mjs`, five established definitions, all GPU-safe).
+* The Formula Lens binds `U` and `V` to their null-ray families (`js/formula/library/penrose.mjs`, five established definitions, all GPU-safe).
+
+### Readability follow-up
+
+The lab introduces the reading directions, light paths and the falling observer before the figure, with a short explanation of each spacetime and the coordinate transformations. On narrow screens the diagram retains its width inside a keyboard-focusable horizontal scroller; buttons bring each panel into view. The release cursor is centred on the computed worldline and its animation advances uniformly in proper time by interpolating the sampled trajectory. The Formula Lens highlights computed outgoing and ingoing null rays for U and V, respectively, rather than the unrelated constant-time and constant-radius grid. Reduced motion still snaps the cursor to the endpoint.
 
 ## Numbers on screen
 

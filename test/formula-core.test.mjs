@@ -345,7 +345,7 @@ test("the Kruskal relations of the library equal the conformal maps to 1e-12 and
     }
   }
   assert.deepEqual([...library.penroseTortoise.termIds], ["r_star"]);
-  assert.deepEqual([...library.penroseCompactT.termIds], ["T"]);
+  assert.deepEqual([...library.penroseCompactT.termIds], ["U", "V"]);
   assert.match(library.penroseCompactT.tex, /htmlData/, "the term is addressable, so the lens can bind it");
   for (const f of [library.penroseTortoise, library.penroseKruskalU, library.penroseKruskalV, library.penroseCompactT, library.penroseCompactR]) {
     assert.equal(f.status, "established", `${f.id} is textbook general relativity`);

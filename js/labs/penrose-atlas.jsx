@@ -92,6 +92,15 @@ function PenroseAtlas() {
     setReleased(result);
   };
 
+  const showPanel = (id) => {
+    const inner = wrap.current;
+    const scroller = inner?.parentElement;
+    if (!inner || !scroller) return;
+    const fractions = geometry.screenFractions(PN_FOV, width / stage.height, stage.radius);
+    const panel = fractions.panels.find((item) => item.id === id);
+    if (panel) scroller.scrollLeft = ((panel.left + panel.right) / 2) * width - scroller.clientWidth / 2;
+  };
+
   // Keyboard cycling of the regions: the overlay is a real control, not a decoration.
   const cycle = (event) => {
     if (!regionList.length) return;
@@ -108,7 +117,28 @@ function PenroseAtlas() {
 
   return (
     <div className="viz-frame pn-lab">
-      <div ref={wrap}>
+      <div className="pn-intro">
+        <p className="pn-eyebrow">A guide to causal structure</p>
+        <h3>Read the shape of spacetime</h3>
+        <p>These maps bring infinitely distant events onto a finite page. They show which events can communicate,
+          not their physical size or the time between them.</p>
+        <div className="pn-key" aria-label="How to read the diagrams">
+          <div><strong>↑ Future</strong><span>Time runs upward.</span></div>
+          <div><strong>↗ Light</strong><span>Diagonal lines are paths light can follow.</span></div>
+          <div><strong>— Falling observer</strong><span>The bright curve traces a fall in the middle diagram.</span></div>
+        </div>
+        <p className="pn-reading-note">In the middle map, diagonal horizons separate the regions; the zigzag edges mark
+          the singularities. The four regions describe a mathematical extension, not four places in a collapsing star.</p>
+        <p className="pn-scroll-hint">Choose a diagram below or scroll sideways to explore all three maps.</p>
+      </div>
+      <div className="pn-jump" role="group" aria-label="Choose a diagram to bring into view">
+        <span>View diagram</span>
+        <button className="btn" type="button" onClick={() => showPanel("minkowski")}>Minkowski</button>
+        <button className="btn" type="button" onClick={() => showPanel("schwarzschild")}>Schwarzschild</button>
+        <button className="btn" type="button" onClick={() => showPanel("reissner-nordstrom")}>Reissner–Nordström</button>
+      </div>
+      <div className="pn-stage-scroll" role="region" aria-label="Conformal diagrams, scroll sideways to see all three" tabIndex={0}>
+      <div className="pn-stage-inner" ref={wrap}>
         <Scene3D animated={false} height={stage.height} deps={[stage.radius]}
           aria="Three conformal diagrams side by side. Left: flat Minkowski spacetime on its causal diamond, with the infinity points i-minus, i-zero and i-plus and the null-infinity edges. Middle: the maximally extended Schwarzschild solution, with regions one and three the two exteriors, region two the black-hole interior, region four the white-hole interior, the four horizons on the diagonals, the two singularities at r = 0 along the top and bottom edges, and the free fall from rest at r-zero as the heavy curve. Right: one block of the Reissner-Nordstrom extension, drawn as a labelled schematic."
           initial={{ radius: stage.radius, theta: 0, phi: 0.02, fov: PN_FOV, minR: stage.radius * 0.55, maxR: stage.radius * 1.8, target: [0, 0, 0] }}
@@ -116,11 +146,16 @@ function PenroseAtlas() {
           fallback={<div className="lab-fallback">The diagrams need WebGL. The readouts below are computed without it.</div>}></Scene3D>
       </div>
 
+      </div>
+      <div className="pn-panel-guide" aria-label="The three diagrams">
+        <p><strong>Minkowski</strong><span>Flat spacetime, without gravity.</span></p>
+        <p><strong>Schwarzschild</strong><span>An ideal uncharged black hole; follow the bright falling path.</span></p>
+        <p><strong>Reissner–Nordström · schematic</strong><span>A charged black-hole solution, shown as a simplified block.</span></p>
+      </div>
       <p className="pn-note">{C.RN_SCHEMATIC.note}</p>
 
       <VizCaption provenanceId="gr-penrose-atlas" status="established">
-        Three conformal diagrams, drawn from the coordinate maps of <Eq tex="js/science/conformal.mjs"></Eq> and
-        evaluated in the browser. Left, flat Minkowski spacetime: <Eq tex="U=\arctan(t-r)"></Eq>,{" "}
+        Left, flat Minkowski spacetime: <Eq tex="U=\arctan(t-r)"></Eq>,{" "}
         <Eq tex="V=\arctan(t+r)"></Eq>, so the whole of spacetime becomes a diamond and every light ray is at 45 degrees.
         Middle, the Schwarzschild solution in Kruskal–Szekeres coordinates from the tortoise{" "}
         <Eq tex="r^*=r+2M\ln|r/2M-1|"></Eq>: four regions meet at the horizons on the diagonals, and the singularity at{" "}
@@ -132,16 +167,20 @@ function PenroseAtlas() {
 
       <div className="viz-toolbar pn-bar" role="group" aria-label="Infall">
         <div className="pn-range">
-          <span className="ctl-label"><Eq tex="r_0"></Eq></span>
+          <span className="ctl-label">Starting radius <Eq tex="r_0"></Eq></span>
           <input type="range" min={PN_R0.min} max={PN_R0.max} step={PN_R0.step} value={r0}
             aria-label="infall start radius in units of M"
             onChange={(e) => setR0(parseFloat(e.target.value))}></input>
           <span className="ctl-value"><Eq tex={String.raw`${r0.toFixed(1)}M`}></Eq></span>
         </div>
         <button type="button" className="btn pn-release" onClick={release} disabled={reduced && released === "snapped"}>
-          release
+          {released === "idle" ? "Release the observer" : released === "snapped" ? "Fall complete" : "Replay fall"}
         </button>
       </div>
+      <p className="pn-control-help">Change the starting radius, then release the observer. The ring follows the bright
+        curve in the Schwarzschild diagram; its motion represents the observer’s own elapsed time. With reduced motion,
+        it moves directly to the end. M is the mass expressed as a length in geometric units; larger starting radii
+        compress the final part of the path toward a corner of this map.</p>
 
       <div className="pn-regions">
         <div className="pn-region-list" role="group" aria-label="Regions of the diagrams" tabIndex={0} onKeyDown={cycle}>
@@ -193,6 +232,12 @@ function PenroseAtlas() {
         everything the fall does is set by the ratio <Eq tex={String.raw`r_0/M`}></Eq>.
       </VizCaption>
 
+      <div className="pn-formula-intro">
+        <h4>How the map is made</h4>
+        <p>First stretch the radial coordinate near the horizon. Then use light-ray coordinates U and V to cross it.
+          Finally compress those coordinates into T and R, the vertical and horizontal axes of the diagram. In the
+          Formula Lens, selecting U or V highlights the corresponding family of light rays.</p>
+      </div>
       <div className="formula-grid">
         <FormulaCard title="Tortoise coordinate" formulaId="penrose-tortoise" status="established"
           symbols={[
@@ -205,7 +250,7 @@ function PenroseAtlas() {
         <FormulaCard title="Kruskal coordinates" formulaId="penrose-compact-t" status="established"
           symbols={[
             { s: "U", d: "Retarded null coordinate, $U=-e^{-(t-r^*)/4M}$. Vanishes on the horizon, negative in region I and positive in region II." },
-            { s: "V", d: "Advanced null coordinate, $V=e^{(t+r^*)/4M}$. Positive everywhere and zero on the horizon." },
+            { s: "V", d: "Advanced null coordinate. In region I, $V=e^{(t+r^*)/4M}$; its sign changes between Kruskal regions and it is zero on a horizon." },
             { s: "T", d: "The compactified time of the diagram, $T=\\arctan U+\\arctan V$." },
           ]}
           meaning="The chart in which the horizon is not a coordinate singularity: $U$ and $V$ are smooth across it. Compactifying both with the same arctan turns the infinite Kruskal plane into the finite diagram and keeps every light ray at 45 degrees."

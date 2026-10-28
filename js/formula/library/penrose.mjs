@@ -54,7 +54,7 @@ export const penroseKruskalU = defineFormula({
   references: [KRUSKAL],
 });
 
-/** V = e^(v/4M) with v = t + r*: the advanced null Kruskal coordinate, positive everywhere and zero on the horizon. */
+/** V = e^(v/4M) with v = t + r* in region I; the extended chart also contains regions with negative V. */
 export const penroseKruskalV = defineFormula({
   id: "penrose-kruskal-v", title: "Advanced Kruskal coordinate V", status: "established",
   symbols: { t: T_DESC, rStar: R_STAR_DESC, M: M_DESC },
@@ -73,7 +73,7 @@ export const penroseCompactT = defineFormula({
   id: "penrose-compact-t", title: "Compactified time coordinate T of the Penrose diagram", status: "established",
   symbols: { U: U_DESC, V: V_DESC },
   output: { tex: "T", unit: "rad", dims: {} },
-  expr: term("T", add(atan("U"), atan("V"))),
+  expr: add(atan(term("U", "U")), atan(term("V", "V"))),
   // Region I only, and away from the light cone T = 0: atan U + atan V cancels to zero where V = -U, and no float32
   // evaluation of a sum can be relative-accurate about a zero (the GPU-safety contract in Formula Core).
   domain: { U: [-1, -0.05, "lin"], V: [2, 20, "lin"] },

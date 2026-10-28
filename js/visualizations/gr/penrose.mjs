@@ -24,7 +24,7 @@ import {
 } from "../../science/conformal.mjs";
 import {
   LABEL_PAD, PANELS, TITLE_DROP, closedLoop, framing, layout, lightConeSegments, panelAtX, polyline, screenFractions,
-  toScene, zigzag,
+  properTimeIndex, toScene, zigzag,
 } from "./penrose-geometry.mjs";
 
 /** Field of view of the flat-map framing. */
@@ -283,11 +283,11 @@ export async function buildPenroseAtlas(ctx) {
   const uLines = [];
   const vLines = [];
   {
-    const { tLines, rLines } = coordinatePolylines(panelOf.schwarzschild, { M });
-    // U = -e^(-(t - r*)/4M) is constant along an outgoing null ray, V = e^((t + r*)/4M) along an ingoing one; the two
-    // families of coordinate lines are the closest drawn objects to those congruences, so they carry the terms.
-    for (const line of tLines) uLines.push(flat(panelOf.schwarzschild, line.points));
-    for (const line of rLines) vLines.push(flat(panelOf.schwarzschild, line.points));
+    // Lens highlights must be null rays, not the t=const and r=const grid: U and V are constant along these rays.
+    for (const nullValue of [-4, 0, 4]) {
+      uLines.push(flat(panelOf.schwarzschild, radialNullRay({ kind: "outgoing", nullValue, M, samples: 64 }).rows));
+      vLines.push(flat(panelOf.schwarzschild, radialNullRay({ kind: "ingoing", nullValue, M, samples: 64 }).rows));
+    }
   }
   try {
     const { attachLens } = await import("../common/lens-scenes.mjs");
@@ -302,21 +302,19 @@ export async function buildPenroseAtlas(ctx) {
   /* ---- the proper-time cursor: the only animated thing here ---- */
   let cursor = { t: 0, index: 0 };
   let released = false;
-  const cursorRing = add(ringPolyline(panel, worldline.ticks[0]?.tick ?? { T: 0, R: 0 }), {
+  const cursorRing = add(ringPolyline(panel, { T: 0, R: 0 }), {
     color: "ink-strong", widthPx: WIDTH.boundary, opacity: 1, layer: "decoration",
   });
   cursorRing.userData.decoration = true;
-  const cursorAt = (index) => {
-    const rows = worldline.fall?.rows ?? [];
-    if (!rows.length) return { T: 0, R: 0 };
-    const clamped = Math.max(0, Math.min(rows.length - 1, Math.round(index)));
-    return rows[clamped];
-  };
   const moveCursor = (index) => {
+    const rows = worldline.fall?.rows ?? [];
+    if (!rows.length) return;
+    const clamped = Math.max(0, Math.min(rows.length - 1, index));
+    const lo = Math.floor(clamped), hi = Math.min(rows.length - 1, lo + 1), w = clamped - lo;
     cursor.index = index;
-    const point = cursorAt(index);
-    const [x, y, z] = toScene(panel, point);
-    cursorRing.position.set(x - toScene(panel, { T: 0, R: 0 })[0], y, z);
+    const T = rows[lo].T + (rows[hi].T - rows[lo].T) * w;
+    const R = rows[lo].R + (rows[hi].R - rows[lo].R) * w;
+    cursorRing.position.set(R * panel.scale, 0, -T * panel.scale);
     ctx.invalidate();
   };
 
@@ -367,7 +365,7 @@ export async function buildPenroseAtlas(ctx) {
       }
       cursor.t += dt;
       const progress = Math.min(1, cursor.t / RELEASE_SECONDS);
-      moveCursor(progress * ((worldline.fall?.rows.length ?? 1) - 1));
+      moveCursor(properTimeIndex(worldline.fall.rows, progress));
       if (progress >= 1) released = false;
     },
     isAnimated: () => released,
@@ -403,6 +401,7 @@ export async function buildPenroseAtlas(ctx) {
       // where each proper-time tick sits on the diagram, so a test can check the glyphs follow the curve
       tickPoints: worldline.ticks.map(({ tick }) => ({ tau: tick.tau, T: tick.T, R: tick.R })),
       cursorIndex: cursor.index,
+      cursorPoint: { T: -cursorRing.position.z / panel.scale, R: cursorRing.position.x / panel.scale },
       etaHorizon: worldline.fall?.etaHorizon ?? null,
       properTimeEnd: worldline.fall?.properTimeEnd ?? null,
       crossing: worldline.fall?.horizonCrossing ?? null,
