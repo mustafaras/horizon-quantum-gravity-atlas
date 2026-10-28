@@ -7,13 +7,24 @@ import assert from "node:assert/strict";
 
 import {
   DIAGRAM_SCALE, PANEL_GAP, PANELS, closedLoop, framing, fromScene, layout, lightCone, lightConeSegments,
-  panelAtX, polyline, properTimeIndex, horizonProgress, observatoryFrame, futureLightRays, futureCausalRegion, schematicRegionAt, toScene, zigzag,
+  panelAtX, polyline, properTimeIndex, horizonProgress, compactificationSample, observatoryFrame, futureLightRays, futureCausalRegion, schematicRegionAt, toScene, zigzag,
 } from "../js/visualizations/gr/penrose-geometry.mjs";
 import { freeFallFromRest } from "../js/science/conformal.mjs";
 
 const close = (actual, expected, tolerance, what) => {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${what}: ${actual} is not within ${tolerance} of ${expected}`);
 };
+
+test("intro samples interpolate between a linear finite chart and the exact compactification", () => {
+  for (const u of [-6, -2, 2, 6]) for (const v of [-6, -2, 2, 6]) {
+    const start = compactificationSample(u, v, 0), end = compactificationSample(u, v, 1), mid = compactificationSample(u, v, .5);
+    close(end.T, (Math.atan(u) + Math.atan(v)) / 2, 1e-12, "compactified T");
+    close(end.R, (Math.atan(v) - Math.atan(u)) / 2, 1e-12, "compactified R");
+    close(mid.T, (start.T + end.T) / 2, 1e-12, "interpolated T");
+    close(mid.R, (start.R + end.R) / 2, 1e-12, "interpolated R");
+  }
+  assert.throws(() => compactificationSample(7, 0, .5), RangeError);
+});
 
 test("future light rays remain null, stop at the boundary, and reject invalid or schematic events", () => {
   for (const [id, point] of [["minkowski", {T: 0, R: 0}], ["schwarzschild", {T: 0, R: 1.2}], ["schwarzschild", {T: 0.9, R: 0.15}]]) {

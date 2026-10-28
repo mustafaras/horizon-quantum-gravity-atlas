@@ -2938,6 +2938,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "follow-up",
       "detail": "Replaced the three-panel S19 layout with the Spacetime Observatory: one enlarged exact map, optional comparison, computed causal-future and null-ray interaction, proper-time transport, region selection and progressive formulas. Refreshed only gr-penrose-atlas and gr-penrose-atlas-mobile visual baselines and documentation captures because the user requested this deliberate redesign; the old three-panel images no longer represent the interface. F-16 remains open for S20."
+    },
+    {
+      "date": "2026-10-28",
+      "prompt": "S19",
+      "agent": "local: Codex for mustafaras",
+      "event": "follow-up",
+      "detail": "Completed the Observatory introduction with a finite sample interpolating from linear null coordinates to the arctan map, followed by the existing approach to infinity. Refreshed only the two Penrose screenshots and baselines again because the introduction control and reduced-motion explanation intentionally changed; the coordinate demo is explicitly limited to a finite sample."
     }
   ]
 }
