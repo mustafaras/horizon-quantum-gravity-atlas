@@ -250,7 +250,13 @@
         "S19",
         "S20"
       ],
-      "closedIn": null
+      "closedIn": null,
+      "partiallyAddressed": {
+        "by": "S19",
+        "date": "2026-10-27",
+        "delivered": "Exact conformal (Penrose) diagrams: Minkowski, the maximally extended Schwarzschild solution in Kruskal-Szekeres coordinates, and a schematic Reissner-Nordstrom block, on the shared stage with a focal free fall, light-cone glyphs, a region overlay and a Formula Lens.",
+        "remaining": "S20: the rubber-sheet embedding diagram (replacing the display-constant well) and the observational tests."
+      }
     },
     {
       "id": "F-17",
@@ -1157,13 +1163,15 @@
       "findings": [
         "F-16"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "branch": "claude/s19-gr-penrose-atlas",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/91",
-      "commits": [],
+      "commits": [
+        "5539696d71c56d80a976bec0b83e613f81546243"
+      ],
       "startedAt": "2026-10-27",
-      "completedAt": null,
+      "completedAt": "2026-10-27",
       "evidence": {
         "tests": [
           "npm test: 1060 pass, 1 skipped, 0 fail (baseline after S18: 1031 pass, 1 skipped, 0 fail; new: test/conformal.test.mjs 19, test/penrose-geometry.test.mjs 9, test/formula-core.test.mjs +1 including the Kruskal cross-check)",
@@ -2916,6 +2924,13 @@
       "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
       "event": "review",
       "detail": "Conformal maps, geometry, scene, lab, provenance, Formula Lens, QA spec, two captures and docs/render/gr-penrose-atlas.md. npm test 1060 pass / 1 skipped / 0 fail; validate 71 entries; 48 captures; the new spec 7/7. Decisions D-113 to D-123 recorded."
+    },
+    {
+      "date": "2026-10-27",
+      "prompt": "S19",
+      "agent": "local: Copilot (Copilot SDK in VS Code) for mustafaras",
+      "event": "done",
+      "detail": "Merged in 5539696 (PR #91). F-16 stays open for S20: the conformal-diagram part is delivered, the rubber-sheet well and the observational tests are still owed. npm test 1060 pass / 1 skipped / 0 fail on the merge."
     }
   ]
 }
