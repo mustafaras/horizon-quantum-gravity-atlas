@@ -138,7 +138,13 @@ test("chirp frequency track rises through the inspiral and locks to the ringdown
   }
   assert.ok(freqTrack[0] > 10 && freqTrack[0] < 60); // starts in the LIGO band
   assert.ok(freqTrack[mergerIndex - 1] > freqTrack[0]); // chirps upward
-  assert.equal(freqTrack[mergerIndex], 190); // damped-sinusoid ringdown frequency
+  // S26: the ringdown frequency is now the (2,2,0) quasi-normal mode of the fitted remnant, not a fixed 190 Hz.
+  // For 36 + 29 solar masses the fit gives chi_f ≈ 0.680 and M_f/M ≈ 0.953, hence ~275 Hz.
+  const { ringdownHz, remnant } = generatedChirp({ seed: 7, m1: 36, m2: 29 });
+  assert.equal(freqTrack[mergerIndex], Math.fround(ringdownHz));
+  assert.ok(ringdownHz > 200 && ringdownHz < 350, `ringdown at ${ringdownHz.toFixed(1)} Hz for a 65 solar-mass remnant`);
+  assert.ok(remnant.spin > 0.6 && remnant.spin < 0.75, `final spin ${remnant.spin.toFixed(3)}`);
+  assert.ok(remnant.massRatio > 0.93 && remnant.massRatio < 0.97, `final mass ratio ${remnant.massRatio.toFixed(3)}`);
   // component masses reshape the track: heavier binary chirps lower at fixed tau
   const heavy = generatedChirp({ seed: 7, m1: 80, m2: 60 });
   assert.ok(heavy.freqTrack[Math.round(sampleRate)] < freqTrack[Math.round(sampleRate)]);

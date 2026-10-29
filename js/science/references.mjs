@@ -110,6 +110,9 @@ export const REF = Object.freeze({
   EHT_SGR_A_2022_I: "Event Horizon Telescope Collaboration, First Sagittarius A* Event Horizon Telescope results. I. The shadow of the supermassive black hole in the center of the Milky Way, Astrophys. J. Lett. 930, L12 (2022), doi:10.3847/2041-8213/ac6674, arXiv:2311.08680",
   GRAVITY_2021_MASS: "GRAVITY Collaboration, Abuter et al., Mass distribution in the Galactic Centre from interferometric astrometry of S2, Astron. Astrophys. (2021), arXiv:2112.07478",
   JOHNSON_2020_PHOTON_RING: "Johnson, Lupsasca, Strominger, Wong & Hadar, Universal interferometric signatures of a black hole's photon ring, Sci. Adv. 6, eaaz1310 (2020), doi:10.1126/sciadv.aaz1310",
+  BLANCHET_2014: "Blanchet, Gravitational radiation from post-Newtonian sources and inspiralling compact binaries, Living Rev. Relativ. 17, 2 (2014), doi:10.12942/lrr-2014-2, arXiv:1310.1528",
+  JIMENEZ_FORTEZA_2017: "Jiménez-Forteza, Keitel, Husa, et al., Hierarchical data-driven approach to fitting numerical relativity data for nonprecessing binary black holes with an application to final spin and radiated energy, Phys. Rev. D 95, 064024 (2017), doi:10.1103/PhysRevD.95.064024, arXiv:1611.00332",
+  BERTI_CARDOSO_WILL_2006: "Berti, Cardoso & Will, On gravitational-wave spectroscopy of massive black holes with the space interferometer LISA, Phys. Rev. D 73, 064030 (2006), doi:10.1103/PhysRevD.73.064030, arXiv:gr-qc/0512160",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 

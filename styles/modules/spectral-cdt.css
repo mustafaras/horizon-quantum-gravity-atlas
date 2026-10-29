@@ -90,3 +90,9 @@
   .kerr-shadow-grid { grid-template-columns: 1fr; }
   .kerr-eht-head { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---------- S26 post-Newtonian waveform lab ---------- */
+.pn-lab .viz-toolbar { flex-wrap: wrap; }
+.pn-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.pn-readouts { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 14px; }
+.pn-readouts .readout-value .unit { margin-left: 5px; font-size: 10.5px; color: var(--ink-dim); }

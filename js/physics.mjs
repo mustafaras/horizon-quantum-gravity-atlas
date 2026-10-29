@@ -331,6 +331,14 @@ export function hawkingSpectralShape(x, temperature) {
   return (u * u * u) / (Math.exp(Math.min(40, u)) - 1 + 1e-9);
 }
 
+import {
+  evolveInspiral as pnEvolveInspiral,
+  polarizations as pnPolarizations,
+  remnant as pnRemnant,
+  ringdownHz as pnRingdownHz,
+  ringdownTauSeconds as pnRingdownTauSeconds,
+} from "./science/pn-waveform.mjs";
+
 export function seededRng(seed) {
   let state = (Number(seed) >>> 0) || 1;
   return () => {
@@ -654,15 +662,17 @@ export function inspiralFrequency(tauSeconds, chirpMassSolar) {
   return (1 / Math.PI) * Math.pow(5 / (256 * tau), 3 / 8) * Math.pow(mc, -5 / 8);
 }
 
-/* Seeded teaching waveform: inspiral chirp + damped ringdown + Gaussian noise.
-   Amplitude normalized so the merger peak is ~1; noise is seeded Gaussian
-   (Box–Muller over seededRng), NOT a measured detector noise PSD. */
+/* Seeded teaching waveform: 3.5PN inspiral + NR-calibrated remnant ringdown + Gaussian noise.
+   The inspiralling part is the TaylorT4 waveform from js/science/pn-waveform.mjs (Blanchet 2014 coefficients),
+   truncated at the Schwarzschild ISCO; the ringdown is the (2,2,0) quasi-normal mode of the fitted remnant
+   (Berti, Cardoso & Will 2006). Amplitude is normalised so the merger peak is ~1; noise is seeded Gaussian
+   (Box–Muller over seededRng), NOT a measured detector noise PSD.
+   S26 replaced the previous Newtonian chirp with its ad-hoc amplitude clamp and fixed 190 Hz / 60 ms ringdown. */
 export function generatedChirp({
   seed = 42, sampleRate = 512, duration = 4, m1 = 36, m2 = 29,
-  mergerAt = 3.4, noiseRms = 0.35, delaySeconds = 0, ringdownFreq = 190, ringdownTau = 0.06,
+  mergerAt = 3.4, noiseRms = 0.35, delaySeconds = 0, ringdownFreq = null, ringdownTau = null,
 } = {}) {
   const n = Math.max(8, Math.round(sampleRate * duration));
-  const mc = chirpMass(m1, m2);
   const rng = seededRng(seed);
   const gauss = () => {
     const u = Math.max(1e-12, rng()), v = rng();
@@ -671,26 +681,40 @@ export function generatedChirp({
   const delay = Math.round(delaySeconds * sampleRate);
   const samples = new Float64Array(n);
   const freqTrack = new Float32Array(n);
-  let phase = 0, prevTau = Math.max(0.02, mergerAt);
+
+  // The inspiralling phase, at the sample rate the caller asked for rather than the module's default.
+  const inspiral = pnEvolveInspiral({ m1, m2, fStartHz: 30, dt: 1 / sampleRate, maxTime: mergerAt });
+  const { plus } = pnPolarizations(inspiral, { inclinationRad: 0 });
   const mergerIndex = Math.min(n - 1, Math.round(mergerAt * sampleRate) + delay);
+
+  // Remnant and ringdown: the fitted final spin sets the quasi-normal frequency unless the caller overrides it.
+  const fit = pnRemnant({ m1, m2 });
+  const finalMass = (m1 + m2) * fit.massRatio;
+  const qnmHz = ringdownFreq ?? pnRingdownHz(finalMass, fit.spin, 0);
+  const damping = ringdownTau ?? pnRingdownTauSeconds(finalMass, fit.spin, 0);
+
+  let phase = 0;
   for (let i = 0; i < n; i++) {
     const t = i / sampleRate - delaySeconds;
     let h = 0;
     if (t >= 0 && t < mergerAt) {
-      const tau = mergerAt - t;
-      const f = inspiralFrequency(tau, mc);
-      phase += 2 * Math.PI * f * (prevTau - tau);
-      prevTau = tau;
-      h = Math.min(1, Math.pow(f / 220, 2 / 3)) * Math.cos(phase);
-      freqTrack[i] = f;
+      const k = Math.min(plus.length - 1, Math.round((t / mergerAt) * (inspiral.times.length - 1)));
+      h = plus[k];
+      freqTrack[i] = inspiral.frequency[k];
+      phase = 2 * inspiral.phase[k];
     } else if (t >= mergerAt) {
       const tr = t - mergerAt;
-      h = Math.exp(-tr / ringdownTau) * Math.cos(phase + 2 * Math.PI * ringdownFreq * tr);
-      freqTrack[i] = ringdownFreq;
+      h = Math.exp(-tr / damping) * Math.cos(phase + 2 * Math.PI * qnmHz * tr);
+      freqTrack[i] = qnmHz;
     }
     samples[i] = h + noiseRms * gauss();
   }
-  return { samples, freqTrack, sampleRate, duration, mergerIndex, chirpMass: mc, model: "leading-order-quadrupole+ringdown" };
+  return {
+    samples, freqTrack, sampleRate, duration, mergerIndex,
+    chirpMass: chirpMass(m1, m2),
+    model: "TaylorT4-3.5PN + BCW ringdown",
+    ringdownHz: qnmHz, ringdownTau: damping, remnant: fit,
+  };
 }
 
 /* Hann-windowed STFT magnitude spectrogram in dB (naive DFT; bounded inputs only).
