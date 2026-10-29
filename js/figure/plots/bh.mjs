@@ -1,7 +1,9 @@
 // Black-hole plots: the Hawking blackbody spectrum shape and the Page curve.
 
 import { figure, axis, line, band, rule } from "../spec.mjs";
-import { hawkingSpectralShape, pageCurveEntropy } from "../../physics.mjs";
+import { hawkingSpectralShape } from "../../physics.mjs";
+import { pageCurve, radiationEntropyFraction, pageTimeSummary } from "../../science/evaporation.mjs";
+import { greybodySpectrum } from "../../science/greybody.mjs";
 import { grid, evaluate } from "./sample.mjs";
 
 export const HAWKING_X_MAX = 3;
@@ -30,22 +32,62 @@ export function hawkingSpectrumSpec({ logM, tempFactor, height = 150 }) {
   });
 }
 
-/** Page curve S_rad(f): Hawking's ever-rising thermal entropy against the unitary curve. */
-export function pageCurveSpec({ height = 150 } = {}) {
-  const f = grid(0, 1, 100);
-  const naive = evaluate(f, (v) => Math.min(1, Math.min(1.6, 1.7 * v)));
-  const unitary = evaluate(f, (v) => 0.85 * pageCurveEntropy(v));
+/**
+ * The Page curve, derived rather than drawn.
+ *
+ * Three curves: the black hole's remaining entropy S_BH = S₀(1−t/τ)^{2/3}, the radiation entropy Page computed
+ * S_rad = β(S₀ − S_BH) with β = 1.4847, and the Page curve, which is the minimum of the two. The crossing is the
+ * Page time and it is computed, not placed by hand.
+ */
+export function pageCurveSpec({ height = 190 } = {}) {
+  const f = grid(0, 1, 120);
+  const summary = pageTimeSummary();
+  const bh = evaluate(f, (v) => Math.min(1, Math.max(0, 1 - v) ** (2 / 3)));
+  const rad = evaluate(f, (v) => Math.min(1, radiationEntropyFraction(v)));
+  const page = evaluate(f, (v) => Math.min(1, pageCurve(v)));
   return figure({
-    id: "bh-page-curve", title: "Page curve S_rad(t)", status: "schematic",
+    id: "bh-page-curve", title: "The Page curve, derived", status: "effective",
     provenanceId: "bh-page-curve", height,
-    x: axis({ scale: { type: "linear", domain: [0, 1] }, label: { text: "evaporated fraction" } }),
-    y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { tex: "S_{\\mathrm{rad}}" } }),
+    x: axis({ scale: { type: "linear", domain: [0, 1] }, label: { text: "evaporated fraction t/tau" } }),
+    y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { tex: "S/S_0" } }),
     marks: [
-      line({ x: f, y: naive, layer: "model", dash: "4 4", color: "pigment-red-65", label: "Hawking (info lost)" }),
-      line({ x: f, y: unitary, layer: "model", focal: true, color: "pigment-azure-82", label: "unitary (Page)" }),
-      rule({ axis: "x", value: 0.5, layer: "model", color: "pigment-amber-79-c12", text: { text: "Page time" } }),
+      line({ x: f, y: bh, layer: "model", color: "pigment-blue-64", label: { text: "black hole entropy" } }),
+      line({ x: f, y: rad, layer: "model", dash: "4 4", color: "pigment-red-65", label: { tex: "\beta(S_0-S_{BH}),\ \beta=1.4847" } }),
+      line({ x: f, y: page, layer: "model", focal: true, color: "pigment-azure-82", label: { text: "Page curve" } }),
+      rule({ axis: "x", value: summary.timeFraction, layer: "model", color: "pigment-amber-79-c12", text: { text: "t/tau = 0.5381" } }),
     ],
-    summary: "Unitary evaporation: the radiation entropy rises until the Page time and then falls back to zero.",
+    summary:
+      `The Page curve is the minimum of the black hole's remaining entropy and the entropy the radiation has carried away. ` +
+      `Page's coefficient beta = ${summary.beta} puts the crossing where S_BH/S_0 = ${summary.entropyFraction.toFixed(4)}, ` +
+      `i.e. M/M_0 = ${summary.massFraction.toFixed(4)} at t/tau = ${summary.timeFraction.toFixed(4)} — not at half the evaporation.`,
+  });
+}
+
+/**
+ * The emitted spectrum: the pure blackbody Hawking shape against the greybody-corrected one.
+ *
+ * The correction is not a cosmetic wobble: the gravitational barrier suppresses the low-energy part of the
+ * spectrum, which is why an evaporating hole emits fewer soft quanta than a blackbody of the same temperature.
+ */
+export function greybodySpectrumSpec({ temperature = 0.15, height = 200 } = {}) {
+  const spec = greybodySpectrum({ omegaMax: 2, samples: 48, lMax: 2, M: 1, temperature });
+  const peak = (values) => Math.max(...values.map((v) => Math.abs(v)), 1e-30);
+  return figure({
+    id: "bh-greybody-spectrum", title: "Hawking spectrum with greybody factors", status: "effective",
+    provenanceId: "bh-greybody", height,
+    legend: true,
+    x: axis({ scale: { type: "linear", domain: [0, 2] }, label: { tex: "\omega\,(\hbar=c=1)" } }),
+    y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { text: "dN/domega dt (norm.)" } }),
+    marks: [
+      line({ x: spec.omega, y: spec.blackbody.map((v) => v / peak(spec.blackbody)), layer: "model", dash: "4 4",
+        color: "pigment-orange-85", label: { text: "blackbody" } }),
+      line({ x: spec.omega, y: spec.greybody.map((v) => v / peak(spec.blackbody)), layer: "model", focal: true,
+        color: "pigment-azure-82", label: { text: "with greybody factors" } }),
+    ],
+    summary:
+      "The thermal spectrum a black hole emits, with and without the greybody correction. The gravitational barrier " +
+      "suppresses the low-energy end, so the corrected curve is lower where the blackbody is largest. The " +
+      "transmission factors themselves are computed by solving the radial Regge-Wheeler equation.",
   });
 }
 

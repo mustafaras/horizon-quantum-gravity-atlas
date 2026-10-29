@@ -1830,6 +1830,70 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S23 captures; 3% allows pinned-browser rasterisation of the point and band layers."
       }
+    },
+    {
+      "id": "bh-page-curve",
+      "file": "docs/screenshots/57-bh-page-curve.png",
+      "description": "The derived Page curve: black-hole entropy, Page's radiation entropy with beta = 1.4847, and their crossing.",
+      "view": "bh",
+      "url": "?view=bh&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".bh-page-figure",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".bh-page-figure",
+          "text": "Page time"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "established",
+      "statusNote": "The Page curve and the greybody factors are effective-theory results: derived from stated equations and tested against their closed-form limits, not measured.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S24 captures; 3% allows pinned-browser rasterisation."
+      }
+    },
+    {
+      "id": "bh-greybody",
+      "file": "docs/screenshots/58-bh-greybody.png",
+      "description": "The Hawking spectrum with and without greybody factors, plus the partial-wave transmission limits.",
+      "view": "bh",
+      "url": "?view=bh&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".bh-greybody-figure",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".bh-greybody-figure",
+          "text": "geometric-optics"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "established",
+      "statusNote": "The Page curve and the greybody factors are effective-theory results: derived from stated equations and tested against their closed-form limits, not measured.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S24 captures; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }

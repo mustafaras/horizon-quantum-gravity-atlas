@@ -141,9 +141,15 @@ test("plots reproduce the physics: values are the functions' own outputs", () =>
   assert.ok(Math.abs(bands[2].y1[i] - 1) < 1e-12);
   assert.equal(f.status, "established");
   assert.equal(cases.neutrinoMatter().status, "effective");
-  const page = plots.bh.pageCurveSpec().marks[1];
-  assert.equal(Math.max(...page.y), 0.85);
-  assert.equal(page.y[0], 0); assert.equal(page.y.at(-1), 0);
+  // S24: the Page curve is now the minimum of the two derived branches, not a tent function with an invented 0.85
+  // peak. It still starts and ends at zero, and its peak is where the branches cross.
+  const pageSpec = plots.bh.pageCurveSpec();
+  const page = pageSpec.marks.find((m) => m.focal);
+  assert.equal(page.y[0], 0);
+  assert.equal(page.y.at(-1), 0);
+  const peak = Math.max(...page.y);
+  assert.ok(peak > 0.59 && peak < 0.61, `the Page curve peaks at S_BH/S0 = beta/(1+beta) = 0.5975, got ${peak}`);
+  assert.equal(pageSpec.status, "effective");
   const run = higgsCentralRun, running = cases.higgsRunning();
   const focal = running.marks.find((m) => m.focal);
   assert.equal(focal.y.length, run.t.length);
