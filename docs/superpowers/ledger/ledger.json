@@ -245,12 +245,12 @@
       "id": "F-16",
       "title": "GR engine on a display constant; few observational tests; no Penrose diagrams; rubber-sheet well",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S19",
         "S20"
       ],
-      "closedIn": null,
+      "closedIn": "c324864faf5f619f6b03f9178ea68f0b73bc5bc7",
       "partiallyAddressed": {
         "by": "S19",
         "date": "2026-10-27",
@@ -1212,13 +1212,15 @@
       "findings": [
         "F-16"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Codex for mustafaras",
       "branch": "codex/s20-gr-tidal-embedding",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/95",
-      "commits": [],
+      "commits": [
+        "c324864faf5f619f6b03f9178ea68f0b73bc5bc7"
+      ],
       "startedAt": "2026-10-28",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm ci: passed, zero vulnerabilities",
@@ -1233,7 +1235,8 @@
           "npm run qa:critical before Scene3D visibility change: 25 passed; after change: 23 passed, 2 timed out under high load/sleep; both failed cases passed on isolated rerun",
           "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs: 4 passed on final code",
           "QGA_WEBGPU_HEADED=1 npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal-webgpu.spec.mjs: 1 passed on final code (Apple Metal)",
-          "PR #95 implementation commit 2187707: GitHub Repository Quality Validate and Browser QA passed, run 40852042615."
+          "PR #95 implementation commit 2187707: GitHub Repository Quality Validate and Browser QA passed, run 40852042615.",
+          "PR #95 final head f417f8d: GitHub Validate and Browser QA passed, run 40853314001 (browser 6m59s)."
         ],
         "screenshots": [
           "docs/screenshots/05-spacetime-curvature-lensing.png",
@@ -1249,7 +1252,7 @@
         ]
       },
       "blockers": [],
-      "notes": "PR #95 is in review. F-16 remains open until a merge SHA exists; the final ledger transition will close it. Headless SwiftShader WebGPU presentation was blank for the unchanged 564ecea baseline as well as S20; headed Apple Metal WebGPU rendered both S20 scenes. Final local critical suite: 23 passed, 2 failures under load and machine sleep; both passed on isolated reruns."
+      "notes": "Merged in PR #95. Headless SwiftShader WebGPU presentation was blank for the unchanged 564ecea Penrose baseline as well as S20; headed Apple Metal WebGPU rendered both S20 scenes. Final local critical suite: 23 passed, 2 failures under load and machine sleep; both passed on isolated reruns, and final PR CI passed."
     },
     {
       "id": "S21",
@@ -3081,6 +3084,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "follow-up",
       "detail": "Clarified the non-rotating Earth assumption in the GPS calculation, refreshed the affected new screenshot and baseline, and reran the scientific, ledger, validation, manifest and mobile panel checks."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "done",
+      "detail": "PR #95 merged as c324864faf5f619f6b03f9178ea68f0b73bc5bc7 after final-head Validate and Browser QA passed in run 40853314001. F-16 closed by the S19 and S20 deliveries."
     }
   ]
 }
