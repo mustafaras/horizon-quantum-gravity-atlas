@@ -171,21 +171,21 @@
       "id": "F-09",
       "title": "Page curve hardcodes slope 1.7 and a tent function",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S24"
       ],
-      "closedIn": null
+      "closedIn": "43de559aa4bcf43b5330f124548172652e46bdf6"
     },
     {
       "id": "F-10",
       "title": "Hawking spectrum is a pure blackbody; no greybody factors",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S24"
       ],
-      "closedIn": null
+      "closedIn": "43de559aa4bcf43b5330f124548172652e46bdf6"
     },
     {
       "id": "F-11",
@@ -1418,13 +1418,15 @@
         "F-09",
         "F-10"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s24-bh-evaporation",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/107",
-      "commits": [],
+      "commits": [
+        "43de559aa4bcf43b5330f124548172652e46bdf6"
+      ],
       "startedAt": "2026-10-29",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm test: 1111 passed, 1 skipped, 0 failed",
@@ -1432,7 +1434,8 @@
           "npm run validate: passed; 81 provenance entries",
           "npm run qa:verify: 59 captures valid",
           "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (all unchanged)",
-          "node qa/capture.mjs --only=bh-page-curve,bh-greybody --update --docs: 2 captures"
+          "node qa/capture.mjs --only=bh-page-curve,bh-greybody --update --docs: 2 captures",
+          "PR #107 head: GitHub Validate and Browser QA both passed, run 40890827974 (validate 17s, browser 6m28s)."
         ],
         "screenshots": [
           "docs/screenshots/57-bh-page-curve.png",
@@ -2822,6 +2825,34 @@
       "prompt": "S23",
       "decision": "Close F-13 now that the approaches module covers seven programs, one quantitative comparison and three runnable ones.",
       "rationale": "S22 delivered the causal-set laboratory and its computed comparison; S23 delivers the spectral-dimension comparison across five programs plus the CDT and string-spectrum laboratories, all with cited sources. The finding's own words — five programs, no computed program, no quantitative comparison — are now all addressed."
+    },
+    {
+      "id": "D-154",
+      "date": "2026-10-29",
+      "prompt": "S24",
+      "decision": "Derive the Page curve from Page's beta = 1.4847 rather than keeping the tent function.",
+      "rationale": "The old form was 2*min(f, 1-f): a peak fixed at exactly half the evaporation with a hardcoded slope. Page's computed coefficient puts the crossing at S/S0 = 0.5975 and t/tau = 0.5381, and the rising branch is a power law. Both numbers are now computed and tested, and the figure's rule is placed at the computed value."
+    },
+    {
+      "id": "D-155",
+      "date": "2026-10-29",
+      "prompt": "S24",
+      "decision": "Extract the greybody amplitudes from |psi' +/- i*omega*psi| instead of decomposing into cos(omega r*) and sin(omega r*).",
+      "rationale": "The phase decomposition loses precision as omega r* grows: extending the domain turned every transmission into noise near 1e-4. The combination psi' + i*omega*psi is proportional to the outgoing wave alone, so its modulus gives |B| exactly for any r*, with no phase arithmetic."
+    },
+    {
+      "id": "D-156",
+      "date": "2026-10-29",
+      "prompt": "S24",
+      "decision": "Keep the greybody calculation to a massless scalar and say so in the caption.",
+      "rationale": "Photons and gravitons obey different Regge-Wheeler potentials, so a full Standard-Model spectrum needs three separate scattering problems. What is delivered is the scalar case with both closed-form cross-section limits as tests; presenting it as the complete emission would overstate it."
+    },
+    {
+      "id": "D-157",
+      "date": "2026-10-29",
+      "prompt": "S24",
+      "decision": "Record that three physics bugs were fixed in the transmission solver rather than only the final numbers.",
+      "rationale": "The stepped equation was missing the omega^2 term (psi'' = -V psi instead of (V - omega^2) psi), which collapsed the transmission to 1e-4; a flux normalisation returned exactly 0.5 at every frequency; and the phase decomposition failed at large r*. Each was caught by measuring a known limit, so the reasoning is recorded for anyone who revisits the solver."
     }
   ],
   "log": [
@@ -3426,6 +3457,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "verification",
       "detail": "Evaporation and greybody modules built and tested. Three real physics bugs were found and fixed while bringing the transmission solver up: a missing omega^2 term, a phase decomposition that lost precision, and a flux normalisation that returned 0.5 at every frequency."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S24",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #107 as 43de559. Closed F-09 (hardcoded Page-curve slope) and F-10 (pure-blackbody Hawking spectrum)."
     }
   ]
 }
