@@ -1894,6 +1894,70 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S24 captures; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "id": "bh-bardeen-curve",
+      "file": "docs/screenshots/59-bh-bardeen-curve.png",
+      "description": "The Kerr shadow's critical curve from the spherical photon orbits, with the spin and inclination controls.",
+      "view": "bh",
+      "url": "?view=bh&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1300,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".kerr-shadow-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".kerr-shadow-lab",
+          "text": "Critical curve"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "The critical curve is exact for the vacuum Kerr metric; the EHT comparison is a ~10 % statement because the ring is calibrated to the shadow through a modelling factor.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S25 captures; 3% allows pinned-browser rasterisation."
+      }
+    },
+    {
+      "id": "bh-eht-comparison",
+      "file": "docs/screenshots/60-bh-eht-comparison.png",
+      "description": "The measured EHT ring diameters against the predicted shadow size for M87* and Sgr A*.",
+      "view": "bh",
+      "url": "?view=bh&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1300,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".kerr-eht-block",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".kerr-eht-block",
+          "text": "measured"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "The critical curve is exact for the vacuum Kerr metric; the EHT comparison is a ~10 % statement because the ring is calibrated to the shadow through a modelling factor.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S25 captures; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }
