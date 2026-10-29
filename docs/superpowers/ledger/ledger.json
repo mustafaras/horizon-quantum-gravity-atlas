@@ -1471,13 +1471,15 @@
       "findings": [
         "F-17"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s25-bh-shadow",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/110",
-      "commits": [],
+      "commits": [
+        "96f987bc1c04df2621feeaadf92e2f97ec4a660e"
+      ],
       "startedAt": "2026-10-29",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm test: 1118 passed, 1 skipped, 0 failed",
@@ -3517,6 +3519,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claimed",
       "detail": "Started S25 on a branch from main after S24 closed."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S25",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #110. The Bardeen curve and the EHT comparison are live; F-17 stays open with a partiallyAddressed record because the screen-space overlay and the Kerr Formula Lens need a TSL storage buffer that CI cannot exercise."
     }
   ]
 }
