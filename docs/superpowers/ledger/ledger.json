@@ -1264,12 +1264,12 @@
       "findings": [
         "F-12"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Codex for mustafaras",
+      "branch": "codex/s21-planck-constraints",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3091,6 +3091,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "done",
       "detail": "PR #95 merged as c324864faf5f619f6b03f9178ea68f0b73bc5bc7 after final-head Validate and Browser QA passed in run 40853314001. F-16 closed by the S19 and S20 deliveries."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "agent": "local: Codex for mustafaras",
+      "event": "claimed",
+      "detail": "Started S21 on a branch from clean main after S20 closure."
     }
   ]
 }
