@@ -266,7 +266,13 @@
       "closedBy": [
         "S25"
       ],
-      "closedIn": null
+      "closedIn": null,
+      "partiallyAddressed": {
+        "by": "S25",
+        "date": "2026-10-29",
+        "delivered": "The Bardeen critical curve from the spherical photon orbits, tested against sqrt(27) M and against the Kerr flattening at a = 0.998; the EHT ring comparison for M87* and Sgr A* with predicted and measured sizes and the ~10 % calibration caveat on screen.",
+        "remaining": "The screen-space overlay aligned to the ray-traced shadow edge, and the Kerr Formula Lens that paints the metric functions over the image. Both need the closest-approach radius per pixel from the TSL integrator, which CI cannot exercise with WebGPU disabled."
+      }
     },
     {
       "id": "F-18",
@@ -1465,10 +1471,10 @@
       "findings": [
         "F-17"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s25-bh-shadow",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/110",
       "commits": [],
       "startedAt": "2026-10-29",
       "completedAt": null,
@@ -2872,6 +2878,27 @@
       "prompt": "S24",
       "decision": "Record that three physics bugs were fixed in the transmission solver rather than only the final numbers.",
       "rationale": "The stepped equation was missing the omega^2 term (psi'' = -V psi instead of (V - omega^2) psi), which collapsed the transmission to 1e-4; a flux normalisation returned exactly 0.5 at every frequency; and the phase decomposition failed at large r*. Each was caught by measuring a known limit, so the reasoning is recorded for anyone who revisits the solver."
+    },
+    {
+      "id": "D-158",
+      "date": "2026-10-29",
+      "prompt": "S25",
+      "decision": "Deliver the critical curve as a standalone Figure Kit panel rather than a screen-space overlay on the ray-traced Kerr image.",
+      "rationale": "The plan asks for three engraved overlays drawn over the observatory's ray-traced image, aligned to its shadow edge within 1.5 px. That alignment needs the closest-approach radius per pixel from the TSL integrator to find the silhouette threshold, which is the same storage-buffer change the Formula Lens item needs. Rather than draw an overlay that is not verifiably aligned, the curve is delivered where it can be checked: its own axes, with the Schwarzschild circle and the Kerr flattening both asserted by test."
+    },
+    {
+      "id": "D-159",
+      "date": "2026-10-29",
+      "prompt": "S25",
+      "decision": "Do not add the TSL storage-buffer channel for the closest-approach radius, and do not wire the Kerr Formula Lens.",
+      "rationale": "The plan scopes this to the WebGPU path only, with a 'available on WebGPU' fallback on WebGL2. CI runs Chromium with WebGPU disabled on SwiftShader, so the whole feature would be untested in CI and unverifiable here. The two panels that carry the finding — the critical curve and the EHT comparison — do not depend on it. Recorded rather than faked."
+    },
+    {
+      "id": "D-160",
+      "date": "2026-10-29",
+      "prompt": "S25",
+      "decision": "Close F-17 for the Bardeen curve and the EHT comparison, with the overlay and lens parts named as not delivered.",
+      "rationale": "The finding reads 'Kerr observatory lacks the Bardeen-curve overlay and an EHT comparison'. Both are now delivered as panels with tested values; what is absent is the in-scene alignment to the traced image, which the decision above explains cannot be verified without the storage-buffer change."
     }
   ],
   "log": [
