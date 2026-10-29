@@ -258,16 +258,27 @@ export function longestChain(matrix, points) {
   const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => points[a].t - points[b].t || a - b);
   const rank = new Int32Array(n);
   order.forEach((id, pos) => { rank[id] = pos; });
+
+  // Flat CSR of successors by topological rank: building one array per node with `map` allocates n arrays and
+  // dominates the cost at N = 4000. One Int32Array of offsets plus one of targets runs in a single pass.
   const succ = buildSuccessors(matrix);
-  const succByRank = new Array(n);
-  for (let pos = 0; pos < n; pos++) succByRank[pos] = succ[order[pos]].map((j) => rank[j]);
+  const offsets = new Int32Array(n + 1);
+  for (let pos = 0; pos < n; pos++) offsets[pos + 1] = offsets[pos] + succ[order[pos]].length;
+  const targets = new Int32Array(offsets[n]);
+  for (let pos = 0; pos < n; pos++) {
+    const list = succ[order[pos]];
+    let at = offsets[pos];
+    for (let k = 0; k < list.length; k++) targets[at++] = rank[list[k]];
+  }
+
   const best = new Int32Array(n).fill(1);
   const prev = new Int32Array(n).fill(-1);
   for (let pos = 0; pos < n; pos++) {
-    const nexts = succByRank[pos];
-    for (let idx = 0; idx < nexts.length; idx++) {
-      const next = nexts[idx];
-      if (best[pos] + 1 > best[next]) { best[next] = best[pos] + 1; prev[next] = pos; }
+    const from = best[pos] + 1;
+    const end = offsets[pos + 1];
+    for (let at = offsets[pos]; at < end; at++) {
+      const next = targets[at];
+      if (from > best[next]) { best[next] = from; prev[next] = pos; }
     }
   }
   let endPos = 0;
