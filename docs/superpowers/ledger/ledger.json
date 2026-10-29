@@ -2722,6 +2722,34 @@
       "prompt": "S22",
       "decision": "Keep F-13 open after S22.",
       "rationale": "S22 delivers the causal-set program and its computed comparison. F-13 also names CDT, the spectral dimension and the string spectrum, which are S23's."
+    },
+    {
+      "id": "D-146",
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "decision": "Budget what the causal-set figure draws and state the stride on screen, instead of drawing every relation.",
+      "rationale": "At N = 4000 a 2D sprinkle has 168647 cover relations and one hairline per relation merged into a solid block, so the constellation the figure is about disappeared; the measured capture showed a flat blue shape. The estimators still read every element. LINK_DRAW_BUDGET=700 and POINT_DRAW_BUDGET=900 stride the drawing, and the readout says \"599 drawn (1 in 5)\" so the picture never implies it shows every relation."
+    },
+    {
+      "id": "D-147",
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "decision": "Animate the structure as a smoothstep reveal along time and snap it complete under reduced motion.",
+      "rationale": "The elements, links and chain now resolve over --dur-scene (900 ms) and the chain draws last. reduce calls completeReveal() at build time and reports reveal=1, verified in the browser, so the animation is never the only way to read the data."
+    },
+    {
+      "id": "D-148",
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "decision": "Move the causal-set status label from a world position to a mountOverlay chip.",
+      "rationale": "At 390 px the world-space label was clipped at the left edge and collided with the stage controls. The RG flow lab already solved this with a pinned DOM chip (js/visualizations/rg/lic-field.mjs); the same pattern is used here."
+    },
+    {
+      "id": "D-149",
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "decision": "Flatten the longest-chain DP to a CSR so the N=4000 budget holds in CI.",
+      "rationale": "The budget passed locally and failed in CI at 307 ms CPU. longestChain built one successor array per node with map; two Int32Arrays of offsets and targets cut the chain pass from 84 ms to 42 ms and the whole 2D estimate from ~307 ms to ~120 ms. The test was not relaxed."
     }
   ],
   "log": [
@@ -3291,6 +3319,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #100 as 58d19f2 and confirmed the Pages deployment serves that commit; the live Approaches view shows the computed causal-set readouts and the comparator lists the new program."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "agent": "local: Copilot for mustafaras",
+      "event": "follow-up",
+      "detail": "Interaction and legibility pass after review: the N=4000 capture was a solid blue block because every relation was drawn. Added a disclosed drawing budget, a smoothstep reveal with a reduced-motion snap, a DOM status chip, and a CSR chain DP that keeps the budget in CI. PR #102 merged as 9c0bf27 and the deployed site was verified with motion on (reveal grows) and with reduced motion (complete at once)."
     }
   ]
 }
