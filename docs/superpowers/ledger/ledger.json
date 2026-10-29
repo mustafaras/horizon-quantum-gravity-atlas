@@ -1465,12 +1465,12 @@
       "findings": [
         "F-17"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s25-bh-shadow",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3464,6 +3464,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #107 as 43de559. Closed F-09 (hardcoded Page-curve slope) and F-10 (pure-blackbody Hawking spectrum)."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S25",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S25 on a branch from main after S24 closed."
     }
   ]
 }
