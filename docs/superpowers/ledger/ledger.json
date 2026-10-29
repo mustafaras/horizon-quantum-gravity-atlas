@@ -1567,12 +1567,12 @@
       "findings": [
         "F-11"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s27-gw-matched-filter",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3593,6 +3593,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #112. The TaylorT4 inspiral, the NR-fitted remnant and the ringdown are live; F-11 stays open with a partiallyAddressed record because the matched filter is S27."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S27 on a branch from main after S26 closed."
     }
   ]
 }
