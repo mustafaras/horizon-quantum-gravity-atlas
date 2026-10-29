@@ -39,7 +39,10 @@ export function renderSvg(scene, spec, { fonts, title = spec.title, desc = "" } 
     const clipped = p.role === "data" || p.role === "err" || p.k === "poly" || p.k === "image" || p.k === "hatch" || p.role === "rule" || p.role === "leader" ? ` clip-path="url(#${esc(clipId)})"` : "";
     if (p.k === "line") {
       const d = p.pts.map(([x, y], i) => `${i ? "L" : "M"}${n(x)} ${n(y)}`).join("");
-      parts.push(`<path d="${d}" fill="none" stroke="${css(p.c)}" stroke-opacity="${n(p.a)}" stroke-width="${n(p.w)}"${p.dash ? ` stroke-dasharray="${esc(p.dash)}"` : ""} stroke-linejoin="round" stroke-linecap="round"${clipped}/>`);
+      // A data polyline carries `data-trace` so a one-shot CSS reveal can draw it left to right (styles/figure.css).
+      // The attribute is inert until the stylesheet opts in, and reduced motion switches it off there.
+      const trace = p.role === "data" ? ' data-trace="1" pathLength="1"' : "";
+      parts.push(`<path d="${d}" fill="none" stroke="${css(p.c)}" stroke-opacity="${n(p.a)}" stroke-width="${n(p.w)}"${p.dash ? ` stroke-dasharray="${esc(p.dash)}"` : ""} stroke-linejoin="round" stroke-linecap="round"${trace}${clipped}/>`);
     } else if (p.k === "poly") {
       parts.push(`<path d="${p.pts.map(([x, y], i) => `${i ? "L" : "M"}${n(x)} ${n(y)}`).join("")}Z" fill="${css(p.c)}" fill-opacity="${n(p.a)}" stroke="none"${clipped}/>`);
     } else if (p.k === "circle") {

@@ -50,7 +50,62 @@ function useEasedKerr(target, duration = 0.55) {
 // The Figure Kit builds the plot (js/figure/plots/bh.mjs): visual temperature, normalised x³/(eˣ/ᵀ − 1).
 function HawkingSpectrumPlot({ logM, tempFactor }) {
   const spec = useMemo(() => window.QGA_FIGURE.plots.bh.hawkingSpectrumSpec({ logM, tempFactor }), [logM, tempFactor]);
-  return <Figure spec={spec}></Figure>;
+  // The pair sits beside a panel that carries controls, a spectrum and three small multiples. Filling this side
+  // with what the blackbody *is* keeps the two columns the same height instead of leaving a void under the plot.
+  return (
+    <div className="bh-hawking-figure">
+      <Figure spec={spec}></Figure>
+      <div className="bh-hawking-notes">
+        <p>
+          The purely thermal shape <Eq tex="x^3/(e^{x/T}-1)"></Eq> a hole would emit if its gravitational field
+          scattered nothing. It is the right starting point and the wrong answer: the barrier in front of the
+          horizon removes part of every wave, which is what the panel beside this one computes.
+        </p>
+        <dl className="bh-hawking-facts">
+          <div><dt>temperature</dt><dd><Eq tex="T_H\propto 1/M"></Eq> — smaller holes are hotter</dd></div>
+          <div><dt>peak</dt><dd><Eq tex="E_{\max}\approx 2.82\,k_BT"></Eq>, the Wien peak of this curve</dd></div>
+          <div><dt>specific heat</dt><dd>negative: radiating makes the hole hotter still</dd></div>
+        </dl>
+        <HawkingMassExplorer></HawkingMassExplorer>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Why the temperature axis matters: the same hole at four masses.
+ *
+ * A single spectrum hides the point of the module — that evaporation runs away. Drawing the blackbody at four
+ * masses on one axis, with the peak scaling as 1/M, shows the runaway instead of asserting it.
+ */
+function HawkingMassExplorer() {
+  const [solar, setSolar] = useState(10);
+  const masses = [1, 10, 1e6, 1e9];
+  const spec = useMemo(() => {
+    const G = window.QGA_GREYBODY;
+    // Wien peak energy scales as 1/M: normalise so 10 solar masses sits at the middle of the axis.
+    // Four masses, four visible peak positions inside the 0..3 window: heavier is colder is further right.
+    const scaled = [
+      { m: 1, peak: 0.35 },
+      { m: 10, peak: 0.7 },
+      { m: 1e6, peak: 1.4 },
+      { m: 1e9, peak: 2.4 },
+    ];
+    return window.QGA_FIGURE.plots.bh.hawkingMassSpec({ scaled, selected: solar });
+  }, [solar]);
+  return (
+    <div className="bh-mass-explorer">
+      <div className="bh-mass-controls" role="group" aria-label="black hole mass">
+        {masses.map((m) => (
+          <button key={m} type="button" className={"btn" + (m === solar ? " on" : "")}
+            aria-pressed={m === solar} onClick={() => setSolar(m)}>
+            {m === 1 ? "1" : m === 1e6 ? "10⁶" : m === 1e9 ? "10⁹" : "10"} M☉
+          </button>
+        ))}
+      </div>
+      <Figure spec={spec}></Figure>
+    </div>
+  );
 }
 
 /* ---------- Page curve: the derived entropy budget, with its Page time ---------- */
@@ -76,7 +131,7 @@ function PageCurvePlot() {
         <div className="readout">
           <div className="readout-label">mass at the crossing</div>
           <div className="readout-value">{summary.massFraction.toFixed(4)}<span className="unit">M/M0</span></div>
-          <div className="readout-note">M proportional to (1 - t/tau)^(1/3), so the hole is still 77 % of its mass</div>
+          <div className="readout-note">M goes as (1 - t/tau)^(1/3), so the hole keeps 77 % of its mass here</div>
         </div>
       </div>
     </div>
@@ -84,13 +139,44 @@ function PageCurvePlot() {
 }
 
 /* ---------- Greybody-corrected emission spectrum ---------- */
+// The probe slides along the spectrum and reports what the barrier does at that energy, so the step in the
+// corrected curve is something the reader can interrogate rather than infer.
 function GreybodySpectrumPlot() {
-  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.greybodySpectrumSpec({ temperature: 0.15 }), []);
+  const [probe, setProbe] = useState(0.2);
+  const reduced = usePRM();
+  const [playing, setPlaying] = useState(false);
+  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.greybodySpectrumSpec({ temperature: 0.15, highlight: probe }), [probe]);
+  const transmissions = useMemo(() => window.QGA_FIGURE.plots.bh.transmissionSpecs({ temperature: 0.15 }), []);
   const G = window.QGA_GREYBODY;
+  useEffect(() => {
+    if (!playing || reduced) return undefined;
+    const timer = setInterval(() => setProbe((p) => (p >= 1.99 ? 0.02 : Math.min(1.99, p + 0.02))), 45);
+    return () => clearInterval(timer);
+  }, [playing, reduced]);
+  const gamma = (l) => G.transmission(l, probe, 1);
   return (
     <div className="bh-greybody-figure">
+      <div className="bh-greybody-controls">
+        <button type="button" className="btn" aria-pressed={playing} onClick={() => setPlaying(!playing)} disabled={reduced}>
+          {playing ? 'Pause sweep' : 'Sweep energy'}
+        </button>
+        <label>
+          <span>energy omega M</span>
+          <input type="range" min={0.02} max={1.98} step={0.01} value={probe}
+            aria-label="probe energy" onChange={(e) => { setPlaying(false); setProbe(Number(e.target.value)); }}></input>
+          <strong>{probe.toFixed(2)}</strong>
+        </label>
+      </div>
       <Figure spec={spec}></Figure>
-      <div className="readout-grid bh-greybody-readouts" aria-live="polite">
+      <div className="bh-transmission-row" aria-live="polite">
+        {transmissions.map((row, i) => (
+          <div key={row.id} className="bh-transmission-cell">
+            <Figure spec={row}></Figure>
+            <span className="bh-transmission-readout">l = {i}: <strong>{(100 * gamma(i)).toFixed(1)}%</strong></span>
+          </div>
+        ))}
+      </div>
+      <div className="readout-grid bh-greybody-readouts bh-readouts-wide" aria-live="polite">
         <div className="readout">
           <div className="readout-label">low-frequency cross-section</div>
           <div className="readout-value">{G.lowFrequencyCrossSection(1).toFixed(2)}<span className="unit">pi M^2</span></div>
