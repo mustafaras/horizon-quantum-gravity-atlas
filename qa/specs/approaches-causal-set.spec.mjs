@@ -113,3 +113,38 @@ test('the mobile layout keeps every control usable', async ({ page, context }) =
   await expect(dimButtons).toHaveAttribute('aria-pressed', 'true');
   expect(errors).toEqual([]);
 });
+
+test('the reveal animates with motion and snaps complete under reduced motion', async ({ page, context }) => {
+  // Motion allowed: the sprinkle resolves over roughly a second, so the drawn count must grow.
+  const errors = [];
+  await context.addInitScript(() => {
+    window.QGA_RENDER_OPTIONS = { forceBackend: 'webgl2' };
+    sessionStorage.setItem('horizon-intro', '1');
+  });
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await gotoReady(page, '/?view=approaches&seed=42', ['fonts', 'network-idle', 'view-mounted']);
+  await page.locator('#approaches-causal-set').scrollIntoViewIfNeeded();
+
+  const drawn = () => page.evaluate(() => window.__qgaCausalSet?.drawnPoints ?? null);
+  await expect.poll(drawn, { timeout: 20000 }).toBeGreaterThan(0);
+  const mid = await drawn();
+  await expect.poll(() => page.evaluate(() => window.__qgaCausalSet?.reveal ?? 0), { timeout: 20000 }).toBe(1);
+  const end = await drawn();
+  const budget = await page.evaluate(() => window.__qgaCausalSet?.budgetPoints ?? 0);
+  expect(end).toBe(budget);
+  expect(mid).toBeLessThanOrEqual(end);
+  expect(errors).toEqual([]);
+});
+
+test('reduced motion shows the whole structure at once, and the drawing budget is disclosed', async ({ page, context }) => {
+  const errors = await open(page, context); // open() emulates reduced motion
+  const lab = page.locator('.causal-set-lab');
+  await lab.scrollIntoViewIfNeeded();
+  const state = await page.evaluate(() => window.__qgaCausalSet);
+  expect(state.reveal).toBe(1);
+  expect(state.drawnPoints).toBe(state.budgetPoints);
+  // The readout must state that the picture is strided, not pretend to draw every relation.
+  await expect(lab.locator('.causal-readouts')).toContainText(/drawn \(1 in \d+\)|drawn \d+/);
+  expect(errors).toEqual([]);
+});

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   orderingFractionTheory, dimensionFromOrderingFraction, sprinkle, causalMatrix, isRelated,
   links, relationCount, longestChain, estimate, ensemble, chainGrowthSlope,
+  drawableLinks, drawablePoints, revealProgress, revealCutoff, LINK_DRAW_BUDGET, POINT_DRAW_BUDGET,
 } from "../js/science/causal-sets.mjs";
 
 const near = (a, b, tol) => assert.ok(Math.abs(a - b) <= tol, `${a} differs from ${b} by more than ${tol}`);
@@ -143,4 +144,40 @@ test("an N = 4000 sprinkle and reduction stays inside the 300 ms budget", () => 
     const elapsed = median(dim);
     assert.ok(elapsed < 300, `${dim}D N = 4000 median CPU ${elapsed.toFixed(1)} ms, over the 300 ms budget`);
   }
+});
+
+test("the drawn subset is strided, deterministic and complete when it fits", () => {
+  const run = estimate({ dim: 2, n: 1200, seed: 42 });
+  const drawn = drawableLinks(run);
+  assert.ok(drawn.shown <= LINK_DRAW_BUDGET, `drew ${drawn.shown} links for a budget of ${LINK_DRAW_BUDGET}`);
+  assert.equal(drawn.stride, Math.ceil(run.links.length / LINK_DRAW_BUDGET));
+  assert.equal(drawn.links.length, drawn.shown);
+  // Deterministic: the same run draws the same subset.
+  assert.deepEqual(drawableLinks(run).links, drawn.links);
+  // A small sprinkle is drawn whole, with no stride.
+  const small = estimate({ dim: 2, n: 60, seed: 7 });
+  const whole = drawableLinks(small);
+  assert.equal(whole.stride, 1);
+  assert.equal(whole.shown, small.links.length);
+  // Points: the index list is strided, keeps the first element and stays inside the budget.
+  const pts = drawablePoints(run);
+  assert.ok(pts.shown <= POINT_DRAW_BUDGET);
+  assert.equal(pts.indices[0], 0);
+  assert.ok(pts.indices.every((i) => Number.isInteger(i) && i >= 0 && i < run.n));
+});
+
+test("the reveal is eased, bounded and snappable", () => {
+  assert.equal(revealProgress(0, 900), 0);
+  assert.equal(revealProgress(900, 900), 1);
+  assert.equal(revealProgress(5000, 900), 1, "never overshoots");
+  assert.equal(revealProgress(-10, 900), 0, "never goes backwards");
+  // Smoothstep: monotone, and at the midpoint exactly one half.
+  let previous = -1;
+  for (let t = 0; t <= 900; t += 30) { const p = revealProgress(t, 900); assert.ok(p >= previous); previous = p; }
+  assert.equal(revealProgress(450, 900), 0.5);
+  // Cutoff covers [0, count] and reaches the full count only at the end.
+  assert.equal(revealCutoff(600, 0), 0);
+  assert.equal(revealCutoff(600, 1), 600);
+  assert.ok(revealCutoff(600, 0.5) < 600);
+  assert.throws(() => drawableLinks(run, 0));
 });

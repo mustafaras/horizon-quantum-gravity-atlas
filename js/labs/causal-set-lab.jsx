@@ -17,29 +17,45 @@ function CausalSetLab() {
     const { createCausalSetRuntime } = await window.QGA_LABS.loadCausalSet();
     const runtime = createCausalSetRuntime({ ...state.current, engraved: ctx.engraved });
     ctx.scene.add(runtime.group);
-    // The in-scene label stays short enough to fit a phone viewport; the caption carries the full statement.
-    const dim = state.current.dim;
-    ctx.label(
-      window.matchMedia("(max-width: 640px)").matches
-        ? `CONJECTURAL · ${dim}D causal diamond`
-        : `CONJECTURAL · Poisson sprinkle into a ${dim}D causal diamond — order is the only structure`,
-      () => (window.matchMedia("(max-width: 640px)").matches ? { x: 0, y: 2.1, z: 0 } : { x: -2.6, y: 3.9, z: 1.6 }),
-      "s3d-strong");
+    // The status is DOM pinned to the stage (mountOverlay), not a world position: a world label at the diamond's
+    // corner is clipped on a phone, and it also collides with the stage controls. The caption carries the rest.
+    if (typeof ctx.mountOverlay === "function" && globalThis.document) {
+      const chip = globalThis.document.createElement("div");
+      chip.className = "s3d-label s3d-strong causal-set-status";
+      chip.textContent = `CONJECTURAL · ${state.current.dim}D causal diamond`;
+      ctx.mountOverlay(chip);
+    }
     ctx.label(
       state.current.dim === 2
         ? "t vertical, x horizontal — the diamond drawn literally"
         : "4D projected: time vertical, space through a fixed frame",
       () => (window.matchMedia("(max-width: 640px)").matches ? { x: 0, y: -3.6, z: 0 } : { x: -2.6, y: -3.6, z: 1.6 }),
       "s3d-quiet");
-    // The scene is static (it renders on demand), so the QA hook is written at build time, not in update().
-    window.__qgaCausalSet = runtime.stats();
+    const still = reduced;
+    if (still) {
+      runtime.completeReveal();
+      // The stage calls update(0) before the first frame; nothing may undo the completed reveal.
+      window.__qgaCausalSet = runtime.stats();
+    }
+    let last = 0;
     return {
+      isAnimated: () => !still,
+      update: (t) => {
+        if (still) return;
+        const dt = last ? (t - last) * 1000 : 16;
+        last = t;
+        const running = runtime.tick(dt);
+        // Publish every frame so the QA hook reports what is on screen, not just the settled state.
+        window.__qgaCausalSet = runtime.stats();
+        if (running) ctx.invalidate();
+      },
       dispose: () => { runtime.dispose(); delete window.__qgaCausalSet; },
     };
   };
 
   const mm = run.myrheimMeyer;
   const chainIdeal = Math.pow(n, 1 / dim);
+  const drawn = useMemo(() => ({ ...S.drawableLinks(run), points: S.drawablePoints(run) }), [run]);
   return (
     <div className="viz-frame causal-set-lab" id="approaches-causal-set">
       <div className="viz-toolbar">
@@ -62,10 +78,10 @@ function CausalSetLab() {
           <strong>{seed}</strong>
         </label>
       </div>
-      <Scene3D animated={false} nodeKit height={460}
+      <Scene3D animated="motion" nodeKit height={460}
         aria={`A Poisson sprinkle of ${n} elements into a ${dim}-dimensional causal diamond. Points are the elements, faint lines their causal links, and the golden line the longest chain.`}
         initial={{ radius: 13, theta: 0.42, phi: 1.32, target: [0, 0, 0], minR: 7, maxR: 30 }}
-        build={build} deps={[dim, n, seed, showLinks]}
+        build={build} deps={[dim, n, seed, showLinks, reduced]}
         fallback={<div className="lab-fallback">The constellation view needs WebGL. Every estimator below is still computed.</div>}></Scene3D>
       <div className="readout-grid causal-readouts" aria-live="polite">
         <div className="readout">
@@ -86,7 +102,7 @@ function CausalSetLab() {
         <div className="readout">
           <div className="readout-label">links / relations</div>
           <div className="readout-value">{run.links.length}<span className="unit">of {run.relations}</span></div>
-          <div className="readout-note">cover relations after transitive reduction</div>
+          <div className="readout-note">cover relations after transitive reduction; {drawn.shown} drawn (1 in {drawn.stride})</div>
         </div>
       </div>
       {reduced ? <p className="causal-note">Reduced motion is on. The scene is static by design; change N, the dimension or the seed to redraw it.</p> : null}
@@ -95,8 +111,10 @@ function CausalSetLab() {
         the causal order — which element can influence which. From that order alone the dimension is recovered by the
         Myrheim–Meyer relation <Eq tex="f(d)=\Gamma(d+1)\Gamma(d/2)\,/\,(2\Gamma(3d/2))"></Eq>, and the longest chain
         estimates proper time, growing as <Eq tex="N^{1/d}"></Eq>. The recovered value is a statistical estimate; the
-        readout quotes its spread over five seeds. Whether spacetime really is a causal set is an open conjecture, and
-        the 4D view is a projection, not four dimensions on screen.
+        readout quotes its spread over five seeds. The estimators read every element, but the <em>picture</em> is
+        budgeted: at large N the elements and links are drawn at a stated stride, because one hairline per relation
+        would merge into a solid block and show nothing. Whether spacetime really is a causal set is an open
+        conjecture, and the 4D view is a projection, not four dimensions on screen.
       </VizCaption>
     </div>
   );

@@ -339,3 +339,62 @@ export function chainGrowthSlope(samples) {
 export function registerCausalSetProvenance(register) {
   return register(CAUSAL_SET_PROVENANCE.id, CAUSAL_SET_PROVENANCE);
 }
+
+/* ---------------------------------------------------------------------------
+ * Drawing budgets.
+ *
+ * A sprinkle large enough to measure the dimension is far too large to draw link by link: at N = 4000 a 2D
+ * sprinkle has ~170 000 relations, and one hairline per relation turns the constellation into a solid block.
+ * The order is still computed in full — the estimators read every element — but the *picture* shows the part
+ * that can be read. These helpers say which and how much, and they are pure so the choice is testable.
+ * ------------------------------------------------------------------------- */
+
+/** Relations past this count are represented by their longest `budget`, not drawn one by one. */
+export const LINK_DRAW_BUDGET = 700;
+
+/**
+ * The subset of relations to draw. Deterministic: a stride through the relation list, so the same seed always
+ * draws the same picture and the picture stays uniform instead of favouring early elements.
+ */
+export function drawableLinks(run, budget = LINK_DRAW_BUDGET) {
+  const links = run?.links ?? [];
+  if (!Number.isInteger(budget) || budget < 1) throw new RangeError("budget must be a positive integer");
+  if (links.length <= budget) return { links, stride: 1, total: links.length, shown: links.length };
+  const stride = Math.ceil(links.length / budget);
+  const out = [];
+  for (let i = 0; i < links.length; i += stride) out.push(links[i]);
+  return { links: out, stride, total: links.length, shown: out.length };
+}
+
+/**
+ * The drawable element budget. At 2 px a dense sprinkle still reads as a constellation below roughly a
+ * thousand points; above it, the point layer alone fills the diamond.
+ */
+export const POINT_DRAW_BUDGET = 900;
+
+/** How many of the sprinkled elements to draw, evenly strided so the subset keeps the diamond's shape. */
+export function drawablePoints(run, budget = POINT_DRAW_BUDGET) {
+  const n = run?.points?.length ?? 0;
+  if (n === 0) throw new RangeError("drawablePoints needs a run with points");
+  if (!Number.isInteger(budget) || budget < 1) throw new RangeError("budget must be a positive integer");
+  const stride = n <= budget ? 1 : Math.ceil(n / budget);
+  const indices = [];
+  for (let i = 0; i < n; i += stride) indices.push(i);
+  return { indices, stride, total: n, shown: indices.length };
+}
+
+/**
+ * How far through the structure the reveal has travelled, 0 → 1, eased. The caller steps it frame by frame and
+ * snaps it to 1 when reduced motion is on, so the animation never becomes the only way to see the data.
+ */
+export function revealProgress(elapsedMs, durationMs) {
+  if (!(durationMs > 0)) return 1;
+  const t = Math.max(0, Math.min(1, elapsedMs / durationMs));
+  return t * t * (3 - 2 * t); // smoothstep: starts and ends at rest
+}
+
+/** Element index at the frontier of a reveal of progress p, for a time-ordered sprinkle. */
+export function revealCutoff(count, progress) {
+  if (!(count > 0)) return 0;
+  return Math.max(0, Math.min(count, Math.round(count * Math.max(0, Math.min(1, progress)))));
+}
