@@ -1212,10 +1212,10 @@
       "findings": [
         "F-16"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Codex for mustafaras",
       "branch": "codex/s20-gr-tidal-embedding",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/95",
       "commits": [],
       "startedAt": "2026-10-28",
       "completedAt": null,
@@ -1232,7 +1232,8 @@
           "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs -g 'tidal controls' --repeat-each=3: 3 passed after visibility change",
           "npm run qa:critical before Scene3D visibility change: 25 passed; after change: 23 passed, 2 timed out under high load/sleep; both failed cases passed on isolated rerun",
           "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs: 4 passed on final code",
-          "QGA_WEBGPU_HEADED=1 npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal-webgpu.spec.mjs: 1 passed on final code (Apple Metal)"
+          "QGA_WEBGPU_HEADED=1 npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal-webgpu.spec.mjs: 1 passed on final code (Apple Metal)",
+          "PR #95 implementation commit 2187707: GitHub Repository Quality Validate and Browser QA passed, run 40852042615."
         ],
         "screenshots": [
           "docs/screenshots/05-spacetime-curvature-lensing.png",
@@ -1248,7 +1249,7 @@
         ]
       },
       "blockers": [],
-      "notes": "Implementation is locally verified and awaiting PR/merge. F-16 remains open until merge. Headless SwiftShader WebGPU canvas appeared blank on both S20 and unchanged 564ecea Penrose; headed Apple Metal WebGPU rendered and passed the interactive and nonblank-scene test. The final critical suite recorded 23 passes and 2 failures during heavy machine load and sleep; both failures passed individually on rerun."
+      "notes": "PR #95 is in review. F-16 remains open until a merge SHA exists; the final ledger transition will close it. Headless SwiftShader WebGPU presentation was blank for the unchanged 564ecea baseline as well as S20; headed Apple Metal WebGPU rendered both S20 scenes. Final local critical suite: 23 passed, 2 failures under load and machine sleep; both passed on isolated reruns."
     },
     {
       "id": "S21",
@@ -3059,6 +3060,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "verification",
       "detail": "Final code: 4/4 S20 WebGL2 tests and 1/1 headed Apple Metal WebGPU test passed. The critical suite recorded 23/25 after the visibility change under load and sleep; legacy deep links and exp mount each passed in isolated reruns. Full pre-visibility suite had passed 25/25. Findings remain open until merge."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "review",
+      "detail": "PR #95 opened; GitHub Validate and Browser QA passed on implementation commit 2187707. F-16 remains open until a merge SHA can populate closedIn, as required by test/plan-ledger.test.mjs."
     }
   ]
 }
