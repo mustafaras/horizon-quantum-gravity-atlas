@@ -95,6 +95,12 @@ export const REF = Object.freeze({
   LITIM_2004: "Litim, Fixed points of quantum gravity, Phys. Rev. Lett. 92, 201301 (2004), doi:10.1103/PhysRevLett.92.201301, arXiv:hep-th/0312114",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
   BLMS_1987: "Bombelli, Lee, Meyer & Sorkin, Space-time as a causal set, Phys. Rev. Lett. 59, 521 (1987), doi:10.1103/PhysRevLett.59.521",
+  AMBJORN_JURKIEWICZ_LOLL_2005: "Ambjørn, Jurkiewicz & Loll, Spectral dimension of the universe, Phys. Rev. Lett. 95, 171301 (2005), doi:10.1103/PhysRevLett.95.171301, arXiv:hep-th/0505113",
+  LAUSCHER_REUTER_2005: "Lauscher & Reuter, Fractal spacetime structure in asymptotically safe gravity, JHEP 10 (2005) 050, doi:10.1088/1126-6708/2005/10/050, arXiv:hep-th/0508202",
+  MODESTO_2009: "Modesto, Fractal structure of loop quantum gravity, Class. Quantum Grav. 26, 242002 (2009), doi:10.1088/0264-9381/26/24/242002, arXiv:0812.2214",
+  HORAVA_2009: "Hořava, Quantum gravity at a Lifshitz point, Phys. Rev. D 79, 084008 (2009), doi:10.1103/PhysRevD.79.084008, arXiv:0901.3775",
+  EICHHORN_MIZERA_2014: "Eichhorn & Mizera, Spectral dimension in causal set quantum gravity, Found. Phys. 44, 421 (2014), arXiv:1311.2530",
+  CARLIP_2017: "Carlip, Dimension and dimensional reduction in quantum gravity, Class. Quantum Grav. 34, 193001 (2017), doi:10.1088/1361-6382/aa8535, arXiv:1705.05417",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 

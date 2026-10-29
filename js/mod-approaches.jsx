@@ -379,6 +379,28 @@ function ModuleApproaches({ go }) {
         <CausalSetLab></CausalSetLab>
       </Section>
 
+      <Section title="The spectral dimension, compared">
+        <SpectralDimensionChart></SpectralDimensionChart>
+      </Section>
+
+      <Section title="Causal dynamical triangulations, computed">
+        <p>
+          The one program in this comparison whose number is <em>measured</em> rather than argued. Build a cylinder of
+          time slices out of triangles, let the slice volumes relax under volume-conserving moves, then set a random
+          walk loose on the dual graph: the rate at which it returns tells you how many dimensions it is moving in.
+        </p>
+        <CdtLab></CdtLab>
+      </Section>
+
+      <Section title="The string spectrum, counted">
+        <p>
+          The other computed program. Every level of the open bosonic string is a whole tower of states, and the tower
+          heights are a number-theory fact rather than a parameter: they are the coefficients of a single generating
+          function. The ground state is a tachyon, which is why this spectrum is a lesson and not a theory of nature.
+        </p>
+        <StringSpectrumLab></StringSpectrumLab>
+      </Section>
+
       <Section title="The comparator">
         <TheoryComparator></TheoryComparator>
       </Section>

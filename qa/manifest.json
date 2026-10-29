@@ -1734,6 +1734,102 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S22 mobile capture; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "view": "approaches",
+      "url": "?view=approaches&seed=42",
+      "scope": "element",
+      "readme": false,
+      "id": "approaches-spectral-dimension",
+      "file": "docs/screenshots/54-approaches-spectral-dimension.png",
+      "description": "Spectral dimension of five quantum-gravity programs from the ultraviolet to the infrared.",
+      "viewport": {
+        "width": 1440,
+        "height": 1500,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "target": ".spectral-chart",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".spectral-chart",
+          "text": "random walk"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "approximation",
+      "statusNote": "The simulation arithmetic and the spectrum are exact and tested; CDT and the cross-program comparison are conjectural or approximate, and every figure says so in canvas.",
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S23 captures; 3% allows pinned-browser rasterisation of the point and band layers."
+      }
+    },
+    {
+      "view": "approaches",
+      "url": "?view=approaches&seed=42",
+      "scope": "element",
+      "readme": false,
+      "id": "approaches-cdt",
+      "file": "docs/screenshots/55-approaches-cdt.png",
+      "description": "A triangulated CDT cylinder with the volume profile, sweep counters and the diffusion control.",
+      "viewport": {
+        "width": 1440,
+        "height": 1500,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "target": ".cdt-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".cdt-lab",
+          "text": "measured"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "conjectural",
+      "statusNote": "The simulation arithmetic and the spectrum are exact and tested; CDT and the cross-program comparison are conjectural or approximate, and every figure says so in canvas.",
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S23 captures; 3% allows pinned-browser rasterisation of the point and band layers."
+      }
+    },
+    {
+      "view": "approaches",
+      "url": "?view=approaches&seed=42",
+      "scope": "element",
+      "readme": false,
+      "id": "approaches-string-spectrum",
+      "file": "docs/screenshots/56-approaches-string-spectrum.png",
+      "description": "The open bosonic string spectrum with level degeneracies and the D = 26 derivation steps.",
+      "viewport": {
+        "width": 1440,
+        "height": 1500,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "target": ".string-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".string-lab",
+          "text": "oscillator level"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "established",
+      "statusNote": "The simulation arithmetic and the spectrum are exact and tested; CDT and the cross-program comparison are conjectural or approximate, and every figure says so in canvas.",
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S23 captures; 3% allows pinned-browser rasterisation of the point and band layers."
+      }
     }
   ]
 }

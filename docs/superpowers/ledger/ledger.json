@@ -1367,20 +1367,42 @@
       "findings": [
         "F-13"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s23-cdt-spectral",
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/104",
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm ci: node_modules present; baseline npm test 1090 passed, 1 skipped",
+          "npm test: 1102 passed, 1 skipped, 0 failed",
+          "node --test test/cdt-spectral.test.mjs: 12/12",
+          "npm run validate: passed; 80 provenance entries",
+          "npm run qa:verify: 57 captures valid",
+          "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (all unchanged)",
+          "node qa/capture.mjs --only=approaches-spectral-dimension,approaches-cdt,approaches-string-spectrum --update --docs: 3 captures"
+        ],
+        "screenshots": [
+          "docs/screenshots/54-approaches-spectral-dimension.png",
+          "docs/screenshots/55-approaches-cdt.png",
+          "docs/screenshots/56-approaches-string-spectrum.png",
+          "qa/baselines/approaches-spectral-dimension.png",
+          "qa/baselines/approaches-cdt.png",
+          "qa/baselines/approaches-string-spectrum.png"
+        ],
+        "measurements": [
+          "String level degeneracies computed as the 24-fold convolution of the partition numbers: 1, 24, 324, 3200, 25650 for N = 0..4, matching the plan exactly; N = 5 gives 176256.",
+          "Normal-ordering constant: a(4) = -0.083333 = -2/24 and a(26) = -1.000000 = -24/24, so the massless level-one condition 1 + a = 0 fixes D = 26. zeta(-1) = -1/12 to 1e-15.",
+          "CDT volume control: profile mean 8.000 against a target of 8, spread 1.47, range 5-10, with 4002 of 5726 moves accepted after the curvature term was added.",
+          "Spectral dimension on the flat honeycomb control (24x24, 1500 walkers, seed 42): d_s = 1.929 over sigma 3-8, against 2 within the planned 0.15.",
+          "CDT science path (240 sweeps plus the flat control) runs in 3 ms, well inside the 2 s test budget.",
+          "4D CDT values transcribed as 4.02 (infrared) and 1.80 (ultraviolet) from Ambjorn-Jurkiewicz-Loll, PRL 95 (2005) 171301; the other four programs' values were each checked against their own paper."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The comparison, the CDT cylinder and the string spectrum are live in the Approaches module. F-13 closes: S22 delivered the causal-set program and S23 delivers the computed spectral-dimension comparison, CDT and the string spectrum, so the module now covers seven programs with one quantitative comparison and three runnable ones. The cylinder's own dual graph is degree-irregular when neighbouring slices differ in volume, so the readout quotes the flat honeycomb control for d_s and reports the cylinder's degree histogram separately rather than hiding it."
     },
     {
       "id": "S24",
@@ -3326,6 +3348,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "follow-up",
       "detail": "Interaction and legibility pass after review: the N=4000 capture was a solid blue block because every relation was drawn. Added a disclosed drawing budget, a smoothstep reveal with a reduced-motion snap, a DOM status chip, and a CSR chain DP that keeps the budget in CI. PR #102 merged as 9c0bf27 and the deployed site was verified with motion on (reveal grows) and with reduced motion (complete at once)."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S23 on a branch from main after S22 closed."
     }
   ]
 }
