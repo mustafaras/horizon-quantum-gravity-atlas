@@ -80,6 +80,8 @@ async function bootstrap() {
     const adsGeometry = await import("./science/ads-geometry.mjs");
     const collider = await import("./science/collider-kinematics.mjs");
     const spinNetworks = await import("./science/spin-networks.mjs");
+    const constraints = await import("./science/data/constraints.mjs");
+    Object.defineProperty(window, "QGA_CONSTRAINTS", { value: Object.freeze({ ...constraints }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();

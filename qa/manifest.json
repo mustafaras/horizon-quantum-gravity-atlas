@@ -932,7 +932,7 @@
       "url": "?view=planck&sfj=2&sfm=network",
       "viewport": {
         "width": 1600,
-        "height": 1200,
+        "height": 2400,
         "deviceScaleFactor": 1,
         "label": "desktop-hi"
       },
@@ -950,7 +950,7 @@
       "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.02,
-        "note": "Seeded 3-D Scene3D render of a deterministic graph; 2% for rasterization."
+        "note": "S21 adds area and volume spectra inside this section; taller viewport captures the full intended layout."
       }
     },
     {
@@ -1637,6 +1637,38 @@
       "baseline": {
         "maxDiffPixelRatio": 0.03,
         "note": "New S20 capture; 3% allows pinned-browser font and renderer rasterisation."
+      }
+    },
+    {
+      "id": "planck-constraint-plane",
+      "file": "docs/screenshots/51-planck-constraint-plane.png",
+      "description": "Source-linked observational scales and model-dependent constraints on a logarithmic map.",
+      "view": "planck",
+      "url": "?view=planck&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".constraint-plane",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".constraint-plane",
+          "text": "OBSERVATIONAL FRONTIER"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "approximation",
+      "statusNote": "The reduced-wavelength map combines distinct observables; boundaries and model assumptions are disclosed, and no point is claimed as direct Planck-scale data.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S21 figure capture; 3% permits pinned-browser rasterization."
       }
     }
   ]

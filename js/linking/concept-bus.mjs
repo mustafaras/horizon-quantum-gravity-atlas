@@ -44,6 +44,10 @@ export const CONCEPT_EVENT_TYPES = Object.freeze({
     description: "An annotation pin was hovered or focused; highlights its linked scene object.",
     fields: Object.freeze({ id: "string", concept: "string" }),
   }),
+  "planck-scale": Object.freeze({
+    description: "The Planck ladder length scale changed.",
+    fields: Object.freeze({ logLength: "number" }),
+  }),
   "compare-camera": Object.freeze({
     description: "A compare side broadcast its camera pose for synchronized orbit.",
     fields: Object.freeze({ side: Object.freeze(["A", "B"]), radius: "number", theta: "number", phi: "number" }),

@@ -12,3 +12,4 @@ export * as electroweak from "./electroweak.mjs";
 export * as unification from "./unification.mjs";
 export * as gravity from "./asymptotic-safety.mjs";
 export * as grTides from "./gr-tides.mjs";
+export * as planckConstraints from "./planck-constraints.mjs";

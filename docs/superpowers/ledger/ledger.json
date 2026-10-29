@@ -1264,7 +1264,7 @@
       "findings": [
         "F-12"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Codex for mustafaras",
       "branch": "codex/s21-planck-constraints",
       "pr": null,
@@ -1272,12 +1272,34 @@
       "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm ci: passed baseline",
+          "baseline npm test: 1070 passed, 1 skipped",
+          "npm test: 1078 passed, 1 skipped, 0 failed",
+          "npm run validate: passed (76 provenance entries)",
+          "npm run qa:verify: 52 captures valid",
+          "npm run perf:audit: passed",
+          "node --test test/constraints-data.test.mjs: 8/8",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/planck-constraints.spec.mjs: 3/3",
+          "node qa/capture.mjs --only=planck-constraint-plane,planck-spin-foam-lab: 2 captures reproduced within baseline tolerance",
+          "git diff --check: passed"
+        ],
+        "screenshots": [
+          "docs/screenshots/51-planck-constraint-plane.png",
+          "docs/screenshots/27-spin-foam-lab.png",
+          "qa/baselines/planck-constraint-plane.png",
+          "qa/baselines/planck-spin-foam-lab.png"
+        ],
+        "measurements": [
+          "Inflation bound 1.40859 x 10^16 GeV from r = 0.036, A_s = 2.100 x 10^-9, reduced Planck mass; compare plan approximately 1.4 x 10^16 GeV.",
+          "Fermi Table 2(a) lower limit M_QG,1/M_Planck > 1.19 read from the paper (plotted 1.19 E_P); plan rounded it to 1.2. GWTC-3 v3 abstract quotes m_g <= 2.42 x 10^-23 eV/c^2 at 90% credibility (plotted), against 1.27 x 10^-23 in the first preprint.",
+          "Quantum tetrahedron volumes in (8*pi*gamma)^1.5 l_P^3: j=1/2 0.3102016 vs Appendix C 0.310, j=1 0 and 0.6204032 vs 0 and 0.620, j=3/2 0.537285 and 0.992982 vs 0.537 and 0.992.",
+          "Eot-Wash guide now spans the quoted 52 um to 3.0 mm (was a 52 um +/-3x locator box); IceCube spans the quoted 6.3 to 980 TeV.",
+          "Area axis window at max spin 1: 0 to 29.4 l_P^2 for a top level of 21.8 l_P^2 (was a fixed 0 to 67.7 from spin 2, leaving the value in the lowest third)."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "F-12 remains open for the separate S28 Experiments observational-net replacement. The delivered map, the LQG spectra and their guides carry sourced values and explicit model limitations; range guides use each source's quoted extent."
     },
     {
       "id": "S22",
@@ -2585,6 +2607,55 @@
       "prompt": "S20",
       "decision": "Refresh gr-tests-pull to explicitly label the GPS calculation as a non-rotating spherical Earth with a circular orbit.",
       "rationale": "The 38.50 microseconds/day calculation uses a stationary ground reference and neglects Earth rotation; the previous caption did not state that approximation."
+    },
+    {
+      "id": "D-134",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Use the final published GWTC-3 bound 2.42 × 10⁻²³ eV/c² and Fermi Table 2(a) bound 1.19 E_P.",
+      "rationale": "GWTC-3 v3 corrected the original preprint value 1.27 × 10⁻²³; the plan rounded Fermi’s value to 1.2. Both changes are traceable to the primary sources."
+    },
+    {
+      "id": "D-135",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Extend the plot maxima to 2 × 10²⁸ eV and 2 × 10²⁶ m; boundary triangles disclose clipped low energies.",
+      "rationale": "The requested maxima 10²⁸ eV and 10²⁶ m exclude the actual Planck energy and the Hubble radius. Marker hatching is disclosed as a graphical guide, not an invented two-dimensional exclusion."
+    },
+    {
+      "id": "D-136",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Drive the plane crosshair from the existing ladder length slider through a typed ConceptBus event.",
+      "rationale": "The existing ScaleLadder has a slider rather than a scroll-controlled state; using that actual selection preserves the intended connection without inventing a scroll position."
+    },
+    {
+      "id": "D-137",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Keep F-12 open pending S28.",
+      "rationale": "S21 adds sourced constraints to Planck, but S28 explicitly replaces the four prose panels in the Experiments observational net; those panels have not yet been replaced."
+    },
+    {
+      "id": "D-138",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Refresh planck-spin-foam-lab baseline and documentation image, with a taller viewport; add the planck-constraint-plane baseline.",
+      "rationale": "S21 adds two spectrum plots and corrects the existing volume-proxy disclosure within the captured spin section. The new plane has its own capture; the changes are intentional, not test-only refreshes."
+    },
+    {
+      "id": "D-139",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Draw each hatched guide at the source's quoted range, and derive each spectrum window from the levels actually drawn.",
+      "rationale": "A fixed multiple of one endpoint misrepresented the published extent: the Eot-Wash guide covered 17-156 um instead of 52 um-3 mm, and IceCube covered 2.1-18.9 TeV instead of 6.3-980 TeV. The spectrum axes were also pinned to the spin-2 maximum, so at a lower maximum spin the drawn levels sat in the bottom quarter."
+    },
+    {
+      "id": "D-140",
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "decision": "Place the \"no direct data\" callout clear of the focal diagonal and the QG module marker, and drop the region opacity that the shared renderer ignores.",
+      "rationale": "js/figure/scene.mjs replaces region alpha with a fixed opacity, so the selected-entry emphasis never rendered; the marker radius carries that emphasis instead, and the callout label previously crossed the diagonal and the QG marker."
     }
   ],
   "log": [
@@ -3098,6 +3169,27 @@
       "agent": "local: Codex for mustafaras",
       "event": "claimed",
       "detail": "Started S21 on a branch from clean main after S20 closure."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "agent": "local: Codex for mustafaras",
+      "event": "in_progress",
+      "detail": "Baseline npm ci, npm test (1070 pass, 1 skipped), and npm run validate passed. Primary-source verification in progress."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "agent": "local: Codex for mustafaras",
+      "event": "verification",
+      "detail": "S21 sourced map and small-spin spectra implemented. Unit, manifest, provenance, performance, and targeted browser checks pass; broader browser checks and delivery are in progress."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "agent": "local: Copilot for mustafaras",
+      "event": "verification",
+      "detail": "Inherited the uncommitted S21 work and verified it: every citation resolved to its primary source (arXiv API plus the Fermi and Bianchi-Haggard PDFs), and three defects were fixed - range guides now use the quoted extents, spectrum windows follow the drawn spins, and the void callout no longer overlaps the diagonal or the QG marker. npm test 1078 passed, validate and qa:verify passed, and the targeted browser spec passed 3/3."
     }
   ]
 }
