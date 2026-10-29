@@ -16,7 +16,7 @@ async function evidence(info, name, value) {
 }
 
 // Scenes built from the TSL material kit (S07, S08) have no classic form: they run on the node renderer, on its WebGL2 backend here.
-const KIT_SCENE = /Atlas backdrop|gravity well|Hawking pair emission|renormalization-group flow field|collider event display|waterfall of a free quantum field/i;
+const KIT_SCENE = /Atlas backdrop|gravity well|ring of test particles|Hawking pair emission|renormalization-group flow field|collider event display|waterfall of a free quantum field/i;
 
 function observe(page) {
   const errors = [], failures = [];

@@ -35,10 +35,15 @@ async function bootstrap() {
     });
 
     // Curvature engine scene (S07): TSL materials on the material kit; the builder loads with the scene.
+    const tidal = await import("./science/tidal.mjs");
+    const grTests = await import("./science/data/gr-tests.mjs");
     const lensedSky = await import("./visualizations/gr/lensed-sky.mjs");
     const nullPhotons = await import("./visualizations/gr/null-photons.mjs");
     Object.defineProperty(window, "QGA_GR", {
       value: Object.freeze({
+        tidal: Object.freeze({ ...tidal }),
+        tests: Object.freeze({ ...grTests }),
+        loadTidalRing: () => import("./visualizations/gr/tidal-ring.mjs"),
         lensedSky: Object.freeze({ ...lensedSky }),
         nullPhotons: Object.freeze({ ...nullPhotons }),
         loadCurvatureEngine: () => import("./visualizations/gr/curvature-engine.mjs"),

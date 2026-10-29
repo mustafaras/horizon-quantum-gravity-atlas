@@ -3,13 +3,13 @@
  * in TSL on top of the material kit (js/render/materials/). They replace the three GLSL ShaderMaterials that kept this scene on the
  * classic renderer; they run on the WebGPU renderer and on the node renderer's WebGL2 backend.
  *
- * The well is a schematic: a Flamm-style embedding intuition drawn with an engraved grid and a field heatmap of its depth (S20
- * replaces the geometry with the exact Flamm embedding). Colours come from the design tokens.
+ * The surface switches between a schematic potential well and the exact equatorial Schwarzschild spatial embedding.
+ * Colours come from the design tokens.
  */
 
 import { AdditiveBlending, MeshBasicNodeMaterial } from "three/webgpu";
 import {
-  Fn, atan, clamp, cameraPosition, dot, exp, float, floor, fract, length, max, mix, normalize, normalWorld, positionLocal,
+  Fn, atan, clamp, cameraPosition, dot, exp, float, floor, fract, length, log, max, mix, normalize, normalWorld, positionLocal, sqrt,
   positionWorld, pow, select, sin, smoothstep, uniform, varying, vec3, vec4,
 } from "three/tsl";
 import { seededRng } from "../../physics.mjs";
@@ -52,6 +52,7 @@ export function createStarfield({ count, seed = 7 }) {
 /** The luminous gravity well. Returns the material and the uniforms the scene loop drives. */
 export function createWellMaterial() {
   const uTime = uniform(0), uMaxDepth = uniform(3), uFlat = uniform(0), uRippleT = uniform(-1);
+  const uFlamm = uniform(0), uRs = uniform(0.2);
   const material = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, fog: false });
   material.blending = AdditiveBlending;
 
@@ -60,7 +61,10 @@ export function createWellMaterial() {
   const front = uRippleT.mul(4.6).add(0.6);
   const band = exp(pow(rad.sub(front).mul(1.5), 2).negate());
   const ripple = band.mul(sin(rad.sub(front).mul(9))).mul(exp(uRippleT.mul(-1.35))).mul(0.55);
-  const y = positionLocal.y.add(select(uRippleT.greaterThanEqual(0), ripple, float(0)));
+  // Exact embedding z=2 sqrt(rs (r-rs)), shifted vertically to meet the outer rim.
+  const safeR = max(rad, uRs);
+  const flammY = sqrt(uRs.mul(safeR.sub(uRs))).mul(2).sub(sqrt(uRs.mul(float(8.5).sub(uRs))).mul(2));
+  const y = select(uFlamm.greaterThan(0.5), flammY, positionLocal.y.add(select(uRippleT.greaterThanEqual(0), ripple, float(0))));
   material.positionNode = vec3(positionLocal.x, y, positionLocal.z);
   const vDepth = varying(clamp(y.negate().div(max(uMaxDepth, 0.4)), 0, 1), "wellDepth");
   const vR = varying(rad, "wellRadius");
@@ -73,7 +77,10 @@ export function createWellMaterial() {
   const spoke = lineCoverage(atan(z, x).mul(12 / Math.PI), 0.9);
   const near = float(1).sub(smoothstep(1.6, 5.6, vR));
   const far = float(1).sub(near.mul(0.85));
-  const grid = clamp(max(cart.mul(far).add(cartMajor.mul(0.5).mul(far)), ring.add(spoke).mul(near)), 0, 1.4);
+  const schematicGrid = clamp(max(cart.mul(far).add(cartMajor.mul(0.5).mul(far)), ring.add(spoke).mul(near)), 0, 1.4);
+  // Integral of dr/sqrt(1-rs/r); equal steps here are equal proper distances.
+  const proper = sqrt(safeR.mul(safeR.sub(uRs))).add(uRs.mul(log(sqrt(safeR).add(sqrt(safeR.sub(uRs))).div(sqrt(uRs)))));
+  const grid = select(uFlamm.greaterThan(0.5), max(lineCoverage(proper, 1.25), spoke), schematicGrid);
 
   // Field heatmap of the embedding depth, through the iridescent rim -> mid -> deep ramp, with a slow shimmer and descending pulses.
   const ramp = paletteTexture({ range: [0, 1], palette: { stops: WELL_RAMP.map((token) => TK.linear(token)) } });
@@ -91,13 +98,14 @@ export function createWellMaterial() {
   const lit = color.mul(grid).mul(bright).add(deep.mul(fill)).mul(rimFade);
   const [fr, fg, fb] = TK.linear("pigment-blue-75-c05");
   const flat = vec3(fr, fg, fb).mul(grid.mul(0.35).add(fill.mul(0.5)));
-  material.colorNode = vec4(mix(lit, flat, uFlat.mul(0.55)), 1);
+  const outside = select(uFlamm.greaterThan(0.5), smoothstep(uRs.sub(0.015), uRs.add(0.015), vR), float(1));
+  material.colorNode = vec4(mix(lit, flat, uFlat.mul(0.55)), outside);
   // Formula Lens (S10): the nodes a formula term is evaluated from. The potential is not drawn inside the central star.
   const uMass = uniform(0);
   const nodes = { mass: uMass, radius: max(vR, float(LENS_MIN_RADIUS)), rim: rimFade };
   return {
     material: kitMaterial(material, "gr-well"),
-    uniforms: { time: uTime, maxDepth: uMaxDepth, flat: uFlat, rippleT: uRippleT, mass: uMass },
+    uniforms: { time: uTime, maxDepth: uMaxDepth, flat: uFlat, rippleT: uRippleT, mass: uMass, flamm: uFlamm, rs: uRs },
     nodes,
   };
 }
