@@ -1670,6 +1670,70 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S21 figure capture; 3% permits pinned-browser rasterization."
       }
+    },
+    {
+      "id": "approaches-causal-set",
+      "file": "docs/screenshots/52-approaches-causal-set.png",
+      "description": "Poisson-sprinkled causal set in a 2D causal diamond, with the longest chain as the focal polyline and the Myrheim-Meyer dimension recovered from the order.",
+      "view": "approaches",
+      "url": "?view=approaches&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2000,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".causal-set-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".causal-set-lab",
+          "text": "Myrheim"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "approximation",
+      "statusNote": "The sprinkle and the dimension estimator are exact and tested, but the causal set as a description of spacetime is conjectural; the 4D view is a projection.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S22 laboratory capture; 3% allows pinned-browser rasterisation of the point sprite layer."
+      }
+    },
+    {
+      "id": "approaches-causal-set-mobile",
+      "file": "docs/screenshots/53-approaches-causal-set-mobile.png",
+      "description": "The causal-set laboratory on a phone viewport: controls fit, the scene and the estimator readouts remain legible.",
+      "view": "approaches",
+      "url": "?view=approaches&seed=42",
+      "viewport": {
+        "width": 390,
+        "height": 2600,
+        "deviceScaleFactor": 1,
+        "label": "mobile"
+      },
+      "scope": "element",
+      "target": ".causal-set-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".causal-set-lab",
+          "text": "Myrheim"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "approximation",
+      "statusNote": "Documents responsive layout at 44 px touch targets; the physics is identical to the desktop capture.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S22 mobile capture; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }

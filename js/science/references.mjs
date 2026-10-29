@@ -94,6 +94,8 @@ export const REF = Object.freeze({
   REUTER_SAUERESSIG_2012: "Reuter & Saueressig, Quantum Einstein gravity, New J. Phys. 14, 055022 (2012), doi:10.1088/1367-2630/14/5/055022, arXiv:1202.2274",
   LITIM_2004: "Litim, Fixed points of quantum gravity, Phys. Rev. Lett. 92, 201301 (2004), doi:10.1103/PhysRevLett.92.201301, arXiv:hep-th/0312114",
   REPO: "HORIZON Quantum Gravity Atlas, source of the model, https://github.com/mustafaras/horizon-quantum-gravity-atlas",
+  BLMS_1987: "Bombelli, Lee, Meyer & Sorkin, Space-time as a causal set, Phys. Rev. Lett. 59, 521 (1987), doi:10.1103/PhysRevLett.59.521",
+  SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 
 const DOI = /(?:\bdoi:\s*|https?:\/\/(?:dx\.)?doi\.org\/)(10\.\d{4,9}\/\S+)/gi;

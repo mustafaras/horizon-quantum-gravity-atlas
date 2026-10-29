@@ -3,6 +3,7 @@
 // in Node to compare the registry with the captions in the source. Each registrar is idempotent.
 
 import { registerConstraintProvenance } from "./science/constraint-provenance.mjs";
+import { registerCausalSetProvenance } from "./science/causal-set-provenance.mjs";
 import { registerFigureProvenance } from "./figure/provenance.mjs";
 import { registerGaugeRunningProvenance } from "./science/gauge-running-provenance.mjs";
 import { registerAsymptoticSafetyProvenance } from "./science/asymptotic-safety-provenance.mjs";
@@ -22,6 +23,7 @@ import { registerKerrObservatoryProvenance } from "./visualizations/kerr/kerr-ob
 const REGISTRARS = Object.freeze([
   registerFigureProvenance,
   registerConstraintProvenance,
+  registerCausalSetProvenance,
   registerGaugeRunningProvenance,
   registerAsymptoticSafetyProvenance,
   registerConformalProvenance,
