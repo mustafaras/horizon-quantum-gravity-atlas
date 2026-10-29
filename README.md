@@ -217,8 +217,15 @@ Black-hole screenshots are included prominently because the black-hole module is
 <td width="50%">
 <img src="docs/screenshots/27-spin-foam-lab.png" alt="Spin-foam laboratory" width="100%" />
 <br/>
-<sub><strong>Spin-foam laboratory</strong> — Schlegel-projected four-simplex spin network with spin-coloured edges, volume-weighted nodes and translucent face membranes; pedagogical, conjectural.</sub>
+<sub><strong>Spin-foam laboratory</strong> — Schlegel-projected four-simplex spin network with spin-coloured edges, volume-weighted nodes and translucent face membranes, above the computed area and volume spectra of the loop-quantum-gravity operators; pedagogical, conjectural.</sub>
 </td>
+<td width="50%">
+<img src="docs/screenshots/51-planck-constraint-plane.png" alt="The map of the unseen: eleven published experimental limits and observed scales on a logarithmic length-energy plane whose hatched Planck corner is marked as having no direct data" width="100%" />
+<br/>
+<sub><strong>The map of the unseen</strong> — every published limit and observed scale in one logarithmic plane, with <code>E = ħc/L</code> as the diagonal: Eöt-Wash, the LHC and CMS, IceCube, XENONnT, Fermi, GWTC-3, the Event Horizon Telescope, BICEP/Keck, the CMB sound horizon and the Hubble radius. Each carries its value, confidence level, uncertainty and a primary-source link, and the hatched Planck corner marks where no direct data exist. See <a href="docs/render/planck-constraints.md">docs/render/planck-constraints.md</a>.</sub>
+</td>
+</tr>
+<tr>
 <td width="50%">
 <strong>Screenshot policy</strong>
 <br/><br/>
@@ -1115,7 +1122,8 @@ The atlas therefore presents collider events as indirect constraints, not as qua
 | RG Flow Landscape | `mod-gauge-rg.jsx`, `mod-rg-stage3.jsx`, and shared pure helpers | synchronizes coupling running, β phase lines, fixed points, termination, and epistemic boundaries |
 | Causal Spacetime Laboratory | Minkowski diagram and Lorentz-frame explorer in `mod-gr.jsx` | makes invariant intervals, causal order, simultaneity, and proper time directly testable |
 | GR curvature engine | scene in `mod-gr.jsx` | visualizes geodesics and lensing |
-| Planck ladder | scene in `mod-planck.jsx` | makes the scale desert explicit |
+| Planck ladder | scene in `js/labs/planck-labs.jsx`, mounted by `mod-planck.jsx` | makes the scale desert explicit |
+| Planck constraint map | `js/labs/constraint-plane.jsx` and `js/science/data/constraints.mjs` | places published limits and observed scales on one sourced length–energy plane |
 | collider and GW labs | `mod-experiments.jsx` | shows indirect constraints |
 
 ---
@@ -1172,7 +1180,8 @@ horizon-quantum-gravity-atlas/
 │       ├── 25-ads-bulk-boundary-lab.png
 │       ├── 26-collider-event-lab.png
 │       ├── 27-spin-foam-lab.png
-│       └── 28-qft-field-lab.png
+│       ├── 28-qft-field-lab.png
+│       └── 51-planck-constraint-plane.png
 │   └── social/
 │       └── og-image.png
 ├── scripts/
@@ -1377,8 +1386,9 @@ The screenshot set emphasizes visual and animated modules:
 | `45-rg-gravity-flow-mobile.png` | `rg` | the same lab in one column at `?view=rg&seed=42`, 390 × 3200 |
 | `25-ads-bulk-boundary-lab.png` | `approaches` | AdS holography lab at `?view=approaches&aln=5&alr=0.5`: exact geodesics, RT surface, entanglement wedge |
 | `26-collider-event-lab.png` | `sm` | synthetic collider lab at `?view=sm&clc=h2gg&seed=42`: tracks, towers, jets, missing energy |
-| `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges |
+| `27-spin-foam-lab.png` | `planck` | spin-foam lab at `?view=planck&sfj=2&sfm=network`: four-simplex network, spin-coloured edges, and the computed area and volume spectra beside it |
 | `28-qft-field-lab.png` | `qft` | field laboratory at `?view=qft&seed=42`: a classical φ⁴ field on a GPU lattice drawn by its energy density, with the Hamiltonian-density card |
+| `51-planck-constraint-plane.png` | `planck` | "The map of the unseen" at `?view=planck&seed=42`: eleven sourced limits and observed scales on a logarithmic length–energy plane, with the Planck corner and the selected entry's citation |
 
 Capture criteria:
 
@@ -1479,6 +1489,12 @@ It shows the scale ladder from human dimensions to the Planck length.
 Its foam-like visualization is explicitly labeled schematic.
 
 The app does not claim spacetime is actually a foam lattice.
+
+**The map of the unseen** turns the module's thesis into one image: where experiments have actually looked, and the void where quantum gravity lives. Eleven published limits and observed scales — the Eöt-Wash inverse-square test, the LHC's collision energy and a CMS large-extra-dimension bound, IceCube's neutrino absorption, XENONnT's WIMP limit, Fermi's linear-dispersion bound, GWTC-3's graviton mass, the Event Horizon Telescope's M87* radius, BICEP/Keck's tensor limit converted to an inflation energy, and the CMB sound horizon and Hubble radius — sit on a logarithmic length–energy plane with `E = ħc/L` as the diagonal. Each entry carries its value, confidence level, stated uncertainty, a model caveat and a link to its primary source, so the figure is a map of *different* questions rather than a joint exclusion. The dark Planck corner is labelled "no direct data": indirect limits reach that scale, no experiment starts there.
+
+Beside the 3-D graph, the loop-quantum-gravity spectra are computed rather than drawn: the single-link area levels and the volume eigenvalues of a four-valent quantum tetrahedron, the latter by diagonalizing the Bianchi–Haggard squared-volume operator and reproducing their published Appendix C values. The chosen Immirzi parameter γ = 1 is a convention, not a measurement, and the whole section is labelled conjectural.
+
+The module's length slider also drives a crosshair on the map through the shared concept bus, so the descent and the frontier stay in step.
 
 ### Module 06 — Theory Comparator
 
@@ -2420,8 +2436,9 @@ Each screenshot also has a caveat.
 | `19-rg-flow-landscape-mobile.png` | documents responsive controls and the conjectural fixed-point toy | the displayed UV fixed point is built into an illustrative polynomial |
 | `25-ads-bulk-boundary-lab.png` | computes hyperbolic geodesics, the RT minimal surface and the entanglement wedge from the tested geometry module | the AdS/CFT duality reading is conjectural and labeled in-canvas |
 | `26-collider-event-lab.png` | shows seeded synthetic collision kinematics with exact four-momentum conservation | synthetic fixture, never a CERN observation; labeled in-canvas |
-| `27-spin-foam-lab.png` | shows the spin-network area spectrum and a four-simplex foam step | pedagogical sketch with no amplitudes computed; conjectural, labeled in-canvas |
+| `27-spin-foam-lab.png` | shows the spin-network area spectrum and a four-simplex foam step, with the computed area and volume levels alongside | pedagogical sketch with no amplitudes computed; conjectural, labeled in-canvas |
 | `28-qft-field-lab.png` | shows the φ⁴ lattice field with its energy-density colours, readouts and the Hamiltonian-density card | classical lattice field, equal to its float64 CPU reference to 3e-7 after 200 steps; reduced motion and software rasterizers park it at its initial state |
+| `51-planck-constraint-plane.png` | shows eleven published limits and observed scales, each linked to its primary source, on the length–energy plane | the axes are independent quantities joined by `E = ħc/L`; the Fermi, graviton-mass and inflation entries are model-dependent, and the hatched corner means no direct Planck-energy experiment |
 
 ### Appendix W — Badge Manifest
 

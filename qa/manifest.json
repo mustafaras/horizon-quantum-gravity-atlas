@@ -1665,7 +1665,7 @@
       ],
       "scientificStatus": "approximation",
       "statusNote": "The reduced-wavelength map combines distinct observables; boundaries and model assumptions are disclosed, and no point is claimed as direct Planck-scale data.",
-      "readme": false,
+      "readme": true,
       "baseline": {
         "maxDiffPixelRatio": 0.03,
         "note": "New S21 figure capture; 3% permits pinned-browser rasterization."
