@@ -210,9 +210,10 @@ export function buildSuccessors(matrix) {
  * Walking a precomputed time order and testing membership with a single bit costs O(N) bit tests per element,
  * instead of sorting each element's successor list — which is what kept the dense 2D case over budget.
  */
-export function links(matrix, points = null) {
+export function links(matrix, points = null, prebuiltSuccessors = null) {
   const { n, words, rows } = matrix;
   if (!points) throw new TypeError("links needs the points to order the candidates by time");
+  void prebuiltSuccessors; // the time-ordered walk below does not need the adjacency
   const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => points[a].t - points[b].t || a - b);
   const reach = new Uint32Array(words);
   const out = [];
@@ -253,15 +254,16 @@ export function relationCount(matrix) {
  * is a valid topological order for any sprinkle. The DP walks each element's successor list once, so the cost is
  * O(N + relations) rather than O(N²) — the difference matters at N = 4000.
  */
-export function longestChain(matrix, points) {
+export function longestChain(matrix, points, prebuiltSuccessors = null) {
   const { n } = matrix;
+  const successors = prebuiltSuccessors ?? buildSuccessors(matrix);
   const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => points[a].t - points[b].t || a - b);
   const rank = new Int32Array(n);
   order.forEach((id, pos) => { rank[id] = pos; });
 
   // Flat CSR of successors by topological rank: building one array per node with `map` allocates n arrays and
   // dominates the cost at N = 4000. One Int32Array of offsets plus one of targets runs in a single pass.
-  const succ = buildSuccessors(matrix);
+  const succ = successors;
   const offsets = new Int32Array(n + 1);
   for (let pos = 0; pos < n; pos++) offsets[pos + 1] = offsets[pos] + succ[order[pos]].length;
   const targets = new Int32Array(offsets[n]);
@@ -300,8 +302,9 @@ export function estimate({ dim = 2, n = 200, seed = 42 } = {}) {
   const relations = relationCount(matrix);
   const fraction = relations / pairs;
   const dimension = dimensionFromOrderingFraction(fraction);
-  const linksOut = links(matrix, points);
-  const chain = longestChain(matrix, points);
+  const successors = buildSuccessors(matrix);
+  const linksOut = links(matrix, points, successors);
+  const chain = longestChain(matrix, points, successors);
   return {
     dim, n, seed, points, matrix,
     relations, pairs, orderingFraction: fraction,
