@@ -1517,12 +1517,12 @@
       "findings": [
         "F-11"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s26-gw-waveforms",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3526,6 +3526,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #110. The Bardeen curve and the EHT comparison are live; F-17 stays open with a partiallyAddressed record because the screen-space overlay and the Kerr Formula Lens need a TSL storage buffer that CI cannot exercise."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S26",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S26 on a branch from main after S25 closed."
     }
   ]
 }
