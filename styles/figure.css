@@ -254,3 +254,20 @@ button.badge.prov-chip:focus-visible, .prov-close:focus-visible, .prov-link:focu
   .pn-math summary { padding: 20px 18px; }
   .pn-math > p { padding: 0 18px 20px; }
 }
+
+/* ---------- one-shot reveal (S24) ----------
+   The canvas draws the plot; the SVG fallback and the exported figure carry `data-trace` on their data polylines.
+   The stroke is drawn left to right once, from the same tokens as the rest of the motion system, and the whole
+   thing is switched off under reduced motion — a figure must never depend on the animation to be readable. */
+.fig [data-trace] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: fig-trace 900ms cubic-bezier(0.18, 0.72, 0.2, 1) 1 both;
+}
+@keyframes fig-trace {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fig [data-trace] { animation: none !important; stroke-dashoffset: 0 !important; }
+}

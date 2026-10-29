@@ -69,7 +69,7 @@ export function pageCurveSpec({ height = 190 } = {}) {
  * The correction is not a cosmetic wobble: the gravitational barrier suppresses the low-energy part of the
  * spectrum, which is why an evaporating hole emits fewer soft quanta than a blackbody of the same temperature.
  */
-export function greybodySpectrumSpec({ temperature = 0.15, height = 200 } = {}) {
+export function greybodySpectrumSpec({ temperature = 0.15, height = 200, highlight = 0.2 } = {}) {
   const spec = greybodySpectrum({ omegaMax: 2, samples: 48, lMax: 2, M: 1, temperature });
   const peak = (values) => Math.max(...values.map((v) => Math.abs(v)), 1e-30);
   return figure({
@@ -83,12 +83,81 @@ export function greybodySpectrumSpec({ temperature = 0.15, height = 200 } = {}) 
         color: "pigment-orange-85", label: { text: "blackbody" } }),
       line({ x: spec.omega, y: spec.greybody.map((v) => v / peak(spec.blackbody)), layer: "model", focal: true,
         color: "pigment-azure-82", label: { text: "with greybody factors" } }),
+      rule({ axis: "x", value: highlight, layer: "model", color: "pigment-amber-79-c12" }),
     ],
     summary:
       "The thermal spectrum a black hole emits, with and without the greybody correction. The gravitational barrier " +
       "suppresses the low-energy end, so the corrected curve is lower where the blackbody is largest. The " +
       "transmission factors themselves are computed by solving the radial Regge-Wheeler equation.",
   });
+}
+
+/**
+ * The blackbody at four masses on one axis: the Wien peak moves as 1/M, so heavier holes are colder.
+ *
+ * The curves are the same Planckian shape; only the peak position changes. That is the whole content of
+ * T ∝ 1/M, and drawing it is more honest than printing the formula and asking the reader to trust it.
+ */
+export function hawkingMassSpec({ scaled = [], selected = 10 } = {}) {
+  const x = grid(0, 3, 160);
+  const shape = (peak) => {
+    // Planckian in u = E/(k T), with the Wien peak at u ≈ 2.82. Written so that the curve's *peak* lands on `peak`
+    // and its height is held at 1: the point of the figure is where the maximum sits, not how tall it is.
+    const u = x.map((v) => (2.82 * v) / Math.max(peak, 1e-9));
+    const raw = u.map((value) => (value <= 0 ? 0 : (value * value * value) / (Math.exp(Math.min(40, value)) - 1 + 1e-12)));
+    const top = Math.max(...raw, 1e-30);
+    return raw.map((v) => v / top);
+  };
+  const marks = [];
+  scaled.forEach((entry, i) => {
+    const y = shape(entry.peak);
+    const peak = Math.max(...y, 1e-30);
+    const isSelected = entry.m === selected;
+    marks.push(line({
+      x, y: y.map((v) => v / peak),
+      layer: "model", color: `cat-${i + 1}`,
+      focal: isSelected, width: isSelected ? 2.2 : 1.2,
+      dash: isSelected ? null : "4 4",
+    }));
+    if (isSelected) marks.push(rule({ axis: "x", value: entry.peak, layer: "model", color: "pigment-amber-79-c12" }));
+  });
+  return figure({
+    id: "bh-hawking-mass", title: "The same spectrum at four masses", status: "effective",
+    provenanceId: "bh-hawking-spectrum", height: 200, legend: false,
+    x: axis({ scale: { type: "linear", domain: [0, 3] }, label: { text: "photon energy (arb.)" } }),
+    y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { text: "flux (norm. per curve)" } }),
+    marks,
+    summary:
+      "The Planckian shape at 1, 10, a million and a billion solar masses. Each curve is normalised to its own peak; " +
+      "what changes is the peak position, which moves as 1/M. The selected mass is solid and carries a rule at its " +
+      "peak; the others are dashed. A heavier hole is colder, which is why evaporation runs away as the hole shrinks.",
+  });
+}
+
+/**
+ * The partial-wave transmissions as small multiples: Γ_ℓ(ω) for ℓ = 0, 1, 2 on one axis.
+ *
+ * This is what makes the spectrum above legible: the step at ωM ≈ 0.4 is the ℓ = 1 channel opening, and the one
+ * at ≈ 0.65 is ℓ = 2. Without them the corrected curve looks arbitrary.
+ */
+export function transmissionSpecs({ temperature = 0.15 } = {}) {
+  const { transmissions } = greybodySpectrum({ omegaMax: 2, samples: 48, lMax: 2, M: 1, temperature });
+  return transmissions.map((row) =>
+    figure({
+      id: `bh-transmission-l${row.l}`,
+      title: `Transmission, l = ${row.l}`,
+      status: "effective",
+      provenanceId: "bh-greybody",
+      height: 150,
+      legend: false,
+      x: axis({ scale: { type: "linear", domain: [0, 2] }, label: { tex: "\\omega M" } }),
+      y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { tex: "\\Gamma_\\ell" } }),
+      marks: [
+        line({ x: row.omega, y: row.gamma, layer: "data", focal: true, color: `cat-${row.l + 1}` }),
+      ],
+      summary: `Transmission of the l = ${row.l} partial wave through the Schwarzschild barrier.`,
+    }),
+  );
 }
 
 const ring = (r, n = 121) => {
