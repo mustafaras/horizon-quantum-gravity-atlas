@@ -213,12 +213,12 @@
       "id": "F-13",
       "title": "Approaches cover five programs; no computed program, no quantitative comparison",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S22",
         "S23"
       ],
-      "closedIn": null
+      "closedIn": "a5fba616a4a668d93f13cbe9099e374f6c3c2806"
     },
     {
       "id": "F-14",
@@ -1367,13 +1367,15 @@
       "findings": [
         "F-13"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s23-cdt-spectral",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/104",
-      "commits": [],
+      "commits": [
+        "a5fba616a4a668d93f13cbe9099e374f6c3c2806"
+      ],
       "startedAt": "2026-10-29",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm ci: node_modules present; baseline npm test 1090 passed, 1 skipped",
@@ -1382,7 +1384,8 @@
           "npm run validate: passed; 80 provenance entries",
           "npm run qa:verify: 57 captures valid",
           "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (all unchanged)",
-          "node qa/capture.mjs --only=approaches-spectral-dimension,approaches-cdt,approaches-string-spectrum --update --docs: 3 captures"
+          "node qa/capture.mjs --only=approaches-spectral-dimension,approaches-cdt,approaches-string-spectrum --update --docs: 3 captures",
+          "PR #104 head: GitHub Validate and Browser QA both passed, run 40883313112 (validate 21s, browser 5m42s)."
         ],
         "screenshots": [
           "docs/screenshots/54-approaches-spectral-dimension.png",
@@ -2772,6 +2775,34 @@
       "prompt": "S22",
       "decision": "Flatten the longest-chain DP to a CSR so the N=4000 budget holds in CI.",
       "rationale": "The budget passed locally and failed in CI at 307 ms CPU. longestChain built one successor array per node with map; two Int32Arrays of offsets and targets cut the chain pass from 84 ms to 42 ms and the whole 2D estimate from ~307 ms to ~120 ms. The test was not relaxed."
+    },
+    {
+      "id": "D-150",
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "decision": "Add the discretised curvature term to the 2D CDT action instead of keeping only the volume term.",
+      "rationale": "With only -lambda*N2 and volume-conserving moves, the fixed-volume ensemble is flat and the slice profile performed a free random walk: measured acceptance was 100% and the profile drifted to 4, 6, 4, 9, 4, 4, 13, 6 on a target of 8. Including epsilon*sum (L_t - L_{t+1})^2/(L_t + L_{t+1}) drops acceptance to 70%, the spread from 6.58 to 1.47 and the mean to 8.000."
+    },
+    {
+      "id": "D-151",
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "decision": "Quote d_s from the flat honeycomb control and report the cylinder's dual degree histogram separately.",
+      "rationale": "The cylinder's dual graph is degree-irregular whenever neighbouring slice volumes differ (measured histogram 4x2, 26x3, 162x4), and its d_s drifted with the profile. No construction I tried was simultaneously connected and uniformly degree-3 for unequal slice sizes. Rather than quote a number I do not trust, the readout cites the honeycomb where the estimator is tested to return 2 within 0.15, and shows the irregularity instead of hiding it."
+    },
+    {
+      "id": "D-152",
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "decision": "Replace three guessed arXiv identifiers with verified ones before citing the spectral-dimension table.",
+      "rationale": "The ids first written for Lauscher-Reuter, Modesto and Horava resolved to a galaxy-groups paper, a viscous-hydrodynamics review and an axion paper. Author and title searches gave the correct hep-th/0508202, 0812.2214 and 0901.3775, each confirmed against its journal reference."
+    },
+    {
+      "id": "D-153",
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "decision": "Close F-13 now that the approaches module covers seven programs, one quantitative comparison and three runnable ones.",
+      "rationale": "S22 delivered the causal-set laboratory and its computed comparison; S23 delivers the spectral-dimension comparison across five programs plus the CDT and string-spectrum laboratories, all with cited sources. The finding's own words — five programs, no computed program, no quantitative comparison — are now all addressed."
     }
   ],
   "log": [
@@ -3355,6 +3386,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claimed",
       "detail": "Started S23 on a branch from main after S22 closed."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S23",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #104 as a5fba61. Closed F-13: the approaches module now carries seven programs with one quantitative comparison and three runnable laboratories."
     }
   ]
 }
