@@ -24,6 +24,7 @@ const EXPECTED_ORDER = [
   "styles/components-scene.css",
   "styles/shell.css",
   "styles/modules/causal.css",
+  "styles/modules/gr-tides.css",
   "styles/modules/overview.css",
   "styles/modules/workbench.css",
   "styles/modules/cinematic.css",

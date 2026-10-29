@@ -78,18 +78,27 @@ export async function buildCurvatureScene(ctx, env) {
   const well = createWellMaterial();
   const wellUniforms = well.uniforms;
   const surf = new THREE.Mesh(geo, well.material);
+  surf.userData.qgaGeometryMode = wellUniforms.flamm;
   surf.renderOrder = -2;
   scene.add(tag(surf, "model"));
   const pos = geo.attributes.position;
 
-  const depth = (x, z, GM) => (refs.view.current === "gr" ? -0.92 * GM / Math.sqrt(x * x + z * z + 0.62) : 0);
-  let lastM = -1, lastView = "";
+  const depth = (x, z, GM) => {
+    if (refs.geometry.current === "flamm") {
+      const rs = 2 * GM / GR_C2, r = Math.max(rs, Math.hypot(x, z));
+      return 2 * Math.sqrt(rs * (r - rs)) - 2 * Math.sqrt(rs * (EXT / 2 - rs));
+    }
+    return -0.92 * GM / Math.sqrt(x * x + z * z + 0.62);
+  };
+  let lastM = -1, lastView = "", lastGeometry = "";
   const reshape = () => {
     const GM = GM_SCALE * refs.mass.current;
     for (let k = 0; k < pos.count; k++) pos.setY(k, depth(pos.getX(k), pos.getZ(k), GM));
     pos.needsUpdate = true;
     wellUniforms.maxDepth.value = Math.max(0.5, 0.92 * GM / Math.sqrt(0.62));
     wellUniforms.mass.value = GM;
+    wellUniforms.rs.value = 2 * GM / GR_C2;
+    wellUniforms.flamm.value = refs.geometry.current === "flamm" ? 1 : 0;
   };
   const hAt = (x, z) => depth(x, z, GM_SCALE * refs.mass.current);
 
@@ -315,8 +324,8 @@ export async function buildCurvatureScene(ctx, env) {
       const M = refs.mass.current, GM = GM_SCALE * M;
       const newton = refs.view.current === "newton";
       const st = refs.st.current;
-      if (lastM !== M || lastView !== refs.view.current) {
-        lastM = M; lastView = refs.view.current; reshape();
+      if (lastM !== M || lastView !== refs.view.current || lastGeometry !== refs.geometry.current) {
+        lastM = M; lastView = refs.view.current; lastGeometry = refs.geometry.current; reshape();
         // ray dynamics differ fundamentally between GR/Newton — relaunch the fan
         st.rays = GR_RAY_B.map((b) => makeRay(b, newton));
       }
@@ -332,6 +341,11 @@ export async function buildCurvatureScene(ctx, env) {
 
       syncSimBodies(st, refs.bodies.current);
 
+      // Exact embedding has a horizon boundary, not a drawn stellar photosphere.
+      const exactSurface = refs.geometry.current === "flamm";
+      star.visible = !exactSurface; starGlow.visible = !exactSurface; corona.visible = !exactSurface;
+      throat.visible = !exactSurface; einstein.visible = !exactSurface; vortex.visible = !exactSurface;
+      if (dust) dust.object.visible = !exactSurface;
       // ---- central star ----
       const sc = 0.45 + M * 0.07;
       star.scale.setScalar(sc);

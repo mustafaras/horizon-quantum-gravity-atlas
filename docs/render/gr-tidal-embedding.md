@@ -1,0 +1,9 @@
+# S20 — tides, embedding and observation
+
+In **General Relativity → Tidal forces and observation**, the tidal laboratory drops an initially comoving ring from rest and allows a user to scrub its progress. The centre is an exact radial Schwarzschild geodesic. Two RK4-integrated linear geodesic-deviation axes determine the ring; its size is normalised to fit the viewport. The 100 m/s² threshold is an illustrative differential acceleration across 2 m, not a universal survival limit. The scene stops outside the horizon.
+
+The curvature engine defaults to the Flamm embedding. Its TSL vertex position uses `z = 2 sqrt(rs (r - rs))`, with a vertical offset; radial grid lines are equally spaced in proper distance. This is an embedding of the equatorial **spatial** slice outside the Schwarzschild horizon, not a representation of spacetime. The former potential well remains selectable and labelled schematic. Orbits, spin and radiation-reaction overlays have their own approximations and are not a solution derived from the embedded surface.
+
+The observed comparisons use the source quantities and quoted errors individually; they are not a combined fit. In particular, the GPS clock-rate calculation is separate from the measured GPS redshift violation. Mercury's quoted 1972 uncertainty is statistical; the authors estimated larger systematics. Solar deflection is the equivalent limb coefficient obtained from a VLBI measurement of gamma, rather than presenting a theoretical 1.75 arcsec prediction as a measurement. Sources are linked beside each point.
+
+For 10 solar masses and the selected 2 m / 100 m/s² threshold, the threshold is 3,758,330 m while the horizon is 29,533 m. For one million solar masses the threshold is 174,446,229 m and the horizon is 2,953,339,382 m. Constants and calculations are in `js/science/tidal.mjs`; the citations and measured values are in `js/science/data/gr-tests.mjs`.

@@ -700,7 +700,7 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
 
     // ---------- offscreen pause ----------
     let visible = true;
-    const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; session.setVisible(visible); }, { threshold: 0.02 });
+    const io = new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; session.setVisible(visible); }, { threshold: 0.02 });
     io.observe(mount);
 
     // ---------- frame loop ----------

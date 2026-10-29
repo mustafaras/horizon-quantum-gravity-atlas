@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-28",
+  "updated": "2026-10-29",
   "statuses": [
     "todo",
     "claimed",
@@ -1212,7 +1212,7 @@
       "findings": [
         "F-16"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Codex for mustafaras",
       "branch": "codex/s20-gr-tidal-embedding",
       "pr": null,
@@ -1220,12 +1220,35 @@
       "startedAt": "2026-10-28",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm ci: passed, zero vulnerabilities",
+          "npm test: 1070 passed, 1 skipped, 0 failed",
+          "npm run validate: passed; 74 provenance entries",
+          "npm run qa:verify: 51 captures valid",
+          "npm run perf:audit: passed",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs: 4 passed (WebGL2, reduced and normal motion, mobile)",
+          "QGA_WEBGPU_HEADED=1 npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal-webgpu.spec.mjs: 1 passed (Apple Metal WebGPU)",
+          "node qa/capture.mjs --only=gr-curvature-lensing,gr-tidal-lab,gr-flamm,gr-tests-pull --update --docs: 4 captures rendered",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs -g 'tidal controls' --repeat-each=3: 3 passed after visibility change",
+          "npm run qa:critical before Scene3D visibility change: 25 passed; after change: 23 passed, 2 timed out under high load/sleep; both failed cases passed on isolated rerun",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal.spec.mjs: 4 passed on final code",
+          "QGA_WEBGPU_HEADED=1 npx playwright test --config qa/playwright.config.mjs qa/specs/gr-tidal-webgpu.spec.mjs: 1 passed on final code (Apple Metal)"
+        ],
+        "screenshots": [
+          "docs/screenshots/05-spacetime-curvature-lensing.png",
+          "docs/screenshots/48-gr-tidal-lab.png",
+          "docs/screenshots/49-gr-flamm.png",
+          "docs/screenshots/50-gr-tests-pull.png"
+        ],
+        "measurements": [
+          "10 solar masses, 2 m and 100 m/s^2: threshold 3758330.075654403 m > horizon 29533.393820668785 m (127.2569654 rs).",
+          "1e6 solar masses, same body and threshold: threshold 174446229.12188548 m < horizon 2953339382.0668783 m (0.05906745 rs).",
+          "Spherical GPS model r=26560 km: gravitational +45.71821278, kinematic -7.21359982 and net +38.50461296 microseconds/day; compare +45.72, -7.21 and +38.50 to 0.01.",
+          "Flamm proper radial distance versus Simpson integration agrees within 1e-8 in test/tidal.test.mjs."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Implementation is locally verified and awaiting PR/merge. F-16 remains open until merge. Headless SwiftShader WebGPU canvas appeared blank on both S20 and unchanged 564ecea Penrose; headed Apple Metal WebGPU rendered and passed the interactive and nonblank-scene test. The final critical suite recorded 23 passes and 2 failures during heavy machine load and sleep; both failures passed individually on rerun."
     },
     {
       "id": "S21",
@@ -2488,6 +2511,69 @@
       "prompt": "S19",
       "decision": "Baseline justification, gr-penrose-atlas and gr-penrose-atlas-mobile: both are first baselines, recorded at 2 percent and 3 percent pixel tolerance. The desktop figure is static engraved lines from exact maps with KaTeX labels, so it is deterministic and the tolerance covers rasterisation of the 1 px grid; the mobile figure is the same content in one column at 390 px, where the per-panel titles are hidden because each diagram is a thumbnail and the captions name all three.",
       "rationale": "The plan forbids refreshing a baseline to make a test pass and requires a one-line justification for each one updated. These are new, not updated, and the tolerances are stated with the reason."
+    },
+    {
+      "id": "D-124",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Use the GPS redshift observation (0.23 +/- 1.34)e-3 from Fathollahi et al. 2023 as the GPS pull; show the calculated GPS clock offset separately.",
+      "rationale": "The listed clock offsets are model corrections, not measured values with a quoted one-sigma uncertainty. The published GPS experiment supplies a real observational uncertainty."
+    },
+    {
+      "id": "D-125",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Express the 1972 Mercury radar PPN measurement as 42.98 times 1.005 +/- 0.007 arcsec/century and the 2004 solar VLBI gamma measurement as an equivalent solar-limb coefficient.",
+      "rationale": "The prompt quotes theoretical values, not measured points. The 1972 error is statistical only and the source estimates larger systematics; both conversions and their limits are displayed."
+    },
+    {
+      "id": "D-126",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Normalise the particle ring to fit the scene at each instant and show its integrated radial stretch numerically.",
+      "rationale": "The axis ratio preserves the linear geodesic-deviation shape while large deformations would otherwise leave the viewport; absolute apparent size is explicitly disclaimed."
+    },
+    {
+      "id": "D-127",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Baseline justification, gr-tidal-lab: new S20 laboratory with 3% renderer and font rasterization tolerance.",
+      "rationale": "This is a first baseline for an intentionally new interactive figure."
+    },
+    {
+      "id": "D-128",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Baseline justification, gr-flamm: new exact Flamm scene capture with 3% renderer rasterization tolerance.",
+      "rationale": "This is a first baseline for an intentionally new geometry mode."
+    },
+    {
+      "id": "D-129",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Baseline justification, gr-tests-pull: new observed-comparisons figure with 3% font and rasterization tolerance.",
+      "rationale": "This is a first baseline for a new source-linked figure."
+    },
+    {
+      "id": "D-130",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Baseline justification, gr-curvature-lensing: refreshed the existing capture because the default surface is now Flamm and its controls and scientific caption changed.",
+      "rationale": "The previous image depicted the former schematic surface; this intentional redesign changes the captured section and needs a new reference, not a test-only refresh."
+    },
+    {
+      "id": "D-131",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "WebGPU was verified on a headed Apple Metal adapter; the software headless WebGPU screenshot path remained blank for the unchanged 564ecea Penrose scene as well as S20.",
+      "rationale": "The visual claim is based on real rendered headed WebGPU evidence; the headless SwiftShader presentation limitation is not reported as a passing visual test."
+    },
+    {
+      "id": "D-132",
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "decision": "Use the last entry in a batch of IntersectionObserver events for shared Scene3D visibility.",
+      "rationale": "A scrub followed by scrolling sometimes left the tidal scene reported invisible although its viewport rectangle was visible. Using the last queued observation avoids one possible stale-state cause; three repeated WebGL2 checks passed, but this does not prove the sole root cause."
     }
   ],
   "log": [
@@ -2952,6 +3038,27 @@
       "agent": "local: Codex for mustafaras",
       "event": "claimed",
       "detail": "Branch codex/s20-gr-tidal-embedding cut from origin/main 564ecea9; S19 is done."
+    },
+    {
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "in_progress",
+      "detail": "Baseline npm ci, npm test (1065 pass, 1 skipped), and npm run validate passed. Verifying primary measurement sources before implementation."
+    },
+    {
+      "date": "2026-10-28",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "verification",
+      "detail": "Implemented tidal science and controls, exact Flamm mode, sourced GR pull plot and captures. Local tests and headed Metal WebGPU pass; F-16 and status remain open pending PR/merge."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "verification",
+      "detail": "Final code: 4/4 S20 WebGL2 tests and 1/1 headed Apple Metal WebGPU test passed. The critical suite recorded 23/25 after the visibility change under load and sleep; legacy deep links and exp mount each passed in isolated reruns. Full pre-visibility suite had passed 25/25. Findings remain open until merge."
     }
   ]
 }

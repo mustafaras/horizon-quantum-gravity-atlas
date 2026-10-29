@@ -1542,6 +1542,102 @@
         "maxDiffPixelRatio": 0.03,
         "note": "Same content in one column at 390 px; 3% tolerance for the narrower layout."
       }
+    },
+    {
+      "id": "gr-tidal-lab",
+      "file": "docs/screenshots/48-gr-tidal-lab.png",
+      "description": "Test-particle tidal deformation and radial stretch under Schwarzschild free fall.",
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".tidal-lab",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".tidal-lab",
+          "text": "Gravity pulls unevenly"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Test-particle tidal deformation and radial stretch under Schwarzschild free fall.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S20 capture; 3% allows pinned-browser font and renderer rasterisation."
+      }
+    },
+    {
+      "id": "gr-flamm",
+      "file": "docs/screenshots/49-gr-flamm.png",
+      "description": "The exact Flamm embedding of a Schwarzschild equatorial spatial slice with schematic orbit overlays.",
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".gr-well-stage",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".gr-well-stage",
+          "text": "EXACT"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "approximation",
+      "statusNote": "The exact Flamm embedding of a Schwarzschild equatorial spatial slice with schematic orbit overlays.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S20 capture; 3% allows pinned-browser font and renderer rasterisation."
+      }
+    },
+    {
+      "id": "gr-tests-pull",
+      "file": "docs/screenshots/50-gr-tests-pull.png",
+      "description": "Seven independently sourced observational comparisons with uncertainties.",
+      "view": "gr",
+      "url": "?view=gr&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".gr-tests-panel",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".gr-tests-panel",
+          "text": "THE TESTED UNIVERSE"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "established",
+      "statusNote": "Seven independently sourced observational comparisons with uncertainties.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S20 capture; 3% allows pinned-browser font and renderer rasterisation."
+      }
     }
   ]
 }
