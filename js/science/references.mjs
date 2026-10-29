@@ -105,6 +105,11 @@ export const REF = Object.freeze({
   PENINGTON_2019: "Penington, Entanglement wedge reconstruction and the information paradox, JHEP 09 (2020) 002, doi:10.1007/JHEP09(2020)002, arXiv:1905.08255",
   AEM_2019: "Almheiri, Engelhardt, Marolf & Maxfield, The entropy of bulk quantum fields and the entanglement wedge of an evaporating black hole, JHEP 12 (2019) 063, doi:10.1007/JHEP12(2019)063, arXiv:1905.08762",
   DAS_GIBBONS_MATHUR_1997: "Das, Gibbons & Mathur, Universality of low-energy absorption cross-sections for black holes, Phys. Rev. Lett. 78, 417 (1997), doi:10.1103/PhysRevLett.78.417, arXiv:hep-th/9609052",
+  EHT_M87_2019_I: "Event Horizon Telescope Collaboration, First M87 Event Horizon Telescope results. I. The shadow of the supermassive black hole, Astrophys. J. Lett. 875, L1 (2019), doi:10.3847/2041-8213/ab0ec7, arXiv:1906.11238",
+  EHT_M87_2019_VI: "Event Horizon Telescope Collaboration, First M87 Event Horizon Telescope results. VI. The shadow and mass of the central black hole, Astrophys. J. Lett. 875, L6 (2019), doi:10.3847/2041-8213/ab1141, arXiv:1906.11243",
+  EHT_SGR_A_2022_I: "Event Horizon Telescope Collaboration, First Sagittarius A* Event Horizon Telescope results. I. The shadow of the supermassive black hole in the center of the Milky Way, Astrophys. J. Lett. 930, L12 (2022), doi:10.3847/2041-8213/ac6674, arXiv:2311.08680",
+  GRAVITY_2021_MASS: "GRAVITY Collaboration, Abuter et al., Mass distribution in the Galactic Centre from interferometric astrometry of S2, Astron. Astrophys. (2021), arXiv:2112.07478",
+  JOHNSON_2020_PHOTON_RING: "Johnson, Lupsasca, Strominger, Wong & Hadar, Universal interferometric signatures of a black hole's photon ring, Sci. Adv. 6, eaaz1310 (2020), doi:10.1126/sciadv.aaz1310",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 

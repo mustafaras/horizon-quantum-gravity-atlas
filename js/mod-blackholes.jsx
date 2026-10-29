@@ -1078,6 +1078,16 @@ function ModuleBH({ go }) {
         </p>
       </Section>
 
+      <Section title="The shadow, measured">
+        <p>
+          A black hole casts no light and emits almost none; what the telescopes see is a silhouette. The boundary
+          of that silhouette is the set of photon orbits that skim the horizon forever, and it can be computed
+          exactly. Move the spin and watch the circle deform, then compare the size you get with the two rings the
+          Event Horizon Telescope has actually measured.
+        </p>
+        <KerrShadowLab></KerrShadowLab>
+      </Section>
+
       <Section title="Holography: boundary and bulk">
         <HolographyViz></HolographyViz>
       </Section>

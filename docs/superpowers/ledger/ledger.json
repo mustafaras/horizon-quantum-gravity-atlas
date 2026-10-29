@@ -1465,7 +1465,7 @@
       "findings": [
         "F-17"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s25-bh-shadow",
       "pr": null,
@@ -1473,12 +1473,31 @@
       "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1118 passed, 1 skipped, 0 failed",
+          "node --test test/kerr-shadow.test.mjs: 7/7",
+          "npm run validate: passed; 83 provenance entries",
+          "npm run qa:verify: 61 captures valid",
+          "node qa/capture.mjs --only=bh-bardeen-curve,bh-eht-comparison --update --docs: 2 captures",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/kerr-shadow.spec.mjs: 2/2"
+        ],
+        "screenshots": [
+          "docs/screenshots/59-bh-bardeen-curve.png",
+          "docs/screenshots/60-bh-eht-comparison.png",
+          "qa/baselines/bh-bardeen-curve.png",
+          "qa/baselines/bh-eht-comparison.png"
+        ],
+        "measurements": [
+          "Schwarzschild critical curve: every sampled radius equals sqrt(27) M = 5.196152 to 1e-12, symmetric about alpha to 1.8e-15.",
+          "a = 0.998 at 90 degrees: alpha runs from -2.111 to +6.997 M, so the prograde edge sits well inside the -5.196 M circle while the retrograde side bulges out; beta max 5.196 M, so the flattening is horizontal.",
+          "Shadow angular size: 39.689 microarcsec for M87* (6.5e9 Msun, 16.8 Mpc) and 51.291 for Sgr A* (4.0e6 Msun, 8.0 kpc), each matching the plan's 39.69 and 51.29 to 0.01.",
+          "EHT comparison: measured 42 +/- 3 microarcsec against 39.689 predicted (+5.8 %) and 51.8 +/- 2.3 against 51.291 (+1.0 %), both inside the ~10 % the calibration supports.",
+          "First photon sub-ring: e^-pi = 0.043214 of the direct image, matching Math.exp(-Math.PI) to 1e-15.",
+          "In-browser: the width/height ratio reads 1.000 at a = 0 and 1.141 at a = 0.998, with the readout switching from 'very nearly circular' to 'flattened on the prograde edge'."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The critical curve, the sub-ring demagnification and the EHT comparison are live in the Black Holes module. F-17 closes for the shadow-overlay and EHT-comparison parts. Two plan items are not delivered and are recorded as decisions: the screen-space overlay on the ray-traced image, and the Formula Lens painting of the Kerr metric functions through a TSL storage buffer."
     },
     {
       "id": "S26",

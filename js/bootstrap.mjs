@@ -94,6 +94,10 @@ async function bootstrap() {
     Object.defineProperty(window, "QGA_EVAPORATION", { value: Object.freeze({ ...evaporation }), configurable: true });
     const greybody = await import("./science/greybody.mjs");
     Object.defineProperty(window, "QGA_GREYBODY", { value: Object.freeze({ ...greybody }), configurable: true });
+    const kerrShadow = await import("./science/kerr-shadow.mjs");
+    Object.defineProperty(window, "QGA_KERR_SHADOW", { value: Object.freeze({ ...kerrShadow }), configurable: true });
+    const eht = await import("./science/data/eht.mjs");
+    Object.defineProperty(window, "QGA_EHT", { value: Object.freeze({ ...eht }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
@@ -179,7 +183,7 @@ async function bootstrap() {
         loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
         ...causalSets,
         loadCausalSet: () => import("./visualizations/approaches/causal-set.mjs"),
-        ...cdt, ...stringSpectrum, ...evaporation, ...greybody,
+        ...cdt, ...stringSpectrum, ...evaporation, ...greybody, ...kerrShadow, ...eht,
         loadCdt: () => import("./visualizations/approaches/cdt.mjs"),
       }),
       configurable: true,
