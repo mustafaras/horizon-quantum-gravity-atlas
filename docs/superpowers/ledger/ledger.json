@@ -1316,10 +1316,10 @@
       "findings": [
         "F-13"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s22-causal-sets",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/100",
       "commits": [],
       "startedAt": "2026-10-29",
       "completedAt": null,
@@ -3238,6 +3238,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claimed",
       "detail": "Started S22 on a branch from main after S21 closed."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S22",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "detail": "Opened PR #100 with the causal-set laboratory, the LQG-style estimator evidence and the two geometry fixes recorded as decisions."
     }
   ]
 }
