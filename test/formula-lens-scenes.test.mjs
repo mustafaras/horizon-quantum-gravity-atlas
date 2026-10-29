@@ -52,7 +52,7 @@ test("circlePoints is a closed circle of the given radius in the requested plane
 /* ---------- facts the wiring depends on ---------- */
 
 test("the three Planck gates exist on the descent's ladder and each association is defensible", () => {
-  const planck = source("js/mod-planck.jsx");
+  const planck = source("js/labs/planck-labs.jsx");
   const stops = Object.fromEntries([...planck.matchAll(/\{ log: (-?\d+), name: "([^"]+)", note: "([^"]+)"/g)].map((m) => [Number(m[1]), { name: m[2], note: m[3] }]));
   for (const [constant, gate] of Object.entries(PLANCK_GATES)) assert.ok(stops[gate.log], `${constant}: a ladder stop at 10^${gate.log} m`);
   assert.match(stops[PLANCK_GATES.hbar.log].note, /Quantum mechanics governs structure/);

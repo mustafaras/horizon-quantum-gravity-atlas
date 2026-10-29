@@ -435,3 +435,45 @@ export function spinFoamExportMetadata(state, runtime = {}) {
     },
   };
 }
+/**
+ * Exact small-spin quantum tetrahedron spectrum, equal spins on four links.
+ * Bianchi & Haggard, Phys. Rev. D 86, 124010 (2012), Eqs. 21–25 and
+ * Appendix C: https://arxiv.org/abs/1208.2228. Barbieri volume convention.
+ * γ=1 is the explicit convention used in that paper, not a measured value.
+ * The Hermitian tridiagonal Q is unitarily equivalent to a real symmetric
+ * tridiagonal matrix. Its |eigenvalues| yield V²; retain degeneracies.
+ */
+export function tetrahedronVolumeSpectrum(j, { immirzi = 1 } = {}) {
+  const s = Number(j), gamma = Number(immirzi);
+  if (!Number.isFinite(s) || s <= 0 || s > 2 || !Number.isInteger(2*s)) throw new RangeError('spin must be a positive half-integer up to 2');
+  if (!Number.isFinite(gamma) || gamma <= 0) throw new RangeError('immirzi must be positive and finite');
+  const n = 2*s + 1, matrix = Array.from({length:n}, () => Array(n).fill(0));
+  const a = s + 0.5;
+  for (let k=1; k<n; k++) {
+    const triangle2 = k*k * (4*a*a-k*k) / 16; // Heron area squared for (k,a,a)
+    const q = (4/9) * triangle2 / Math.sqrt(k*k - 0.25);
+    matrix[k-1][k] = q;
+    matrix[k][k-1] = q;
+  }
+  // Jacobi rotations on a matrix at most 5×5. Convergence threshold absolute,
+  // long before the quoted three-digit tabulated eigenvalues.
+  for (let iteration=0; iteration<100; iteration++) {
+    let p=0, q=0, largest=0;
+    for (let i=0; i<n; i++) for (let k=i+1; k<n; k++) {
+      if (Math.abs(matrix[i][k]) > largest) { largest=Math.abs(matrix[i][k]); p=i; q=k; }
+    }
+    if (largest < 1e-14) break;
+    const angle=0.5*Math.atan2(2*matrix[p][q], matrix[q][q]-matrix[p][p]);
+    const c=Math.cos(angle), sn=Math.sin(angle), pp=matrix[p][p], qq=matrix[q][q], pq=matrix[p][q];
+    for (let i=0; i<n; i++) if (i !== p && i !== q) {
+      const ip=matrix[i][p], iq=matrix[i][q];
+      matrix[i][p]=matrix[p][i]=c*ip-sn*iq;
+      matrix[i][q]=matrix[q][i]=sn*ip+c*iq;
+    }
+    matrix[p][p]=c*c*pp-2*sn*c*pq+sn*sn*qq;
+    matrix[q][q]=sn*sn*pp+2*sn*c*pq+c*c*qq;
+    matrix[p][q]=matrix[q][p]=0;
+  }
+  const unit=(8*Math.PI*gamma)**1.5;
+  return matrix.map((row,i) => Math.sqrt(Math.abs(row[i]) < 1e-13 ? 0 : Math.abs(row[i])) * unit).sort((x,y)=>x-y);
+}

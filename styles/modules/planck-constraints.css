@@ -1,0 +1,29 @@
+.constraint-plane { padding: clamp(18px,3vw,38px); }
+.constraint-heading { display:flex; justify-content:space-between; gap:28px; align-items:flex-start; margin-bottom:24px; }
+.constraint-heading h3,.planck-spectra h3 { font-family:var(--font-head); font-size:var(--step-3); margin:8px 0; }
+.constraint-heading p,.planck-spectra p,.constraint-detail p { color:var(--ink-dim); line-height:1.6; }
+.constraint-kicker,.constraint-void span,.constraint-links span { color:var(--ink-dim); font:var(--step--2) var(--font-mono); letter-spacing:.12em; }
+.constraint-void { min-width:200px; border-left:2px solid var(--cat-2); padding:4px 0 4px 16px; display:grid; gap:6px; }
+.constraint-void strong { font:var(--step-1) var(--font-head); color:var(--ink-strong); }
+.constraint-void small { color:var(--ink-dim); }
+.constraint-layout { display:grid; grid-template-columns:minmax(0,2fr) minmax(240px,1fr); gap:22px; align-items:start; }
+.constraint-chart { min-width:0; }
+.constraint-detail { background:var(--surface-1); border:1px solid var(--line); padding:22px; min-height:280px; }
+.constraint-detail h4 { margin:12px 0; font:var(--step-1) var(--font-head); }
+.constraint-detail .constraint-value { font:var(--step-1) var(--font-mono); color:var(--ink-strong); overflow-wrap:anywhere; }
+.constraint-detail a { display:block; color:var(--cat-1); line-height:1.5; margin-top:12px; overflow-wrap:anywhere; }
+.constraint-detail .constraint-uncertainty { font-size:var(--step--1); }
+.constraint-crosshair { padding:14px 0; color:var(--ink-dim); font:var(--step--1) var(--font-mono); }
+.constraint-crosshair strong { color:var(--ink-strong); }
+.constraint-selector,.constraint-links { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.constraint-selector { margin:20px 0; }
+.constraint-chip { min-height:44px; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius:4px; background:var(--surface-1); color:var(--ink); font:var(--step--1) var(--font-body); cursor:pointer; }
+.constraint-chip.selected { border-color:var(--line-strong); color:var(--ink-strong); background:var(--surface-2); }
+.constraint-chip span { display:inline-block; width:8px; height:8px; border-radius:50%; }
+.planck-spectra { border-top:1px solid var(--line); padding:24px; }
+.planck-spectra-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:800px) { .constraint-layout,.planck-spectra-grid { grid-template-columns:1fr; } .constraint-heading { flex-direction:column; } .constraint-detail { min-height:0; } }
+.constraint-links .btn { min-height:44px; }
+.constraint-map-link { position:absolute; transform:translate(-50%,-50%); width:44px; height:44px; display:grid; place-items:center; border:0; background:transparent; color:var(--ink-strong); cursor:pointer; z-index:2; }
+.constraint-map-link span { font:var(--step--2) var(--font-mono); background:var(--surface-2); border:1px solid var(--line-strong); padding:2px 3px; }
+.constraint-map-link:focus-visible { outline:2px solid var(--accent); }
