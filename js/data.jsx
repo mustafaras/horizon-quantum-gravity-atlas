@@ -207,6 +207,23 @@ const QGA_THEORIES = [
       problems: { short: "Continuum limit unproven; the dynamics is not unique; no confirmed observable.",
         long: "Whether a causal set generically gives rise to a manifold of the right dimension and signature is unresolved, and a Lorentz-invariant dynamics is hard to write down. The program remains conjectural: no observation yet requires it." },
     } },
+  { id: "cdt", name: "Causal dynamical triangulations", status: "conjectural",
+    rows: {
+      idea: { short: "Gravity is defined by a sum over causal triangulations, and spacetime's dimension runs with scale.",
+        long: "CDT keeps a genuine Lorentzian causal structure — every simplex has a time ordering — and sums over triangulations with that structure built in. The regularisation is explicit and the continuum limit is taken numerically, which is why this is the one program in the comparison whose spectral dimension is *measured* rather than argued." },
+      object: { short: "A sum over causal triangulations of a fixed topology, with the Regge action and a Wick rotation.",
+        long: "The path integral is over piecewise-linear Lorentzian manifolds assembled from simplices with a preferred time foliation. The Regge action replaces the Einstein–Hilbert action, and the sum is evaluated by Monte Carlo on lattices of up to hundreds of thousands of simplices." },
+      background: { short: "Background-independent: no metric is fixed, only the causal structure is imposed.",
+        long: "The foliation is part of the definition rather than a background geometry, which is the point of contention: critics ask whether imposing a global time is a restriction that the continuum theory would not tolerate." },
+      spacetime: { short: "Four-dimensional at large scales, effectively two-dimensional at short ones — measured, not assumed.",
+        long: "The spectral dimension is computed by diffusion on the generated triangulations: d_s ≈ 4.02 in the infrared and ≈ 1.80 in the ultraviolet. This is the only entry in the comparison that comes from a direct measurement on the theory's own configurations." },
+      experiment: { short: "No direct experimental test; the dimensional reduction is a theoretical prediction awaiting one.",
+        long: "The running dimension is internally robust across lattice sizes and couplings, but nothing in it is yet compared with data. Like every program here, it is tested for consistency, not against nature." },
+      strengths: { short: "A nonperturbative definition that actually computes; dimensional reduction emerges rather than being inserted.",
+        long: "CDT produces a de Sitter-like universe at large scales without tuning, and its spectral dimension is a number obtained from the ensemble. It is the strongest existence proof that a lattice approach to Lorentzian quantum gravity can be made to work." },
+      problems: { short: "The continuum limit is numerical, not proven; the foliation assumption is contested; no matter coupling.",
+        long: "Whether the lattice results survive as the lattice spacing goes to zero is established by evidence rather than proof, and adding realistic matter has not been carried through. The 4 → 2 result is a property of the regularised ensemble." },
+    } },
 ];
 
 const QGA_ROWS = [

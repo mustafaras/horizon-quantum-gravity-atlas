@@ -27,6 +27,7 @@ const EXPECTED_ORDER = [
   "styles/modules/gr-tides.css",
   "styles/modules/planck-constraints.css",
   "styles/modules/causal-set.css",
+  "styles/modules/spectral-cdt.css",
   "styles/modules/overview.css",
   "styles/modules/workbench.css",
   "styles/modules/cinematic.css",

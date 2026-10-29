@@ -13,3 +13,5 @@ export * as unification from "./unification.mjs";
 export * as gravity from "./asymptotic-safety.mjs";
 export * as grTides from "./gr-tides.mjs";
 export * as planckConstraints from "./planck-constraints.mjs";
+export * as spectralDimension from "./spectral-dimension.mjs";
+export * as stringSpectrum from "./string-spectrum.mjs";

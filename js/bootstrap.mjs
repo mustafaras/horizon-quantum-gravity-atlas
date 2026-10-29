@@ -84,6 +84,12 @@ async function bootstrap() {
     Object.defineProperty(window, "QGA_CONSTRAINTS", { value: Object.freeze({ ...constraints }), configurable: true });
     const causalSets = await import("./science/causal-sets.mjs");
     Object.defineProperty(window, "QGA_CAUSAL_SETS", { value: Object.freeze({ ...causalSets }), configurable: true });
+    const cdt = await import("./science/cdt-2d.mjs");
+    Object.defineProperty(window, "QGA_CDT", { value: Object.freeze({ ...cdt }), configurable: true });
+    const stringSpectrum = await import("./science/string-spectrum.mjs");
+    Object.defineProperty(window, "QGA_STRING", { value: Object.freeze({ ...stringSpectrum }), configurable: true });
+    const spectralData = await import("./science/data/spectral-dimension.mjs");
+    Object.defineProperty(window, "QGA_SPECTRAL_DIMENSION", { value: Object.freeze({ ...spectralData }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
@@ -169,6 +175,8 @@ async function bootstrap() {
         loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
         ...causalSets,
         loadCausalSet: () => import("./visualizations/approaches/causal-set.mjs"),
+        ...cdt, ...stringSpectrum,
+        loadCdt: () => import("./visualizations/approaches/cdt.mjs"),
       }),
       configurable: true,
     });

@@ -4,6 +4,7 @@
 
 import { registerConstraintProvenance } from "./science/constraint-provenance.mjs";
 import { registerCausalSetProvenance } from "./science/causal-set-provenance.mjs";
+import { registerSpectralProgramsProvenance } from "./science/spectral-provenance.mjs";
 import { registerFigureProvenance } from "./figure/provenance.mjs";
 import { registerGaugeRunningProvenance } from "./science/gauge-running-provenance.mjs";
 import { registerAsymptoticSafetyProvenance } from "./science/asymptotic-safety-provenance.mjs";
@@ -24,6 +25,7 @@ const REGISTRARS = Object.freeze([
   registerFigureProvenance,
   registerConstraintProvenance,
   registerCausalSetProvenance,
+  registerSpectralProgramsProvenance,
   registerGaugeRunningProvenance,
   registerAsymptoticSafetyProvenance,
   registerConformalProvenance,
