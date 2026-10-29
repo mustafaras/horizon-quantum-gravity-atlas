@@ -101,6 +101,10 @@ export const REF = Object.freeze({
   HORAVA_2009: "Hořava, Quantum gravity at a Lifshitz point, Phys. Rev. D 79, 084008 (2009), doi:10.1103/PhysRevD.79.084008, arXiv:0901.3775",
   EICHHORN_MIZERA_2014: "Eichhorn & Mizera, Spectral dimension in causal set quantum gravity, Found. Phys. 44, 421 (2014), arXiv:1311.2530",
   CARLIP_2017: "Carlip, Dimension and dimensional reduction in quantum gravity, Class. Quantum Grav. 34, 193001 (2017), doi:10.1088/1361-6382/aa8535, arXiv:1705.05417",
+  PAGE_2013: "Page, Time dependence of Hawking radiation entropy, JCAP 09 (2013) 028, doi:10.1088/1475-7516/2013/09/028, arXiv:1301.4995",
+  PENINGTON_2019: "Penington, Entanglement wedge reconstruction and the information paradox, JHEP 09 (2020) 002, doi:10.1007/JHEP09(2020)002, arXiv:1905.08255",
+  AEM_2019: "Almheiri, Engelhardt, Marolf & Maxfield, The entropy of bulk quantum fields and the entanglement wedge of an evaporating black hole, JHEP 12 (2019) 063, doi:10.1007/JHEP12(2019)063, arXiv:1905.08762",
+  DAS_GIBBONS_MATHUR_1997: "Das, Gibbons & Mathur, Universality of low-energy absorption cross-sections for black holes, Phys. Rev. Lett. 78, 417 (1997), doi:10.1103/PhysRevLett.78.417, arXiv:hep-th/9609052",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 

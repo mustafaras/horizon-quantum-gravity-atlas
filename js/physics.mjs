@@ -306,9 +306,14 @@ export function blackHoleEvaporationTimeYears(massSolar) {
   return 2.1e67 * massSolar ** 3;
 }
 
-/* Unitary Page curve: S_rad = min(thermal, remaining), normalised so the
-   peak is 1 at the Page time (half the evaporation). The naive semiclassical
-   curve is the ever-rising thermal branch alone. */
+/**
+ * @deprecated S24 replaced this with the derived Page curve in js/science/evaporation.mjs.
+ *
+ * The old form was `2·min(f, 1−f)`: a tent function with an invented peak at exactly half the evaporation and a
+ * hardcoded slope. Page's computed coefficient β = 1.4847 puts the real crossing at t/τ = 0.5381, not 0.5, and the
+ * rising branch is a power law, not a straight line. Kept only so older callers keep working; the figures use
+ * `pageCurve` from the science module.
+ */
 export function pageCurveEntropy(fractionEvaporated) {
   const f = Number(fractionEvaporated);
   if (!Number.isFinite(f)) return NaN;

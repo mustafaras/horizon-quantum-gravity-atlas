@@ -2194,6 +2194,9 @@ docs/screenshots/01-black-hole-kerr-raymarch.png
 |---|---|---|
 | no direct Planck-scale data | prevents confirmation of candidate theories | Planck module caveats |
 | Hawking radiation unobserved | black-hole thermodynamics remains indirect | black-hole captions |
+| Page curve is a unitarity expectation, not a measurement | no evaporating hole has been observed, so the turn-over rests on the assumption that evaporation is unitary | the Page curve is drawn as the minimum of two derived branches and its status chip says effective theory; the island derivation is cited |
+| Page's beta assumes a species content | beta = 1.4847 counts the Standard-Model fields plus the graviton; a different light spectrum moves the Page time | the coefficient and its assumption are stated in the figure and the ledger rather than presented as universal |
+| greybody factors computed for a scalar only | photons and gravitons have different Regge-Wheeler potentials, so the plotted spectrum is not the full Standard-Model emission | the caption states the scalar restriction; the two cross-section limits are used as the check |
 | visual grids can mislead | spacetime curvature is not a rubber sheet | GR caption |
 | causal diagram is flat and 1+1D | it cannot represent curvature, gravity, expansion, or geodesic deviation | causal-laboratory validity panel and export metadata |
 | twin path omits acceleration history | an instantaneous turnaround is not a complete physical twin-paradox trajectory | twin preset labels the path piecewise inertial and schematic |

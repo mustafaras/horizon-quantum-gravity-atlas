@@ -53,10 +53,62 @@ function HawkingSpectrumPlot({ logM, tempFactor }) {
   return <Figure spec={spec}></Figure>;
 }
 
-/* ---------- Page curve: entanglement entropy of Hawking radiation vs time ---------- */
+/* ---------- Page curve: the derived entropy budget, with its Page time ---------- */
+// S24 replaced the tent function with Page's computed coefficient. The readout states the crossing the figure
+// draws, so the number on screen and the rule in the plot cannot drift apart.
 function PageCurvePlot() {
   const spec = useMemo(() => window.QGA_FIGURE.plots.bh.pageCurveSpec(), []);
-  return <Figure spec={spec}></Figure>;
+  const summary = useMemo(() => window.QGA_EVAPORATION.pageTimeSummary(), []);
+  return (
+    <div className="bh-page-figure">
+      <Figure spec={spec}></Figure>
+      <div className="readout-grid bh-page-readouts" aria-live="polite">
+        <div className="readout">
+          <div className="readout-label">Page time</div>
+          <div className="readout-value">{summary.timeFraction.toFixed(4)}<span className="unit">t/tau</span></div>
+          <div className="readout-note">from S_rad = S_BH with Page&apos;s beta = {summary.beta}</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">entropy at the crossing</div>
+          <div className="readout-value">{(100 * summary.entropyFraction).toFixed(2)}<span className="unit">% of S0</span></div>
+          <div className="readout-note">beta/(1+beta); a tent function would have said 50 %</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">mass at the crossing</div>
+          <div className="readout-value">{summary.massFraction.toFixed(4)}<span className="unit">M/M0</span></div>
+          <div className="readout-note">M proportional to (1 - t/tau)^(1/3), so the hole is still 77 % of its mass</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Greybody-corrected emission spectrum ---------- */
+function GreybodySpectrumPlot() {
+  const spec = useMemo(() => window.QGA_FIGURE.plots.bh.greybodySpectrumSpec({ temperature: 0.15 }), []);
+  const G = window.QGA_GREYBODY;
+  return (
+    <div className="bh-greybody-figure">
+      <Figure spec={spec}></Figure>
+      <div className="readout-grid bh-greybody-readouts" aria-live="polite">
+        <div className="readout">
+          <div className="readout-label">low-frequency cross-section</div>
+          <div className="readout-value">{G.lowFrequencyCrossSection(1).toFixed(2)}<span className="unit">pi M^2</span></div>
+          <div className="readout-note">A_H = 16 pi M^2, from Das, Gibbons and Mathur (1997)</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">geometric-optics limit</div>
+          <div className="readout-value">{G.highFrequencyCrossSection(1).toFixed(2)}<span className="unit">pi M^2</span></div>
+          <div className="readout-note">27 pi M^2; the two limits differ by exactly {G.CROSS_SECTION_RATIO.toFixed(4)}</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">s-wave transmission at omega M = 0.2</div>
+          <div className="readout-value">{(100 * G.transmission(0, 0.2, 1)).toFixed(1)}<span className="unit">%</span></div>
+          <div className="readout-note">the barrier is what makes the spectrum not a blackbody</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Camera presets expressed as observatory state: inclination from the spin axis (deg) and
@@ -655,8 +707,9 @@ function BlackHoleLab3D() {
       <KerrValidity geometry={kerr}></KerrValidity>
       <div className="grid-2" style={{ marginTop: 6 }}>
         <HawkingSpectrumPlot logM={logM} tempFactor={tempFactor}></HawkingSpectrumPlot>
-        <PageCurvePlot></PageCurvePlot>
+        <GreybodySpectrumPlot></GreybodySpectrumPlot>
       </div>
+      <PageCurvePlot></PageCurvePlot>
       <VizCaption provenanceId="bh-spin-geometry" status="schematic">
         Spin reshapes the geometry. The outer horizon <Eq tex="r_+ = M + \sqrt{M^2 - a^2}"></Eq> shrinks as the hole
         spins up, the prograde <strong>ISCO</strong> falls from 6 to 1 <Eq tex="GM/c^2"></Eq> as
