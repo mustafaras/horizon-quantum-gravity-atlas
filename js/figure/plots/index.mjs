@@ -16,3 +16,4 @@ export * as planckConstraints from "./planck-constraints.mjs";
 export * as spectralDimension from "./spectral-dimension.mjs";
 export * as stringSpectrum from "./string-spectrum.mjs";
 export * as kerrShadow from "./kerr-shadow.mjs";
+export * as gwWaveform from "./gw-waveform.mjs";

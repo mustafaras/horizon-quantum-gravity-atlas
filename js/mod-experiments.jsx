@@ -1514,6 +1514,15 @@ function ModuleExp({ go }) {
         <GWInspiral3D></GWInspiral3D>
       </Section>
 
+      <Section title="The waveform, computed">
+        <p>
+          The signal above is now generated from a real expansion, not a power law with a tuned ringdown. Move the
+          masses and the inspiral shortens, the remnant spins faster and the ringdown climbs — all three follow from
+          the same two numbers.
+        </p>
+        <PnWaveformLab></PnWaveformLab>
+      </Section>
+
       <Section title="The wider observational net">
         <div className="grid-2">
           <div className="panel">

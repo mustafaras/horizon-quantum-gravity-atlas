@@ -455,39 +455,51 @@ export function assertRealProvenance(provenance, context = "observation") {
  * with A = min(1, (f/220)^{2/3}); after merger a damped ringdown at
  * ringdownFreq. Seeded Gaussian noise is added to both polarizations.
  */
+import {
+  evolveInspiral as pnEvolveInspiral,
+  polarizations as pnPolarizations,
+  remnant as pnRemnant,
+  ringdownHz as pnRingdownHz,
+  ringdownTauSeconds as pnRingdownTauSeconds,
+} from "./pn-waveform.mjs";
+
 export function synthesizePolarizations({
   m1 = 36, m2 = 29, seed = 42, sampleRate = 512, duration = 4, mergerAt = 3.4,
-  inclinationRad = 0.4, noiseRms = 0.35, ringdownFreq = 190, ringdownTau = 0.06,
+  inclinationRad = 0.4, noiseRms = 0.35, ringdownFreq = null, ringdownTau = null,
 } = {}) {
   const n = Math.max(8, Math.round(sampleRate * duration));
-  const mc = chirpMass(m1, m2);
   const gauss = seededGaussians(seed);
   const plus = new Float64Array(n);
   const cross = new Float64Array(n);
   const freqTrack = new Float32Array(n);
   const incl = Number(inclinationRad);
-  const fPlus = (1 + Math.cos(incl) * Math.cos(incl)) / 2;
-  const fCross = Math.cos(incl);
-  let phase = 0;
-  let prevTau = Math.max(0.02, mergerAt);
   const mergerIndex = Math.min(n - 1, Math.round(mergerAt * sampleRate));
+
+  // S26: the inspiral is the TaylorT4 3.5PN phase, and the ringdown is the (2,2,0) quasi-normal mode of the
+  // NR-fitted remnant. The old version used a Newtonian chirp, an amplitude clamp and a fixed 190 Hz ringdown.
+  const inspiral = pnEvolveInspiral({ m1, m2, fStartHz: 30, dt: 1 / sampleRate, maxTime: mergerAt });
+  const pol = pnPolarizations(inspiral, { inclinationRad: incl });
+  const fit = pnRemnant({ m1, m2 });
+  const finalMass = (m1 + m2) * fit.massRatio;
+  const qnmHz = ringdownFreq ?? pnRingdownHz(finalMass, fit.spin, 0);
+  const damping = ringdownTau ?? pnRingdownTauSeconds(finalMass, fit.spin, 0);
+
+  const cosI = Math.cos(incl);
+  const fPlus = (1 + cosI * cosI) / 2;
+  const fCross = cosI;
+  const lastPhase = 2 * inspiral.phase[inspiral.phase.length - 1];
   for (let i = 0; i < n; i++) {
     const t = i / sampleRate;
-    let amp = 0;
     if (t < mergerAt) {
-      const tau = mergerAt - t;
-      const f = inspiralFrequency(tau, mc);
-      phase += 2 * Math.PI * f * (prevTau - tau);
-      prevTau = tau;
-      amp = Math.min(1, Math.pow(f / 220, 2 / 3));
-      freqTrack[i] = f;
-      plus[i] = amp * fPlus * Math.cos(phase);
-      cross[i] = amp * fCross * Math.sin(phase);
+      const k = Math.min(pol.plus.length - 1, Math.round((t / mergerAt) * (inspiral.times.length - 1)));
+      plus[i] = pol.plus[k];
+      cross[i] = pol.cross[k];
+      freqTrack[i] = inspiral.frequency[k];
     } else {
       const tr = t - mergerAt;
-      amp = Math.exp(-tr / ringdownTau);
-      freqTrack[i] = ringdownFreq;
-      const rdPhase = phase + 2 * Math.PI * ringdownFreq * tr;
+      const amp = Math.exp(-tr / damping);
+      freqTrack[i] = qnmHz;
+      const rdPhase = lastPhase + 2 * Math.PI * qnmHz * tr;
       plus[i] = amp * fPlus * Math.cos(rdPhase);
       cross[i] = amp * fCross * Math.sin(rdPhase);
     }
@@ -496,8 +508,9 @@ export function synthesizePolarizations({
   }
   return {
     plus, cross, freqTrack, mergerIndex, sampleRate, duration,
-    chirpMassSolar: mc, inclinationRad: incl,
-    model: "leading-order-quadrupole+ringdown",
+    chirpMassSolar: chirpMass(m1, m2), inclinationRad: incl,
+    ringdownHz: qnmHz, ringdownTau: damping, remnant: fit,
+    model: "TaylorT4-3.5PN + BCW ringdown",
     provenance: syntheticProvenance({ seed }),
   };
 }

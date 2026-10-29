@@ -1958,6 +1958,38 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S25 captures; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "id": "gw-pn-waveform",
+      "file": "docs/screenshots/61-gw-pn-waveform.png",
+      "description": "The TaylorT4 3.5PN inspiral and its frequency track for a 36 + 29 solar-mass binary, with the fitted remnant and ringdown.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1500,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "#gw-pn-waveform",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "#gw-pn-waveform",
+          "text": "coalescence"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "The post-Newtonian inspiral is an expansion truncated at 3.5PN and the ISCO; the remnant and ringdown are numerical-relativity fits, not derivations.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S26 capture; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }

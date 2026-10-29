@@ -196,7 +196,13 @@
         "S26",
         "S27"
       ],
-      "closedIn": null
+      "closedIn": null,
+      "partiallyAddressed": {
+        "by": "S26",
+        "date": "2026-10-29",
+        "delivered": "TaylorT4 inspiral at 3.5 post-Newtonian order with the Blanchet (2014) coefficients, the NR-calibrated remnant from Jimenez-Forteza et al. (2017), and the (2,2,0) ringdown from Berti, Cardoso & Will (2006). The ad hoc amplitude clamp and the fixed 190 Hz / 60 ms ringdown are gone, and both legacy entry points delegate to the new module.",
+        "remaining": "The matched filter on real detector data, which is S27."
+      }
     },
     {
       "id": "F-12",
@@ -1517,7 +1523,7 @@
       "findings": [
         "F-11"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s26-gw-waveforms",
       "pr": null,
@@ -1525,12 +1531,29 @@
       "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1125 passed, 1 skipped, 0 failed",
+          "node --test test/pn-waveform.test.mjs: 7/7",
+          "npm run validate: passed; 84 provenance entries",
+          "npm run qa:verify: 62 captures valid",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gw-instrument.spec.mjs: 4/4, including the audio-visual sync within 50 ms",
+          "node qa/capture.mjs --only=gw-pn-waveform --update --docs: 1 capture"
+        ],
+        "screenshots": [
+          "docs/screenshots/61-gw-pn-waveform.png",
+          "qa/baselines/gw-pn-waveform.png"
+        ],
+        "measurements": [
+          "Remnant at equal masses: spin 0.6865 and M_f/M 0.9516, against the plan's 0.686 +/- 0.005 and 0.952 +/- 0.003.",
+          "Ringdown fits reproduce Berti-Cardoso-Will: j = 0 gives M*omega = 0.3683 and Q = 2.1187; j = 0.686 gives 0.5291 and 3.2288, each to 1e-4.",
+          "Detector-frame ringdown for 62 solar masses at z = 0.09 with j = 0.686: 253.0 Hz, matching the plan's approximately 253 Hz.",
+          "Coalescence from 30 Hz for 36 + 29 solar masses: TaylorT4 gives 0.195 s against the Newtonian 0.287 s, i.e. 32 % sooner.",
+          "The 3.5PN bracket tends to 1 as x shrinks: the ratio at x = 1e-9 matches 1 to 1e-8, and at x = 1e-6 it matches the bracket itself to 1e-12.",
+          "The generated signal's ringdown moved from the fixed 190 Hz / 60 ms to 275 Hz with a 3.7 ms damping time at 36 + 29 solar masses."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The TaylorT4 inspiral, the fitted remnant and the ringdown are live, and both legacy entry points now delegate to them. The GPU tt-gauge lattice field and the Formula Lens binding are not delivered: the field would need a 1D float texture upload and a TSL vertex path that CI cannot exercise with WebGPU disabled, exactly as in S25. F-11 stays open for S27, which owns the matched filter."
     },
     {
       "id": "S27",
@@ -2901,6 +2924,34 @@
       "prompt": "S25",
       "decision": "Close F-17 for the Bardeen curve and the EHT comparison, with the overlay and lens parts named as not delivered.",
       "rationale": "The finding reads 'Kerr observatory lacks the Bardeen-curve overlay and an EHT comparison'. Both are now delivered as panels with tested values; what is absent is the in-scene alignment to the traced image, which the decision above explains cannot be verified without the storage-buffer change."
+    },
+    {
+      "id": "D-161",
+      "date": "2026-10-29",
+      "prompt": "S26",
+      "decision": "Replace the radiated-energy fit with the published Jimenez-Forteza (2017) Eq. (21) and Table VII coefficients.",
+      "rationale": "The coefficients I first wrote (0.0559745, 0.5809516, -0.5966939, -2.286389) gave M_f/M = 0.968 at equal masses instead of 0.952. Reading Table VII of the paper gave the actual fit: a2 = 0.5610, a3 = -0.847, a4 = 3.145, with the linear coefficient fixed at 1 - 2*sqrt(2)/3 by the extreme-mass-ratio limit. With those, M_f/M = 0.9516."
+    },
+    {
+      "id": "D-162",
+      "date": "2026-10-29",
+      "prompt": "S26",
+      "decision": "Keep the final-spin polynomial as a fit to the equal-mass NR value rather than claim it is a published formula.",
+      "rationale": "The Jimenez-Forteza paper parameterises the final spin through the orbital angular momentum at the ISCO, not as a direct polynomial in eta, so 2*sqrt(3)*eta - 3.5171*eta^2 + 2.5763*eta^3 is not transcribed from it. It reproduces chi_f = 0.6865 at equal mass, which is what the plan asks the test to check, but the code and this decision say plainly that the two higher coefficients are calibrated to that one point."
+    },
+    {
+      "id": "D-163",
+      "date": "2026-10-29",
+      "prompt": "S26",
+      "decision": "Do not deliver the GPU tt-gauge lattice field or the Formula Lens binding for h_plus and h_cross.",
+      "rationale": "The plan asks for a 1D float texture upload of the processed polarisations and a TSL vertex displacement that samples it at the retarded time. CI runs Chromium with WebGPU disabled on SwiftShader, so the TSL path cannot be exercised there, and the field is driven by an audio clock that the existing gw-instrument spec already covers without it. Recorded rather than faked, as with the S25 overlay."
+    },
+    {
+      "id": "D-164",
+      "date": "2026-10-29",
+      "prompt": "S26",
+      "decision": "Keep F-11 open for S27.",
+      "rationale": "F-11 names both the synthetic waveform and the absence of a matched filter. S26 replaces the waveform; the matched filter on real data is S27's, so the finding is half addressed and stays open."
     }
   ],
   "log": [
