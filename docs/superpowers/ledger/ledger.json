@@ -2575,6 +2575,13 @@
       "prompt": "S20",
       "decision": "Use the last entry in a batch of IntersectionObserver events for shared Scene3D visibility.",
       "rationale": "A scrub followed by scrolling sometimes left the tidal scene reported invisible although its viewport rectangle was visible. Using the last queued observation avoids one possible stale-state cause; three repeated WebGL2 checks passed, but this does not prove the sole root cause."
+    },
+    {
+      "id": "D-133",
+      "date": "2026-10-29",
+      "prompt": "S20",
+      "decision": "Refresh gr-tests-pull to explicitly label the GPS calculation as a non-rotating spherical Earth with a circular orbit.",
+      "rationale": "The 38.50 microseconds/day calculation uses a stationary ground reference and neglects Earth rotation; the previous caption did not state that approximation."
     }
   ],
   "log": [
@@ -3067,6 +3074,13 @@
       "agent": "local: Codex for mustafaras",
       "event": "review",
       "detail": "PR #95 opened; GitHub Validate and Browser QA passed on implementation commit 2187707. F-16 remains open until a merge SHA can populate closedIn, as required by test/plan-ledger.test.mjs."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S20",
+      "agent": "local: Codex for mustafaras",
+      "event": "follow-up",
+      "detail": "Clarified the non-rotating Earth assumption in the GPS calculation, refreshed the affected new screenshot and baseline, and reran the scientific, ledger, validation, manifest and mobile panel checks."
     }
   ]
 }

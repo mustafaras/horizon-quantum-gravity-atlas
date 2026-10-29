@@ -9,6 +9,7 @@ const day = 86400;
 const earthGM = 3.986004418e14; // m^3/s^2
 // NASA Earth fact sheet: volumetric mean radius, https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html (retrieved 2026-10-28).
 const earthRadius = 6371000; // m, spherical approximation
+// Circular orbit, stationary ground reference; Earth rotation and oblateness are omitted.
 export function gpsClockOffset(radius = 26560000) {
   if (!Number.isFinite(radius) || radius <= earthRadius) throw new RangeError('orbit must be above the reference sphere');
   const gravitational = earthGM * (1 / earthRadius - 1 / radius) / C ** 2 * day * 1e6;
