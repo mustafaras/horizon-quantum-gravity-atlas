@@ -1264,13 +1264,15 @@
       "findings": [
         "F-12"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Codex for mustafaras",
       "branch": "codex/s21-planck-constraints",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/97",
-      "commits": [],
+      "commits": [
+        "39c4a1bc18ebe7a0674446102de44521163d7bca"
+      ],
       "startedAt": "2026-10-29",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm ci: passed baseline",
@@ -1282,7 +1284,10 @@
           "node --test test/constraints-data.test.mjs: 8/8",
           "npx playwright test --config qa/playwright.config.mjs qa/specs/planck-constraints.spec.mjs: 3/3",
           "node qa/capture.mjs --only=planck-constraint-plane,planck-spin-foam-lab: 2 captures reproduced within baseline tolerance",
-          "git diff --check: passed"
+          "git diff --check: passed",
+          "PR #97 head: GitHub Validate and Browser QA both passed, run 40861586576 (validate 20s, browser 5m53s).",
+          "Live site after merge: https://mustafaras.github.io/horizon-quantum-gravity-atlas/ serves commit 39c4a1b (Pages build \"built\"); Playwright against the deployed URL loaded ?view=planck with 11 observation chips, 2 spectrum figures and 0 page errors, and the Fermi chip reported > 1.453e+28 eV.",
+          "Live smoke of 7 deployed views (overview, gr, planck, exp, bh, rg, approaches): all rendered with 0 page or console errors."
         ],
         "screenshots": [
           "docs/screenshots/51-planck-constraint-plane.png",
@@ -1299,7 +1304,7 @@
         ]
       },
       "blockers": [],
-      "notes": "F-12 remains open for the separate S28 Experiments observational-net replacement. The delivered map, the LQG spectra and their guides carry sourced values and explicit model limitations; range guides use each source's quoted extent."
+      "notes": "Merged in PR #97 (39c4a1b) and deployed. F-12 remains open: S28 replaces the four prose panels in the Experiments observational net, which S21 does not touch. The delivered map, the LQG spectra and their guides carry sourced values and explicit model limitations; range guides use each source's quoted extent."
     },
     {
       "id": "S22",
@@ -3197,6 +3202,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "detail": "Opened PR #97 for S21 and set the prompt to review with the test, screenshot and measurement evidence recorded."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S21",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #97 as 39c4a1b and confirmed the GitHub Pages deployment serves that commit. Marked S21 done with the merge commit; F-12 stays open for S28."
     }
   ]
 }
