@@ -1316,7 +1316,7 @@
       "findings": [
         "F-13"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s22-causal-sets",
       "pr": null,
@@ -1324,12 +1324,34 @@
       "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm ci: not needed; node_modules present and the baseline suite was green",
+          "baseline npm test: 1078 passed, 1 skipped, 0 failed",
+          "npm test: 1088 passed, 1 skipped, 0 failed",
+          "node --test test/causal-sets.test.mjs: 10/10",
+          "npm run validate: passed; 77 provenance entries",
+          "npm run qa:verify: 54 captures valid",
+          "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (all unchanged)",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/approaches-causal-set.spec.mjs: 3/3",
+          "node qa/capture.mjs --only=approaches-causal-set,approaches-causal-set-mobile --update --docs: 2 captures",
+          "npm test run three times back to back after the CPU-time perf fix: 0 failures each time"
+        ],
+        "screenshots": [
+          "docs/screenshots/52-approaches-causal-set.png",
+          "docs/screenshots/53-approaches-causal-set-mobile.png",
+          "qa/baselines/approaches-causal-set.png",
+          "qa/baselines/approaches-causal-set-mobile.png"
+        ],
+        "measurements": [
+          "Myrheim–Meyer inversion reproduces f(2) = 0.5, f(3) = 0.228571, f(4) = 0.1 to 1e-13, and inverts them back to the input dimension to 1e-9.",
+          "N = 2000 sprinkling, five seeds: 2D mean d = 2.0055 with spread 0.0313 (range 1.956–2.043); 4D mean d = 4.0294 with spread 0.0531 (range 3.945–4.105). Planned tolerance was 2 ± 0.1 and 4 ± 0.3.",
+          "Longest-chain growth from N = 250–2000, three seeds each: 2D slope 0.5687 against 1/2 (13.7% high); 4D slope 0.2453 against 1/4 (1.9% low). Both inside the 15% band.",
+          "The 4D in-browser run at N = 600, seed 42: ordering fraction 0.1005 against the theoretical 0.1000, recovered d = 3.994.",
+          "N = 4000, median of five runs on an idle machine: 4D 149 ms, 2D 196 ms, against the 300 ms budget. Under parallel test load CPU time stays at 192 ms (4D) and 232 ms (2D); the wall-clock figure rises with contention, so the test measures CPU time."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The lab is live in the Approaches module: a seeded Poisson sprinkling, the bitset causal order, the transitive reduction and the longest chain, with the Myrheim–Meyer dimension and its five-seed spread on screen. F-13 stays open: S22 covers causal sets, and S23 still owes CDT, the spectral dimension and the string spectrum. The 4D view is a disclosed projection."
     },
     {
       "id": "S23",

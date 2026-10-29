@@ -1,0 +1,34 @@
+.causal-set-lab .viz-toolbar { flex-wrap: wrap; gap: 12px; }
+.causal-set-lab .causal-toggle,
+.causal-set-lab .causal-seed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink-dim);
+  font: var(--step--1) var(--font-mono);
+}
+.causal-set-lab .causal-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+/* A 44 px target without a 44 px bar: the element is tall, the visible track stays 3 px, centred. */
+.causal-set-lab .viz-toolbar input[type="range"] {
+  height: 44px;
+  background: linear-gradient(90deg, var(--acc), rgba(148,176,224,0.18)) center / 100% 3px no-repeat;
+  border-radius: 2px;
+}
+.causal-set-lab .causal-seed input[type="range"] { width: clamp(90px, 16vw, 160px); }
+/* Every toolbar control is a 44 px target (the shared .btn is 26 px tall). */
+.causal-set-lab .viz-toolbar .btn { min-height: 44px; padding: 10px 14px; }
+.causal-set-lab .causal-seed strong { color: var(--ink-strong); min-width: 2ch; }
+.causal-readouts { margin-top: 12px; }
+.causal-readouts .readout-value .unit { margin-left: 5px; font-size: 10.5px; color: var(--ink-dim); }
+.causal-readouts .readout-note {
+  color: var(--ink-dim);
+  font: var(--step--2) var(--font-mono);
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.causal-note { color: var(--ink-dim); font: var(--step--1) var(--font-body); margin-top: 10px; }
+@media (max-width: 640px) {
+  .causal-set-lab .causal-seed { width: 100%; }
+  .causal-readouts { grid-template-columns: 1fr 1fr; }
+}

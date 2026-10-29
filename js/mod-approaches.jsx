@@ -369,6 +369,16 @@ function ModuleApproaches({ go }) {
         <MicrostructureViz></MicrostructureViz>
       </Section>
 
+      <Section title="Causal sets, computed">
+        <p>
+          The first program in this module you can run yourself. A causal set keeps one thing and throws everything
+          else away: the order of events. Sprinkle points at random into a diamond of flat spacetime, keep only which
+          element can influence which, and the dimension comes back out of that order alone. Nothing in the code below
+          knows how many dimensions it is drawing — the estimator has to work it out.
+        </p>
+        <CausalSetLab></CausalSetLab>
+      </Section>
+
       <Section title="The comparator">
         <TheoryComparator></TheoryComparator>
       </Section>

@@ -190,6 +190,23 @@ const QGA_THEORIES = [
       problems: { short: "De Sitter / cosmological holography unknown; bulk reconstruction inside horizons unclear; proof of the duality lacking.",
         long: "The correspondence remains mathematically unproven (though heavily tested). How the interior of a black hole is encoded, and what replaces AdS/CFT for our accelerating universe, are open questions." },
     } },
+  { id: "causalset", name: "Causal sets", status: "conjectural",
+    rows: {
+      idea: { short: "Spacetime is a locally finite partial order — a set of events with \"before\", and nothing else.",
+        long: "The causal set program takes the causal structure of general relativity seriously and discards the manifold. A causal set is a locally finite partially ordered set; the Hauptvermutung conjectures that it approximates a Lorentzian manifold when its elements are Poisson-sprinkled into that manifold. Order plus number is claimed to be enough: volume comes from counting elements, and the metric from the longest chain between them." },
+      object: { short: "A locally finite partial order; the continuum arises as a statistical approximation, not an assumption.",
+        long: "Discreteness is imposed from the start rather than derived, which is what removes the ultraviolet divergences of the continuum path integral. Dynamics is expressed as a sum over causal sets — a Rideout–Sorkin sequential growth model is the best-studied example — and the measure is constrained by Bell causality and discrete general covariance." },
+      background: { short: "Background-independent: the order needs no pre-existing spacetime.",
+        long: "There is no metric to expand around and no fixed lattice embedded in a manifold. The manifold itself is emergent, recovered only in the continuum limit, which is precisely why the program is hard to test." },
+      spacetime: { short: "Fundamentally discrete; the 4D manifold is an approximation valid above the discreteness scale.",
+        long: "Continuum geometry is recovered statistically. The sprinkling theorem — that a causal set approximating a manifold is overwhelmingly likely to be a sprinkling — is what makes the correspondence predictive rather than merely suggestive." },
+      experiment: { short: "No direct confirmation. Everpresent Λ is the one proposed observable signature, and it is contested.",
+        long: "A residual cosmological constant of the observed magnitude has been argued to follow from Poisson fluctuations in the number of elements (everpresent Λ). The claim is order-of-magnitude and model-dependent, and it has not been confirmed. No experiment currently distinguishes a causal set from a continuum." },
+      strengths: { short: "Minimal ingredients; resolves the entropy-scaling puzzle; a concrete, computable growth dynamics.",
+        long: "The framework explains why entropy scales with area rather than volume without extra machinery, and it makes the continuum a derived rather than assumed notion. Its growth models are the most explicit dynamics in any of these programs, and the two dimension estimators — Myrheim–Meyer and longest chain — can be run in a browser, as this module's laboratory does." },
+      problems: { short: "Continuum limit unproven; the dynamics is not unique; no confirmed observable.",
+        long: "Whether a causal set generically gives rise to a manifold of the right dimension and signature is unresolved, and a Lorentz-invariant dynamics is hard to write down. The program remains conjectural: no observation yet requires it." },
+    } },
 ];
 
 const QGA_ROWS = [

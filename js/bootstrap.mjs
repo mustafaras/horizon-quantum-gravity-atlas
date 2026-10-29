@@ -82,6 +82,8 @@ async function bootstrap() {
     const spinNetworks = await import("./science/spin-networks.mjs");
     const constraints = await import("./science/data/constraints.mjs");
     Object.defineProperty(window, "QGA_CONSTRAINTS", { value: Object.freeze({ ...constraints }), configurable: true });
+    const causalSets = await import("./science/causal-sets.mjs");
+    Object.defineProperty(window, "QGA_CAUSAL_SETS", { value: Object.freeze({ ...causalSets }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
@@ -165,6 +167,8 @@ async function bootstrap() {
         loadAdsLab: () => import("./visualizations/holography/ads-lab.mjs"),
         loadColliderDisplay: () => import("./visualizations/collider/event-display.mjs"),
         loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
+        ...causalSets,
+        loadCausalSet: () => import("./visualizations/approaches/causal-set.mjs"),
       }),
       configurable: true,
     });
