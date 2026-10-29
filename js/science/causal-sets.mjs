@@ -258,16 +258,27 @@ export function longestChain(matrix, points) {
   const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => points[a].t - points[b].t || a - b);
   const rank = new Int32Array(n);
   order.forEach((id, pos) => { rank[id] = pos; });
+
+  // Flat CSR of successors by topological rank: building one array per node with `map` allocates n arrays and
+  // dominates the cost at N = 4000. One Int32Array of offsets plus one of targets runs in a single pass.
   const succ = buildSuccessors(matrix);
-  const succByRank = new Array(n);
-  for (let pos = 0; pos < n; pos++) succByRank[pos] = succ[order[pos]].map((j) => rank[j]);
+  const offsets = new Int32Array(n + 1);
+  for (let pos = 0; pos < n; pos++) offsets[pos + 1] = offsets[pos] + succ[order[pos]].length;
+  const targets = new Int32Array(offsets[n]);
+  for (let pos = 0; pos < n; pos++) {
+    const list = succ[order[pos]];
+    let at = offsets[pos];
+    for (let k = 0; k < list.length; k++) targets[at++] = rank[list[k]];
+  }
+
   const best = new Int32Array(n).fill(1);
   const prev = new Int32Array(n).fill(-1);
   for (let pos = 0; pos < n; pos++) {
-    const nexts = succByRank[pos];
-    for (let idx = 0; idx < nexts.length; idx++) {
-      const next = nexts[idx];
-      if (best[pos] + 1 > best[next]) { best[next] = best[pos] + 1; prev[next] = pos; }
+    const from = best[pos] + 1;
+    const end = offsets[pos + 1];
+    for (let at = offsets[pos]; at < end; at++) {
+      const next = targets[at];
+      if (from > best[next]) { best[next] = from; prev[next] = pos; }
     }
   }
   let endPos = 0;
@@ -338,4 +349,63 @@ export function chainGrowthSlope(samples) {
 /** Register this figure's provenance once, idempotently. */
 export function registerCausalSetProvenance(register) {
   return register(CAUSAL_SET_PROVENANCE.id, CAUSAL_SET_PROVENANCE);
+}
+
+/* ---------------------------------------------------------------------------
+ * Drawing budgets.
+ *
+ * A sprinkle large enough to measure the dimension is far too large to draw link by link: at N = 4000 a 2D
+ * sprinkle has ~170 000 relations, and one hairline per relation turns the constellation into a solid block.
+ * The order is still computed in full — the estimators read every element — but the *picture* shows the part
+ * that can be read. These helpers say which and how much, and they are pure so the choice is testable.
+ * ------------------------------------------------------------------------- */
+
+/** Relations past this count are represented by their longest `budget`, not drawn one by one. */
+export const LINK_DRAW_BUDGET = 700;
+
+/**
+ * The subset of relations to draw. Deterministic: a stride through the relation list, so the same seed always
+ * draws the same picture and the picture stays uniform instead of favouring early elements.
+ */
+export function drawableLinks(run, budget = LINK_DRAW_BUDGET) {
+  const links = run?.links ?? [];
+  if (!Number.isInteger(budget) || budget < 1) throw new RangeError("budget must be a positive integer");
+  if (links.length <= budget) return { links, stride: 1, total: links.length, shown: links.length };
+  const stride = Math.ceil(links.length / budget);
+  const out = [];
+  for (let i = 0; i < links.length; i += stride) out.push(links[i]);
+  return { links: out, stride, total: links.length, shown: out.length };
+}
+
+/**
+ * The drawable element budget. At 2 px a dense sprinkle still reads as a constellation below roughly a
+ * thousand points; above it, the point layer alone fills the diamond.
+ */
+export const POINT_DRAW_BUDGET = 900;
+
+/** How many of the sprinkled elements to draw, evenly strided so the subset keeps the diamond's shape. */
+export function drawablePoints(run, budget = POINT_DRAW_BUDGET) {
+  const n = run?.points?.length ?? 0;
+  if (n === 0) throw new RangeError("drawablePoints needs a run with points");
+  if (!Number.isInteger(budget) || budget < 1) throw new RangeError("budget must be a positive integer");
+  const stride = n <= budget ? 1 : Math.ceil(n / budget);
+  const indices = [];
+  for (let i = 0; i < n; i += stride) indices.push(i);
+  return { indices, stride, total: n, shown: indices.length };
+}
+
+/**
+ * How far through the structure the reveal has travelled, 0 → 1, eased. The caller steps it frame by frame and
+ * snaps it to 1 when reduced motion is on, so the animation never becomes the only way to see the data.
+ */
+export function revealProgress(elapsedMs, durationMs) {
+  if (!(durationMs > 0)) return 1;
+  const t = Math.max(0, Math.min(1, elapsedMs / durationMs));
+  return t * t * (3 - 2 * t); // smoothstep: starts and ends at rest
+}
+
+/** Element index at the frontier of a reveal of progress p, for a time-ordered sprinkle. */
+export function revealCutoff(count, progress) {
+  if (!(count > 0)) return 0;
+  return Math.max(0, Math.min(count, Math.round(count * Math.max(0, Math.min(1, progress)))));
 }

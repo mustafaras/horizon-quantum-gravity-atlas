@@ -32,3 +32,15 @@
   .causal-set-lab .causal-seed { width: 100%; }
   .causal-readouts { grid-template-columns: 1fr 1fr; }
 }
+/* The status chip is pinned to the stage, clear of the diamond and of the stage controls. */
+.causal-set-status {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 150px);
+  pointer-events: none;
+  z-index: 2;
+}
+@media (max-width: 640px) {
+  .causal-set-status { max-width: calc(100% - 132px); font-size: 10px; }
+}
