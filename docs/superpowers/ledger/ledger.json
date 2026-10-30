@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "statuses": [
     "todo",
     "claimed",
@@ -1607,12 +1607,12 @@
       "findings": [
         "F-12"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s28-observational-net",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3657,6 +3657,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #114 as 1f6b190. Closed F-11: S26 replaced the synthetic waveform and S27 added the matched filter, so both halves of the finding are delivered."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S28 on a branch from main after S27 closed."
     }
   ]
 }
