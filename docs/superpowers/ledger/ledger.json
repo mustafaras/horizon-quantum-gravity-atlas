@@ -1653,13 +1653,16 @@
         "S28"
       ],
       "findings": [],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s29-chapter-covers",
       "pr": 119,
-      "commits": [],
+      "commits": [
+        "76d4c9c",
+        "f8bbf86"
+      ],
       "startedAt": "2026-10-30",
-      "completedAt": null,
+      "completedAt": "2026-10-30",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1155 tests, 1154 pass, 0 fail, 1 skipped",
@@ -3088,6 +3091,13 @@
       "prompt": "S29",
       "decision": "Draw the atlas map as SVG on the shared page rather than as a Scene3D.",
       "rationale": "Thirty static discs do not justify a third WebGL context, and the performance contract forbids making the overview's first frame slower by more than 5 %. With the map as committed SVG the first frame is 2979 ms against the S05 baseline of 5343 ms and the renderer count stays at 2, while the text stays selectable and focusable."
+    },
+    {
+      "id": "D-175",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Refuse to render a cover from a figure narrower than 900 CSS pixels instead of upscaling it.",
+      "rationale": "The first Planck cover was committed at 1168x438 from a figure measured 389 px wide, so every pixel in the band was an invented interpolation. scripts/render-covers.mjs now fails the render with the measured width, and the Planck band frames a 962 px figure instead. The guard is what makes the failure visible next time rather than silently shipping a blur."
     }
   ],
   "log": [
@@ -3776,6 +3786,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Chapter covers re-rendered from verified landscape figures; atlas map and status bars built; 1154 tests pass; overview first frame 2979 ms against the 5343 ms S05 baseline."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #119 as 76d4c9c and the Planck cover correction as f8bbf86. Chapter covers, the SVG atlas map and the eight chapter status bars are live. The cover renderer now refuses a target narrower than 900 px rather than upscaling it, which replaced the 389 px source behind the first Planck band."
     }
   ]
 }
