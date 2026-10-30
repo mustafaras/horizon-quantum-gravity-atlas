@@ -369,7 +369,8 @@ function ModuleQFT({ go }) {
   return (
     <article>
       <ModuleHeader num="02" kicker="Fields before particles" title="Quantum Field Theory"
-      lede="Quantum field theory merges quantum mechanics with special relativity by taking fields, not particles, as fundamental. A particle is a localized, quantized excitation of a field that fills all of spacetime — every electron is a ripple in one and the same electron field."></ModuleHeader>
+      lede="Quantum field theory merges quantum mechanics with special relativity by taking fields, not particles, as fundamental. A particle is a localized, quantized excitation of a field that fills all of spacetime — every electron is a ripple in one and the same electron field."
+        target='.qft-field-lab, [data-figure="qft-lattice-energy"]'></ModuleHeader>
 
       <Section title="The field laboratory">
         <p>

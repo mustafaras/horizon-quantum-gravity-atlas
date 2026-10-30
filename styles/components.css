@@ -207,3 +207,30 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .readout-value { font-family: var(--font-mono); font-size: 14.5px; color: var(--head); }
 .readout-value .unit { font-size: 11px; color: var(--text-dim); margin-left: 4px; }
 
+
+/* ---------- chapter cover (S29) ---------- */
+/* The band is capped at a quarter of the first viewport on desktop so it never pushes the text off screen. */
+.module-cover {
+  display: block; width: 100%; margin: 18px 0 0; padding: 0;
+  border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  background: var(--surface-1); cursor: pointer; position: relative;
+  aspect-ratio: 16 / 6; max-height: 25vh;
+}
+.module-cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.module-cover-hint {
+  position: absolute; right: 10px; bottom: 10px;
+  padding: 4px 8px; border-radius: 4px;
+  background: var(--surface-1); border: 1px solid var(--line);
+  font: var(--step--2) var(--font-mono); color: var(--ink-dim);
+  opacity: 0; transition: opacity 0.15s;
+}
+.module-cover:hover .module-cover-hint,
+.module-cover:focus-visible .module-cover-hint { opacity: 1; }
+.module-cover:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.module-cover:disabled { cursor: default; }
+@media (max-width: 800px) {
+  .module-cover { aspect-ratio: 16 / 9; max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .module-cover-hint { transition: none; }
+}

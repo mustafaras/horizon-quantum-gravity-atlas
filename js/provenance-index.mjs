@@ -6,6 +6,7 @@ import { registerConstraintProvenance } from "./science/constraint-provenance.mj
 import { registerCausalSetProvenance } from "./science/causal-set-provenance.mjs";
 import { registerSpectralProgramsProvenance } from "./science/spectral-provenance.mjs";
 import { registerFigureProvenance } from "./figure/provenance.mjs";
+import { registerAtlasMapProvenance } from "./science/atlas-map.mjs";
 import { registerGaugeRunningProvenance } from "./science/gauge-running-provenance.mjs";
 import { registerAsymptoticSafetyProvenance } from "./science/asymptotic-safety-provenance.mjs";
 import { registerTidalProvenance } from "./science/tidal-provenance.mjs";
@@ -23,6 +24,7 @@ import { registerKerrObservatoryProvenance } from "./visualizations/kerr/kerr-ob
 
 const REGISTRARS = Object.freeze([
   registerFigureProvenance,
+  registerAtlasMapProvenance,
   registerConstraintProvenance,
   registerCausalSetProvenance,
   registerSpectralProgramsProvenance,

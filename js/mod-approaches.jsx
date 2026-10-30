@@ -359,7 +359,8 @@ function ModuleApproaches({ go }) {
   return (
     <article>
       <ModuleHeader num="06" kicker="The contenders" title="Major Approaches to Quantum Gravity"
-        lede="No complete, experimentally confirmed theory of quantum gravity exists. What exists is a set of serious research programs, each rescuing a different virtue — perturbative finiteness, background independence, nonperturbative definition — at a different cost. This module compares them honestly."></ModuleHeader>
+        lede="No complete, experimentally confirmed theory of quantum gravity exists. What exists is a set of serious research programs, each rescuing a different virtue — perturbative finiteness, background independence, nonperturbative definition — at a different cost. This module compares them honestly."
+        target='[data-figure="approaches-spectral-dimension"]'></ModuleHeader>
 
       <Section title="The theory constellation">
         <TheoryConstellation3D></TheoryConstellation3D>

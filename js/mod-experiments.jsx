@@ -1481,7 +1481,8 @@ function ModuleExp({ go }) {
   return (
     <article>
       <ModuleHeader num="08" kicker="Where theory meets data" title="Experimental and Observational Frontiers"
-        lede="Quantum gravity research is constrained by a hard fact: no experiment has ever probed the Planck scale, and no direct experimental confirmation of any complete quantum gravity theory currently exists. What experiments do provide is a tightening net of indirect constraints."></ModuleHeader>
+        lede="Quantum gravity research is constrained by a hard fact: no experiment has ever probed the Planck scale, and no direct experimental confirmation of any complete quantum gravity theory currently exists. What experiments do provide is a tightening net of indirect constraints."
+        target='[data-figure="exp-gw-qtransform"]'></ModuleHeader>
 
       <Section title="Collider event explorer">
         <p>

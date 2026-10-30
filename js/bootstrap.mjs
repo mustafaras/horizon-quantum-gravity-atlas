@@ -108,6 +108,11 @@ async function bootstrap() {
     Object.defineProperty(window, "QGA_CMS_DIMUON", { value: Object.freeze({ ...cmsDimuon }), configurable: true });
     const observationalNet = await import("./science/observational-net.mjs");
     Object.defineProperty(window, "QGA_OBSERVATIONAL_NET", { value: Object.freeze({ ...observationalNet }), configurable: true });
+    // S29: the atlas map. Its positions are committed data, so the overview draws a static graph and never simulates.
+    const atlasMap = await import("./science/atlas-map.mjs");
+    const atlasMapLayout = await import("./science/data/atlas-map-layout.mjs");
+    Object.defineProperty(window, "QGA_ATLAS_MAP", { value: Object.freeze({ ...atlasMap }), configurable: true });
+    Object.defineProperty(window, "QGA_ATLAS_MAP_LAYOUT", { value: Object.freeze({ ...atlasMapLayout }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();

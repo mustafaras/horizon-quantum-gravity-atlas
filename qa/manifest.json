@@ -2150,6 +2150,62 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S28 captures; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "id": "s29-chapter-cover-band",
+      "file": "docs/screenshots/s29-chapter-cover.png",
+      "description": "A chapter header with its cover band: the signature figure of that chapter, rendered by the chapter's own science at seed 42, clickable through to the figure that produced it.",
+      "view": "planck",
+      "url": "?view=planck&seed=42",
+      "viewport": {
+        "width": 1600,
+        "height": 1000,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "scope": "element",
+      "target": "header[data-screen-label]:has(.module-cover)",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled"
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A committed screenshot of the chapter's own live figure (docs/covers/*.png), with a provenance sidecar naming the seed and commit; it is an image of a rendering, not an observation.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "The cover is a committed PNG and the band is CSS-fixed, so only font rasterisation may differ; 2% tolerance."
+      }
+    },
+    {
+      "id": "s29-atlas-map",
+      "file": "docs/screenshots/s29-atlas-map.png",
+      "description": "The atlas map on the overview: eight chapters, fourteen key results and nine open problems as one graph, with committed seeded positions, status-coloured nodes and a text alternative.",
+      "view": "overview",
+      "url": "?view=overview&seed=42",
+      "viewport": {
+        "width": 1600,
+        "height": 1200,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "scope": "element",
+      "target": "#overview-atlas-map",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled"
+      ],
+      "scientificStatus": "documentation",
+      "statusNote": "A navigational graph of the atlas's own content, labelled schematic: node positions carry no quantity and every result repeats a number computed in its chapter.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "Positions, labels and colours are deterministic SVG from committed data; only font rasterisation may differ."
+      }
     }
   ]
 }

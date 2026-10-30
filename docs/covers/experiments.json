@@ -1,0 +1,23 @@
+{
+  "id": "experiments",
+  "label": "the GW150914 strain",
+  "view": "exp",
+  "seed": 42,
+  "url": "?view=exp&seed=42",
+  "target": ".fig[data-figure=\"gw-strain-generated\"]",
+  "sizes": [
+    {
+      "width": 2400,
+      "height": 900,
+      "file": "experiments.png"
+    },
+    {
+      "width": 1200,
+      "height": 450,
+      "file": "experiments-sm.png"
+    }
+  ],
+  "renderedAt": "2026-10-30T08:35:50.263Z",
+  "commit": "4647ed4bed215aa803f3667c3dabb0d1a8603103",
+  "status": "screenshot of the module's own computed figure"
+}
