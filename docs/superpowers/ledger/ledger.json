@@ -1567,10 +1567,10 @@
       "findings": [
         "F-11"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s27-gw-matched-filter",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/114",
       "commits": [],
       "startedAt": "2026-10-29",
       "completedAt": null,
