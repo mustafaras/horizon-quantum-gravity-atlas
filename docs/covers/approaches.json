@@ -7,17 +7,24 @@
   "target": ".fig[data-figure=\"approaches-string-spectrum\"]",
   "sizes": [
     {
-      "width": 2400,
-      "height": 900,
-      "file": "approaches.png"
+      "suffix": "",
+      "file": "approaches.png",
+      "width": 998,
+      "height": 421
     },
     {
-      "width": 1200,
-      "height": 450,
-      "file": "approaches-sm.png"
+      "suffix": "-sm",
+      "file": "approaches-sm.png",
+      "width": 842,
+      "height": 420
     }
   ],
-  "renderedAt": "2026-10-30T09:03:19.942Z",
-  "commit": "76d4c9cb3ef120a7b53d271224a71fbba6ed1352",
+  "widths": [
+    842,
+    998
+  ],
+  "aspect": 2.370546318289786,
+  "renderedAt": "2026-10-30T09:29:17.120Z",
+  "commit": "b392229bd0dfb4067f8d8b83246d5894ff59c9e0",
   "status": "screenshot of the module's own computed figure"
 }

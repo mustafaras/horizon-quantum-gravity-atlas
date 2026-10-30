@@ -3098,6 +3098,13 @@
       "prompt": "S29",
       "decision": "Refuse to render a cover from a figure narrower than 900 CSS pixels instead of upscaling it.",
       "rationale": "The first Planck cover was committed at 1168x438 from a figure measured 389 px wide, so every pixel in the band was an invented interpolation. scripts/render-covers.mjs now fails the render with the measured width, and the Planck band frames a 962 px figure instead. The guard is what makes the failure visible next time rather than silently shipping a blur."
+    },
+    {
+      "id": "D-176",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Describe every cover with its measured pixel width and draw it at that width instead of stretching it to the 1000 px band.",
+      "rationale": "The committed covers are 794-998 px wide because each frames a figure and stops where the figure stops, but the header claimed 1200w and 2400w and the CSS forced width:100% inside an aspect-ratio box. Measured in the browser, the Planck cover was a 950 px file drawn at 998 px and the phone chose the 794 px thumbnail for the same slot. scripts/render-covers.mjs now reads the PNG header back after the screenshot, scripts/build-cover-index.mjs publishes those numbers to js/science/data/cover-index.mjs, and npm run validate --checks the index so it cannot go stale."
     }
   ],
   "log": [

@@ -7,17 +7,24 @@
   "target": ".fig[data-figure=\"qft-dispersion\"]",
   "sizes": [
     {
-      "width": 2400,
-      "height": 900,
-      "file": "qft.png"
+      "suffix": "",
+      "file": "qft.png",
+      "width": 998,
+      "height": 251
     },
     {
-      "width": 1200,
-      "height": 450,
-      "file": "qft-sm.png"
+      "suffix": "-sm",
+      "file": "qft-sm.png",
+      "width": 842,
+      "height": 250
     }
   ],
-  "renderedAt": "2026-10-30T09:02:28.812Z",
-  "commit": "76d4c9cb3ef120a7b53d271224a71fbba6ed1352",
+  "widths": [
+    842,
+    998
+  ],
+  "aspect": 3.9760956175298805,
+  "renderedAt": "2026-10-30T09:28:22.762Z",
+  "commit": "b392229bd0dfb4067f8d8b83246d5894ff59c9e0",
   "status": "screenshot of the module's own computed figure"
 }
