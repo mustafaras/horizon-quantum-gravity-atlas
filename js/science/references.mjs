@@ -115,6 +115,10 @@ export const REF = Object.freeze({
   BERTI_CARDOSO_WILL_2006: "Berti, Cardoso & Will, On gravitational-wave spectroscopy of massive black holes with the space interferometer LISA, Phys. Rev. D 73, 064030 (2006), doi:10.1103/PhysRevD.73.064030, arXiv:gr-qc/0512160",
   ALLEN_2005_MATCHED_FILTER: "Allen, Ching, Fairhurst, Herrmann, Hewitson, Krolak & Schutz, FINDCHIRP: an algorithm for detection of gravitational waves from inspiraling compact binaries, Phys. Rev. D 85, 122006 (2012), doi:10.1103/PhysRevD.85.122006, arXiv:gr-qc/0509116",
   CHATTERJI_2004_QTRANSFORM: "Chatterji, Blackburn, Martin & Katsavounidis, Search for gravitational-wave bursts in the second LIGO science run, Class. Quantum Grav. 21, S1809 (2004), doi:10.1088/0264-9381/21/20/020, arXiv:gr-qc/0405055",
+  FERMI_2009: "Abdo et al. (Fermi GBM/LAT Collaborations), A limit on the variation of the speed of light arising from quantum gravity effects, Nature 462, 331 (2009), doi:10.1038/nature08574, arXiv:0908.1832",
+  JACOB_PIRAN_2008: "Jacob & Piran, Lorentz-violation and the time delay of high-energy photons from gamma-ray bursts, JCAP 01 (2008) 031, doi:10.1088/1475-7516/2008/01/031, arXiv:0712.2170",
+  BICEP_KECK_2021: "BICEP/Keck Collaboration, Improved constraints on primordial gravitational waves using Planck, WMAP and BICEP/Keck observations through the 2018 observing season, Phys. Rev. Lett. 127, 151301 (2021), doi:10.1103/PhysRevLett.127.151301, arXiv:2110.00483",
+  EOT_WASH_2020: "Lee, Adelberger, Terrano, Shaw & Yin, New test of the gravitational 1/r² law at separations down to 52 μm, Phys. Rev. Lett. 124, 101101 (2020), doi:10.1103/PhysRevLett.124.101101, arXiv:2002.11761",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 

@@ -96,3 +96,14 @@
 .pn-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .pn-readouts { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 14px; }
 .pn-readouts .readout-value .unit { margin-left: 5px; font-size: 10.5px; color: var(--ink-dim); }
+
+/* ---------- S28 observational net ---------- */
+.obs-net-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+.obs-net-cell { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.obs-net-cell h3 { margin: 0; font: var(--step-1) var(--font-head); color: var(--ink-strong); }
+.obs-net-controls { flex-wrap: wrap; gap: 10px; }
+.obs-net-readouts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.obs-net-readouts .readout-value .unit { margin-left: 5px; font-size: 10.5px; color: var(--ink-dim); }
+.obs-net-note { color: var(--ink-dim); font-size: var(--step--1); line-height: 1.6; margin: 0; }
+.obs-net-link .btn { min-height: 44px; display: inline-flex; align-items: center; padding: 10px 14px; text-decoration: none; }
+@media (max-width: 800px) { .obs-net-grid { grid-template-columns: 1fr; } }
