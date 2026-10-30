@@ -1656,7 +1656,7 @@
       "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s29-chapter-covers",
-      "pr": null,
+      "pr": 119,
       "commits": [],
       "startedAt": "2026-10-30",
       "completedAt": null,
@@ -3074,6 +3074,20 @@
       "prompt": "S28",
       "decision": "Link the horizon-scale panel to the black-hole module instead of duplicating the EHT comparison.",
       "rationale": "The plan says to reuse the S25 component. Copying the numbers into a fourth panel would let them drift; a link plus the two percentage figures keeps one source of truth, and the caption says the comparison lives there."
+    },
+    {
+      "id": "D-173",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Cover the chapters with their widest Figure Kit plot instead of the eight scenes the plan names.",
+      "rationale": "Three of the named ids are not registered figures at all (qft-lattice-energy, rg-flow-field-3d, exp-gw-qtransform), and the tall panels are portrait: the Penrose atlas measures 1000x1216 and the gravity-flow silk 1000x2010. A 16:6 band can only show those as a strip, which is not a signature image. Every target was measured in the running page before being committed, and each chapter's band names the figure it frames."
+    },
+    {
+      "id": "D-174",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Draw the atlas map as SVG on the shared page rather than as a Scene3D.",
+      "rationale": "Thirty static discs do not justify a third WebGL context, and the performance contract forbids making the overview's first frame slower by more than 5 %. With the map as committed SVG the first frame is 2979 ms against the S05 baseline of 5343 ms and the renderer count stays at 2, while the text stays selectable and focusable."
     }
   ],
   "log": [
@@ -3757,8 +3771,9 @@
       "detail": "Started S29 on a branch from main after S28 closed."
     },
     {
-      "at": "2026-10-30",
+      "date": "2026-10-30",
       "prompt": "S29",
+      "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Chapter covers re-rendered from verified landscape figures; atlas map and status bars built; 1154 tests pass; overview first frame 2979 ms against the 5343 ms S05 baseline."
     }
