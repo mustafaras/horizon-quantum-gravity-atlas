@@ -100,6 +100,12 @@ async function bootstrap() {
     Object.defineProperty(window, "QGA_EHT", { value: Object.freeze({ ...eht }), configurable: true });
     const pnWaveform = await import("./science/pn-waveform.mjs");
     Object.defineProperty(window, "QGA_PN_WAVEFORM", { value: Object.freeze({ ...pnWaveform }), configurable: true });
+    const matchedFilter = await import("./science/matched-filter.mjs");
+    Object.defineProperty(window, "QGA_MATCHED_FILTER", { value: Object.freeze({ ...matchedFilter }), configurable: true });
+    const qtransform = await import("./science/qtransform.mjs");
+    Object.defineProperty(window, "QGA_QTRANSFORM", { value: Object.freeze({ ...qtransform }), configurable: true });
+    const cmsDimuon = await import("./science/data/cms-dimuon.mjs");
+    Object.defineProperty(window, "QGA_CMS_DIMUON", { value: Object.freeze({ ...cmsDimuon }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
@@ -185,7 +191,7 @@ async function bootstrap() {
         loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
         ...causalSets,
         loadCausalSet: () => import("./visualizations/approaches/causal-set.mjs"),
-        ...cdt, ...stringSpectrum, ...evaporation, ...greybody, ...kerrShadow, ...eht, ...pnWaveform,
+        ...cdt, ...stringSpectrum, ...evaporation, ...greybody, ...kerrShadow, ...eht, ...pnWaveform, ...matchedFilter, ...qtransform, ...cmsDimuon,
         loadCdt: () => import("./visualizations/approaches/cdt.mjs"),
       }),
       configurable: true,

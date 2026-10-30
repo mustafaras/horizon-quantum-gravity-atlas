@@ -1990,6 +1990,70 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S26 capture; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "id": "exp-cms-dimuon",
+      "file": "docs/screenshots/62-exp-cms-dimuon.png",
+      "description": "The CMS Run2010B dimuon invariant-mass spectrum: real open data with the J/psi, psi(2S), Upsilon family and Z.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "[data-figure=\"exp-cms-dimuon\"]",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "[data-figure=\"exp-cms-dimuon\"]",
+          "text": "J/psi"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "observation",
+      "statusNote": "The CMS spectrum is real open data; the Q-transform is computed from whichever strain is loaded, and the caption names the source.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S27 captures; 3% allows pinned-browser rasterisation."
+      }
+    },
+    {
+      "id": "exp-gw-qtransform",
+      "file": "docs/screenshots/63-exp-gw-qtransform.png",
+      "description": "A constant-Q time-frequency map of the loaded strain with the best template's track over it.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1400,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "#exp-matched-filter",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "#exp-matched-filter",
+          "text": "matched filter"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "The Q-transform is shown after the matched filter runs; the target is the whole lab so the capture does not depend on a figure that only exists post-search.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S27 captures; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }

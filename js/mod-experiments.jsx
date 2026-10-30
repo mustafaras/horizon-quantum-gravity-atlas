@@ -1523,6 +1523,16 @@ function ModuleExp({ go }) {
         <PnWaveformLab></PnWaveformLab>
       </Section>
 
+      <Section title="Finding the signal: matched filtering">
+        <p>
+          A detector records noise; the search asks whether a template is hiding in it. The matched filter answers
+          that with a single number per template, weighted by how noisy the detector is at each frequency. Below is a
+          real search over a 32-template bank, and — separately — a real measurement from CMS open data, so the
+          synthetic and the observed are never mixed.
+        </p>
+        <MatchedFilterLab></MatchedFilterLab>
+      </Section>
+
       <Section title="The wider observational net">
         <div className="grid-2">
           <div className="panel">
