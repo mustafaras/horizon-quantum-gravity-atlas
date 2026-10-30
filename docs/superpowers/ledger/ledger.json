@@ -1613,10 +1613,10 @@
       "findings": [
         "F-12"
       ],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s28-observational-net",
-      "pr": null,
+      "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/117",
       "commits": [],
       "startedAt": "2026-10-30",
       "completedAt": null,
