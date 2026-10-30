@@ -4,7 +4,8 @@ function ModuleRGStage3({ go }) {
   return (
     <article>
       <ModuleHeader num="03" kicker="Scale & symmetry" title="Gauge Theory and Renormalization"
-        lede="Local symmetry organizes interactions; renormalization-group flow makes their scale dependence quantitative. This module separates perturbative QED and QCD results (and the two-loop running of all three Standard-Model gauge couplings) from numerical presentation, pedagogical fixed-point toys, and conjectural quantum-gravity ideas."></ModuleHeader>
+        lede="Local symmetry organizes interactions; renormalization-group flow makes their scale dependence quantitative. This module separates perturbative QED and QCD results (and the two-loop running of all three Standard-Model gauge couplings) from numerical presentation, pedagogical fixed-point toys, and conjectural quantum-gravity ideas."
+        target="#rg-gravity-flow, .rg-flow-landscape"></ModuleHeader>
 
       <Section title="Local gauge invariance">
         <p>A global symmetry rotates a field by the same amount everywhere. Promoting it to a <em>local</em> symmetry — an independent rotation at every spacetime point — breaks derivative terms unless a compensating gauge field is introduced. Electromagnetism, the weak force, and the strong force all arise from this principle.</p>

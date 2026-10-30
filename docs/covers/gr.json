@@ -1,0 +1,23 @@
+{
+  "id": "gr",
+  "label": "the effective potential of a geodesic",
+  "view": "gr",
+  "seed": 42,
+  "url": "?view=gr&seed=42",
+  "target": ".fig[data-figure=\"gr-effective-potential\"]",
+  "sizes": [
+    {
+      "width": 2400,
+      "height": 900,
+      "file": "gr.png"
+    },
+    {
+      "width": 1200,
+      "height": 450,
+      "file": "gr-sm.png"
+    }
+  ],
+  "renderedAt": "2026-10-30T08:34:51.708Z",
+  "commit": "4647ed4bed215aa803f3667c3dabb0d1a8603103",
+  "status": "screenshot of the module's own computed figure"
+}

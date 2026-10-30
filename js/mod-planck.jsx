@@ -3,7 +3,8 @@ function ModulePlanck({ go }) {
   return (
     <article>
       <ModuleHeader num="05" kicker="The obstruction" title="Why Quantum Gravity Is Difficult"
-        lede="Quantum field theory assumes a fixed spacetime stage; general relativity makes the stage itself dynamical. Reconciling the two is not a matter of missing cleverness alone — concrete technical obstructions appear the moment one tries, and they point to the Planck scale."></ModuleHeader>
+        lede="Quantum field theory assumes a fixed spacetime stage; general relativity makes the stage itself dynamical. Reconciling the two is not a matter of missing cleverness alone — concrete technical obstructions appear the moment one tries, and they point to the Planck scale."
+        target="#planck-constraint-plane"></ModuleHeader>
 
       <Section title="The structural conflict">
         <p>

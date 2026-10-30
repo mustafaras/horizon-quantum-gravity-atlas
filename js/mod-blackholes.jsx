@@ -1018,7 +1018,8 @@ function ModuleBH({ go }) {
   return (
     <article>
       <ModuleHeader num="07" kicker="The theoretical laboratory" title="Black Holes, Entropy, and Holography"
-        lede="Black holes are where general relativity, quantum field theory, and thermodynamics collide in a single object. They are the closest thing quantum gravity has to an experimental apparatus — even if, so far, only a theoretical one."></ModuleHeader>
+        lede="Black holes are where general relativity, quantum field theory, and thermodynamics collide in a single object. They are the closest thing quantum gravity has to an experimental apparatus — even if, so far, only a theoretical one."
+        target=".kerr-shadow-lab"></ModuleHeader>
 
       <Section title="Thermodynamics simulator">
         <p>

@@ -1,0 +1,23 @@
+{
+  "id": "blackholes",
+  "label": "the Page curve",
+  "view": "bh",
+  "seed": 42,
+  "url": "?view=bh&seed=42",
+  "target": ".fig[data-figure=\"bh-page-curve\"]",
+  "sizes": [
+    {
+      "width": 2400,
+      "height": 900,
+      "file": "blackholes.png"
+    },
+    {
+      "width": 1200,
+      "height": 450,
+      "file": "blackholes-sm.png"
+    }
+  ],
+  "renderedAt": "2026-10-30T08:35:38.188Z",
+  "commit": "4647ed4bed215aa803f3667c3dabb0d1a8603103",
+  "status": "screenshot of the module's own computed figure"
+}

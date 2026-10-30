@@ -350,6 +350,33 @@ const OVERVIEW_MODULE_META = {
   exp: { scale: "GW: 10⁻²¹ strain", statusKind: "effective", cue: "GW150914 + collider" },
 };
 
+/* S29: the share of a chapter's figures per status, from the provenance registry rather than from a constant. A
+   five-segment bar under the chapter number, with the counts beside it so colour never carries the answer alone. */
+function ChapterStatusBar({ id }) {
+  const [theme, setTheme] = useState(0);
+  useEffect(() => window.QGA_TOKENS.onThemeChange(() => setTheme((t) => t + 1)), []);
+  const shares = useMemo(() => {
+    const M = window.QGA_ATLAS_MAP;
+    const registry = window.QGA_PROVENANCE;
+    return M.chapterStatusShares((figureId) => registry.get(figureId)?.status ?? null)[id] ?? null;
+  }, [id]);
+  if (!shares || !shares.total) return null;
+  const order = window.QGA_ATLAS_MAP.CHAPTER_STATUS_ORDER;
+  void theme;
+  return (
+    <div className="chapter-status-bar">
+      <span className="chapter-status-track" aria-hidden="true">
+        {order.map((status) => shares.fractions[status] > 0 ? (
+          <span key={status} style={{ width: `${shares.fractions[status] * 100}%`, background: `var(--status-${status})` }}></span>
+        ) : null)}
+      </span>
+      <span className="chapter-status-label">
+        {shares.total} figures · {order.filter((s) => shares.counts[s]).map((s) => `${shares.counts[s]} ${s}`).join(" · ")}
+      </span>
+    </div>
+  );
+}
+
 function ViewOverview({ go }) {
   return (
     <article data-screen-label="Overview">
@@ -395,6 +422,7 @@ function ViewOverview({ go }) {
                   <Badge kind={meta.statusKind}></Badge>
                 </div>
                 <div className="gs-group" style={{ fontSize: 17, marginTop: 4 }}>{m.title}</div>
+                <ChapterStatusBar id={m.id}></ChapterStatusBar>
                 <p className="small dim" style={{ margin: "8px 0 0 0" }}>{MODULE_BLURBS[m.id]}</p>
                 <div className="ov-card-meta" style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
                   <span className="ov-cue mono">{meta.cue}</span>
@@ -415,6 +443,9 @@ function ViewOverview({ go }) {
         <div className="panel">
           <StatusLegend></StatusLegend>
         </div>
+      </Section>
+      <Section title="The argument as a graph">
+        <AtlasMap go={go}></AtlasMap>
       </Section>
     </article>
   );

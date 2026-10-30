@@ -926,7 +926,8 @@ function ModuleGR({ go }) {
   return (
     <article>
       <ModuleHeader num="04" kicker="Gravity as geometry" title="General Relativity and Spacetime Geometry"
-        lede="General relativity removes gravity from the list of forces. Mass-energy curves spacetime; freely falling bodies follow the straightest available paths through that curved geometry. The theory has passed every experimental test for over a century — and contains the seeds of its own breakdown."></ModuleHeader>
+        lede="General relativity removes gravity from the list of forces. Mass-energy curves spacetime; freely falling bodies follow the straightest available paths through that curved geometry. The theory has passed every experimental test for over a century — and contains the seeds of its own breakdown."
+        target='.penrose-atlas, [data-figure="gr-penrose"]'></ModuleHeader>
 
       <Section title="Causal spacetime laboratory">
         <p>

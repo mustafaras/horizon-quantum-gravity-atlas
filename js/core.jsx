@@ -290,12 +290,37 @@ function Section({ index, title, children }) {
   );
 }
 
-function ModuleHeader({ num, kicker, title, lede, label }) {
+// The chapter's signature image, rendered from its own science by scripts/render-covers.mjs. Clicking it scrolls to
+// the figure that produced it, so the cover is a door rather than decoration.
+const COVER_SLUG = {
+  "01": "standard-model", "02": "qft", "03": "rg", "04": "gr",
+  "05": "planck", "06": "approaches", "07": "blackholes", "08": "experiments",
+};
+
+function ModuleHeader({ num, kicker, title, lede, label, target }) {
+  const slug = COVER_SLUG[num];
+  const reduced = usePRM();
+  const openSource = () => {
+    if (!target) return;
+    const el = document.querySelector(target);
+    if (el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  };
   return (
     <header data-screen-label={label || title}>
       <div className="module-kicker">Module {num} — {kicker}</div>
       <h1>{title}</h1>
       <p className="module-lede">{lede}</p>
+      {slug ? (
+        <button type="button" className="module-cover" onClick={openSource} disabled={!target}
+          aria-label={`${title}: show the figure that produced this cover`}>
+          {/* A phone gets the 1200 px thumbnail: the 2400 px hero is ~400 kB and there is no benefit at 16:9 in a
+              390 px column. `srcset` lets the browser choose without a script. */}
+          <img src={`docs/covers/${slug}.png`} srcSet={`docs/covers/${slug}-sm.png 1200w, docs/covers/${slug}.png 2400w`}
+            sizes="(max-width: 640px) 100vw, 1200px"
+            alt="" loading="eager" fetchpriority="high" decoding="async" width="2400" height="900" />
+          <span className="module-cover-hint">the figure behind this chapter</span>
+        </button>
+      ) : null}
     </header>
   );
 }

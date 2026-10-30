@@ -1653,17 +1653,43 @@
         "S28"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s29-chapter-covers",
+      "pr": 119,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "node --test test/*.test.mjs — 1155 tests, 1154 pass, 0 fail, 1 skipped",
+          "node --test test/atlas-map.test.mjs — 11 pass: node/edge integrity, spine against js/data.jsx, every result recomputes its displayed number, layout determinism, minimum node separation, chapter shares from the registry, adjacency connectivity, text alternative, provenance, no runtime simulation",
+          "node --test test/chapter-covers.test.mjs — 5 pass: 16 files plus sidecars, a cover frames a figure and fails rather than falling back to the article, viewport set before clip, srcset for the phone, ModuleHeader wiring",
+          "npm run validate — Repository validation passed; Provenance audit passed: 89 registered entries, every caption registered, no stray Math.random",
+          "npm run qa:verify — 69 captures, schema-conformant, README-consistent",
+          "npm run perf:audit — exit 0",
+          "playwright a11y.spec.mjs — 65 pass, 2 fail, both pre-existing in view bh (single H1, contrast): reproduced on a clean tree with this branch stashed, so not caused by S29"
+        ],
+        "screenshots": [
+          "docs/screenshots/s29-atlas-map.png",
+          "docs/screenshots/s29-atlas-map-mobile.png",
+          "docs/screenshots/s29-chapter-cover.png",
+          "docs/covers/ — 16 files, 8 chapters x full and -sm"
+        ],
+        "measurements": [
+          "Overview first frame 2979 ms with the map on the page, against the S05 WebGL2 baseline of 5343 ms: 44 % faster, inside the 5 % contract, and the renderer count stays 2 because the map is SVG rather than a third WebGL context",
+          "Label placement measured in the browser at 1440x1000: 30 labels, 0 label-label overlaps, 0 labels touching a node disc, 0 clipped. At 390x844: 30 discs drawn, 0 labels in the canvas by design, with 68 text-alternative lines and 31 selector options carrying every name",
+          "Layout: 30 nodes, 38 edges, closest node pair 0.1069 of the unit square; recomputed by scripts/build-atlas-layout.mjs and identical to the committed file",
+          "Chapter share bars from the registry: sm 7 figures (2 established, 3 effective, 2 schematic), qft 16 (3 established, 6 effective, 7 schematic), and so on for all eight chapters",
+          "Covers: every target measured in the running page before being committed. The landscape figures the bands frame are 962-998 px wide at 1.27-3.96 aspect; the tall panels the plan named (Penrose atlas 1000x1216, gravity-flow silk 1000x2010) cannot fill a 16:6 band, which is why each chapter uses its widest figure instead"
+        ],
+        "decisions": [
+          "The atlas map is SVG on the shared page, not a Scene3D: 30 static discs do not justify a third WebGL context, and the performance contract forbids slowing the overview's first frame. It draws committed positions and never simulates.",
+          "Cover targets were re-derived from the running page after the plan's eight named scenes proved either absent (qft-lattice-energy, rg-flow-field-3d and exp-gw-qtransform are not registered figure ids) or portrait (the Penrose atlas is 1000x1216, the gravity-flow silk 2010 px tall). Each chapter is covered by its widest Figure Kit plot and the substitution is named in the renderer.",
+          "Chapter status shares are computed from the provenance registry through chapterStatusShares(), not hardcoded: an unknown figure id is skipped rather than guessed, and a chapter with no registered figure gets an empty bar rather than a fabricated one.",
+          "At 390 px the map draws the discs and no labels: thirty labels in 308 px collide with each other and with the discs. The selector, the detail panel and the 68-line text alternative carry the names, and the caption states the change."
+        ],
+        "notes": "Chapter covers, the atlas map and the eight chapter status bars."
       },
       "blockers": [],
       "notes": ""
@@ -3048,6 +3074,20 @@
       "prompt": "S28",
       "decision": "Link the horizon-scale panel to the black-hole module instead of duplicating the EHT comparison.",
       "rationale": "The plan says to reuse the S25 component. Copying the numbers into a fourth panel would let them drift; a link plus the two percentage figures keeps one source of truth, and the caption says the comparison lives there."
+    },
+    {
+      "id": "D-173",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Cover the chapters with their widest Figure Kit plot instead of the eight scenes the plan names.",
+      "rationale": "Three of the named ids are not registered figures at all (qft-lattice-energy, rg-flow-field-3d, exp-gw-qtransform), and the tall panels are portrait: the Penrose atlas measures 1000x1216 and the gravity-flow silk 1000x2010. A 16:6 band can only show those as a strip, which is not a signature image. Every target was measured in the running page before being committed, and each chapter's band names the figure it frames."
+    },
+    {
+      "id": "D-174",
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "decision": "Draw the atlas map as SVG on the shared page rather than as a Scene3D.",
+      "rationale": "Thirty static discs do not justify a third WebGL context, and the performance contract forbids making the overview's first frame slower by more than 5 %. With the map as committed SVG the first frame is 2979 ms against the S05 baseline of 5343 ms and the renderer count stays at 2, while the text stays selectable and focusable."
     }
   ],
   "log": [
@@ -3722,6 +3762,20 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #117 as ba9d4b8. Closed F-12: the four prose panels in the experiments observational net are replaced by computed figures, and S21 had already delivered the sourced scale map the finding also names."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S29 on a branch from main after S28 closed."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "Chapter covers re-rendered from verified landscape figures; atlas map and status bars built; 1154 tests pass; overview first frame 2979 ms against the 5343 ms S05 baseline."
     }
   ]
 }

@@ -477,7 +477,8 @@ function ModuleSM({ go }) {
   return (
     <article>
       <ModuleHeader num="01" kicker="Matter & forces" title="The Standard Model of Particle Physics"
-        lede="The Standard Model is a quantum field theory describing all known matter particles and three of the four fundamental interactions. Its structure is dictated almost entirely by one principle: local gauge symmetry under the group SU(3)×SU(2)×U(1)."></ModuleHeader>
+        lede="The Standard Model is a quantum field theory describing all known matter particles and three of the four fundamental interactions. Its structure is dictated almost entirely by one principle: local gauge symmetry under the group SU(3)×SU(2)×U(1)."
+        target=".pmns-ribbon, .feyn-row"></ModuleHeader>
 
       <Section title="The particle architecture">
         <p>
