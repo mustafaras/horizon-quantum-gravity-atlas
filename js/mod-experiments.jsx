@@ -1534,42 +1534,12 @@ function ModuleExp({ go }) {
       </Section>
 
       <Section title="The wider observational net">
-        <div className="grid-2">
-          <div className="panel">
-            <h3>Cosmic microwave background</h3>
-            <p className="small" style={{ marginBottom: 0 }}>
-              The CMB carries the imprint of quantum fluctuations stretched to cosmic size during inflation — arguably
-              quantum fluctuations of spacetime made visible. A detection of primordial B-mode polarization would probe
-              gravitational waves of quantum origin from the inflationary epoch; current bounds (Planck 2018, BICEP/Keck)
-              constrain but do not yet detect them.
-            </p>
-          </div>
-          <div className="panel">
-            <h3>Neutrinos & dark matter</h3>
-            <p className="small" style={{ marginBottom: 0 }}>
-              Neutrino oscillations are the one laboratory-confirmed crack in the minimal Standard Model. Dark matter —
-              evidenced gravitationally at every scale from galaxies to the CMB — remains undetected in the laboratory,
-              and its identity may or may not connect to quantum gravity.
-            </p>
-          </div>
-          <div className="panel">
-            <h3>Quantum gravity phenomenology</h3>
-            <p className="small" style={{ marginBottom: 0 }}>
-              Some models predict tiny violations of Lorentz invariance, energy-dependent photon arrival times from
-              gamma-ray bursts, or modified dispersion relations. Observations (e.g. Fermi-LAT timing of GRB photons)
-              constrain linear Planck-scale dispersion to beyond the Planck energy itself — a rare case of experiment
-              reaching quantum gravity territory, with null results.
-            </p>
-          </div>
-          <div className="panel">
-            <h3>Black hole imaging</h3>
-            <p className="small" style={{ marginBottom: 0 }}>
-              The Event Horizon Telescope's images of M87* (2019) and Sgr A* (2022) resolve photon-ring-scale structure
-              around supermassive black holes, confirming general relativistic predictions for the shadow size at the
-              ~10% level. Horizon-scale deviations predicted by some quantum gravity scenarios are increasingly constrained.
-            </p>
-          </div>
-        </div>
+        <p>
+          Four windows onto quantum gravity, each now a computed instrument rather than a paragraph: the arrival time
+          of a gamma-ray photon, the tensor-to-scalar ratio inflation would leave in the microwave background, the
+          short-range test of Newton's law, and the horizon-scale image.
+        </p>
+        <ObservationalNetLab></ObservationalNetLab>
       </Section>
 
       <Misconception title="Detecting gravitational waves did not confirm quantum gravity.">

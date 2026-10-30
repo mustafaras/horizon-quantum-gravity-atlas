@@ -207,7 +207,13 @@
         "S21",
         "S28"
       ],
-      "closedIn": null
+      "closedIn": null,
+      "partiallyAddressed": {
+        "by": "S28",
+        "date": "2026-10-30",
+        "delivered": "The four prose panels are gone. Lorentz-violation delay, slow-roll tensor predictions, the Eot-Wash short-range bound and the horizon-scale link are computed figures with citations.",
+        "remaining": "Nothing in the finding text; closes once a merge commit exists to point closedIn at."
+      }
     },
     {
       "id": "F-13",
@@ -1607,7 +1613,7 @@
       "findings": [
         "F-12"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s28-observational-net",
       "pr": null,
@@ -1615,12 +1621,33 @@
       "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1140 passed, 1 skipped, 0 failed",
+          "node --test test/observational-net.test.mjs: 6/6",
+          "npm run validate: passed; 88 provenance entries",
+          "npm run qa:verify: 67 captures valid",
+          "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (unchanged)",
+          "node qa/capture.mjs --only=exp-lorentz-delay,exp-tensor-scalar,exp-short-range --update --docs: 3 captures"
+        ],
+        "screenshots": [
+          "docs/screenshots/64-exp-lorentz-delay.png",
+          "docs/screenshots/65-exp-tensor-scalar.png",
+          "docs/screenshots/66-exp-short-range.png",
+          "qa/baselines/exp-lorentz-delay.png",
+          "qa/baselines/exp-tensor-scalar.png",
+          "qa/baselines/exp-short-range.png"
+        ],
+        "measurements": [
+          "Lookback integral at z = 0.903: 1.000600, matching a 200001-point Simpson reference to 1e-8.",
+          "Hubble time 1/H0 = 14.516 Gyr for H0 = 67.36 km/s/Mpc.",
+          "A 31 GeV photon from z = 0.903 arrives 1.16 s late at E_QG = E_Planck, and 0.116 s at ten Planck energies.",
+          "Slow-roll at N = 50: phi^2 gives n_s = 0.9600, r = 0.1600 (above the 0.036 bound, so excluded); R^2 gives r = 0.0048; natural inflation with f = 5 gives n_s = 1.0155, r = 0.0490.",
+          "Eot-Wash: 38.6 um at alpha = 1, 95 % CL, over separations of 52 um to 3.0 mm, read from the paper's abstract.",
+          "The four prose panels are gone: the experiments view now reports zero .panel headings in that section."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The observational net is four computed instruments. F-12 closes: S21 delivered the sourced scale map and S28 replaces the four prose panels in the experiments view, which is what the finding names. The horizon-scale panel links to the black-hole module rather than duplicating its numbers."
     },
     {
       "id": "S29",
@@ -2997,6 +3024,34 @@
       "prompt": "S27",
       "decision": "Keep the fixture-based search labelled synthetic and run the deployed fallback on the teaching signal with the source named.",
       "rationale": "The bundled GWOSC fixture says in its own README that it must never be presented as real data. The lab therefore reports which source it used, and the real measurement in the same section is the CMS spectrum, clearly marked as observation."
+    },
+    {
+      "id": "D-169",
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "decision": "Replace the invented Eot-Wash alpha-lambda envelope with the single point the paper publishes.",
+      "rationale": "I first wrote a smooth Gaussian envelope, which would have been a fabricated exclusion contour: Lee et al. (2020) state exactly one number, that gravitational-strength Yukawa interactions are excluded below 38.6 um at 95 % CL. The figure now draws that point and the separation range 52 um to 3.0 mm, and says the paper publishes no contour."
+    },
+    {
+      "id": "D-170",
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "decision": "Correct the Hubble rate conversion: H0 in km/s/Mpc divided by Mpc in km, not multiplied by 1000 first.",
+      "rationale": "The extra factor of 1000 made the Hubble time 14.5 Myr instead of 14.5 Gyr and every delay a thousand times too small. Caught because the delay for a 31 GeV photon came out at 1.2 ms where the physics wants about a second."
+    },
+    {
+      "id": "D-171",
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "decision": "Use the closed form for natural inflation rather than a numerical march to the minimum.",
+      "rationale": "Marching dphi/dN towards phi = 0 diverges: eps -> 0 there and dphi/dN -> infinity, which produced n_s = -3.2e11. The exact relation N = f^2 ln[(1+cos x_end)/(1+cos x)] inverts cleanly, and the resulting predictions (n_s 1.016 to 1.024, r 0.049 to 0.031 for f = 5) are finite and ordered."
+    },
+    {
+      "id": "D-172",
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "decision": "Link the horizon-scale panel to the black-hole module instead of duplicating the EHT comparison.",
+      "rationale": "The plan says to reuse the S25 component. Copying the numbers into a fourth panel would let them drift; a link plus the two percentage figures keeps one source of truth, and the caption says the comparison lives there."
     }
   ],
   "log": [

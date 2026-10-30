@@ -106,6 +106,8 @@ async function bootstrap() {
     Object.defineProperty(window, "QGA_QTRANSFORM", { value: Object.freeze({ ...qtransform }), configurable: true });
     const cmsDimuon = await import("./science/data/cms-dimuon.mjs");
     Object.defineProperty(window, "QGA_CMS_DIMUON", { value: Object.freeze({ ...cmsDimuon }), configurable: true });
+    const observationalNet = await import("./science/observational-net.mjs");
+    Object.defineProperty(window, "QGA_OBSERVATIONAL_NET", { value: Object.freeze({ ...observationalNet }), configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();
@@ -191,7 +193,7 @@ async function bootstrap() {
         loadSpinFoam: () => import("./visualizations/planck/spin-foam.mjs"),
         ...causalSets,
         loadCausalSet: () => import("./visualizations/approaches/causal-set.mjs"),
-        ...cdt, ...stringSpectrum, ...evaporation, ...greybody, ...kerrShadow, ...eht, ...pnWaveform, ...matchedFilter, ...qtransform, ...cmsDimuon,
+        ...cdt, ...stringSpectrum, ...evaporation, ...greybody, ...kerrShadow, ...eht, ...pnWaveform, ...matchedFilter, ...qtransform, ...cmsDimuon, ...observationalNet,
         loadCdt: () => import("./visualizations/approaches/cdt.mjs"),
       }),
       configurable: true,

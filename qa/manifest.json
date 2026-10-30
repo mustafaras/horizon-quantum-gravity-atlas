@@ -2054,6 +2054,102 @@
         "maxDiffPixelRatio": 0.03,
         "note": "New S27 captures; 3% allows pinned-browser rasterisation."
       }
+    },
+    {
+      "id": "exp-lorentz-delay",
+      "file": "docs/screenshots/64-exp-lorentz-delay.png",
+      "description": "The arrival delay a linear Lorentz-violation term would produce from GRB 090510, with the Fermi bound.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1600,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "[data-figure=\"exp-lorentz-delay\"]",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "[data-figure=\"exp-lorentz-delay\"]",
+          "text": "Lorentz violation"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Each panel computes its curve from stated equations and cites its source; the data are limits, not detections.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S28 captures; 3% allows pinned-browser rasterisation."
+      }
+    },
+    {
+      "id": "exp-tensor-scalar",
+      "file": "docs/screenshots/65-exp-tensor-scalar.png",
+      "description": "Three slow-roll inflation predictions in the (n_s, r) plane against the BICEP/Keck tensor bound.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1600,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "[data-figure=\"exp-tensor-scalar\"]",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "[data-figure=\"exp-tensor-scalar\"]",
+          "text": "(n_s, r)"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Each panel computes its curve from stated equations and cites its source; the data are limits, not detections.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S28 captures; 3% allows pinned-browser rasterisation."
+      }
+    },
+    {
+      "id": "exp-short-range",
+      "file": "docs/screenshots/66-exp-short-range.png",
+      "description": "The Eot-Wash short-range Yukawa exclusion at gravitational strength, with the dark-energy length marked.",
+      "view": "exp",
+      "url": "?view=exp&seed=42",
+      "viewport": {
+        "width": 1440,
+        "height": 1600,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": "[data-figure=\"exp-short-range\"]",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": "[data-figure=\"exp-short-range\"]",
+          "text": "Short-range gravity"
+        },
+        "animation-settled"
+      ],
+      "scientificStatus": "effective-model",
+      "statusNote": "Each panel computes its curve from stated equations and cites its source; the data are limits, not detections.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.03,
+        "note": "New S28 captures; 3% allows pinned-browser rasterisation."
+      }
     }
   ]
 }
