@@ -42,7 +42,7 @@ const COVERS = [
   { id: "qft", view: "qft", target: '.fig[data-figure="qft-dispersion"]', label: "lattice dispersion relation" },
   { id: "rg", view: "rg", target: '.fig[data-figure="rg-gravity-flow-trajectory"]', label: "gravity-flow trajectory" },
   { id: "gr", view: "gr", target: '.fig[data-figure="gr-effective-potential"]', label: "the effective potential of a geodesic" },
-  { id: "planck", view: "planck", target: '.fig[data-figure="planck-area-spectrum"], #planck-constraint-plane', label: "the map of the unseen" },
+  { id: "planck", view: "planck", target: ".planck-spectra-grid", label: "the discrete area and volume spectra of loop quantum gravity" },
   { id: "approaches", view: "approaches", target: '.fig[data-figure="approaches-string-spectrum"]', label: "the string mass spectrum" },
   { id: "blackholes", view: "bh", target: '.fig[data-figure="bh-page-curve"]', label: "the Page curve" },
   { id: "experiments", view: "exp", target: '.fig[data-figure="gw-strain-generated"]', label: "the GW150914 strain" },
@@ -97,6 +97,11 @@ try {
         const box = await element.boundingBox();
         if (!box || box.width < 80 || box.height < 60) {
           throw new Error(`${cover.id}: target ${cover.target} measured ${Math.round(box?.width ?? 0)}x${Math.round(box?.height ?? 0)}`);
+        }
+        // The hero band is ~998 CSS px wide on a desktop. A narrower source would be upscaled on every visit, so a
+        // narrow target is a build error with the figure named, not a blurry cover shipped silently.
+        if (size.width === 2400 && box.width < 900) {
+          throw new Error(`${cover.id}: target ${cover.target} is only ${Math.round(box.width)} px wide; a cover must not be upscaled`);
         }
         // Fit the element into the cover's aspect without distorting it: keep the figure's own aspect and let the
         // renderer scale it. A figure taller than 16:6 is cropped from its top, where a figure's own title sits.

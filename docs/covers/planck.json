@@ -1,10 +1,10 @@
 {
   "id": "planck",
-  "label": "the map of the unseen",
+  "label": "the discrete area and volume spectra of loop quantum gravity",
   "view": "planck",
   "seed": 42,
   "url": "?view=planck&seed=42",
-  "target": ".fig[data-figure=\"planck-area-spectrum\"], #planck-constraint-plane",
+  "target": ".planck-spectra-grid",
   "sizes": [
     {
       "width": 2400,
@@ -17,7 +17,7 @@
       "file": "planck-sm.png"
     }
   ],
-  "renderedAt": "2026-10-30T08:35:05.475Z",
-  "commit": "4647ed4bed215aa803f3667c3dabb0d1a8603103",
+  "renderedAt": "2026-10-30T09:03:07.509Z",
+  "commit": "76d4c9cb3ef120a7b53d271224a71fbba6ed1352",
   "status": "screenshot of the module's own computed figure"
 }
