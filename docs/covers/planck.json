@@ -7,17 +7,24 @@
   "target": ".planck-spectra-grid",
   "sizes": [
     {
-      "width": 2400,
-      "height": 900,
-      "file": "planck.png"
+      "suffix": "",
+      "file": "planck.png",
+      "width": 950,
+      "height": 366
     },
     {
-      "width": 1200,
-      "height": 450,
-      "file": "planck-sm.png"
+      "suffix": "-sm",
+      "file": "planck-sm.png",
+      "width": 794,
+      "height": 366
     }
   ],
-  "renderedAt": "2026-10-30T09:03:07.509Z",
-  "commit": "76d4c9cb3ef120a7b53d271224a71fbba6ed1352",
+  "widths": [
+    794,
+    950
+  ],
+  "aspect": 2.5956284153005464,
+  "renderedAt": "2026-10-30T09:29:03.028Z",
+  "commit": "b392229bd0dfb4067f8d8b83246d5894ff59c9e0",
   "status": "screenshot of the module's own computed figure"
 }

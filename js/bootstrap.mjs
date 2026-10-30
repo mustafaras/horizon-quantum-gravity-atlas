@@ -113,6 +113,10 @@ async function bootstrap() {
     const atlasMapLayout = await import("./science/data/atlas-map-layout.mjs");
     Object.defineProperty(window, "QGA_ATLAS_MAP", { value: Object.freeze({ ...atlasMap }), configurable: true });
     Object.defineProperty(window, "QGA_ATLAS_MAP_LAYOUT", { value: Object.freeze({ ...atlasMapLayout }), configurable: true });
+    // The measured pixel size of each chapter cover. js/core.jsx is a classic script and cannot read the JSON
+    // sidecars, and without them it claimed 1200w/2400w for 794 and 950 px files.
+    const covers = await import("./science/data/cover-index.mjs");
+    Object.defineProperty(window, "QGA_COVERS", { value: covers.COVER_INDEX, configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();

@@ -10,7 +10,7 @@
  * the code that drew it.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,11 +48,24 @@ const COVERS = [
   { id: "experiments", view: "exp", target: '.fig[data-figure="gw-strain-generated"]', label: "the GW150914 strain" },
 ];
 
-/** The two sizes the header uses: 2400x900 on desktop (16:6) and 1200x450 for the phone thumbnail. */
+/**
+ * The two viewports a cover is captured at. `width` is the viewport, NOT the file's width: the file is exactly as wide
+ * as the figure it frames, which is narrower than the viewport. The header reads the real sizes from `widths`, so the
+ * numbers below never reach the page as image descriptors.
+ */
 const SIZES = Object.freeze([
   { width: 2400, height: 900, suffix: "" },
   { width: 1200, height: 450, suffix: "-sm" },
 ]);
+
+/**
+ * The band the header draws is 1000 CSS px wide at its widest. A cover is never stretched to that width: it is drawn
+ * at its own intrinsic size, so a 794 px file occupies 794 px and the browser never interpolates. The floor below is
+ * about visual weight — a chapter's signature image at 16:6 needs some width to read as a band — and the measured
+ * sizes reach the header through js/science/data/cover-index.mjs so `srcset` carries real widths, never guesses.
+ */
+const BAND_MAX_WIDTH = 1000;
+const BAND_MIN_WIDTH = 760;
 
 const commit = (() => {
   try { return execSync("git rev-parse HEAD", { cwd: root, encoding: "utf8" }).trim(); }
@@ -72,6 +85,7 @@ try {
     await installDeterministicRandom(context, 42);
     const page = await context.newPage();
     const errors = [];
+    const measured = [];
     page.on("pageerror", (e) => errors.push(String(e)));
     try {
       await page.goto(`${server.baseUrl}/?view=${cover.view}&seed=42`, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -98,10 +112,10 @@ try {
         if (!box || box.width < 80 || box.height < 60) {
           throw new Error(`${cover.id}: target ${cover.target} measured ${Math.round(box?.width ?? 0)}x${Math.round(box?.height ?? 0)}`);
         }
-        // The hero band is ~998 CSS px wide on a desktop. A narrower source would be upscaled on every visit, so a
-        // narrow target is a build error with the figure named, not a blurry cover shipped silently.
-        if (size.width === 2400 && box.width < 900) {
-          throw new Error(`${cover.id}: target ${cover.target} is only ${Math.round(box.width)} px wide; a cover must not be upscaled`);
+        // The band is 1000 CSS px at its widest. This floor is about visual weight, not sharpness: the band narrows to
+        // the file's own intrinsic width, so a cover is never upscaled whatever its size.
+        if (size.width === 2400 && box.width < BAND_MIN_WIDTH) {
+          throw new Error(`${cover.id}: target ${cover.target} is only ${Math.round(box.width)} px wide; a chapter cover needs at least ${BAND_MIN_WIDTH} px`);
         }
         // Fit the element into the cover's aspect without distorting it: keep the figure's own aspect and let the
         // renderer scale it. A figure taller than 16:6 is cropped from its top, where a figure's own title sits.
@@ -113,6 +127,15 @@ try {
         };
         const file = path.join(root, "docs/covers", `${cover.id}${size.suffix}.png`);
         await page.screenshot({ path: file, type: "png", clip });
+        // The clip box is a request, not a promise: Chromium rounds the rectangle, so the PNG header is read back and
+        // the header is described with what was actually written.
+        const png = await readFile(file);
+        measured.push({
+          suffix: size.suffix,
+          file: `${cover.id}${size.suffix}.png`,
+          width: png.readUInt32BE(16),
+          height: png.readUInt32BE(20),
+        });
         written.push({ ...cover, ...size, file: path.relative(root, file), clipped: true, box: { width: Math.round(clip.width), height: Math.round(clip.height) } });
         console.log(`  ✓ ${cover.id}${size.suffix} → ${path.relative(root, file)} (${Math.round(clip.width)}x${Math.round(clip.height)})`);
       }
@@ -121,7 +144,10 @@ try {
         JSON.stringify({
           id: cover.id, label: cover.label, view: cover.view, seed: 42,
           url: `?view=${cover.view}&seed=42`, target: cover.target,
-          sizes: SIZES.map((s) => ({ width: s.width, height: s.height, file: `${cover.id}${s.suffix}.png` })),
+          // The real pixel size of each file, so the header can describe them honestly instead of guessing.
+          sizes: measured,
+          widths: measured.map((m) => m.width).sort((a, b) => a - b),
+          aspect: measured[0].width / measured[0].height,
           renderedAt: new Date().toISOString(), commit,
           status: "screenshot of the module's own computed figure",
         }, null, 2) + "\n",

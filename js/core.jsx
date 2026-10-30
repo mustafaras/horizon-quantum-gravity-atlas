@@ -297,6 +297,16 @@ const COVER_SLUG = {
   "05": "planck", "06": "approaches", "07": "blackholes", "08": "experiments",
 };
 
+// A cover file is only as wide as the figure it frames (794-998 px) and it is drawn at that width, never stretched to
+// fill the column. `sizes` states the band so the browser can pick, and `max-width` pins the file at its intrinsic
+// width: before this, `srcset` claimed 1200w and 2400w for 794 and 950 px files, so the browser chose the thumbnail
+// for a 1000 px slot and the band upscaled it.
+const COVER_SIZES = "min(100vw, 1000px)";
+
+function coverSidecar(slug) {
+  return (typeof window !== "undefined" && window.QGA_COVERS && window.QGA_COVERS[slug]) || null;
+}
+
 function ModuleHeader({ num, kicker, title, lede, label, target }) {
   const slug = COVER_SLUG[num];
   const reduced = usePRM();
@@ -313,11 +323,24 @@ function ModuleHeader({ num, kicker, title, lede, label, target }) {
       {slug ? (
         <button type="button" className="module-cover" onClick={openSource} disabled={!target}
           aria-label={`${title}: show the figure that produced this cover`}>
-          {/* A phone gets the 1200 px thumbnail: the 2400 px hero is ~400 kB and there is no benefit at 16:9 in a
-              390 px column. `srcset` lets the browser choose without a script. */}
-          <img src={`docs/covers/${slug}.png`} srcSet={`docs/covers/${slug}-sm.png 1200w, docs/covers/${slug}.png 2400w`}
-            sizes="(max-width: 640px) 100vw, 1200px"
-            alt="" loading="eager" fetchpriority="high" decoding="async" width="2400" height="900" />
+          {/* The srcset is built from the sidecar's measured widths, so a browser is never told a file is wider than it
+              is. Before that data is available the hero file is used at its true intrinsic size ratio. */}
+          {(() => {
+            const meta = coverSidecar(slug);
+            const sizes = meta && Array.isArray(meta.sizes) && meta.sizes.length === 2 ? meta.sizes : null;
+            const hero = sizes ? sizes.find((s) => !/-sm\.png$/.test(s.file)) : null;
+            return (
+              <img
+                src={hero ? `docs/covers/${hero.file}` : `docs/covers/${slug}.png`}
+                srcSet={sizes ? sizes.map((s) => `docs/covers/${s.file} ${s.width}w`).join(", ") : undefined}
+                sizes={sizes ? COVER_SIZES : undefined}
+                // Pinned to the file's own width: the band is 1000 px but a 950 px cover must not be stretched to fill it.
+                style={hero ? { maxWidth: `${hero.width}px` } : undefined}
+                alt="" loading="eager" fetchpriority="high" decoding="async"
+                width={hero ? hero.width : undefined}
+                height={hero ? hero.height : undefined} />
+            );
+          })()}
           <span className="module-cover-hint">the figure behind this chapter</span>
         </button>
       ) : null}
