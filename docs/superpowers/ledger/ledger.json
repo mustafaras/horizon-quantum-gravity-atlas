@@ -191,18 +191,12 @@
       "id": "F-11",
       "title": "Synthetic GW: Newtonian chirp, ad hoc amplitude clamp, fixed 190 Hz/60 ms ringdown; no matched filter",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S26",
         "S27"
       ],
-      "closedIn": null,
-      "partiallyAddressed": {
-        "by": "S27",
-        "date": "2026-10-29",
-        "delivered": "S26 replaced the Newtonian chirp with TaylorT4 3.5PN, an NR-calibrated remnant and its ringdown; S27 added the frequency-domain matched filter over a 32-template bank with a Welch PSD, and the Q-transform.",
-        "remaining": "Nothing in the finding text: the matched filter exists. Closing on merge once a commit exists to point closedIn at."
-      }
+      "closedIn": "1f6b1909b34d58e8766d7a8ddfe9adddcacf0fb0"
     },
     {
       "id": "F-12",
@@ -1567,13 +1561,15 @@
       "findings": [
         "F-11"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s27-gw-matched-filter",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/114",
-      "commits": [],
+      "commits": [
+        "1f6b1909b34d58e8766d7a8ddfe9adddcacf0fb0"
+      ],
       "startedAt": "2026-10-29",
-      "completedAt": null,
+      "completedAt": "2026-10-29",
       "evidence": {
         "tests": [
           "npm test: 1134 passed, 1 skipped, 0 failed",
@@ -3654,6 +3650,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "verification",
       "detail": "Matched filter, Q-transform and the real CMS dimuon spectrum built and tested. A pre-existing crash was found and fixed: the experiments view unmounted while a GWOSC load was in flight because strainSpec read real.duration from null."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #114 as 1f6b190. Closed F-11: S26 replaced the synthetic waveform and S27 added the matched filter, so both halves of the finding are delivered."
     }
   ]
 }
