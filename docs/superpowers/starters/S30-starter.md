@@ -3,8 +3,8 @@
 > Paste this file as the first message of a fresh agent session. It is a *pre-flight brief*, not a replacement for the
 > contract: read [`S30-living-equations.md`](../plans/horizon-v2/S30-living-equations.md) first, then come back here.
 >
-> **State when written (2026-10-30):** `main` = `bf48d6e`, S29 `done`, working tree clean.
-> Every number below was measured in this repository, not read off the plan.
+> **State when written (2026-10-30):** measured at `bf48d6e`, S29 `done`, working tree clean. This file merged as
+> `f83862a`; every number below was measured against the `bf48d6e` tree, not read off the plan.
 
 ---
 
