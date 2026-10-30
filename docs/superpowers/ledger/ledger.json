@@ -1705,12 +1705,12 @@
         "S29"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "copilot/s30-living-equations",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3800,6 +3800,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #119 as 76d4c9c and the Planck cover correction as f8bbf86. Chapter covers, the SVG atlas map and the eight chapter status bars are live. The cover renderer now refuses a target narrower than 900 px rather than upscaling it, which replaced the 389 px source behind the first Planck band."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on copilot/s30-living-equations from main at 6ab87d2. Baseline measured before any change: node --test test/*.test.mjs 1157 pass, 0 fail, 1 skipped; npm run validate passes with 89 provenance entries and a matching cover index."
     }
   ]
 }
