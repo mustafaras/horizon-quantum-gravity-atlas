@@ -198,10 +198,10 @@
       ],
       "closedIn": null,
       "partiallyAddressed": {
-        "by": "S26",
+        "by": "S27",
         "date": "2026-10-29",
-        "delivered": "TaylorT4 inspiral at 3.5 post-Newtonian order with the Blanchet (2014) coefficients, the NR-calibrated remnant from Jimenez-Forteza et al. (2017), and the (2,2,0) ringdown from Berti, Cardoso & Will (2006). The ad hoc amplitude clamp and the fixed 190 Hz / 60 ms ringdown are gone, and both legacy entry points delegate to the new module.",
-        "remaining": "The matched filter on real detector data, which is S27."
+        "delivered": "S26 replaced the Newtonian chirp with TaylorT4 3.5PN, an NR-calibrated remnant and its ringdown; S27 added the frequency-domain matched filter over a 32-template bank with a Welch PSD, and the Q-transform.",
+        "remaining": "Nothing in the finding text: the matched filter exists. Closing on merge once a commit exists to point closedIn at."
       }
     },
     {
@@ -1567,7 +1567,7 @@
       "findings": [
         "F-11"
       ],
-      "status": "claimed",
+      "status": "in_progress",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s27-gw-matched-filter",
       "pr": null,
@@ -1575,12 +1575,31 @@
       "startedAt": "2026-10-29",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1134 passed, 1 skipped, 0 failed",
+          "node --test test/matched-filter.test.mjs: 10/10",
+          "npm run validate: passed; 87 provenance entries",
+          "npm run qa:verify: 64 captures valid",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gwosc.spec.mjs: 6/6",
+          "npx playwright test --config qa/playwright.config.mjs qa/specs/gw-instrument.spec.mjs: 4/4",
+          "npm run perf:audit: passed; Math.random 1 site, needsUpdate 31 in 19 files, ShaderMaterial 8 (unchanged)"
+        ],
+        "screenshots": [
+          "docs/screenshots/62-exp-cms-dimuon.png",
+          "docs/screenshots/63-exp-gw-qtransform.png",
+          "qa/baselines/exp-cms-dimuon.png",
+          "qa/baselines/exp-gw-qtransform.png"
+        ],
+        "measurements": [
+          "Injection-recovery in seeded coloured noise: the bank recovers the injected chirp mass exactly (Mc = 27.0 from a 1.0 Msun-spaced bank) and the peak SNR is 14.5 against an injected optimum of 15, i.e. within 3 %.",
+          "Noise-only data peaks below 8 in the same search, so the filter is not fitting the noise.",
+          "On the bundled fixture (synthetic): peak SNR 5.79, recovered chirp mass 15.8 Msun, peak time 6.06 s. Recorded as a method demonstration, not an observation.",
+          "CMS dimuon spectrum from CERN Open Data record 700: 10 000 events read, 10 000 binned at 0.25 GeV. J/psi window 1014 events, psi(2S) 223, Upsilon(1S) 343, Upsilon(2S+3S) 248, Z region 18.",
+          "The Q-transform finds a 40 Hz pure tone at 39.4 Hz and follows a 20-55 Hz chirp from 23.1 to 43.3 Hz."
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "The matched filter, the template bank, the Q-transform and the real CMS spectrum are live. F-11 closes: S26 replaced the waveform and S27 added the matched filter on it. A pre-existing crash was found and fixed on the way: the experiments view unmounted entirely while a GWOSC load was in flight, because strainSpec read real.duration before the data arrived."
     },
     {
       "id": "S28",
@@ -2954,6 +2973,34 @@
       "prompt": "S26",
       "decision": "Keep F-11 open for S27.",
       "rationale": "F-11 names both the synthetic waveform and the absence of a matched filter. S26 replaces the waveform; the matched filter on real data is S27's, so the finding is half addressed and stays open."
+    },
+    {
+      "id": "D-165",
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "decision": "Build the CMS dimuon histogram from CERN Open Data record 700 rather than declaring the data unobtainable.",
+      "rationale": "The plan allows blocking only if the data cannot be obtained and verified. Record 700, 'Dimuon event information derived from the Run2010B public Mu dataset', DOI 10.7483/OPENDATA.CMS.CB8H.MFFA, is CC0 and its CSV downloads over plain HTTPS. 10000 events were read and the spectrum shows the J/psi, psi(2S), Upsilon family and Z at their known masses, which is the verification the plan asks for."
+    },
+    {
+      "id": "D-166",
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "decision": "Bin the spectrum at 0.25 GeV, not 1 GeV.",
+      "rationale": "One-GeV bins put the J/psi (3.096) and the psi(2S) (3.686) in the same bin, which hid the very structure the figure exists to show. At 0.25 GeV the two resolve into separate peaks with 1014 and 223 events."
+    },
+    {
+      "id": "D-167",
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "decision": "Fix the crash in strainSpec instead of leaving it, even though it predates this prompt.",
+      "rationale": "While a GWOSC load was in flight, strainSpec read real.duration from null and the whole experiments view unmounted: root had zero children and the six GWOSC specs failed. The bug reproduced on the baseline commit, but it blocked this prompt's acceptance and the fix is three lines, so it is fixed here and recorded rather than inherited."
+    },
+    {
+      "id": "D-168",
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "decision": "Keep the fixture-based search labelled synthetic and run the deployed fallback on the teaching signal with the source named.",
+      "rationale": "The bundled GWOSC fixture says in its own README that it must never be presented as real data. The lab therefore reports which source it used, and the real measurement in the same section is the CMS spectrum, clearly marked as observation."
     }
   ],
   "log": [
@@ -3600,6 +3647,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claimed",
       "detail": "Started S27 on a branch from main after S26 closed."
+    },
+    {
+      "date": "2026-10-29",
+      "prompt": "S27",
+      "agent": "local: Copilot for mustafaras",
+      "event": "verification",
+      "detail": "Matched filter, Q-transform and the real CMS dimuon spectrum built and tested. A pre-existing crash was found and fixed: the experiments view unmounted while a GWOSC load was in flight because strainSpec read real.duration from null."
     }
   ]
 }

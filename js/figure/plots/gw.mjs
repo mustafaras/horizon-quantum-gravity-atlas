@@ -14,8 +14,13 @@ function timeAxis(duration, label) {
  * `real` is `{ samples, duration, start }` (GWOSC observation).
  */
 export function strainSpec({ mode, h1, l1, real, playT, amax, height = 220 }) {
-  const src = mode === "real" ? real : h1;
-  const duration = mode === "real" ? real.duration : h1.duration;
+  // A real-data mode with no data yet is a transient state: the fetch is in flight. Falling back to the generated
+  // trace keeps the panel mounted; reading `real.duration` here crashed the whole experiments view while a GWOSC
+  // load was in progress, and the fallback is what the panel shows anyway until the observation arrives.
+  const useReal = mode === "real" && real;
+  const src = useReal ? real : h1;
+  if (!src?.samples?.length) throw new TypeError("strainSpec needs samples");
+  const duration = useReal ? real.duration : h1.duration;
   const n = src.samples.length;
   const t = Array.from({ length: n }, (_, i) => (i / (n - 1)) * duration);
   const frac = Math.min(1, Math.max(0, playT / duration));
@@ -24,7 +29,7 @@ export function strainSpec({ mode, h1, l1, real, playT, amax, height = 220 }) {
   const half = amax / 0.88; // traces use 44 % of the plot height either side of zero
   const marks = [];
   let colorMain, colorSecond;
-  if (mode === "generated") {
+  if (!useReal) {
     const tMerge = h1.mergerIndex / h1.sampleRate;
     const m0 = Math.max(0, tMerge - 0.12), m1 = tMerge + 0.02;
     colorMain = "pigment-azure-76"; colorSecond = "pigment-orange-84-c13";
@@ -41,15 +46,15 @@ export function strainSpec({ mode, h1, l1, real, playT, amax, height = 220 }) {
     marks.push(line({ x: t, y: Array.from(real.samples), layer: "data", color: colorMain, opacity: 0.2 }));
     marks.push(line({ x: tr, y: Array.from(real.samples.slice(0, upto)), layer: "data", focal: true, color: colorMain, width: 1.3, label: "GWOSC strain" }));
   }
-  if (frac > 0) marks.push(rule({ axis: "x", value: playT, layer: mode === "real" ? "data" : "model", color: "ink-strong", dash: null }));
+  if (frac > 0) marks.push(rule({ axis: "x", value: playT, layer: useReal ? "data" : "model", color: "ink-strong", dash: null }));
   return figure({
-    id: mode === "real" ? "gw-strain-observation" : "gw-strain-generated",
-    title: mode === "real" ? "Strain h(t), GWOSC observation" : "Strain h(t), generated and seeded",
-    status: mode === "real" ? "established" : "effective", provenanceId: "gw-strain", height,
-    x: timeAxis(duration, { text: mode === "real" ? `time since GPS ${real.start.toFixed(0)} (s)` : "time (s)" }),
+    id: useReal ? "gw-strain-observation" : "gw-strain-generated",
+    title: useReal ? "Strain h(t), GWOSC observation" : "Strain h(t), generated and seeded",
+    status: useReal ? "established" : "effective", provenanceId: "gw-strain", height,
+    x: timeAxis(duration, { text: useReal ? `time since GPS ${real.start.toFixed(0)} (s)` : "time (s)" }),
     y: axis({ scale: { type: "linear", domain: [-half, half] }, label: { tex: "h(t)" } }),
     marks,
-    summary: mode === "real" ? `${n} samples of calibrated strain, normalised, over ${duration.toFixed(1)} s.` : "Seeded two-detector waveform: inspiral, merger and ringdown.",
+    summary: useReal ? `${n} samples of calibrated strain, normalised, over ${duration.toFixed(1)} s.` : "Seeded two-detector waveform: inspiral, merger and ringdown.",
   });
 }
 

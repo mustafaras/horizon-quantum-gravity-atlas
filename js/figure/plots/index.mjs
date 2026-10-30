@@ -17,3 +17,4 @@ export * as spectralDimension from "./spectral-dimension.mjs";
 export * as stringSpectrum from "./string-spectrum.mjs";
 export * as kerrShadow from "./kerr-shadow.mjs";
 export * as gwWaveform from "./gw-waveform.mjs";
+export * as expRealData from "./exp-real-data.mjs";

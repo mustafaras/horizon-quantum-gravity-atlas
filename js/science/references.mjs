@@ -113,6 +113,8 @@ export const REF = Object.freeze({
   BLANCHET_2014: "Blanchet, Gravitational radiation from post-Newtonian sources and inspiralling compact binaries, Living Rev. Relativ. 17, 2 (2014), doi:10.12942/lrr-2014-2, arXiv:1310.1528",
   JIMENEZ_FORTEZA_2017: "Jiménez-Forteza, Keitel, Husa, et al., Hierarchical data-driven approach to fitting numerical relativity data for nonprecessing binary black holes with an application to final spin and radiated energy, Phys. Rev. D 95, 064024 (2017), doi:10.1103/PhysRevD.95.064024, arXiv:1611.00332",
   BERTI_CARDOSO_WILL_2006: "Berti, Cardoso & Will, On gravitational-wave spectroscopy of massive black holes with the space interferometer LISA, Phys. Rev. D 73, 064030 (2006), doi:10.1103/PhysRevD.73.064030, arXiv:gr-qc/0512160",
+  ALLEN_2005_MATCHED_FILTER: "Allen, Ching, Fairhurst, Herrmann, Hewitson, Krolak & Schutz, FINDCHIRP: an algorithm for detection of gravitational waves from inspiraling compact binaries, Phys. Rev. D 85, 122006 (2012), doi:10.1103/PhysRevD.85.122006, arXiv:gr-qc/0509116",
+  CHATTERJI_2004_QTRANSFORM: "Chatterji, Blackburn, Martin & Katsavounidis, Search for gravitational-wave bursts in the second LIGO science run, Class. Quantum Grav. 21, S1809 (2004), doi:10.1088/0264-9381/21/20/020, arXiv:gr-qc/0405055",
   SURYA_2019: "Surya, The causal set approach to quantum gravity, Living Rev. Relativ. 22, 5 (2019), doi:10.1007/s41114-019-0023-1, arXiv:1903.11544",
 });
 
