@@ -202,18 +202,12 @@
       "id": "F-12",
       "title": "The observational net (CMB, ν/DM, QG phenomenology, EHT) is prose only",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S21",
         "S28"
       ],
-      "closedIn": null,
-      "partiallyAddressed": {
-        "by": "S28",
-        "date": "2026-10-30",
-        "delivered": "The four prose panels are gone. Lorentz-violation delay, slow-roll tensor predictions, the Eot-Wash short-range bound and the horizon-scale link are computed figures with citations.",
-        "remaining": "Nothing in the finding text; closes once a merge commit exists to point closedIn at."
-      }
+      "closedIn": "ba9d4b8f4f9345167629007278ec33e5829a1581"
     },
     {
       "id": "F-13",
@@ -1613,13 +1607,15 @@
       "findings": [
         "F-12"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "codex/s28-observational-net",
       "pr": "https://github.com/mustafaras/horizon-quantum-gravity-atlas/pull/117",
-      "commits": [],
+      "commits": [
+        "ba9d4b8f4f9345167629007278ec33e5829a1581"
+      ],
       "startedAt": "2026-10-30",
-      "completedAt": null,
+      "completedAt": "2026-10-30",
       "evidence": {
         "tests": [
           "npm test: 1140 passed, 1 skipped, 0 failed",
@@ -3719,6 +3715,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claimed",
       "detail": "Started S28 on a branch from main after S27 closed."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S28",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #117 as ba9d4b8. Closed F-12: the four prose panels in the experiments observational net are replaced by computed figures, and S21 had already delivered the sourced scale map the finding also names."
     }
   ]
 }
