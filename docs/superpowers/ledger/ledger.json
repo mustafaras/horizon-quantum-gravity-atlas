@@ -1653,12 +1653,12 @@
         "S28"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "codex/s29-chapter-covers",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3722,6 +3722,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #117 as ba9d4b8. Closed F-12: the four prose panels in the experiments observational net are replaced by computed figures, and S21 had already delivered the sourced scale map the finding also names."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S29",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claimed",
+      "detail": "Started S29 on a branch from main after S28 closed."
     }
   ]
 }
