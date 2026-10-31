@@ -451,7 +451,7 @@ All new animation routes through one shared motion clock (`js/motion/atlas-motio
 - **Teacher worksheets** — `?tour=<id>&print=1` renders the same steps as a printable sheet: numbered questions, the context that introduces each, the expected readout, the tour's primary references, and each step's plain relative URL. The sheet prints a readable URL rather than a QR square, and a print stylesheet hides the sidebar, topbar and 3D stage.
 - **Every number on a tour is computed** — `test/tours.test.mjs` recomputes the √27 critical impact parameter, the M87\* shadow diameter, the GW150914 chirp mass, ISCO and ringdown numbers, the Hawking temperature, the Page time and the Planck length from the modules that own them, and fails when a caption stops matching its source.
 
-Tours and their worksheets ship in **English only**; the Turkish localisation that finding F-20 also covers is not part of this sequence (ledger D-183).
+The atlas ships in **English only**. The Turkish localisation finding F-20 also covered was withdrawn by the project owner and is recorded as an accepted limitation (ledger D-184); there is no \`?lang=\` parameter, no UI dictionary and no translated tour or worksheet, and none is planned.
 
 ---
 

@@ -30,6 +30,10 @@
 ## Goal
 Paths through the atlas for learners and teachers, in English and Turkish.
 
+> **Scope change (2026-10-31).** The Turkish half of this prompt was withdrawn by the project owner. Steps 1, 2 and 4
+> shipped in PR #127; step 3 (the `js/i18n/` dictionary, `?lang=` resolution and Turkish terminology) did not, and
+> will not. F-20 is therefore recorded as **accepted** rather than closed — see ledger decision D-184.
+
 ## Steps
 1. `js/tours/` declarative manifests `{ id, title, steps: [{ view, shot?, state, formulaFocus?, text, question, expected? }] }`, validated by a pure schema. Deep links `?tour=<id>&step=<n>`; resume from localStorage (try/catch). Ship:
    - "Why gravity resists quantisation" (≈ 12 steps);
