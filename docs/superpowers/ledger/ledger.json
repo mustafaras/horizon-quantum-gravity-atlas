@@ -1756,13 +1756,15 @@
       "findings": [
         "F-20"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "feat/s31-tours",
       "pr": 127,
-      "commits": [],
+      "commits": [
+        "a1d4766"
+      ],
       "startedAt": "2026-10-31",
-      "completedAt": null,
+      "completedAt": "2026-10-31",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1227 tests, 1226 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1204 pass, 1 skip; +23 new in test/tours.test.mjs)",
@@ -3931,6 +3933,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Three tours (13/8/7 steps), a deep-linkable step runner, a localStorage resume store and printable teacher worksheets; 22 new Node tests and an 18-test Playwright spec pass; 1226 of 1227 repository tests pass with one pre-existing skip. Turkish localisation deliberately not taken (D-183), so F-20 stays open. PR #127."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #127 as a1d4766. Three guided tours, the step runner with its deep links and resume store, and the printable teacher worksheets are live. F-20 remains open: the Turkish localisation was not taken (D-183), so the tours and worksheets are English-only."
     }
   ]
 }
