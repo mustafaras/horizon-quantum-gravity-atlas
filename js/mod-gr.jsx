@@ -964,7 +964,7 @@ function ModuleGR({ go }) {
       <Section title="Mathematical formulation">
         <div className="formula-grid">
           <FormulaCard title="Einstein field equations" status="established"
-            tex="G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4}\, T_{\mu\nu}"
+            formulaId="gr-einstein-field-equations-compact"
             symbols={[
               { s: "G_{\\mu\\nu}", d: "Einstein tensor — a specific combination of curvature ($R_{\\mu\\nu}-\\tfrac12 R\\,g_{\\mu\\nu}$) that is automatically conserved." },
               { s: "g_{\\mu\\nu}", d: "Metric tensor: the dynamical field encoding distances, durations, and causal structure." },
@@ -974,7 +974,7 @@ function ModuleGR({ go }) {
             meaning="Ten coupled nonlinear equations stating: geometry (left) is determined by energy-momentum content (right). Matter tells spacetime how to curve; spacetime tells matter how to move."
             limits="Classical field equations. They predict singularities (Penrose–Hawking theorems) where the description must fail — a primary motivation for quantum gravity."></FormulaCard>
           <FormulaCard title="Geodesic equation" status="established"
-            tex="\frac{d^2 x^\mu}{d\tau^2} + \Gamma^{\mu}_{\alpha\beta}\,\frac{dx^\alpha}{d\tau}\frac{dx^\beta}{d\tau} = 0"
+            formulaId="gr-geodesic-spaced"
             symbols={[
               { s: "x^\\mu(\\tau)", d: "Worldline of the freely falling body, parameterized by proper time $\\tau$." },
               { s: "\\Gamma^{\\mu}_{\\alpha\\beta}", d: "Christoffel symbols — derivatives of the metric playing the role the 'gravitational field' plays in Newtonian language." },
@@ -982,7 +982,7 @@ function ModuleGR({ go }) {
             meaning="The equation of motion for free fall: the curve of extremal proper time. No mass of the test body appears — the equivalence principle is built in."
             limits="Valid for test bodies whose own gravity is negligible; extended or self-gravitating bodies require corrections."></FormulaCard>
           <FormulaCard title="Einstein–Hilbert action" status="established"
-            tex="S_{EH} = \frac{c^4}{16\pi G} \int R\, \sqrt{-g}\; d^4x"
+            formulaId="gr-einstein-hilbert-action"
             symbols={[
               { s: "R", d: "Ricci curvature scalar — the simplest invariant measure of curvature." },
               { s: "\\sqrt{-g}\\,d^4x", d: "Invariant spacetime volume element." },

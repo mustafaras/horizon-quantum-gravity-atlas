@@ -54,7 +54,7 @@ function ModuleRGStage3({ go }) {
       <Section title="Mathematical formulation">
         <div className="formula-grid">
           <FormulaCard title="Covariant derivative" status="established"
-            tex="D_\mu = \partial_\mu - i g\, A_\mu^a T^a"
+            formulaId="gauge-covariant-derivative"
             symbols={[
               { s: "A_\\mu^a", d: "Gauge field components, one per group generator." },
               { s: "T^a", d: "Generators acting in the matter field representation." },
@@ -63,7 +63,7 @@ function ModuleRGStage3({ go }) {
             meaning="Replacing the ordinary derivative by a covariant derivative restores local gauge covariance and fixes the form of matter–gauge interactions."
             limits="Shown for one group factor; quantization also requires gauge fixing and ghost structure."></FormulaCard>
           <FormulaCard title="QCD beta function · one loop" status="effective"
-            tex="\beta(g_s)=-\frac{b_0}{16\pi^2}g_s^3+\mathcal{O}(g_s^5),\qquad b_0=11-\frac{2}{3}n_f"
+            formulaId="qcd-beta-one-loop"
             symbols={[
               { s: "\\mu", d: "Renormalization scale; $t=\\ln\\mu$ increases toward the ultraviolet." },
               { s: "n_f", d: "Number of active quark flavours in the one-loop SU(3) coefficient." },
@@ -71,7 +71,7 @@ function ModuleRGStage3({ go }) {
             meaning="For $n_f<16.5$, $b_0$ is positive and the QCD coupling decreases toward high scales."
             limits="Thresholds and higher loops are omitted. The one-loop curve is not valid in the infrared strong-coupling regime."></FormulaCard>
           <FormulaCard title="QED convention · one loop" status="effective"
-            tex="\beta(e)=\frac{n_f e^3}{12\pi^2},\qquad \alpha=\frac{e^2}{4\pi}"
+            formulaId="qed-beta-one-loop"
             symbols={[
               { s: "n_f", d: "Active unit-charge Dirac fermions in the simplified displayed convention." },
               { s: "\\alpha", d: "Dimensionless coupling associated with the displayed gauge coupling e." },
@@ -79,7 +79,7 @@ function ModuleRGStage3({ go }) {
             meaning="Vacuum polarization screens electric charge, so the one-loop QED coupling grows toward the ultraviolet."
             limits="Unequal charges and thresholds are omitted. The formal Landau pole is an extrapolation, not an observation."></FormulaCard>
           <FormulaCard title="Fixed-point linearization" status="effective"
-            tex="\beta(g_*)=0,\qquad \beta(g)\simeq\beta'(g_*)(g-g_*)"
+            formulaId="rg-fixed-point-linearization"
             symbols={[
               { s: "\\beta'(g_*)<0", d: "UV-attractive for $t=\\ln\\mu$ increasing toward the ultraviolet." },
               { s: "\\beta'(g_*)>0", d: "IR-attractive because trajectories approach the point as t decreases." },

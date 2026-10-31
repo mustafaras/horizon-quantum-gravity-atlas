@@ -548,7 +548,7 @@ function ModuleSM({ go }) {
       <Section title="Mathematical formulation">
         <div className="formula-grid">
           <FormulaCard title="Standard Model gauge group" status="established"
-            tex="G_{\mathrm{SM}} = SU(3)_C \times SU(2)_L \times U(1)_Y"
+            formulaId="sm-gauge-group"
             symbols={[
               { s: "SU(3)_C", d: "Color symmetry of the strong interaction; acts on quark color triplets via eight gluons." },
               { s: "SU(2)_L", d: "Weak isospin; acts only on left-handed fermion doublets (parity violation)." },
@@ -557,7 +557,7 @@ function ModuleSM({ go }) {
             meaning="The full symmetry group of the Standard Model Lagrangian. Every interaction (other than gravity) follows from gauging these three factors."
             limits="Gravity is absent. Neutrino masses require additional structure. Why this group, with these representations and three generations, is unexplained."></FormulaCard>
           <FormulaCard title="Higgs potential" status="established"
-            tex="V(\phi) = \mu^2\,\phi^\dagger\phi + \lambda\,(\phi^\dagger\phi)^2"
+            formulaId="higgs-potential-card"
             symbols={[
               { s: "\\phi", d: "Complex SU(2) doublet scalar field (four real components)." },
               { s: "\\mu^2", d: "Mass-squared parameter; $\\mu^2<0$ destabilizes the symmetric vacuum." },
@@ -566,7 +566,7 @@ function ModuleSM({ go }) {
             meaning="With $\mu^2<0$ the minimum sits at $|\phi|^2=-\mu^2/2\lambda\equiv v^2/2$. Three components become longitudinal modes of $W^\pm$ and $Z$; the fourth is the 125 GeV Higgs boson."
             limits="Why $\mu^2$ is small compared to the Planck scale (the hierarchy problem) has no accepted explanation."></FormulaCard>
           <FormulaCard title="Lagrangian structure (schematic)" status="established"
-            tex="\mathcal{L} = -\tfrac{1}{4}F_{\mu\nu}^a F^{a\,\mu\nu} + i\bar\psi\,\gamma^\mu D_\mu \psi + |D_\mu\phi|^2 - V(\phi) - \left(\bar\psi_L\, Y\, \phi\, \psi_R + \mathrm{h.c.}\right)"
+            formulaId="sm-lagrangian"
             symbols={[
               { s: "F_{\\mu\\nu}^a", d: "Field strength tensors of the three gauge sectors (kinetic terms and self-interactions)." },
               { s: "\\bar\\psi\\,\\gamma^\\mu D_\\mu\\psi", d: "Fermion kinetic terms; the covariant derivative D encodes all gauge interactions." },

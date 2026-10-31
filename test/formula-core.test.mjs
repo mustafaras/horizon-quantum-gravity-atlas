@@ -287,7 +287,8 @@ test("library formulas equal the existing physics.mjs implementations to 1e-12",
   close(L.kerrOuterHorizon.evaluate({ M: 1, a: 0.9 }), physics.kerrGeometry(0.9).rPlus, 1e-12);
 });
 
-test("every library formula is dimensionally consistent, documented and GPU safe in geometric units", () => {
+test("every library formula that computes a quantity is dimensionally consistent, documented and GPU safe", () => {
+  // The quantitative definitions: each declares the dimensions `inferDimensions` derives from its expression.
   const dims = {
     schwarzschildRadius: { L: 1 }, hawkingTemperature: { Th: 1 }, bekensteinHawkingEntropy: { M: 1, L: 2, T: -2, Th: -1 },
     kerrOuterHorizon: { L: 1 }, photonSphere: { L: 1 }, criticalImpact: { L: 1 }, planckLength: { L: 1 },
@@ -296,14 +297,32 @@ test("every library formula is dimensionally consistent, documented and GPU safe
     casimirPlatesPressure: { M: 1, L: -1, T: -2 }, ewVectorCoupling: {}, ewPoleAsymmetry: {}, gaugeRunningOneLoop: {}, asBetaG: {}, asBetaLambda: {},
     penroseTortoise: { L: 1 }, penroseKruskalU: {}, penroseKruskalV: {}, penroseCompactT: {}, penroseCompactR: {},
   };
-  assert.deepEqual(Object.keys(library).sort(), Object.keys(dims).sort());
-  for (const [name, f] of Object.entries(library)) {
-    assert.deepEqual({ ...f.dims }, { L: 0, M: 0, T: 0, Th: 0, ...dims[name] }, name);
+  for (const [name, expected] of Object.entries(dims)) {
+    const f = library[name];
+    assert.ok(f, `${name} is missing from the library`);
+    assert.deepEqual({ ...f.dims }, { L: 0, M: 0, T: 0, Th: 0, ...expected }, name);
     assert.ok(f.termIds.length >= 1, `${name} exposes a term`);
     const report = f.gpuSafe();
     assert.ok(report.ok, `${name}: float32 error ${report.maxRelError} at ${JSON.stringify(report.worst)}`);
     assert.equal(report.skipped, 0, name);
   }
+});
+
+test("every library definition declares a unit and dimensions for every symbol", () => {
+  // S30's structural equations are relations, not quantities: their two sides have no single unit, so the relation is
+  // dimensionless by construction and the physics lives on the symbols. This asserts the part that is checkable — that
+  // every symbol says what it measures — for every definition in the library, quantitative or not.
+  const offenders = [];
+  for (const [name, f] of Object.entries(library)) {
+    assert.ok(typeof f.output.tex === "string", `${name}: output.tex is a string, possibly empty`);
+    assert.ok(typeof f.output.unit === "string" && f.output.unit !== "", `${name}: output declares a unit`);
+    for (const [symbol, decl] of Object.entries(f.symbols)) {
+      if (typeof decl.unit !== "string" || decl.unit === "") offenders.push(`${name}.${symbol}: no unit`);
+      if (!decl.dims || typeof decl.dims !== "object") offenders.push(`${name}.${symbol}: no dimensions`);
+      if (typeof decl.tex !== "string" || decl.tex === "") offenders.push(`${name}.${symbol}: no TeX`);
+    }
+  }
+  assert.deepEqual(offenders, []);
 });
 
 test("the one-loop gauge-running formula gives the Planck-scale couplings of the plan and exposes its four terms", () => {

@@ -164,7 +164,11 @@ function FormulaCard({ title, tex, status, symbols = [], meaning, limits, formul
   // Formula Lens (S10): with a formulaId the equation is the Formula Core TeX (its \htmlData terms are focusable and
   // drive the scene through the ConceptBus); `texAfter` appends TeX the formula does not hold. Without it nothing changes.
   const formula = formulaId ? (window.QGA_FORMULA?.lens.formula(formulaId) ?? null) : null;
-  const cardTex = formula ? formula.output.tex + " = " + formula.tex + (texAfter || "") : tex;
+  // A definition whose output.tex is empty states a relation with no subject (a gauge group, an operator); it renders as
+  // the expression alone, not as " = <equation>".
+  const cardTex = formula
+    ? (formula.output.tex ? formula.output.tex + " = " : "") + formula.tex + (texAfter || "")
+    : tex;
   useEffect(() => {
     if (!formula || !eqRef.current) return undefined;
     return window.QGA_LINKING.attachFormulaTerms({ container: eqRef.current, formula, onReadout: setTermReadout });

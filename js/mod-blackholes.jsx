@@ -1038,7 +1038,7 @@ function ModuleBH({ go }) {
             meaning="The point of no return. Within $r_s$, all future-directed paths point inward; escape would require exceeding the speed of light."
             limits="Idealized static, spherically symmetric solution; astrophysical black holes rotate (Kerr metric)."></FormulaCard>
           <FormulaCard title="Hawking temperature" status="established"
-            tex="T_H = \frac{\hbar c^3}{8\pi G M k_B}"
+            formulaId="bh-hawking-temperature"
             symbols={[
               { s: "T_H", d: "Temperature of the thermal radiation seen by a distant observer." },
               { s: "M^{-1}", d: "Inverse mass dependence: small black holes are hot, large ones are cold — hence negative specific heat." },
@@ -1046,13 +1046,19 @@ function ModuleBH({ go }) {
             meaning="Derived from quantum field theory on the curved Schwarzschild background — a semiclassical result combining ħ, G, and c, widely regarded as the most trustworthy landmark in quantum gravity."
             limits="A theoretical prediction: for astrophysical masses $T_H$ is unobservably small, and Hawking radiation has never been directly detected."></FormulaCard>
           <FormulaCard title="Bekenstein–Hawking entropy" status="established"
-            tex="S_{BH} = \frac{k_B c^3 A}{4 G \hbar} = k_B \frac{A}{4\, l_P^2}"
+            formulaId="bh-entropy-spaced"
             symbols={[
               { s: "A", d: "Horizon area, $A=4\\pi r_s^2$ for Schwarzschild." },
               { s: "A / 4 l_P^2", d: "One quarter of the horizon area counted in Planck-area units — about 10⁷⁷ for a solar-mass black hole." },
             ]}
             meaning="Entropy proportional to area, not volume. Taken at face value, the information capacity of a region is bounded by its surface — the seed of the holographic principle."
             limits="The microstates being counted remain unidentified in general; candidate countings exist in string theory and LQG for special cases."></FormulaCard>
+        </div>
+        {/* S30: the escape-velocity argument beside the exact null-surface one. The heuristic step is labelled in the stepper,
+            so a reader sees that the coincidence is a coincidence. */}
+        <div className="derivation-grid">
+          <DerivationStepper derivationId="derivation-schwarzschild-radius"></DerivationStepper>
+          <DerivationStepper derivationId="derivation-page-time"></DerivationStepper>
         </div>
       </Section>
 
@@ -1087,6 +1093,10 @@ function ModuleBH({ go }) {
           Event Horizon Telescope has actually measured.
         </p>
         <KerrShadowLab></KerrShadowLab>
+        {/* S30: √27 M from the spherical photon orbit, stepped from the effective potential to the silhouette's edge. */}
+        <div className="derivation-grid">
+          <DerivationStepper derivationId="derivation-shadow-radius"></DerivationStepper>
+        </div>
       </Section>
 
       <Section title="Holography: boundary and bulk">

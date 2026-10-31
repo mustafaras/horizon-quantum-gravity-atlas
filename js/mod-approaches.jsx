@@ -400,6 +400,11 @@ function ModuleApproaches({ go }) {
           function. The ground state is a tachyon, which is why this spectrum is a lesson and not a theory of nature.
         </p>
         <StringSpectrumLab></StringSpectrumLab>
+        {/* S30: 26 dimensions, from the ζ(−1) = −1/12 shift the lab above counts. Every number is read from
+            js/science/string-spectrum.mjs, so the derivation moves when the count does. */}
+        <div className="derivation-grid">
+          <DerivationStepper derivationId="derivation-critical-dimension"></DerivationStepper>
+        </div>
       </Section>
 
       <Section title="The comparator">
@@ -409,7 +414,7 @@ function ModuleApproaches({ go }) {
       <Section title="Key equations across the programs">
         <div className="formula-grid">
           <FormulaCard title="Polyakov action (string theory)" status="conjectural"
-            tex="S_P = -\frac{T}{2}\int d^2\sigma\, \sqrt{-h}\, h^{ab}\, \partial_a X^\mu \partial_b X_\mu"
+            formulaId="qg-polyakov-action"
             symbols={[
               { s: "X^\\mu(\\sigma,\\tau)", d: "Embedding of the string worldsheet into spacetime." },
               { s: "h_{ab}", d: "Independent worldsheet metric; integrating it out recovers the Nambu–Goto area action." },
@@ -418,7 +423,7 @@ function ModuleApproaches({ go }) {
             meaning="The starting point of string perturbation theory: a 2D field theory whose consistency conditions (conformal invariance) reproduce Einstein's equations for the background — gravity emerges from the worldsheet."
             limits="Defines the theory only perturbatively, around a chosen background. Conjectural as a description of nature."></FormulaCard>
           <FormulaCard title="Wheeler–DeWitt equation (canonical QG)" status="conjectural"
-            tex="\hat{\mathcal{H}}\, \Psi[h_{ij}] = 0"
+            formulaId="qg-wheeler-dewitt"
             symbols={[
               { s: "\\Psi[h_{ij}]", d: "Wave functional over 3-geometries — the 'wave function of the universe'." },
               { s: "\\hat{\\mathcal{H}}", d: "Hamiltonian constraint operator of quantized general relativity." },
@@ -427,7 +432,7 @@ function ModuleApproaches({ go }) {
             meaning="The formal core of canonical quantum gravity (DeWitt 1967), ancestral to loop quantum gravity. Solving it — even defining it precisely — remains the central open task of the canonical program."
             limits="Formally divergent as written; LQG's spin-network representation is one attempt to make it well-defined."></FormulaCard>
           <FormulaCard title="Bekenstein–Hawking entropy" status="established"
-            tex="S_{BH} = \frac{k_B\, c^3 A}{4 G \hbar}"
+            formulaId="bh-entropy-plain"
             symbols={[
               { s: "A", d: "Area of the event horizon." },
               { s: "k_B", d: "Boltzmann constant — this is genuine thermodynamic entropy." },
@@ -436,7 +441,7 @@ function ModuleApproaches({ go }) {
             meaning="Entropy scaling with area rather than volume is the single most influential clue in the field — every serious approach is judged by whether it can derive this formula microscopically. String theory (Strominger–Vafa) and LQG both claim derivations in special cases."
             limits="The formula itself is semiclassical; a direct measurement of black hole thermodynamics remains far beyond experiment."></FormulaCard>
           <FormulaCard title="AdS/CFT dictionary (schematic)" status="conjectural"
-            tex="Z_{\mathrm{grav}}\big[\phi \to J \big]_{\mathrm{AdS}} \;=\; \Big\langle e^{\int J\, \mathcal{O}}\Big\rangle_{\mathrm{CFT}}"
+            formulaId="bh-ads-cft"
             symbols={[
               { s: "Z_{\\mathrm{grav}}", d: "Gravitational partition function in the anti-de Sitter bulk, with boundary condition $J$ for the field $\\phi$." },
               { s: "\\mathcal{O}", d: "Dual operator in the boundary conformal field theory." },

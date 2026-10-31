@@ -89,6 +89,47 @@ sub, sup { font-size: max(10px, 0.8em); }
 .fc-lens-readout { min-height: 1.9em; padding: 0 18px 12px 18px; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
 .fc-lens-readout strong { color: var(--head); font-weight: 600; }
 
+/* ---------- Derivation stepper (S30) ---------- */
+/* The stepper draws one step at a time: its equation, the line saying why it follows, and the heuristic label when the
+   step is an argument by analogy. Only the step marker moves, so a reader never waits for an animation to read. */
+.derivation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-top: 16px; }
+.derivation-stepper {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 18px 12px 18px; display: flex; flex-direction: column; gap: 10px; position: relative;
+}
+.derivation-stepper:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.ds-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ds-title { font-family: var(--font-head); font-size: var(--step-0); font-weight: 600; color: var(--head); }
+.ds-position { font-family: var(--font-mono); font-size: var(--step--1); color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.ds-eq { display: flex; justify-content: safe center; padding: 10px 4px; overflow-x: auto; }
+.ds-eq .katex { font-size: 1.12em; color: var(--ink); }
+.ds-heuristic { display: flex; align-items: flex-start; gap: 8px; font-size: var(--step--1); color: var(--ink-dim); margin: 0; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--rule); background: var(--surface-glass-thin); }
+.ds-heuristic .badge { flex: none; }
+.ds-justification { font-size: var(--step--1); color: var(--ink-dim); margin: 0; min-height: 2.4em; }
+.ds-controls { display: flex; align-items: center; gap: 10px; }
+.ds-step {
+  min-width: 44px; min-height: 44px; font-family: var(--font-mono); font-size: var(--step-1);
+  background: var(--surface-glass-thin); color: var(--ink); border: 1px solid var(--rule-strong);
+  border-radius: 8px; cursor: pointer;
+}
+.ds-step:hover:not(:disabled) { border-color: var(--accent); color: var(--ink-strong); }
+.ds-step:disabled { opacity: 0.4; cursor: default; }
+.ds-step:focus-visible, .ds-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ds-track { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; }
+.ds-dot {
+  width: 44px; height: 44px; padding: 0; border: none; background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ds-dot::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--rule-strong); }
+.ds-dot.is-current::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ds-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.derivation-stepper.is-compact .ds-justification { min-height: 0; }
+.derivation-missing { font-size: var(--step--1); color: var(--ink-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-dot::before { transition: none; }
+}
+
 /* ---------- Misconception cards ---------- */
 .misconception {
   border: 1px solid oklch(0.8 0.1 85 / 0.35); border-radius: var(--radius);
