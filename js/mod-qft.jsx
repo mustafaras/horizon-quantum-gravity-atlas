@@ -401,6 +401,11 @@ function ModuleQFT({ go }) {
           missing from the gap is measurable: this is the vacuum effect that experiments have seen, drawn mode by mode.
         </p>
         <CasimirLab></CasimirLab>
+        {/* S30: the regularised mode sum, with the cancellation as a step of its own. A stepper that jumped from the
+            divergent sum to −πħc/24a would be teaching a subtraction nobody performed. */}
+        <div className="derivation-grid">
+          <DerivationStepper derivationId="derivation-casimir-energy"></DerivationStepper>
+        </div>
       </Section>
 
       <Section title="Amplitudes and diagrams">
@@ -430,7 +435,7 @@ function ModuleQFT({ go }) {
       <Section title="Mathematical formulation">
         <div className="formula-grid">
           <FormulaCard title="Path integral amplitude" status="established"
-          tex="\langle \phi_f | e^{-iHt/\hbar} | \phi_i \rangle = \int \mathcal{D}\phi \; e^{\,iS[\phi]/\hbar}"
+            formulaId="qft-path-integral-amplitude"
           symbols={[
           { s: "\\mathcal{D}\\phi", d: "Functional integration over all field configurations connecting initial and final states." },
           { s: "S[\\phi]", d: "Classical action — the time integral of the Lagrangian, evaluated on each configuration." },
@@ -439,7 +444,7 @@ function ModuleQFT({ go }) {
           meaning="Feynman's formulation: the quantum amplitude is a coherent sum over every possible history, each weighted by a phase. Interference between histories produces all quantum phenomena."
           limits="The measure $\mathcal{D}\phi$ is defined rigorously only in special cases; in practice the integral is computed perturbatively or on a lattice."></FormulaCard>
           <FormulaCard title="Klein–Gordon equation" status="established"
-          tex="\left(\Box + \frac{m^2 c^2}{\hbar^2}\right)\phi = 0, \qquad \Box \equiv \frac{1}{c^2}\frac{\partial^2}{\partial t^2} - \nabla^2"
+            formulaId="qft-klein-gordon"
           symbols={[
           { s: "\\phi", d: "Scalar field amplitude." },
           { s: "\\Box", d: "d'Alembert wave operator — the relativistic generalization of the Laplacian." },
@@ -448,7 +453,7 @@ function ModuleQFT({ go }) {
           meaning="The free relativistic wave equation for spin-0 fields. The field laboratory above integrates exactly this equation on a lattice."
           limits="Free (non-interacting) field only. As a single-particle wave equation it fails (negative probabilities); it is consistent only as a field equation."></FormulaCard>
           <FormulaCard title="Dirac equation" status="established"
-          tex="\left(i\gamma^\mu \partial_\mu - \frac{mc}{\hbar}\right)\psi = 0"
+            formulaId="qft-dirac"
           symbols={[
           { s: "\\psi", d: "Four-component spinor field describing spin-½ particles." },
           { s: "\\gamma^\\mu", d: "Dirac matrices satisfying $\\{\\gamma^\\mu,\\gamma^\\nu\\}=2\\eta^{\\mu\\nu}$ — the algebra that linearizes the relativistic energy relation." },
@@ -457,7 +462,7 @@ function ModuleQFT({ go }) {
           meaning="The relativistic equation for electrons and all matter fermions. Spin-½ and the existence of antimatter are consequences, not assumptions."
           limits="Free-field form shown; interactions enter by replacing $\partial$ with the gauge-covariant derivative $D$."></FormulaCard>
           <FormulaCard title="Feynman propagator" status="established"
-          tex="\tilde{G}_F(p) = \frac{i}{p^2 - m^2 + i\epsilon}"
+            formulaId="qft-feynman-propagator"
           symbols={[
           { s: "p", d: "Four-momentum flowing through the internal line ($p^2=E^2-|\\vec p|^2$ in natural units)." },
           { s: "m", d: "Mass of the exchanged field's quanta; the pole at $p^2=m^2$ corresponds to a real particle." },
@@ -466,7 +471,7 @@ function ModuleQFT({ go }) {
           meaning="The amplitude for a field disturbance to propagate between two vertices. Internal lines in the diagram builder carry exactly this factor, integrated over off-shell momenta."
           limits="Internal momenta need not satisfy $p^2=m^2$ — which is why 'virtual particles' are calculational terms rather than observed objects."></FormulaCard>
           <FormulaCard title="Mandelstam variables" status="established"
-          tex="s + t + u = \sum_i m_i^2 c^4, \quad s = (p_1+p_2)^2,\ t = (p_1-p_3)^2"
+            formulaId="qft-mandelstam"
           symbols={[
           { s: "s", d: "Centre-of-mass energy squared — the invariant that sets the energy scale of a collision; the s-channel propagator carries it." },
           { s: "t", d: "Momentum transfer squared — the invariant probed in t-channel exchange; small t means forward (glancing) scattering." },
@@ -475,7 +480,7 @@ function ModuleQFT({ go }) {
           meaning="Lorentz-invariant combinations of the external momenta. Every amplitude in the lab above is a function of s, t, and u — which channel dominates is exactly which template you selected."
           limits="Defined for 2 → 2 kinematics; multi-particle final states need a larger set of invariants."></FormulaCard>
           <FormulaCard title="Fermi's golden rule" status="established"
-          tex="d\Gamma = \frac{2\pi}{\hbar}\,|\mathcal{M}|^2\,d\rho_f"
+            formulaId="qft-fermi-golden-rule"
           symbols={[
           { s: "\\Gamma", d: "Transition rate (decay width, or per-collision probability) — what experiments actually measure." },
           { s: "|\\mathcal{M}|^2", d: "Squared matrix element from the diagrams: the modulus-squared coherent sum of all contributing amplitudes." },

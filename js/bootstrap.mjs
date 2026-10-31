@@ -225,8 +225,15 @@ async function bootstrap() {
     const { compileTSL } = await import("./formula/to-tsl.mjs");
     const { toTeX, KATEX_OPTIONS } = await import("./formula/to-tex.mjs");
     const { lens: formulaLens } = await import("./formula/lens.mjs");
+    // Derivations (S30): the six arguments the stepper walks, and the pure state machine it draws.
+    const { derivations } = await import("./formula/library/derivations.mjs");
+    const stepper = await import("./formula/stepper.mjs");
+    const derivationById = Object.freeze(Object.fromEntries(Object.values(derivations).map((d) => [d.id, d])));
     Object.defineProperty(window, "QGA_FORMULA", {
-      value: Object.freeze({ library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS, lens: formulaLens }),
+      value: Object.freeze({
+        library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS, lens: formulaLens,
+        derivations, stepper, derivation: (id) => derivationById[id] ?? null,
+      }),
       configurable: true,
     });
 

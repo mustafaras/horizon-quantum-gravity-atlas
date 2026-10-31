@@ -1705,17 +1705,41 @@
         "S29"
       ],
       "findings": [],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "copilot/s30-living-equations",
+      "pr": 125,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-30",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "node --test test/*.test.mjs — 1205 tests, 1204 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1157 pass, 1 skip; +47 new)",
+          "node --test test/formula-cards.test.mjs — 10 pass: every card names a definition, no card keeps a dead tex prop, all 48 migrated cards reproduce their pre-migration TeX character for character, all 48 render the same KaTeX glyph tree, and the comparison is proved sensitive to an exponent, a denominator, a symbol, a term and an equals sign while insensitive to a thin space",
+          "node --test test/derivations.test.mjs — 20 pass: step validation, the closed-form check on a domain, a deliberately broken derivation failing it, KaTeX on every step, and the six derivations' numbers against the science modules",
+          "node --test test/stepper.test.mjs — 8 pass: clamping without wrapping, the ends that disable the buttons, reduced motion reporting 0 ms and still stepping, the keyboard map leaving Tab alone, and the heuristic label in the step's accessible name",
+          "node --test test/formula-audit.test.mjs — 8 pass: the audit passes here, reports JSON, and fails on each of three broken trees it builds in a temporary directory",
+          "npm run validate — repository valid · formula audit passed: 65 cards, 77 definitions with units and dimensions, 6 derivations that reach their closed forms · provenance 89 entries · cover index matches 8 sidecars",
+          "npm run perf:audit — exit 0"
+        ],
+        "screenshots": [
+          "docs/screenshots/s30-derivation-schwarzschild.png",
+          "docs/screenshots/s30-derivation-casimir.png",
+          "docs/screenshots/s30-derivation-planck.png",
+          "docs/screenshots/s30-whitepaper-spine.png"
+        ],
+        "measurements": [
+          "65 FormulaCards, 65 with a formulaId, 0 carrying a tex prop: the baseline had 17 with an id and 48 relying on tex, so 48 cards moved and none was left behind",
+          "77 definitions, 318 symbols, 113 addressable terms: every symbol declares a unit and dimensions and the audit checks all 318",
+          "48 cards reproduce their pre-migration TeX character for character after the \\htmlData wrappers are removed, and 48 render the same KaTeX glyph tree — the screenshot comparison the contract asked for, replaced by an assertion that fails on a changed exponent, denominator, symbol or sign",
+          "The whitepaper draws 24 cards in 7 spine groups, all 24 lens-enabled, with every one of their terms focusable (role=button, tabindex=0) and a readout that clears on Escape",
+          "The Schwarzschild stepper labels exactly 1 of its 4 steps heuristic; the arithmetic that makes the escape-velocity route land on 2GM/c² is shown as its own step rather than asserted",
+          "The Casimir derivation gives the cancellation its own step between the divergent sum and the −πħc/24a limit, and its limit agrees with js/science/casimir.mjs to 1e-12 at a 1 μm gap",
+          "Page time 0.5381 τ computed from β = 1.4847 imported from js/science/evaporation.mjs; critical dimension 26 from ζ(−1) imported from js/science/string-spectrum.mjs; √27 from js/science/kerr-shadow.mjs",
+          "Browser run: 0 console errors and 0 page errors across the overview, QFT, Planck, black-hole, approaches and whitepaper views; the stepper steps with ← / → / Home / End, snaps at 0 ms under reduced motion, and keeps stepping"
+        ],
+        "decisions": [],
+        "notes": "Every formula card now resolves to a Formula Core definition, six derivations ship with the stepper, and the formula audit is part of npm run validate."
       },
       "blockers": [],
       "notes": ""
@@ -3105,6 +3129,48 @@
       "prompt": "S29",
       "decision": "Describe every cover with its measured pixel width and draw it at that width instead of stretching it to the 1000 px band.",
       "rationale": "The committed covers are 794-998 px wide because each frames a figure and stops where the figure stops, but the header claimed 1200w and 2400w and the CSS forced width:100% inside an aspect-ratio box. Measured in the browser, the Planck cover was a 950 px file drawn at 998 px and the phone chose the 794 px thumbnail for the same slot. scripts/render-covers.mjs now reads the PNG header back after the screenshot, scripts/build-cover-index.mjs publishes those numbers to js/science/data/cover-index.mjs, and npm run validate --checks the index so it cannot go stale."
+    },
+    {
+      "id": "D-177",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "An identity is a `defineFormula` whose expression has no free symbols, not a new `defineIdentity` kind.",
+      "rationale": "Step 1 of the contract asks for a `defineIdentity` variant for the equations that do not evaluate. Measured against the shipped core, one is unnecessary: `domain` defaults to `{}`, so a formula with no free symbol validates cleanly, evaluates to its own value, and typesets through the same printer — verified in Node before writing anything. A second definition kind would have forked lens.mjs, to-tex.mjs and to-tsl.mjs for no gain."
+    },
+    {
+      "id": "D-178",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "The 48 migrated cards are checked against a committed pre-migration reference of their TeX, not against screenshots.",
+      "rationale": "js/core.jsx discards the `tex` prop whenever a `formulaId` resolves, so a card pointed at the wrong formula renders a correct-looking wrong equation and no existing test would notice. Step 1 asks for a screenshot comparison; instead test/formula-cards.test.mjs compares each definition's rendered KaTeX glyph tree, and its composed TeX character for character, against the string the card carried before this prompt (test/fixtures/formula-cards-before.json). The comparison is proved sensitive: a changed exponent, denominator, symbol or equals sign fails it, while a changed thin space does not."
+    },
+    {
+      "id": "D-179",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "A structural equation is carried as TeX split at the printer's own separators, rather than rebuilt as an expression tree.",
+      "rationale": "A gauge group, an action and an operator are TeX a physicist wrote, not trees: `\\left[`, `\\langle` and `\\tfrac` have no AST operator in to-tex.mjs, so rebuilding them would change the rendering. js/formula/library/equations.mjs splits the card's own string at the first top-level ` = ` and at each top-level ` + ` (the separator `add()` prints), which leaves the composed TeX byte-identical while making every piece a focusable `\\htmlData` term. The splitter tracks braces, `\\left`/`\\right`, plain parentheses and brackets; before it did, it cut `(\\Box + m^2)\\phi = 0` and the Yukawa group in half."
+    },
+    {
+      "id": "D-180",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "A relation carries no output dimension; the physics is declared on its symbols.",
+      "rationale": "The contract asks that no symbol lack units and dimensions, and every symbol of all 77 definitions now declares both. It does not ask that `T_H = ħc³/(8πGMk_B)` declare the dimension of a temperature: the relation is a proposition, and forcing `dims: { Th: 1 }` on it would make defineFormula reject the definition, because its expression is dimensionless by construction. The audit enforces the part that is checkable."
+    },
+    {
+      "id": "D-181",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "Six derivations ship, each importing its numbers from the tested science module rather than restating them; two label their traps as step data.",
+      "rationale": "Step 4 names six derivations and step 1 of the plan is the source of every number. derivation-planck-length, -schwarzschild-radius, -critical-dimension, -shadow-radius, -casimir-energy and -page-time import ℓ_P's constants, √27, ζ(−1), β = 1.4847 and the 1+1D sum's limit from js/science and js/formula/library. The escape-velocity step of the Schwarzschild derivation carries `heuristic`, which the stepper renders as a badge and includes in the step's accessible name, so the coincidence that 2GM/c² is also the exact answer is stated rather than hidden. The Casimir derivation gives the cancellation its own step, because a stepper that jumps from a divergent sum to −πħc/24a teaches a subtraction nobody performed."
+    },
+    {
+      "id": "D-182",
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "decision": "The audit script was written last, after the migrations, and it enforces what was actually done.",
+      "rationale": "Step 6 lists the audit after the migration. Written first it would have encoded a guess about what the tree contains; written last it encodes the three properties the work established — every card names a definition, every symbol declares a unit and dimensions, every derivation reaches its own closed form — and it runs at `npm run validate`, between the repository checks and the provenance sweep."
     }
   ],
   "log": [
@@ -3800,6 +3866,20 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #119 as 76d4c9c and the Planck cover correction as f8bbf86. Chapter covers, the SVG atlas map and the eight chapter status bars are live. The cover renderer now refuses a target narrower than 900 px rather than upscaling it, which replaced the 389 px source behind the first Planck band."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on copilot/s30-living-equations from main at 6ab87d2. Baseline measured before any change: node --test test/*.test.mjs 1157 pass, 0 fail, 1 skipped; npm run validate passes with 89 provenance entries and a matching cover index."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "48 cards migrated to formulaId against a committed pre-migration reference; js/formula/derivation.mjs and stepper.mjs shipped with the six derivations; scripts/audit-formulas.mjs wired into npm run validate. 1204 tests pass, 0 fail; PR #125."
     }
   ]
 }

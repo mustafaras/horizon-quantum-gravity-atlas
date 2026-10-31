@@ -1,7 +1,7 @@
 {
   "name": "horizon-quantum-gravity-atlas",
   "version": "1.1.0",
-  "description": "An interactive, scientifically rigorous atlas of quantum gravity — live simulations and cinematic 3D scenes from the Standard Model to the Planck frontier.",
+  "description": "An interactive, scientifically rigorous atlas of quantum gravity \u2014 live simulations and cinematic 3D scenes from the Standard Model to the Planck frontier.",
   "homepage": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "dev": "npx --yes serve .",
     "serve": "python3 -m http.server 8000",
     "test": "node --test test/*.test.mjs",
-    "validate": "node scripts/validate-repo.mjs && node scripts/audit-provenance.mjs && node scripts/build-cover-index.mjs --check",
+    "validate": "node scripts/validate-repo.mjs && node scripts/audit-formulas.mjs && node scripts/audit-provenance.mjs && node scripts/build-cover-index.mjs --check",
     "check": "npm run validate",
     "benchmark:kerr": "node scripts/benchmark-kerr.mjs",
     "perf:collect": "node scripts/perf/collect.mjs",

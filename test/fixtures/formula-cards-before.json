@@ -1,0 +1,587 @@
+[
+  {
+    "file": "js/extras.jsx",
+    "line": 1182,
+    "title": "Gauge group",
+    "tex": "SU(3)_C \\times SU(2)_L \\times U(1)_Y",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1186,
+    "title": "Electric charge",
+    "tex": "Q = T_3 + \\frac{Y}{2}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1190,
+    "title": "Covariant derivative",
+    "tex": "D_\\mu = \\partial_\\mu + i g_s G_\\mu^a T^a + i g W_\\mu^i \\tau^i + i g' Y B_\\mu",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1194,
+    "title": "Higgs potential",
+    "tex": "V(\\Phi) = \\mu^2 \\Phi^\\dagger \\Phi + \\lambda(\\Phi^\\dagger \\Phi)^2, \\qquad v = \\sqrt{-\\mu^2/\\lambda} \\approx 246\\ \\mathrm{GeV}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1204,
+    "title": "Path integral",
+    "tex": "\\mathcal{A}_{i\\to f} = \\int \\mathcal{D}\\phi\\, e^{\\,iS[\\phi]/\\hbar}",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1208,
+    "title": "Scalar action and Klein–Gordon",
+    "tex": "S = \\int d^4x\\left[\\tfrac{1}{2}\\partial_\\mu\\phi\\,\\partial^\\mu\\phi - \\tfrac{1}{2}m^2\\phi^2 - V(\\phi)\\right], \\qquad (\\Box + m^2)\\phi = 0",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1212,
+    "title": "Propagator and Mandelstam invariants",
+    "tex": "\\Delta_F(p) = \\frac{i}{p^2 - m^2 + i\\epsilon}, \\qquad s + t + u = \\sum_i m_i^2",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1216,
+    "title": "Leading cross-section",
+    "tex": "\\sigma(e^+e^- \\to \\mu^+\\mu^-) \\sim \\frac{4\\pi\\alpha^2}{3s}",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1226,
+    "title": "Yang–Mills field strength",
+    "tex": "F_{\\mu\\nu}^a = \\partial_\\mu A_\\nu^a - \\partial_\\nu A_\\mu^a + g f^{abc} A_\\mu^b A_\\nu^c",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1230,
+    "title": "One-loop beta function",
+    "tex": "\\mu\\frac{dg}{d\\mu} = \\beta(g) = -\\frac{b_0}{16\\pi^2}g^3 + \\mathcal{O}(g^5), \\qquad b_0 = 11 - \\frac{2}{3}n_f",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1234,
+    "title": "Running coupling solution",
+    "tex": "\\frac{1}{g_s^2(\\mu)} = \\frac{1}{g_s^2(\\mu_0)} + \\frac{b_0}{8\\pi^2}\\ln\\frac{\\mu}{\\mu_0}",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1238,
+    "title": "Fixed point and linearization",
+    "tex": "\\beta(g_*) = 0, \\qquad \\beta(g) \\simeq \\beta'(g_*)(g - g_*)",
+    "status": "conjectural",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1248,
+    "title": "Einstein field equations",
+    "tex": "G_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4}T_{\\mu\\nu}, \\qquad G_{\\mu\\nu} = R_{\\mu\\nu} - \\tfrac{1}{2}R g_{\\mu\\nu}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1252,
+    "title": "Geodesic equation",
+    "tex": "\\frac{d^2x^\\mu}{d\\tau^2} + \\Gamma^\\mu_{\\alpha\\beta}\\frac{dx^\\alpha}{d\\tau}\\frac{dx^\\beta}{d\\tau} = 0",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1256,
+    "title": "Minkowski interval and boost",
+    "tex": "\\Delta s^2 = -c^2\\Delta t^2 + \\Delta x^2, \\qquad \\gamma = \\frac{1}{\\sqrt{1-\\beta^2}}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1266,
+    "title": "Planck units",
+    "tex": "\\ell_P = \\sqrt{\\frac{\\hbar G}{c^3}},\\quad t_P = \\sqrt{\\frac{\\hbar G}{c^5}},\\quad m_P = \\sqrt{\\frac{\\hbar c}{G}},\\quad E_P = \\sqrt{\\frac{\\hbar c^5}{G}}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1270,
+    "title": "Heuristic obstruction",
+    "tex": "\\lambda_C \\sim r_s, \\qquad \\lambda_C = \\frac{\\hbar}{mc}, \\qquad r_s = \\frac{2Gm}{c^2}",
+    "status": "heuristic",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1274,
+    "title": "Graviton expansion and EFT tower",
+    "tex": "g_{\\mu\\nu} = \\eta_{\\mu\\nu} + \\kappa h_{\\mu\\nu}, \\qquad \\kappa^2 = 32\\pi G",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1284,
+    "title": "Bekenstein–Hawking entropy",
+    "tex": "S_{BH} = \\frac{k_B c^3 A}{4G\\hbar} = k_B\\frac{A}{4\\ell_P^2}",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1288,
+    "title": "Hawking temperature and evaporation",
+    "tex": "T_H = \\frac{\\hbar c^3}{8\\pi G M k_B}, \\qquad t_{\\mathrm{evap}} \\propto M^3",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1292,
+    "title": "Kerr horizons and surface gravity",
+    "tex": "r_\\pm = \\frac{GM}{c^2}\\left[1 \\pm \\sqrt{1-a_\\star^2}\\right], \\qquad \\kappa = \\frac{c^4}{2GM}\\frac{\\sqrt{1-a_\\star^2}}{1+\\sqrt{1-a_\\star^2}}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1296,
+    "title": "Ryu–Takayanagi formula",
+    "tex": "S(A) = \\frac{\\mathrm{Area}(\\gamma_A)}{4G_N\\hbar}",
+    "status": "conjectural",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1306,
+    "title": "Quadrupole radiated power",
+    "tex": "P = \\frac{G}{5c^5}\\left\\langle Q^{(3)}_{ij}Q^{(3)}_{ij} \\right\\rangle",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/extras.jsx",
+    "line": 1310,
+    "title": "Scale gap",
+    "tex": "E_P \\sim 10^{19}\\ \\mathrm{GeV} \\quad\\text{vs}\\quad E_{\\mathrm{LHC}} \\sim 10^{4}\\ \\mathrm{GeV}",
+    "status": "open",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/casimir-lab.jsx",
+    "line": 120,
+    "title": "Casimir pressure between ideal plates",
+    "tex": null,
+    "status": "established",
+    "formulaId": "casimir-plates-pressure",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/gravity-flow-lab.jsx",
+    "line": 141,
+    "title": "Beta function of the Newton coupling",
+    "tex": null,
+    "status": "conjectural",
+    "formulaId": "as-beta-g",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/gravity-flow-lab.jsx",
+    "line": 148,
+    "title": "Beta function of the cosmological constant",
+    "tex": null,
+    "status": "conjectural",
+    "formulaId": "as-beta-lambda",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/higgs-lab.jsx",
+    "line": 108,
+    "title": "Higgs potential",
+    "tex": null,
+    "status": "established",
+    "formulaId": "higgs-potential",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/higgs-lab.jsx",
+    "line": 115,
+    "title": "Tree-level quartic coupling",
+    "tex": null,
+    "status": "established",
+    "formulaId": "higgs-quartic-tree",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/lattice-lab.jsx",
+    "line": 116,
+    "title": "Hamiltonian density of the lattice field",
+    "tex": null,
+    "status": "established",
+    "formulaId": "qft-phi4-hamiltonian",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/lens-cards.jsx",
+    "line": 6,
+    "title": "Newtonian limit · weak-field potential",
+    "tex": null,
+    "status": "established",
+    "formulaId": "newtonian-potential",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/neutrino-lab.jsx",
+    "line": 178,
+    "title": "Two-flavour limit",
+    "tex": null,
+    "status": "established",
+    "formulaId": "two-flavour-oscillation",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/neutrino-lab.jsx",
+    "line": 187,
+    "title": "Matter potential",
+    "tex": null,
+    "status": "established",
+    "formulaId": "matter-potential",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/penrose-atlas.jsx",
+    "line": 152,
+    "title": "Tortoise coordinate",
+    "tex": null,
+    "status": "established",
+    "formulaId": "penrose-tortoise",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/penrose-atlas.jsx",
+    "line": 160,
+    "title": "Kruskal coordinates",
+    "tex": null,
+    "status": "established",
+    "formulaId": "penrose-compact-t",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/penrose-atlas.jsx",
+    "line": 168,
+    "title": "Outgoing light coordinate U",
+    "tex": null,
+    "status": "established",
+    "formulaId": "penrose-kruskal-u",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/penrose-atlas.jsx",
+    "line": 171,
+    "title": "Ingoing light coordinate V",
+    "tex": null,
+    "status": "established",
+    "formulaId": "penrose-kruskal-v",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/penrose-atlas.jsx",
+    "line": 174,
+    "title": "Compactified radial coordinate",
+    "tex": null,
+    "status": "established",
+    "formulaId": "penrose-compact-r",
+    "texAfter": null
+  },
+  {
+    "file": "js/labs/unification-lab.jsx",
+    "line": 179,
+    "title": "One-loop running of a gauge coupling",
+    "tex": null,
+    "status": "effective",
+    "formulaId": "gauge-running-one-loop",
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-approaches.jsx",
+    "line": 411,
+    "title": "Polyakov action (string theory)",
+    "tex": "S_P = -\\frac{T}{2}\\int d^2\\sigma\\, \\sqrt{-h}\\, h^{ab}\\, \\partial_a X^\\mu \\partial_b X_\\mu",
+    "status": "conjectural",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-approaches.jsx",
+    "line": 420,
+    "title": "Wheeler–DeWitt equation (canonical QG)",
+    "tex": "\\hat{\\mathcal{H}}\\, \\Psi[h_{ij}] = 0",
+    "status": "conjectural",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-approaches.jsx",
+    "line": 429,
+    "title": "Bekenstein–Hawking entropy",
+    "tex": "S_{BH} = \\frac{k_B\\, c^3 A}{4 G \\hbar}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-approaches.jsx",
+    "line": 438,
+    "title": "AdS/CFT dictionary (schematic)",
+    "tex": "Z_{\\mathrm{grav}}\\big[\\phi \\to J \\big]_{\\mathrm{AdS}} \\;=\\; \\Big\\langle e^{\\int J\\, \\mathcal{O}}\\Big\\rangle_{\\mathrm{CFT}}",
+    "status": "conjectural",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-blackholes.jsx",
+    "line": 1033,
+    "title": "Schwarzschild radius",
+    "tex": null,
+    "status": "established",
+    "formulaId": "schwarzschild-radius",
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-blackholes.jsx",
+    "line": 1040,
+    "title": "Hawking temperature",
+    "tex": "T_H = \\frac{\\hbar c^3}{8\\pi G M k_B}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-blackholes.jsx",
+    "line": 1048,
+    "title": "Bekenstein–Hawking entropy",
+    "tex": "S_{BH} = \\frac{k_B c^3 A}{4 G \\hbar} = k_B \\frac{A}{4\\, l_P^2}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-gr.jsx",
+    "line": 966,
+    "title": "Einstein field equations",
+    "tex": "G_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4}\\, T_{\\mu\\nu}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-gr.jsx",
+    "line": 976,
+    "title": "Geodesic equation",
+    "tex": "\\frac{d^2 x^\\mu}{d\\tau^2} + \\Gamma^{\\mu}_{\\alpha\\beta}\\,\\frac{dx^\\alpha}{d\\tau}\\frac{dx^\\beta}{d\\tau} = 0",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-gr.jsx",
+    "line": 984,
+    "title": "Einstein–Hilbert action",
+    "tex": "S_{EH} = \\frac{c^4}{16\\pi G} \\int R\\, \\sqrt{-g}\\; d^4x",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-planck.jsx",
+    "line": 32,
+    "title": "Planck units",
+    "tex": null,
+    "status": "established",
+    "formulaId": "planck-length",
+    "texAfter": "\\approx 1.6\\times10^{-35}\\,\\mathrm{m}, \\quad E_P = \\sqrt{\\frac{\\hbar c^5}{G}} \\approx 1.22\\times10^{19}\\,\\mathrm{GeV}"
+  },
+  {
+    "file": "js/mod-planck.jsx",
+    "line": 40,
+    "title": "Perturbative expansion of the metric",
+    "tex": "g_{\\mu\\nu} = \\eta_{\\mu\\nu} + \\kappa\\, h_{\\mu\\nu}, \\qquad \\kappa^2 = 32\\pi G",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-planck.jsx",
+    "line": 49,
+    "title": "Growth of the effective coupling",
+    "tex": "\\alpha_{\\mathrm{grav}}(E) \\sim \\frac{G E^2}{\\hbar c^5} = \\left(\\frac{E}{E_P}\\right)^{2}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 432,
+    "title": "Path integral amplitude",
+    "tex": "\\langle \\phi_f | e^{-iHt/\\hbar} | \\phi_i \\rangle = \\int \\mathcal{D}\\phi \\; e^{\\,iS[\\phi]/\\hbar}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 441,
+    "title": "Klein–Gordon equation",
+    "tex": "\\left(\\Box + \\frac{m^2 c^2}{\\hbar^2}\\right)\\phi = 0, \\qquad \\Box \\equiv \\frac{1}{c^2}\\frac{\\partial^2}{\\partial t^2} - \\nabla^2",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 450,
+    "title": "Dirac equation",
+    "tex": "\\left(i\\gamma^\\mu \\partial_\\mu - \\frac{mc}{\\hbar}\\right)\\psi = 0",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 459,
+    "title": "Feynman propagator",
+    "tex": "\\tilde{G}_F(p) = \\frac{i}{p^2 - m^2 + i\\epsilon}",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 468,
+    "title": "Mandelstam variables",
+    "tex": "s + t + u = \\sum_i m_i^2 c^4, \\quad s = (p_1+p_2)^2,\\ t = (p_1-p_3)^2",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-qft.jsx",
+    "line": 477,
+    "title": "Fermi's golden rule",
+    "tex": "d\\Gamma = \\frac{2\\pi}{\\hbar}\\,|\\mathcal{M}|^2\\,d\\rho_f",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-rg-stage3.jsx",
+    "line": 56,
+    "title": "Covariant derivative",
+    "tex": "D_\\mu = \\partial_\\mu - i g\\, A_\\mu^a T^a",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-rg-stage3.jsx",
+    "line": 65,
+    "title": "QCD beta function · one loop",
+    "tex": "\\beta(g_s)=-\\frac{b_0}{16\\pi^2}g_s^3+\\mathcal{O}(g_s^5),\\qquad b_0=11-\\frac{2}{3}n_f",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-rg-stage3.jsx",
+    "line": 73,
+    "title": "QED convention · one loop",
+    "tex": "\\beta(e)=\\frac{n_f e^3}{12\\pi^2},\\qquad \\alpha=\\frac{e^2}{4\\pi}",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-rg-stage3.jsx",
+    "line": 81,
+    "title": "Fixed-point linearization",
+    "tex": "\\beta(g_*)=0,\\qquad \\beta(g)\\simeq\\beta'(g_*)(g-g_*)",
+    "status": "effective",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-standard-model.jsx",
+    "line": 550,
+    "title": "Standard Model gauge group",
+    "tex": "G_{\\mathrm{SM}} = SU(3)_C \\times SU(2)_L \\times U(1)_Y",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-standard-model.jsx",
+    "line": 559,
+    "title": "Higgs potential",
+    "tex": "V(\\phi) = \\mu^2\\,\\phi^\\dagger\\phi + \\lambda\\,(\\phi^\\dagger\\phi)^2",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  },
+  {
+    "file": "js/mod-standard-model.jsx",
+    "line": 568,
+    "title": "Lagrangian structure (schematic)",
+    "tex": "\\mathcal{L} = -\\tfrac{1}{4}F_{\\mu\\nu}^a F^{a\\,\\mu\\nu} + i\\bar\\psi\\,\\gamma^\\mu D_\\mu \\psi + |D_\\mu\\phi|^2 - V(\\phi) - \\left(\\bar\\psi_L\\, Y\\, \\phi\\, \\psi_R + \\mathrm{h.c.}\\right)",
+    "status": "established",
+    "formulaId": null,
+    "texAfter": null
+  }
+]

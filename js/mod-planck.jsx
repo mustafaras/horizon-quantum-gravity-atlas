@@ -38,7 +38,7 @@ function ModulePlanck({ go }) {
             meaning="Dimensional analysis alone locates the quantum gravity regime: where the Compton wavelength of an object equals its Schwarzschild radius."
             limits="These are scales, not measured thresholds. What actually happens there is unknown."></FormulaCard>
           <FormulaCard title="Perturbative expansion of the metric" status="effective"
-            tex="g_{\mu\nu} = \eta_{\mu\nu} + \kappa\, h_{\mu\nu}, \qquad \kappa^2 = 32\pi G"
+            formulaId="planck-metric-perturbation"
             symbols={[
               { s: "\\eta_{\\mu\\nu}", d: "Fixed flat background metric — the move that surrenders background independence." },
               { s: "h_{\\mu\\nu}", d: "Graviton field: quantized weak-field ripples, spin 2." },
@@ -47,13 +47,17 @@ function ModulePlanck({ go }) {
             meaning="The standard route to 'quantum gravity as a QFT'. It works beautifully — but only as an effective theory at energies far below $E_P$."
             limits="The expansion is in $\kappa E\sim E/E_P$; at Planckian energies every order contributes equally and the series tells you nothing."></FormulaCard>
           <FormulaCard title="Growth of the effective coupling" status="established"
-            tex="\alpha_{\mathrm{grav}}(E) \sim \frac{G E^2}{\hbar c^5} = \left(\frac{E}{E_P}\right)^{2}"
+            formulaId="planck-effective-coupling"
             symbols={[
               { s: "\\alpha_{\\mathrm{grav}}", d: "Dimensionless measure of gravity's strength at energy E (compare $\\alpha\\approx1/137$ for electromagnetism)." },
               { s: "E/E_P", d: "At LHC energies this is $\\sim10^{-15}$, making quantum gravity effects experimentally invisible — and the theory's UV behavior untestable directly." },
             ]}
             meaning="Contrast with the gauge couplings of Module 03, which run logarithmically. Gravity's strength grows as a power law — the renormalization group flow leaves the perturbative domain."
             limits="Schematic scaling argument; the asymptotic safety program (Module 06) conjectures the full nonperturbative flow may nonetheless reach a fixed point."></FormulaCard>
+        </div>
+        {/* S30: the dimensional-analysis argument behind the three constants above, stepped rather than asserted. */}
+        <div className="derivation-grid">
+          <DerivationStepper derivationId="derivation-planck-length"></DerivationStepper>
         </div>
       </Section>
 
