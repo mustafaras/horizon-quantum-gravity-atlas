@@ -241,6 +241,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   useEffect(() => { if (stateView !== view) setView(stateView); }, [stateView]); // eslint-disable-line
   const [menuOpen, setMenuOpen] = useState(false);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
+  const [toursOpen, setToursOpen] = useState(false);
   const contentRef = useRef(null);
   const openRenderingSettings = () => window.postMessage({ type: "__activate_edit_mode" }, location.origin);
   // Formula linking + palette navigation read the live view id.
@@ -248,7 +249,13 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   // Palette action hook: "Save snapshot" opens this panel from ⌘K.
   useEffect(() => {
     window.QGA_OPEN_SNAPSHOTS = () => setSnapshotsOpen(true);
-    return () => { if (window.QGA_OPEN_SNAPSHOTS) delete window.QGA_OPEN_SNAPSHOTS; };
+    // Guided tours (S31): the palette's "Guided tours" entry uses the same
+    // hook shape as snapshots, so a reader can reach the launcher from ⌘K.
+    window.QGA_OPEN_TOURS = () => setToursOpen(true);
+    return () => {
+      if (window.QGA_OPEN_SNAPSHOTS) delete window.QGA_OPEN_SNAPSHOTS;
+      if (window.QGA_OPEN_TOURS) delete window.QGA_OPEN_TOURS;
+    };
   }, []);
 
   // ---- cinematic direction (Prompt 09) ----
@@ -289,6 +296,39 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
     if (contentRef.current) contentRef.current.scrollTop = 0;
     window.scrollTo(0, 0);
   };
+
+  /* ---- guided tours (S31) ----
+     A tour step is a URL, not a piece of component state: moving a step calls the same writer the URL reader uses, so
+     the back button walks the tour backwards and a step a teacher copies is a working link. The tour id, its step and
+     the worksheet flag all come from the shared state below. */
+  const tourId = atlasState.tour || "";
+  const tourStepNumber = atlasState.tourStep || 1;
+  const tourPrint = atlasState.tourPrint === "1";
+  const openTour = useCallback((payload) => {
+    const { view: target, patch, formulaFocus, shot, step, tour, print } = payload;
+    const nextView = target && QGA_VIEWS[target] ? target : view;
+    if (nextView !== view && window.QGA_CINEMATIC) window.QGA_CINEMATIC.runTransition();
+    setView(nextView);
+    setAtlasState({
+      view: nextView,
+      shot: shot || "",
+      ...(tour !== undefined ? { tour } : {}),
+      ...(step ? { tourStep: step } : {}),
+      ...(print !== undefined ? { tourPrint: print ? "1" : "" } : {}),
+      ...(patch ? patch : {}),
+    }, { replace: false });
+    setMenuOpen(false);
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+    // The formula card listens for this event in the current view, and
+    // __qgaPendingFormulaFocus carries the request across a view change.
+    if (formulaFocus) {
+      window.__qgaPendingFormulaFocus = formulaFocus;
+      window.dispatchEvent(new CustomEvent("qga-open-formula", { detail: { title: formulaFocus } }));
+    }
+  }, [view, setAtlasState]);
+  const closeTour = useCallback(() => {
+    setAtlasState({ tour: "", tourStep: 1, tourPrint: "" }, { replace: false });
+  }, [setAtlasState]);
 
   // Compare embed protocol: render-mode settings + silent state patches
   // (parameter tweens) + readiness announcement. The role itself is set at
@@ -369,6 +409,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
             </button>
             <button className="sidebar-tool-btn" onClick={() => go("compare")} aria-label="Open the A/B compare view">⇄ Compare</button>
             <button className="sidebar-tool-btn" onClick={() => setSnapshotsOpen(true)} aria-label="Open the snapshots panel">◆ Snapshots</button>
+            <button className="sidebar-tool-btn" onClick={() => setToursOpen(true)} aria-label="Open the guided tours">▶ Tours</button>
             <button className="sidebar-tool-btn" onClick={() => window.QGA_ARM_ANNOTATION?.()} aria-label="Place an annotation pin on the current view">✎ Annotate</button>
           </div>
           <div className="sidebar-foot">
@@ -387,6 +428,11 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         </div>
         <main className="content" id="main-content" tabIndex={-1} ref={contentRef}>
           <div className="content-inner" key={view}>
+            {tourId || toursOpen ? (
+              <TourSurface tourId={tourId} step={tourStepNumber} print={tourPrint}
+                onNavigate={openTour}
+                onClose={() => { setToursOpen(false); if (tourId) closeTour(); }}></TourSurface>
+            ) : null}
             {Comp ? <Comp go={go}></Comp> : <p className="dim">Loading module…</p>}
             <AnnotationLayer view={view}></AnnotationLayer>
           </div>

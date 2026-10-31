@@ -61,7 +61,10 @@
       "spinFoamJMax": "sfj",
       "spinFoamMode": "sfm",
       "annotations": "ann",
-      "shot": "shot"
+      "shot": "shot",
+      "tour": "tour",
+      "tourStep": "step",
+      "tourPrint": "print"
     }
   },
   "defaults": {
@@ -2205,6 +2208,62 @@
       "baseline": {
         "maxDiffPixelRatio": 0.02,
         "note": "Positions, labels and colours are deterministic SVG from committed data; only font rasterisation may differ."
+      }
+    },
+    {
+      "id": "s31-tour-reader",
+      "file": "docs/screenshots/s31-tour-reader.png",
+      "description": "The guided tour reader on step 1 of \"Why gravity resists quantisation\": the step counter, the question, the expected readout behind a disclosure, the view/shot/formula the step opens, and the worksheet and exit controls.",
+      "view": "overview",
+      "url": "?tour=why-gravity-resists-quantisation&step=1",
+      "viewport": {
+        "width": 1600,
+        "height": 1100,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "scope": "element",
+      "target": ".tour-surface",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled"
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A screenshot of the tour panel over the live app; the numbers a tour quotes are recomputed from js/science by test/tours.test.mjs, so the caption is a reproduction, not a claim.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "DOM and KaTeX text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
+      }
+    },
+    {
+      "id": "s31-tour-worksheet",
+      "file": "docs/screenshots/s31-tour-worksheet.png",
+      "description": "The teacher worksheet for \"Hearing spacetime\": each step as a numbered question with its context, its expected readout, its plain relative URL, and the tour's primary references.",
+      "view": "exp",
+      "url": "?tour=hearing-spacetime&print=1",
+      "viewport": {
+        "width": 1600,
+        "height": 2400,
+        "deviceScaleFactor": 1,
+        "label": "desktop-tall"
+      },
+      "scope": "element",
+      "target": ".tour-worksheet",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        "animation-settled"
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A screenshot of the printable worksheet; the expected readouts are the same numbers test/tours.test.mjs recomputes from the science modules.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "DOM and KaTeX text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
       }
     }
   ]

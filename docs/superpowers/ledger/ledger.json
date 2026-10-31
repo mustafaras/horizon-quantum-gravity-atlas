@@ -1756,17 +1756,38 @@
       "findings": [
         "F-20"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "feat/s31-tours",
+      "pr": 127,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-31",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "node --test test/*.test.mjs — 1227 tests, 1226 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1204 pass, 1 skip; +23 new in test/tours.test.mjs)",
+          "node --test test/tours.test.mjs — 22 pass: the three shipped tours validate against the app's own view and state tables; every formulaFocus names a card and every shot is in the cinematic manifest; every step's state patch survives the real URL reader in a VM; every quoted number is recomputed from its module; the schema refuses 14 ways of pointing at something that does not exist; step arithmetic clamps without wrapping; the resume store survives corrupt, refusing and absent storage; every tour string typesets through KaTeX with balanced, escapable spans and no control characters",
+          "npm run validate — repository valid · formula audit 65 cards, 77 definitions, 6 derivations · provenance 89 entries · cover index matches 8 sidecars",
+          "npm run qa:verify — 71 captures, schema-conformant, README-consistent",
+          "npm run perf:audit — exit 0",
+          "npx playwright test qa/specs/tours.spec.mjs — 18 pass: each of the three tours opens on step 1 and walks forward and back with the URL following; the ends disable their buttons; an out-of-range step clamps and stays a working link; the expected readout stays behind a disclosure; the progress ticks are buttons; an unknown tour falls back to the launcher; the launcher starts a tour from the sidebar tool; exiting removes the tour parameters; all three worksheets print every step with its plain URL, expected readout and references; the reader announces each step; tour controls meet 44 px; neither the panel nor the sheet overflows at 390 px",
+          "npx playwright test qa/specs/a11y.spec.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs — 89 pass, 2 fail. Both failures (view bh: single H1/skipped heading levels, and view bh: WCAG AA text contrast) reproduce on a clean tree with this branch stashed and are therefore pre-existing; the tour surface does not render on the bare ?view= URLs those tests use."
+        ],
+        "screenshots": [
+          "docs/screenshots/s31-tour-reader.png",
+          "docs/screenshots/s31-tour-worksheet.png"
+        ],
+        "measurements": [
+          "3 tours, 28 steps total (13 + 8 + 7) against the prompt's ≈12, ≈8 and ≈7",
+          "40 inline KaTeX spans across the tour prose, all balanced; 0 control characters, which is the failure mode of writing a TeX backslash once inside a JS string literal",
+          "0 unknown views, 0 unknown state keys, 0 unknown formula cards and 0 unknown cinematic shots across the 28 steps",
+          "Every step's state patch round-trips through qgaReadState/qgaStateSearch unchanged; the tour writer omits step=1 because it is the default, and the reader clamps an out-of-range step without rewriting the link",
+          "Worksheet rows: 28 questions, each with an expected readout and a relative URL; 9 primary references, all https",
+          "Reference line right edge 1413 px against a 1413 px sheet edge at 1600 px wide — 0 horizontal overflow (was 47 px before the overflow-wrap fix)",
+          "Tour panel and worksheet: 0 px horizontal overflow at 390 px"
+        ],
+        "decisions": [],
+        "notes": "Guided tours, the step runner, the resume store and the teacher worksheet. Turkish localisation is not taken — see D-183."
       },
       "blockers": [],
       "notes": ""
@@ -3173,6 +3194,13 @@
       "prompt": "S30",
       "decision": "The audit script was written last, after the migrations, and it enforces what was actually done.",
       "rationale": "Step 6 lists the audit after the migration. Written first it would have encoded a guess about what the tree contains; written last it encodes the three properties the work established — every card names a definition, every symbol declares a unit and dimensions, every derivation reaches its own closed form — and it runs at `npm run validate`, between the repository checks and the provenance sweep."
+    },
+    {
+      "id": "D-183",
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "decision": "Ship the guided tours and the teacher worksheets, but not the Turkish localisation that step 3 of S31 also specifies.",
+      "rationale": "The user asked for the sequence to continue without the Turkish work, so this prompt takes steps 1, 2 and 4 and leaves step 3 out. The consequence is recorded rather than hidden: F-20 (\"English only; no localisation\") stays open, because tours and worksheets that exist only in English do not close it. Every surface shipped here is English-only and says so in README.md."
     }
   ],
   "log": [
@@ -3889,6 +3917,20 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #125 as 0413b30. Every formula card resolves to a Formula Core definition, the six derivations and their stepper are live, and the formula audit runs inside npm run validate. Both CI jobs passed on 4f4bfc7 before the merge."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on feat/s31-tours from main at c68f525. Scope reduced with the user: guided tours and teacher worksheets only; the Turkish localisation of step 3 is not taken."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "Three tours (13/8/7 steps), a deep-linkable step runner, a localStorage resume store and printable teacher worksheets; 22 new Node tests and an 18-test Playwright spec pass; 1226 of 1227 repository tests pass with one pre-existing skip. Turkish localisation deliberately not taken (D-183), so F-20 stays open. PR #127."
     }
   ]
 }
