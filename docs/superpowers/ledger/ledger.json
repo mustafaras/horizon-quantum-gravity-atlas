@@ -1804,12 +1804,12 @@
       "findings": [
         "F-01"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "feat/s32-publishing-studio",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-31",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3954,6 +3954,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "accept",
       "detail": "F-20 accepted as a limitation by user decision (D-184). The atlas, including the S31 tours and worksheets, is English-only; no localisation is planned."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on feat/s32-publishing-studio from main at c675fc8."
     }
   ]
 }
