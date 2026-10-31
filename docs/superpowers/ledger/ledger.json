@@ -1705,10 +1705,10 @@
         "S29"
       ],
       "findings": [],
-      "status": "in_progress",
+      "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "copilot/s30-living-equations",
-      "pr": null,
+      "pr": 125,
       "commits": [],
       "startedAt": "2026-10-30",
       "completedAt": null,
@@ -3873,6 +3873,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "claim",
       "detail": "Claimed on copilot/s30-living-equations from main at 6ab87d2. Baseline measured before any change: node --test test/*.test.mjs 1157 pass, 0 fail, 1 skipped; npm run validate passes with 89 provenance entries and a matching cover index."
+    },
+    {
+      "date": "2026-10-30",
+      "prompt": "S30",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "48 cards migrated to formulaId against a committed pre-migration reference; js/formula/derivation.mjs and stepper.mjs shipped with the six derivations; scripts/audit-formulas.mjs wired into npm run validate. 1204 tests pass, 0 fail; PR #125."
     }
   ]
 }
