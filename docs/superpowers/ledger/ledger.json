@@ -298,7 +298,7 @@
       "id": "F-20",
       "title": "English only; no localisation",
       "severity": "low",
-      "status": "open",
+      "status": "accepted",
       "closedBy": [
         "S31"
       ],
@@ -3203,6 +3203,13 @@
       "prompt": "S31",
       "decision": "Ship the guided tours and the teacher worksheets, but not the Turkish localisation that step 3 of S31 also specifies.",
       "rationale": "The user asked for the sequence to continue without the Turkish work, so this prompt takes steps 1, 2 and 4 and leaves step 3 out. The consequence is recorded rather than hidden: F-20 (\"English only; no localisation\") stays open, because tours and worksheets that exist only in English do not close it. Every surface shipped here is English-only and says so in README.md."
+    },
+    {
+      "id": "D-184",
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "decision": "Accept F-20 (\"English only; no localisation\") as a limitation: the atlas ships in English, and no Turkish or other localisation will be added.",
+      "rationale": "S31 specified a Turkish dictionary over UI chrome, module headers, captions, tours and the glossary, with ?lang= resolution and an English fallback for missing keys. The user withdrew that requirement outright — first for S31 and then permanently. Shipping tours and worksheets that exist only in English does not close a finding about localisation, so the finding is marked accepted rather than closed: nothing was built, and the ledger should say that plainly instead of leaving an open item that no remaining prompt covers. README.md states the scope in the section that describes the tours."
     }
   ],
   "log": [
@@ -3940,6 +3947,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #127 as a1d4766. Three guided tours, the step runner with its deep links and resume store, and the printable teacher worksheets are live. F-20 remains open: the Turkish localisation was not taken (D-183), so the tours and worksheets are English-only."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "agent": "local: Copilot for mustafaras",
+      "event": "accept",
+      "detail": "F-20 accepted as a limitation by user decision (D-184). The atlas, including the S31 tours and worksheets, is English-only; no localisation is planned."
     }
   ]
 }

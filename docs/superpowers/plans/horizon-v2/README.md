@@ -109,7 +109,7 @@ Verified against commit `9013fba` while the pack was written. Each prompt header
 | F-17 | Kerr observatory lacks the Bardeen-curve overlay and an EHT comparison | kerr-observatory.mjs | S25 |
 | F-18 | Production ships React development builds and transpiles JSX in the browser with Babel (3.0 MB) | index.html:2301–2303, bootstrap.mjs:145 | S33 |
 | F-19 | README 2,500+ lines, stale Roadmap, no archival DOI | README.md | S35 |
-| F-20 | English only; no localisation | index.html:2 | S31 |
+| F-20 | English only; no localisation | index.html:2 | S31 — **accepted** as a limitation (D-184) |
 | F-21 | Every Scene3D builds its own renderer: 4 renderers and 4 shader caches on the QFT view | scene3d.jsx, render-session.mjs, create-renderer.mjs | S04, S05 |
 | F-22 | WebGL2 contexts always use preserveDrawingBuffer: true | create-renderer.mjs:205,208 | S04 |
 | F-23 | Quality governor uses CPU frame time only; GPU timestamps unused | quality-governor.mjs | S04 |
