@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-30",
+  "updated": "2026-10-31",
   "statuses": [
     "todo",
     "claimed",
@@ -1705,13 +1705,15 @@
         "S29"
       ],
       "findings": [],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "copilot/s30-living-equations",
       "pr": 125,
-      "commits": [],
+      "commits": [
+        "0413b30"
+      ],
       "startedAt": "2026-10-30",
-      "completedAt": null,
+      "completedAt": "2026-10-31",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1205 tests, 1204 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1157 pass, 1 skip; +47 new)",
@@ -3880,6 +3882,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "48 cards migrated to formulaId against a committed pre-migration reference; js/formula/derivation.mjs and stepper.mjs shipped with the six derivations; scripts/audit-formulas.mjs wired into npm run validate. 1204 tests pass, 0 fail; PR #125."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S30",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #125 as 0413b30. Every formula card resolves to a Formula Core definition, the six derivations and their stepper are live, and the formula audit runs inside npm run validate. Both CI jobs passed on 4f4bfc7 before the merge."
     }
   ]
 }
