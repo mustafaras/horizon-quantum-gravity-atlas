@@ -444,6 +444,15 @@ The non-rotating counterpart — the Schwarzschild null-geodesic core behind the
 
 All new animation routes through one shared motion clock (`js/motion/atlas-motion.mjs`) with deterministic easings; `prefers-reduced-motion` snaps every tween and disables pulses, focus pulls and divider distortion while keeping the full interaction surface functional.
 
+### Guided tours and teacher worksheets (S31)
+
+- **Three tours** — "Why gravity resists quantisation" (13 steps), "What a black hole image measures" (8) and "Hearing spacetime" (7). A tour is data in `js/tours/tour-manifests.mjs`: each step names the view it opens, an optional cinematic shot, an optional state patch, the formula card it opens, the text to read, the question to answer and the expected readout. `js/tours/tour-schema.mjs` validates the manifests in Node against the app's own view and state tables, so a step that names a view, a state key or a formula card the app does not have fails `npm test` instead of rendering a dead button.
+- **Deep links** — `?tour=<id>&step=<n>`. Moving a step goes through the same URL writer the reader uses, so the back button walks the tour backwards and a step a teacher copies is a working link. Progress is remembered per tour in `localStorage` (schema `horizon-qga-tour-resume/v1`) inside a `try`/`catch`, so a browser with storage disabled still walks the tour, it just starts at the beginning next time.
+- **Teacher worksheets** — `?tour=<id>&print=1` renders the same steps as a printable sheet: numbered questions, the context that introduces each, the expected readout, the tour's primary references, and each step's plain relative URL. The sheet prints a readable URL rather than a QR square, and a print stylesheet hides the sidebar, topbar and 3D stage.
+- **Every number on a tour is computed** — `test/tours.test.mjs` recomputes the √27 critical impact parameter, the M87\* shadow diameter, the GW150914 chirp mass, ISCO and ringdown numbers, the Hawking temperature, the Page time and the Planck length from the modules that own them, and fails when a caption stops matching its source.
+
+Tours and their worksheets ship in **English only**; the Turkish localisation that finding F-20 also covers is not part of this sequence (ledger D-183).
+
 ---
 
 ## Module Matrix

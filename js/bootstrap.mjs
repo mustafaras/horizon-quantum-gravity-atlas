@@ -180,6 +180,28 @@ async function bootstrap() {
       }),
       configurable: true,
     });
+
+    // Guided tours (S31): the manifests, their validator, the step runner and the worksheet builder. Exposed before
+    // the classic scripts are evaluated, because js/state.jsx validates `?tour=` and `?step=` on first read.
+    const tours = await import("./tours/tour-schema.mjs");
+    const toursRunner = await import("./tours/tour-runner.mjs");
+    const tourManifests = await import("./tours/tour-manifests.mjs");
+    Object.defineProperty(window, "QGA_TOURS", {
+      value: Object.freeze({
+        TOUR_SCHEMA: tours.TOUR_SCHEMA, TOUR_LIMITS: tours.TOUR_LIMITS,
+        TOUR_LIBRARY: tourManifests.TOUR_LIBRARY, TOUR_IDS: tourManifests.TOUR_IDS,
+        parseTourParam: tours.parseTourParam, parseStepParam: tours.parseStepParam,
+        parsePrintParam: tours.parsePrintParam, clampStep: tours.clampStep,
+        nextStep: tours.nextStep, previousStep: tours.previousStep, formatStepCounter: tours.formatStepCounter,
+        validateTour: tours.validateTour, validateTourLibrary: tours.validateTourLibrary, findTour: tours.findTour,
+        stepUrl: tours.stepUrl, worksheetUrl: tours.worksheetUrl, worksheetRows: tours.worksheetRows,
+        worksheetHeader: tours.worksheetHeader, createTourResumeStore: tours.createTourResumeStore,
+        stepPlan: toursRunner.stepPlan, applyStepState: toursRunner.applyStepState,
+        resumeStep: toursRunner.resumeStep, moveStep: toursRunner.moveStep,
+        tourEntry: toursRunner.tourEntry, describePatch: toursRunner.describePatch,
+      }),
+      configurable: true,
+    });
     Object.defineProperty(window, "QGA_COMPARE", {
       value: Object.freeze({
         COMPARE_PRESETS: compareState.COMPARE_PRESETS, COMPARE_RENDER_MODES: compareState.COMPARE_RENDER_MODES,

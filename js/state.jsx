@@ -14,6 +14,9 @@ const QGA_DEFAULT_STATE = {
   adsLabLinks: 5, adsLabRegion: 0.5, colliderChannel: "h2gg", spinFoamJMax: 2, spinFoamMode: "network",
   annotations: [],
   shot: "",
+  tour: "",
+  tourStep: 1,
+  tourPrint: "",
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -30,6 +33,12 @@ const QGA_STATE_KEYS = {
   adsLabLinks: "aln", adsLabRegion: "alr", colliderChannel: "clc", spinFoamJMax: "sfj", spinFoamMode: "sfm",
   annotations: "ann",
   shot: "shot",
+  // Guided tours (S31): the tour, its 1-based step and the worksheet flag live in the URL so a step is a link a
+  // teacher can print. `print` is a display variant, not a scientific parameter, but it round-trips through the same
+  // writer so a worksheet URL is reproducible.
+  tour: "tour",
+  tourStep: "step",
+  tourPrint: "print",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 // Closure-tracked pending state: the last state written (or silently applied)
@@ -71,6 +80,9 @@ function qgaReadState(search = window.location.search) {
     if (QGA_ENUMS[key]?.includes(raw)) state[key] = raw;
     else if (key === "gwEvent") state[key] = raw;
     else if (key === "shot") state[key] = raw;
+    else if (key === "tour") state[key] = raw;
+    else if (key === "tourStep" && Number.isFinite(Number(raw))) state[key] = Number(raw);
+    else if (key === "tourPrint") state[key] = raw;
     else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets" || key === "gwLoop") {
       if (raw === "true" || raw === "false") state[key] = raw === "true";
     }
@@ -111,6 +123,13 @@ function qgaReadState(search = window.location.search) {
   // Cinematic deep link (Prompt 09): format-validated shot id. Unknown ids are
   // ignored by the runtime, so old URLs and typos render exactly as before.
   state.shot = /^[a-z0-9][a-z0-9-]{0,62}$/.test(state.shot) ? state.shot : "";
+  // Guided tours (S31): format-validated tour id, step and worksheet flag. The
+  // URL reader validates the SHAPE only — it cannot see the tour library, and a
+  // link must survive the module being slow to load. An id that no tour answers
+  // to is reported by the tour panel, which can see the library.
+  state.tour = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.tour) && state.tour.length <= 48 ? state.tour : "";
+  state.tourStep = state.tour ? qgaClamp(Math.trunc(state.tourStep) || 1, 1, 999) : 1;
+  state.tourPrint = state.tour && (state.tourPrint === "1" || state.tourPrint === "true") ? "1" : "";
   // GW instrument (Prompt 06): playback-shaping keys, additive with safe
   // defaults; audio is never enabled by a URL, only by an in-page gesture.
   state.gwPitch = qgaClamp(state.gwPitch, 0.25, 4);
@@ -174,6 +193,9 @@ function qgaStateSearch(state) {
     : QGA_DEFAULT_STATE;
   for (const [key, param] of Object.entries(QGA_STATE_KEYS)) {
     if (key === "bhStateVersion" || key === "annotations") continue;
+    // A step without a tour has nothing to belong to; writing it would publish a link that opens no tour.
+    if (key === "tourStep" && !state.tour) continue;
+    if (key === "tourPrint" && (!state.tour || !state.tourPrint)) continue;
     if (state[key] !== defaults[key]) params.set(param, String(state[key]));
   }
   // Annotations enter shared state only after schema, text and size limits

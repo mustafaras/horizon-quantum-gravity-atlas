@@ -1,0 +1,124 @@
+/* styles/tours.css — S31 guided tours and the teacher worksheet.
+   The reader is a panel at the reading column's width; the worksheet is a print surface that must survive a printer.
+   Nothing here animates beyond the reduced-motion-aware progress ticks, and no rule hides content behind motion. */
+
+/* ---------- surface ---------- */
+.tour-surface { margin: 0 0 26px 0; }
+.tour-surface-inner {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 22px 24px 24px 24px; box-shadow: 0 14px 40px rgba(0,0,0,0.35);
+}
+.tour-kicker {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--acc); margin-bottom: 6px;
+}
+.tour-label {
+  display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px;
+}
+
+/* ---------- launcher ---------- */
+.tour-list { list-style: none; margin: 16px 0 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tour-list-item { border-top: 1px solid var(--line); padding-top: 12px; }
+.tour-list-item:first-child { border-top: none; padding-top: 0; }
+.tour-start {
+  display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left;
+  background: none; border: none; padding: 6px 0; cursor: pointer; color: var(--head);
+  font-family: var(--font-head); font-size: 16px; min-height: 44px;
+}
+.tour-start:hover .tour-list-title { color: var(--acc); }
+.tour-list-title { font-weight: 600; }
+.tour-list-meta { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--text-dim); }
+.tour-list-summary { margin: 4px 0 0 0; font-size: 13px; color: var(--text-dim); max-width: 70ch; }
+.tour-launcher-foot { margin-top: 16px; display: flex; gap: 8px; }
+
+/* ---------- reader ---------- */
+.tour-reader-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; position: relative; }
+.tour-reader-title { margin: 2px 0 0 0; font-size: 20px; }
+/* The step-move focus sink: it holds focus for the announcement without drawing a ring around anything a reader
+   would try to click. It is deliberately not a heading — the heading is a label, not a control. */
+.tour-focus-sink { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); outline: none; }
+.tour-counter { font-size: 11px; color: var(--text-dim); white-space: nowrap; padding-top: 6px; }
+
+.tour-progress { display: flex; gap: 4px; margin: 14px 0 16px 0; }
+.tour-tick {
+  flex: 1; height: 14px; min-height: 14px; padding: 0; cursor: pointer;
+  background: rgba(148,176,224,0.10); border: 1px solid var(--line); border-radius: 3px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tour-tick.is-done { background: var(--acc-soft); border-color: rgba(148,176,224,0.28); }
+.tour-tick.is-current { background: var(--acc); border-color: var(--acc); }
+.tour-tick:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+.tour-text { font-size: 15px; line-height: 1.65; color: var(--text); max-width: 74ch; margin: 0 0 16px 0; }
+
+.tour-question {
+  border-left: 3px solid var(--acc); background: rgba(148,176,224,0.05);
+  padding: 12px 14px; border-radius: 0 8px 8px 0; margin-bottom: 14px;
+}
+.tour-question p { margin: 0; font-size: 14px; }
+.tour-expected { margin-top: 8px; }
+.tour-expected summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); min-height: 24px;
+}
+.tour-expected summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.tour-expected p { margin: 8px 0 0 0; font-size: 13px; color: var(--text-dim); }
+
+.tour-target { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; margin-bottom: 16px; }
+.tour-target .mono { font-size: 11px; color: var(--text-dim); }
+.tour-patch { color: var(--cyan); }
+
+.tour-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.tour-controls .btn { min-height: 44px; padding: 10px 16px; }
+.tour-controls .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------- worksheet ---------- */
+.tour-sheet-head { border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 18px; }
+.tour-sheet-head h2 { margin: 4px 0 8px 0; }
+.tour-sheet-summary { font-size: 13px; color: var(--text-dim); max-width: 74ch; margin: 0 0 8px 0; }
+.tour-sheet-meta { font-size: 10.5px; color: var(--text-dim); margin: 0 0 10px 0; word-break: break-all; }
+.tour-sheet-fields { display: flex; gap: 10px; align-items: flex-end; font-size: 12px; color: var(--text-dim); }
+.tour-sheet-rule { flex: 1; border-bottom: 1px solid var(--line); min-width: 80px; }
+
+.tour-sheet-list { list-style: none; margin: 0; padding: 0; counter-reset: none; }
+.tour-sheet-item {
+  border-top: 1px solid var(--line); padding: 14px 0 16px 0;
+  break-inside: avoid; page-break-inside: avoid;
+}
+.tour-sheet-item:first-child { border-top: none; }
+.tour-sheet-line { display: flex; gap: 8px; align-items: baseline; }
+.tour-sheet-num { font-size: 11px; color: var(--acc); flex: none; min-width: 22px; }
+.tour-sheet-question { margin: 0; font-size: 14px; font-weight: 600; color: var(--head); }
+.tour-sheet-context { font-size: 12.5px; color: var(--text-dim); margin: 6px 0 6px 30px; max-width: 74ch; }
+.tour-sheet-url { font-size: 10.5px; color: var(--cyan); margin: 0 0 8px 30px; word-break: break-all; }
+.tour-sheet-answer { margin-left: 30px; }
+.tour-sheet-answer p { margin: 0; font-size: 13px; }
+.tour-sheet-focus { font-size: 10.5px; color: var(--text-dim); margin: 6px 0 0 30px; }
+
+.tour-sheet-refs { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.tour-sheet-refs h3 { font-size: 14px; margin: 0 0 8px 0; }
+.tour-sheet-refs ol { margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--text-dim); }
+.tour-sheet-refs li { margin-bottom: 5px; overflow-wrap: anywhere; }
+.tour-sheet-refs .mono { font-size: 10.5px; word-break: break-all; overflow-wrap: anywhere; }
+.tour-sheet-foot { font-size: 10.5px; color: var(--text-dim); margin: 20px 0 0 0; }
+.tour-sheet-controls { margin-top: 18px; }
+
+/* ---------- print ---------- */
+.no-print { display: flex; }
+@media print {
+  .no-print { display: none !important; }
+  .tour-surface { margin: 0; }
+  .tour-surface-inner { background: none; border: none; box-shadow: none; padding: 0; }
+  .tour-sheet-item { border-top: 1px solid var(--line); }
+  .tour-sheet-url, .tour-sheet-refs .mono { color: var(--text); }
+}
+
+@media (max-width: 760px) {
+  .tour-surface-inner { padding: 16px 14px 18px 14px; }
+  .tour-reader-title { font-size: 17px; }
+  .tour-sheet-context, .tour-sheet-url, .tour-sheet-answer, .tour-sheet-focus { margin-left: 0; }
+}
+
+/* Reduced motion: the ticks are the only transition, and it goes too. */
+html[data-motion="reduced"] .tour-tick { transition: none; }
