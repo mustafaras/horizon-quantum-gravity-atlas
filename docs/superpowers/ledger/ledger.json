@@ -1756,12 +1756,12 @@
       "findings": [
         "F-20"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "feat/s31-tours",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-31",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -3889,6 +3889,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #125 as 0413b30. Every formula card resolves to a Formula Core definition, the six derivations and their stepper are live, and the formula audit runs inside npm run validate. Both CI jobs passed on 4f4bfc7 before the merge."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S31",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on feat/s31-tours from main at c68f525. Scope reduced with the user: guided tours and teacher worksheets only; the Turkish localisation of step 3 is not taken."
     }
   ]
 }
