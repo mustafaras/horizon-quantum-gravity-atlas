@@ -1753,11 +1753,13 @@
       "dependsOn": [
         "S30"
       ],
-      "findings": [],
+      "findings": [
+        "F-20"
+      ],
       "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "feat/s31-tours",
-      "pr": null,
+      "pr": 127,
       "commits": [],
       "startedAt": "2026-10-31",
       "completedAt": null,
@@ -3928,7 +3930,7 @@
       "prompt": "S31",
       "agent": "local: Copilot for mustafaras",
       "event": "review",
-      "note": "Three tours (13/8/7 steps), a deep-linkable step runner, a localStorage resume store and printable teacher worksheets; 22 new Node tests and an 18-test Playwright spec pass; 1226 of 1227 repository tests pass with one pre-existing skip. Turkish localisation deliberately not taken (D-183), so F-20 stays open. PR open."
+      "note": "Three tours (13/8/7 steps), a deep-linkable step runner, a localStorage resume store and printable teacher worksheets; 22 new Node tests and an 18-test Playwright spec pass; 1226 of 1227 repository tests pass with one pre-existing skip. Turkish localisation deliberately not taken (D-183), so F-20 stays open. PR #127."
     }
   ]
 }
