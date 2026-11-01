@@ -7,6 +7,6 @@ export { renderSvg } from "./svg-renderer.mjs";
 export { createFigureLens, markIndexesFor } from "./lens.mjs";
 export { figureSummary, dataTable, nearestIndex, zeroCrossings, decimate } from "./summary.mjs";
 export { sonificationPlan, createFigureSonifier, pitchFor, referenceLevel, SONIFY_RANGE } from "./sonify.mjs";
-export { announcementFor, createDebouncedAnnouncer, ANNOUNCE_DELAY_MS } from "./announce.mjs";
+export { announcementFor, createDebouncedAnnouncer, createInteractionGate, ANNOUNCE_DELAY_MS } from "./announce.mjs";
 export { registerFigureProvenance, FIGURE_PROVENANCE } from "./provenance.mjs";
 export * as plots from "./plots/index.mjs";

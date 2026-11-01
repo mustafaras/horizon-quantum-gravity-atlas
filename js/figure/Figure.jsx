@@ -95,18 +95,24 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
     sonifier.current.toggle(soundPlan).catch((error) => setSoundNote(error.message));
   };
 
-  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from.
+  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from and
+  // with the control's own value text. Only a change that follows something the reader did is spoken: a figure also
+  // re-renders by itself while the page loads, and that must stay silent.
   const [liveText, setLiveText] = useState("");
   const announcer = useRef(null);
+  const interaction = useRef(null);
   const seenSpec = useRef(false);
+  const liveDetail = (slider && slider.text) || readoutOverride || "";
   useEffect(() => {
     announcer.current = F.createDebouncedAnnouncer({ announce: setLiveText });
-    return () => announcer.current.dispose();
+    interaction.current = F.createInteractionGate({ target: document });
+    return () => { announcer.current.dispose(); interaction.current.dispose(); };
   }, []);
   useEffect(() => {
     if (!seenSpec.current) { seenSpec.current = true; return; }
-    announcer.current.push(F.announcementFor(spec));
-  }, [spec]);
+    if (!interaction.current.recent()) return;
+    announcer.current.push(F.announcementFor(spec, liveDetail));
+  }, [spec, liveDetail]);
 
   const focal = scene && scene.focal;
   const n = focal ? focal.x.length : 0;

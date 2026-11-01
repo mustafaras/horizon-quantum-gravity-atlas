@@ -37,7 +37,7 @@
     },
     "js/figure/Figure.jsx": {
       "output": "js/compiled/js/figure/Figure.js",
-      "bytes": 18263
+      "bytes": 18743
     },
     "js/scene3d.jsx": {
       "output": "js/compiled/js/scene3d.js",

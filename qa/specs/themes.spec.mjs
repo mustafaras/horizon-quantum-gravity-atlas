@@ -85,16 +85,20 @@ test("a theme change repaints canvas figures and keeps the page alive, with no c
   const errors = await open(page, context, "/?view=rg&seed=42");
   await page.locator(".ug-lab").scrollIntoViewIfNeeded();
   await expect(page.locator(COUPLINGS)).toBeVisible();
+  // The canvas is transparent where nothing is drawn, so one pixel proves nothing: sum the colour of every drawn pixel.
   const paint = () => page.evaluate(() => {
     const canvas = document.querySelector('.fig[data-figure="rg-unification-couplings"] canvas');
-    const d = canvas.getContext("2d").getImageData(Math.floor(canvas.width / 2), 2, 1, 1).data;
-    return [d[0], d[1], d[2], d[3]].join(",");
+    const d = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+    let drawn = 0, sum = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0) { drawn += 1; sum += d[i] + d[i + 1] + d[i + 2]; }
+    return drawn > 0 ? `${drawn}:${Math.round(sum / drawn)}` : "empty";
   });
   for (const theme of ["blueprint", "print", "observatory"]) {
     await page.evaluate((id) => window.QGA_THEME.set(id), theme);
     await expect.poll(() => page.evaluate(() => window.QGA_TOKENS.current().theme)).toBe(theme);
   }
   const dark = await paint();
+  expect(dark, "the figure drew something in Observatory").not.toBe("empty");
   await page.evaluate(() => window.QGA_THEME.set("print"));
   await expect.poll(paint).not.toBe(dark);
   expect(errors).toEqual([]);
