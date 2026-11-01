@@ -39,6 +39,8 @@ const EXPECTED_ORDER = [
   "styles/modules/atlas-map.css",
   "styles/tours.css",
   "styles/export.css",
+  "styles/themes/blueprint-surfaces.css",
+  "styles/themes/print-surfaces.css",
 ];
 
 test("index.html links the stylesheets in cascade order and every file exists", () => {

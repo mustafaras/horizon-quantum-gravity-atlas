@@ -61,4 +61,4 @@
 
 :root[data-theme="print"] *:not(:focus-visible) { box-shadow: none !important; }
 :root[data-theme="print"] * { text-shadow: none !important; }
-:root[data-theme="print"] body { background-image: none; }
+:root[data-theme="print"] body { background-color: var(--surface-0); background-image: none; }
