@@ -1807,7 +1807,7 @@
       "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "feat/s32-publishing-studio",
-      "pr": null,
+      "pr": 130,
       "commits": [],
       "startedAt": "2026-10-31",
       "completedAt": null,
@@ -4029,7 +4029,7 @@
       "prompt": "S32",
       "agent": "local: Copilot for mustafaras",
       "event": "review",
-      "note": "Publishing studio: export envelope, real render-target stills, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards with the static-hosting limitation stated, and a print-ready lab report. 24 new Node tests and 15 Playwright specs pass; 1250 of 1251 repository tests pass with one pre-existing skip. PR open."
+      "note": "Publishing studio: export envelope, real render-target stills, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards with the static-hosting limitation stated, and a print-ready lab report. 24 new Node tests and 15 Playwright specs pass; 1250 of 1251 repository tests pass with one pre-existing skip. PR #130."
     }
   ]
 }
