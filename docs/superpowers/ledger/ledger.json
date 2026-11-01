@@ -1902,32 +1902,40 @@
         "F-01",
         "F-05"
       ],
-      "status": "blocked",
+      "status": "review",
       "owner": "local: Claude Code for mustafaras",
-      "branch": "feat/s34-themes-a11y",
-      "pr": 134,
+      "branch": "feat/s34-theme-button",
+      "pr": 135,
       "commits": [],
       "startedAt": "2026-11-01",
       "completedAt": null,
       "evidence": {
         "tests": [
-          "npm test: 1330 pass, 0 fail, 1 pre-existing skip (1267 passing before S34, 63 more now)",
-          "npm run validate: passed (65 formula cards, 89 provenance entries, cover index 8 sidecars)",
+          "npm test: 1359 pass, 0 fail, 1 pre-existing skip (1267 passing before S34, 92 more now)",
+          "npm run validate: passed, including the generated Blueprint and Print stylesheets being current (360 rules, 532 colour literals each)",
           "npm run perf:audit: exit 0",
-          "npm run compile:jsx:check: 59 sources, no drift"
+          "npm run compile:jsx:check: 59 sources, no drift",
+          "CI Theme QA run 41326940080 (Linux, pinned Chromium): a11y.spec.mjs in Observatory 67/67, in Blueprint 67/67, in Print 67/67; themes.spec.mjs 11/11; themes-visual.spec.mjs evidence 18/18",
+          "CI pull request run 41326944811 on a44c078: Browser QA (qa:critical, which now includes themes.spec.mjs) pass; validation pass",
+          "CI Theme QA run 41328289737: the 16 baselines regenerated and uploaded; themes.spec.mjs 11/11"
         ],
-        "screenshots": [],
+        "screenshots": [
+          "qa/baselines/theme-blueprint-approaches.png", "qa/baselines/theme-blueprint-bh.png", "qa/baselines/theme-blueprint-exp.png", "qa/baselines/theme-blueprint-gr.png",
+          "qa/baselines/theme-blueprint-planck.png", "qa/baselines/theme-blueprint-qft.png", "qa/baselines/theme-blueprint-rg.png", "qa/baselines/theme-blueprint-sm.png",
+          "qa/baselines/theme-print-approaches.png", "qa/baselines/theme-print-bh.png", "qa/baselines/theme-print-exp.png", "qa/baselines/theme-print-gr.png",
+          "qa/baselines/theme-print-planck.png", "qa/baselines/theme-print-qft.png", "qa/baselines/theme-print-rg.png", "qa/baselines/theme-print-sm.png"
+        ],
         "measurements": [
-          "status colours pairwise delta E00 minimum: Blueprint 18.7, Print 13.6, Observatory unchanged, against the limit 12 (normal, protan, deutan, tritan)",
-          "categorical neighbours delta E00 minimum: Blueprint 31.1, Print 34.8, against the limit 10",
-          "compatibility aliases remaining: 0 of 17 (about 540 uses moved); a repository grep finds none"
+          "status colours pairwise delta E00 minimum (normal, protan, deutan, tritan): Blueprint 15.1, Print 13.5, Observatory unchanged, against the limit 12; each also held at 4.55:1 or more on the measured panel ground (Print #ccd0d7, Blueprint #335166)",
+          "categorical neighbours delta E00 minimum: Blueprint 24.1, Print 39.6, against the limit 10; each at least 3:1 on the surfaces and on the panel ground",
+          "WCAG AA text contrast spec, views failing of 15: first Theme QA run Observatory 1, Blueprint 8, Print 10; last run 0, 0 and 0",
+          "compatibility aliases remaining: 0 of 17 (about 540 uses moved); a repository grep finds none",
+          "colour literals restated per theme by the generator: 532 in 360 rules; sheet size 49.9 KiB (Blueprint) and 48.5 KiB (Print), about 6.5 KiB gzip each",
+          "text drawn on a panel is held to 4.7:1 or more on the measured panel ground by the generator; the mixing-matrix labels clear 4.5:1 on every chip in every theme (unit test)"
         ]
       },
-      "blockers": [
-        "Browser QA needs a local server: Playwright's globalSetup calls listen on 127.0.0.1, which this session's sandbox refuses (EPERM). Needed from the user: run `npm run qa:test:themes` and `node qa/capture.mjs --only=<ids> --update` (Blueprint and Print baselines, one figure per module) locally, or allow local port binding for the session (sandbox.network.allowLocalBinding).",
-        "The acceptance (a11y spec in all three themes, visual baselines for Blueprint and Print) has not run anywhere: CI runs only qa:critical, so PR 134 merged with 25 critical specs passing (1 flaky, passed on retry) and no theme spec. qa/specs/themes.spec.mjs is added to qa:critical in the follow-up PR so CI runs it for the first time."
-      ],
-      "notes": "Implemented and unit-tested: three theme token sets, theme runtime and switcher, pigment mapping, in-place scene restyling, S02 alias removal, figure sonification, 500 ms live summaries, 3D text alternatives. Not yet run in a browser: qa/specs/themes.spec.mjs (new), a11y.spec.mjs in three themes (QGA_QA_THEME), visual baselines. See D-195 to D-199."
+      "blockers": [],
+      "notes": "PR 134 (1c08f24) merged the token themes, runtime, scene restyling, alias removal, sonification, live summaries and 3D text alternatives. PR 135 adds the visible theme button, the generated Blueprint and Print surface stylesheets, the contrast fixes Theme QA found, the CI theme job and the 16 baselines. Acceptance is met in CI as listed. Known limits: D-198 (Formula Core values only on bound scenes) and D-203 (text drawn inside figure canvases is not covered by the DOM contrast spec). See D-195 to D-205."
     },
     {
       "id": "S35",
@@ -3387,6 +3395,34 @@
       "prompt": "S34",
       "decision": "Known gap in Print: about 90 stylesheet declarations hard-code dark rgba() backgrounds (panels, scene frames, readouts: rg-flow 8, kerr 13, gw 11, workbench 12, qft 7, shell 6, causal 8 and others), which do not follow the theme. On a light Print surface their text, now dark ink, can sit on a dark panel. Only the top bar was moved to a token in the follow-up. Blueprint is unaffected because its ink is light.",
       "rationale": "Found by grep, not by looking at a page. Moving them to surface tokens is a mechanical but large edit that cannot be verified without a browser, so it is recorded as the next task rather than done blind."
+    },
+    {
+      "id": "D-202",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "D-199 and D-200 are resolved: the browser acceptance now runs in CI. A manual theme job (quality.yml, workflow_dispatch with themes=true) runs a11y.spec.mjs in each theme (QGA_QA_THEME), themes.spec.mjs and the evidence screenshots, and themes.spec.mjs is part of qa:critical so every pull request runs it. The last full run (41326940080) is 67/67 in all three themes, 11/11 and 18/18.",
+      "rationale": "The local sandbox cannot bind 127.0.0.1, so CI on the pinned Linux Chromium is the only browser available to this work. Getting there took many pull-request and theme runs; each failure is explained in the message of the commit that fixed it, with the cause read from the CI output rather than guessed."
+    },
+    {
+      "id": "D-203",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "Text drawn inside figure canvases (small annotations such as the Z0 mass label, mu_Planck, r_s) is not covered by the contrast spec, which reads DOM text, and some of it is faint in Blueprint and Print when read in the evidence images. It is recorded as a known limit, not fixed in S34.",
+      "rationale": "The canvas colours come from Figure Kit marks and tokens that were validated as marks (3:1), not as text. Making them text-safe changes the Figure Kit grammar, which belongs with a figure task and a canvas-level contrast check, not with a theme token set."
+    },
+    {
+      "id": "D-204",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "The accessibility spec waits for fonts and the mounted view, not for networkidle, on the compare view. In CI the open-request count was 0 from about 12 s in Observatory, Blueprint and Print, yet Playwright's networkidle event did not fire within 45 s; Observatory had failed the same way in an earlier run. The view embeds two complete copies of the atlas, and the tests measure the parent document only.",
+      "rationale": "A readiness probe must measure what the test depends on. Measured traffic showed the page was quiet, so the failure was in the probe, not in a theme; keeping it would have made the three-theme acceptance depend on an event that does not fire for this view."
+    },
+    {
+      "id": "D-205",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "Print's dark-panel gap (D-201) is closed by two generated stylesheets, styles/themes/blueprint-surfaces.css and print-surfaces.css, written by scripts/build-theme-surfaces.mjs from every colour literal in the module stylesheets through the same OKLCH rule as scene pigments, with text drawn on a panel held to 4.7:1 on the measured panel ground. npm run validate fails when they are stale and tests fail on a new categorical-colour text rule. Sixteen baselines (theme-{blueprint,print}-{approaches,bh,exp,gr,planck,qft,rg,sm}.png) were added: each is a first capture on the CI platform after its evidence image was looked at, so no earlier baseline existed and none was refreshed to make a test pass. Observatory has none of its own: its pixels are unchanged by construction.",
+      "rationale": "About 530 literals cannot be moved to tokens by hand without a way to see the result; the generator keeps the sources as authored, covers every new literal, and was checked page by page in the evidence images. The generated files are an output of a committed script, like js/compiled, and were not edited by hand."
     }
   ],
   "log": [
@@ -4194,6 +4230,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "note",
       "detail": "PR 134 merged as 1c08f24 and deployed to GitHub Pages (blueprint.css served, HTTP 200). S34 stays blocked: CI ran only qa:critical, so no theme spec has run (D-200); Print has a known dark-panel gap (D-201). A visible theme button (sidebar on desktop, top bar on a phone) and themes.spec.mjs in qa:critical follow in a new PR."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "review",
+      "detail": "PR 135 carries the rest of S34 and is in review. CI: a11y spec 67/67 in Observatory, Blueprint and Print; themes.spec.mjs 11/11; evidence 18/18; pull-request Browser QA pass. 16 Blueprint and Print baselines added from the CI platform after reading their evidence images. D-199 to D-201 are superseded by D-202 to D-205; known limits D-198 and D-203. F-01 stays open for S36, F-05 closed in S02."
     }
   ]
 }
