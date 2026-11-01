@@ -15,6 +15,10 @@ on:
         description: Run the three-theme QA (a11y in each theme, theme specs, evidence screenshots)
         type: boolean
         default: false
+      a11y_grep:
+        description: With themes, run only the accessibility tests whose title matches this text (for example "compare")
+        type: string
+        default: ""
       theme_baselines:
         description: With themes, regenerate the Blueprint and Print baselines and upload them (never commits them)
         type: boolean
@@ -144,19 +148,19 @@ jobs:
         if: always()
         env:
           QGA_QA_THEME: observatory
-        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
 
       - name: Accessibility spec, Blueprint
         if: always()
         env:
           QGA_QA_THEME: blueprint
-        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
 
       - name: Accessibility spec, Print
         if: always()
         env:
           QGA_QA_THEME: print
-        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
 
       - name: Theme specs
         if: always()
