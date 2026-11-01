@@ -188,12 +188,27 @@ test.describe("bypass blocks", () => {
     await page.bringToFront();
     await page.waitForFunction(() => document.hasFocus(), null, { timeout: 5000 }).catch(() => {});
 
+    // What the page looked like just before the Tab, kept for the failure message: a first stop that is <body> says
+    // nothing about why, and this test failed in Print only.
+    const before = await page.evaluate(() => {
+      const link = document.querySelector(".skip-link");
+      const cs = link ? getComputedStyle(link) : null;
+      const r = link?.getBoundingClientRect();
+      const tabbable = [...document.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")]
+        .filter((e) => e.getClientRects().length > 0).slice(0, 4).map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 24)}`);
+      return JSON.stringify({
+        theme: document.documentElement.getAttribute("data-theme"), hasFocus: document.hasFocus(), active: document.activeElement?.tagName,
+        link: link ? { display: cs.display, visibility: cs.visibility, opacity: cs.opacity, transform: cs.transform, tabIndex: link.tabIndex, top: Math.round(r.top), height: Math.round(r.height), inert: !!link.closest("[inert]"), hidden: !!link.closest("[aria-hidden='true']") } : null,
+        introPresent: !!document.querySelector(".horizon-intro"), tabbable,
+      });
+    });
+
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
       const el = document.activeElement;
       return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim(), tag: el?.tagName || "", id: el?.id || "" };
     });
-    expect(first.cls, `first Tab stop is not the skip link (it is <${first.tag.toLowerCase()} id="${first.id}"> "${first.text.slice(0, 40)}")`).toContain("skip-link");
+    expect(first.cls, `first Tab stop is not the skip link (it is <${first.tag.toLowerCase()} id="${first.id}"> "${first.text.slice(0, 40)}"); page before Tab: ${before}`).toContain("skip-link");
     expect(first.text.length).toBeGreaterThan(0);
 
     // The reveal is a 0.16s transform transition; wait for it to land rather
