@@ -26,6 +26,22 @@ const SKIPPED_PROPERTIES = new Set(["box-shadow", "text-shadow", "filter", "back
 const PAGE_ELEMENTS = new Set(["html", "body", ":root"]);
 const BACKGROUND_LONGHANDS = /^(-webkit-)?background-(clip|size|position|repeat|origin|attachment)$/;
 
+const FILL_MIN_ALPHA = 0.5;
+
+/**
+ * Whether a declaration gives its element a fill of its own that the text on it is judged against. A wash of alpha 0.08
+ * (the tinted chips) is not one: the text is really on the panel behind it. `none`, `transparent` and longhands such as
+ * background-size are not fills; a token or a gradient with an opaque stop is.
+ */
+export function paintsAFill({ prop, value }) {
+  if (!/^background(-color|-image)?$/.test(prop)) return false;
+  const v = value.trim();
+  if (/^(none|transparent|inherit|initial|unset)$/i.test(v)) return false;
+  const literals = colourLiterals(v);
+  if (!literals.length) return true;
+  return literals.some(({ text }) => (parseCssColor(text)?.alpha ?? 1) >= FILL_MIN_ALPHA);
+}
+
 /** `html …` and `:root …` merge into the theme root; every other selector sits below it. */
 export function themedSelector(selector, theme) {
   const root = `:root[data-theme="${theme}"]`;
@@ -50,7 +66,7 @@ function overridesFor(nodes, theme, stats) {
     const pageOnly = node.selectors.every((s) => PAGE_ELEMENTS.has(s));
     // Text that sits on a fill of its own (a button, a chip) is mapped together with that fill; only text drawn on the
     // surrounding panel is held to the contrast target.
-    const ownsFill = node.declarations.some((d) => /^background/.test(d.prop) && !/^(none|transparent|inherit|initial|unset)$/i.test(d.value.trim()));
+    const ownsFill = node.declarations.some(paintsAFill);
     const lines = [];
     // A `background` shorthand restated here resets every background longhand, so the longhands the source sets after it
     // (a gradient clipped to text, a size, a repeat) must be restated too or the override changes the shape of the element.

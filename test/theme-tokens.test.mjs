@@ -20,7 +20,7 @@ const TOKENS = Object.fromEntries(THEME_IDS.map((id) => [id, themed(id)]));
 
 const SURFACES = ["surface-0", "surface-1", "surface-2"];
 // What the generated stylesheets turn the dark panel washes into: oklch(0.90 0.01 260) on Print, oklch(0.42 0.05 240) on Blueprint.
-const PANEL_REFERENCE = { observatory: null, blueprint: "#335166", print: "#dadee5" };
+const PANEL_REFERENCE = { observatory: null, blueprint: "#335166", print: "#ccd0d7" };
 const STATUS = ["established", "effective", "schematic", "conjectural", "open", "heuristic"].map((s) => `status-${s}`);
 const VISIONS = ["normal", ...CVD_TYPES];
 const see = (rgb, vision) => (vision === "normal" ? rgb : simulateCvd(rgb, vision));
@@ -57,7 +57,7 @@ for (const id of THEME_IDS) {
   });
 
   test(`${id}: accent and signal colours are text-legible on every surface`, () => {
-    for (const name of ["accent", "accent-2", "signal-warm", "signal-danger"]) for (const surface of SURFACES) {
+    for (const name of ["accent", "accent-2", "signal-warm", "signal-danger", "ink-cat-1", "ink-cat-2"]) for (const surface of SURFACES) {
       const ratio = contrastRatio(lin(name), lin(surface));
       assert.ok(ratio >= 4.5, `${id}: --${name} on --${surface}: ${ratio.toFixed(2)}:1`);
     }
@@ -112,7 +112,7 @@ for (const id of THEME_IDS) {
     const panel = PANEL_REFERENCE[id];
     if (!panel) return;
     const ref = cssColorToLinear(panel);
-    for (const name of ["ink-strong", "ink", "ink-dim", "accent", "accent-2", "signal-warm", "signal-danger", ...STATUS]) {
+    for (const name of ["ink-strong", "ink", "ink-dim", "accent", "accent-2", "signal-warm", "signal-danger", "ink-cat-1", "ink-cat-2", ...STATUS]) {
       const ratio = contrastRatio(lin(name), ref);
       assert.ok(ratio >= 4.5, `${id}: --${name} on the panel ${panel}: ${ratio.toFixed(2)}:1`);
     }
@@ -125,6 +125,23 @@ for (const id of THEME_IDS) {
     assert.ok(ratio < 4.5, `${id}: --ink-faint at ${ratio.toFixed(2)}:1 would be mistaken for text`);
   });
 }
+
+test("categorical colours are marks, not text: no stylesheet sets `color` to --cat-N (text asks for --ink-cat-N)", () => {
+  const offenders = [];
+  const walkCss = (dir) => fs.readdirSync(dir, { withFileTypes: true }).forEach((e) => {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) { if (e.name !== "themes") walkCss(full); return; }
+    if (!e.name.endsWith(".css") || e.name === "tokens.css") return;
+    fs.readFileSync(full, "utf8").split("\n").forEach((line, i) => {
+      if (/(^|[;{\s])color\s*:\s*var\(--cat-\d\)/.test(line)) offenders.push(`${path.relative(root, full)}:${i + 1}`);
+    });
+  });
+  walkCss(path.join(root, "styles"));
+  assert.deepEqual(offenders, [], `use var(--ink-cat-N) for text: ${offenders.join(", ")}`);
+  const base = parseTokensCss(baseCss);
+  assert.equal(base["--ink-cat-1"], base["--cat-1"], "in Observatory the text colour is the categorical colour itself");
+  assert.equal(base["--ink-cat-2"], base["--cat-2"]);
+});
 
 test("every theme overrides only tokens that exist in tokens.css", () => {
   const base = parseTokensCss(baseCss);

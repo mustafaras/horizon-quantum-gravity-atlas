@@ -48,6 +48,8 @@
   --cat-6: oklch(0.723 0.182 48.8);
   --cat-7: oklch(0.725 0.180 305.8);
   --cat-8: oklch(0.938 0.030 254.0);
+  --ink-cat-1: oklch(0.82 0.13 76);
+  --ink-cat-2: oklch(0.84 0.09 285);
 }
 
 /* Measured grid on the page, drawn once behind everything; it replaces the starfield. */

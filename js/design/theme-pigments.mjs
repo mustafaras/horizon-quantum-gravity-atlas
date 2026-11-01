@@ -56,7 +56,9 @@ export const themePigment = themeColor;
 // generated stylesheets produce, and pushed until it clears the target. Print's panels are the mapped dark washes
 // (about oklch 0.90); Blueprint's lightest text ground is its mapped wash (about oklch 0.42). Both are tested.
 
-export const TEXT_PANEL = Object.freeze({ blueprint: "#335166", print: "#dadee5" });
+// Measured, not assumed: on the live Print pages the darkest ground text sat on had a luminance of 0.63 (about #ccd0d7),
+// because translucent panels stack. Blueprint's lightest ground measured near #335166.
+export const TEXT_PANEL = Object.freeze({ blueprint: "#335166", print: "#ccd0d7" });
 export const TEXT_CONTRAST_TARGET = 4.7;
 const ALPHA_STEP = 0.05;
 const LIGHTNESS_STEP = 0.01;

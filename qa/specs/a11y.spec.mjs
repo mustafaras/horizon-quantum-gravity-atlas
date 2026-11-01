@@ -291,6 +291,9 @@ test.describe("contrast", () => {
         out.push({
           text: el.textContent.trim().slice(0, 48),
           cls: (typeof el.className === "string" ? el.className : el.getAttribute("class") || "").slice(0, 48),
+          // Where an element without a class of its own lives: its tag and the nearest ancestor that has a class.
+          tag: el.tagName.toLowerCase(),
+          within: (() => { for (let p = el.parentElement; p; p = p.parentElement) { const c = typeof p.className === "string" ? p.className : ""; if (c) return c.slice(0, 40); } return ""; })(),
           got: Math.round(got * 100) / 100,
           need,
         });

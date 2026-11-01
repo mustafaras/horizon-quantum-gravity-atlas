@@ -2,7 +2,7 @@
 .tidal-intro { display: flex; justify-content: space-between; gap: 32px; align-items: end; margin-bottom: 24px; }
 .tidal-intro h3 { font-family: var(--font-head); font-size: clamp(24px,3.1vw,38px); margin: 10px 0; letter-spacing: -.035em; }
 .tidal-intro p { color: var(--ink-dim); max-width: 650px; line-height: 1.65; margin: 0; }
-.tidal-kicker { color: var(--cat-1); font: 11px var(--font-mono); letter-spacing: .12em; }
+.tidal-kicker { color: var(--ink-cat-1); font: 11px var(--font-mono); letter-spacing: .12em; }
 .tidal-formula { border-left: 2px solid var(--cat-1); padding: 9px 0 9px 20px; min-width: 240px; }
 .tidal-formula small { display: block; margin-top: 9px; color: var(--ink-dim); }
 .tidal-controls,.tidal-transport { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 18px 0; }
@@ -22,7 +22,7 @@
 .gr-test-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .gr-test-list li { display: flex; gap: 10px; align-items: start; }.gr-test-list li > div { display: grid; gap: 3px; }
 .gr-test-list strong { color: var(--ink-strong); font-size: 13px; }.gr-test-list span,.gr-test-list small { color: var(--ink-dim); font-size: 11px; line-height: 1.4; }
-.gr-test-list a { display: inline-flex; align-items: center; min-height: 44px; color: var(--cat-1); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.gr-test-list a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-cat-1); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .gr-test-number { border: 1px solid var(--ink-faint); padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); }
 .gr-gps-note { display: flex; gap: 20px; padding: 20px; margin: 24px 0; background: var(--surface-1); border-left: 2px solid var(--cat-2); font-size: 13px; line-height: 1.6; }.gr-gps-note strong { white-space: nowrap; }.gr-gps-note span { color: var(--ink-dim); }
 .gr-well-stage { position: relative; }

@@ -25,27 +25,29 @@
   --edge: rgba(16, 20, 24, 0.2);
   --edge-bright: rgba(16, 20, 24, 0.42);
 
-  --accent: #0b5cad;
+  --accent: #0a529a;
   --accent-2: #005f69;
-  --accent-soft: rgba(11, 92, 173, 0.12);
-  --signal-warm: #8a4b00;
-  --signal-danger: #b3261e;
+  --accent-soft: rgba(10, 82, 154, 0.12);
+  --signal-warm: #7a4200;
+  --signal-danger: #a31f18;
 
-  --status-established: oklch(0.357 0.070 170.6);
-  --status-effective: oklch(0.486 0.083 206.4);
-  --status-schematic: oklch(0.350 0.075 112.9);
-  --status-conjectural: oklch(0.502 0.162 283.5);
-  --status-open: oklch(0.467 0.184 5.8);
-  --status-heuristic: oklch(0.492 0.104 106.3);
+  --status-established: oklch(0.317 0.060 174.8);
+  --status-effective: oklch(0.453 0.077 193.5);
+  --status-schematic: oklch(0.310 0.064 113.1);
+  --status-conjectural: oklch(0.472 0.172 287.3);
+  --status-open: oklch(0.446 0.181 0.6);
+  --status-heuristic: oklch(0.456 0.087 108.3);
 
-  --cat-1: oklch(0.555 0.127 62.5);
-  --cat-2: oklch(0.589 0.224 262.7);
-  --cat-3: oklch(0.173 0.030 199.3);
-  --cat-4: oklch(0.579 0.110 91.1);
+  --cat-1: oklch(0.535 0.114 53.9);
+  --cat-2: oklch(0.558 0.242 261.1);
+  --cat-3: oklch(0.173 0.030 202.1);
+  --cat-4: oklch(0.545 0.106 90.8);
   --cat-5: oklch(0.425 0.108 260.1);
-  --cat-6: oklch(0.595 0.244 29.2);
-  --cat-7: oklch(0.594 0.212 277.2);
-  --cat-8: oklch(0.110 0.031 250.2);
+  --cat-6: oklch(0.572 0.230 30.0);
+  --cat-7: oklch(0.553 0.182 268.3);
+  --cat-8: oklch(0.096 0.039 262.0);
+  --ink-cat-1: oklch(0.46 0.12 62);
+  --ink-cat-2: oklch(0.44 0.15 262);
 
   /* Diverging on paper: the neutral is light and darkness grows away from zero. */
   --div-neg-2: oklch(0.42 0.12 250);

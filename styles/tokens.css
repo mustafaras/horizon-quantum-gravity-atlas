@@ -64,6 +64,10 @@
   --cat-6: #d55e00;
   --cat-7: #cc79a7;
   --cat-8: #b8c4d9;
+  /* Categorical colours used as text (links, kickers, figures' numbers). The palette is held to 3:1 as marks and text needs
+     4.5:1, so text asks for these: the categorical colour itself in Observatory, a text-safe one in Blueprint and Print. */
+  --ink-cat-1: var(--cat-1);
+  --ink-cat-2: var(--cat-2);
   /* Diverging (signed quantities): blue ← dark neutral → orange, lightness rising away from zero. */
   --div-neg-2: oklch(0.78 0.12 235);
   --div-neg-1: oklch(0.56 0.11 250);
