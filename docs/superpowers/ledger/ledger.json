@@ -278,11 +278,11 @@
       "id": "F-18",
       "title": "Production ships React development builds and transpiles JSX in the browser with Babel (3.0 MB)",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S33"
       ],
-      "closedIn": null
+      "closedIn": "c933e5811f3c72f10d4c52d0d9d2f87054484d55"
     },
     {
       "id": "F-19",
@@ -1852,13 +1852,15 @@
         "F-01",
         "F-18"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "perf/s33-production-runtime",
       "pr": 132,
-      "commits": [],
+      "commits": [
+        "c933e58"
+      ],
       "startedAt": "2026-11-01",
-      "completedAt": null,
+      "completedAt": "2026-11-01",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1267 tests, 1266 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1250 pass, 1 skip; +17 new in test/production-runtime.test.mjs)",
@@ -4103,6 +4105,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Production loads 59 committed compiled JSX files and minified React with zero Babel; a module worker with a one-job-per-channel protocol carries the heavy science; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own. babelMs 3987 -> 0, first frame 5293 -> 519 ms. 17 new Node tests and 10 browser specs pass; 1266 of 1267 repository tests pass with one pre-existing skip. PR #132."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #132 as c933e58. Production loads 59 committed compiled JSX files and the React 18.3.1 production build with no Babel; the module worker carries the heavy science behind a one-job-per-channel protocol; the service worker precaches a subpath-scoped shell and never caches GWOSC. babelMs 3987 -> 0 ms, first frame 5293 -> 519 ms. F-18 closed; F-01 stays open for S34 and S36."
     }
   ]
 }
