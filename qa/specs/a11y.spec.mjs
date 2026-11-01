@@ -183,6 +183,10 @@ test.describe("bypass blocks", () => {
     // after 3s; drop it so the skip link is unambiguously the first stop.
     await page.evaluate(() => document.querySelector(".horizon-intro")?.remove());
     await page.evaluate(() => document.activeElement?.blur?.());
+    // A Tab pressed while the page does not have focus lands on <body>, which is what CI showed on a loaded runner (in
+    // Print only, twice). The assertion below is about where the first Tab goes in a focused page, so make it one.
+    await page.bringToFront();
+    await page.waitForFunction(() => document.hasFocus(), null, { timeout: 5000 }).catch(() => {});
 
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
