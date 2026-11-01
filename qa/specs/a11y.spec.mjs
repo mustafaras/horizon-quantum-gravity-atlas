@@ -8,7 +8,18 @@ import { gotoReady as gotoReadyBase } from "./helpers.mjs";
 // URL as `?theme=`; `npm run qa:test:themes` runs the three in turn. Only the colours differ, so any structural,
 // focus or target-size failure that appears in one theme alone is a theme bug.
 const THEME = process.env.QGA_QA_THEME || "observatory";
-const gotoReady = (page, url, ...rest) => gotoReadyBase(page, `${url}${url.includes("?") ? "&" : "?"}theme=${THEME}`, ...rest);
+// The compare view embeds two complete copies of the atlas. Its network is quiet for seconds at a time in every theme
+// (measured in CI: open requests 0 from about 12 s), yet Playwright's `networkidle` lifecycle event did not fire within 45 s,
+// in Observatory as well as Blueprint and Print. Fonts and the mounted view are the readiness that matters for what
+// these tests measure (the parent document; they never look inside the iframes), so that view waits for those two.
+const EMBEDDING_VIEW = /[?&]view=compare\b/;
+const EMBEDDING_READINESS = ["fonts", "view-mounted"];
+const gotoReady = (page, url, readiness, ...rest) => gotoReadyBase(
+  page,
+  `${url}${url.includes("?") ? "&" : "?"}theme=${THEME}`,
+  readiness ?? (EMBEDDING_VIEW.test(url) ? EMBEDDING_READINESS : undefined),
+  ...rest,
+);
 
 const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper", "compare"];
 
