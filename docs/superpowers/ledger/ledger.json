@@ -1804,13 +1804,15 @@
       "findings": [
         "F-01"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "feat/s32-publishing-studio",
       "pr": 130,
-      "commits": [],
+      "commits": [
+        "44efa46"
+      ],
       "startedAt": "2026-10-31",
-      "completedAt": null,
+      "completedAt": "2026-10-31",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1251 tests, 1250 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1226 pass, 1 skip; +24 new in test/export-metadata.test.mjs)",
@@ -4030,6 +4032,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Publishing studio: export envelope, real render-target stills, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards with the static-hosting limitation stated, and a print-ready lab report. 24 new Node tests and 15 Playwright specs pass; 1250 of 1251 repository tests pass with one pre-existing skip. PR #130."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #130 as 44efa46. The publishing studio is live: stills rendered at the target size, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards and print-ready lab reports. F-01 stays open: it spans S33, S34 and S36 as well."
     }
   ]
 }
