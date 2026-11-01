@@ -65,10 +65,20 @@ test("create-renderer registers and releases every renderer it constructs; boots
   assert.equal(create.match(/retainRenderer\(renderer\)/g).length, 2, "one retain per construction site");
   assert.equal(create.match(/releaseCensus\(\)/g).length, 2, "released on dispose and on the failure path");
   const bootstrap = await readFile(path.join(root, "js/bootstrap.mjs"), "utf8");
+  // S33 moved the transform out of production: the marks still wrap whatever work the runtime actually does, and the
+  // transform only exists on the ?dev=1 path.
   const start = bootstrap.indexOf('performance.mark("qga:babel:start")');
-  const transform = bootstrap.indexOf("Babel.transform");
   const end = bootstrap.indexOf('performance.mark("qga:babel:end")');
-  assert.ok(start !== -1 && start < transform && transform < end, "marks must wrap the transform loop");
+  const runtime = bootstrap.indexOf("const dev = window.__QGA_DEV__ === true;");
+  assert.ok(start !== -1 && end !== -1 && start < end, "the two marks must exist and be ordered");
+  assert.ok(runtime !== -1 && runtime < start, "the runtime decision is made before the timed region, so it is not measured");
+  // Every remaining call to Babel.transform sits inside `transpileInBrowser`, which production never calls.
+  const helper = bootstrap.indexOf("async function transpileInBrowser()");
+  const helperEnd = bootstrap.indexOf("\nasync function bootstrap()", helper);
+  const transform = bootstrap.indexOf("Babel.transform");
+  assert.ok(helper !== -1 && helperEnd !== -1, "the dev transpiler must exist as its own function");
+  assert.ok(transform > helper && transform < helperEnd, "the only transform left belongs to the dev path");
+  assert.match(bootstrap, /const dev = window\.__QGA_DEV__ === true;/, "production must decide the runtime explicitly");
 });
 
 async function fixture(files) {

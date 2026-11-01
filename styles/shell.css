@@ -145,3 +145,18 @@ body { background:
 }
 .ov-card:hover .gs-group { color: #fff; }
 
+
+/* ---------- offline / update notice (S33) ---------- */
+.offline-notice {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 70; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  max-width: min(680px, calc(100vw - 32px));
+  padding: 10px 14px; border-radius: 10px;
+  background: var(--surface-glass-strong); border: 1px solid var(--line-strong);
+  backdrop-filter: blur(14px);
+  font-size: 12.5px; color: var(--text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+}
+.offline-notice .btn { min-height: 32px; }
+.offline-notice:focus-within { border-color: var(--accent); }
+html[data-motion="reduced"] .offline-notice { backdrop-filter: none; }

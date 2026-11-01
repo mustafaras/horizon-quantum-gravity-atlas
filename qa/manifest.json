@@ -2330,6 +2330,37 @@
         "note": "DOM text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
       },
       "settleMs": 4000
+    },
+    {
+      "id": "s33-offline-notice",
+      "file": "docs/screenshots/s33-offline-notice.png",
+      "description": "The offline notice, shown once the service worker has cached the shell: the atlas will open without a network. The same component carries the update prompt, whose Reload button does nothing until it is clicked.",
+      "view": "overview",
+      "url": "?view=overview",
+      "viewport": {
+        "width": 1400,
+        "height": 900,
+        "deviceScaleFactor": 1,
+        "label": "desktop"
+      },
+      "scope": "element",
+      "target": ".offline-notice",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".offline-notice",
+          "state": "visible"
+        }
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A screenshot of the offline notice after the shell was cached; the caching rules it reports are asserted in test/production-runtime.test.mjs and qa/specs/production-runtime.spec.mjs.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "DOM text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
+      }
     }
   ]
 }

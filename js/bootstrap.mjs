@@ -1,3 +1,32 @@
+/**
+ * The development transpiler: fetch each JSX entry point and run the vendored Babel over it, exactly as the old
+ * production path did. Only reachable under `?dev=1`.
+ *
+ * The entry list comes from the compiler's own manifest rather than from the document, because index.html now carries
+ * one tag per source in the PRODUCTION form. Reading the manifest keeps the two paths pointed at the same files with no
+ * list to forget; a manifest that disagrees with index.html is what `compile-jsx --check` catches.
+ */
+async function transpileInBrowser() {
+  if (typeof Babel !== "object" || typeof Babel?.transform !== "function") {
+    throw new Error("?dev=1 needs the vendored Babel, which index.html does not load in this mode.");
+  }
+  const manifestResponse = await fetch("js/compiled/.manifest.json");
+  if (!manifestResponse.ok) throw new Error("?dev=1 needs js/compiled/.manifest.json; run `npm run compile:jsx`.");
+  const manifest = await manifestResponse.json();
+  const entries = Object.keys(manifest.sources ?? {});
+  if (entries.length === 0) throw new Error("js/compiled/.manifest.json lists no sources; run `npm run compile:jsx`.");
+  const sources = await Promise.all(entries.map(async (src) => {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error(`Cannot load ${src}: HTTP ${response.status}`);
+    return response.text();
+  }));
+  return sources.map((source, i) => Babel.transform(source, {
+    presets: ["react", "env"],
+    filename: entries[i],
+    sourceMaps: "inline",
+  }).code);
+}
+
 async function bootstrap() {
   try {
     const { threeCompatibility, renderRuntime } = await import("./render/three-runtime.mjs");
@@ -177,6 +206,37 @@ async function bootstrap() {
         SNAPSHOT_SCHEMA: snapshotStore.SNAPSHOT_SCHEMA, SNAPSHOT_LIMITS: snapshotStore.SNAPSHOT_LIMITS,
         validateSnapshotPayload: snapshotStore.validateSnapshotPayload, createSnapshotRecord: snapshotStore.createSnapshotRecord,
         createSnapshotStore: snapshotStore.createSnapshotStore,
+      }),
+      configurable: true,
+    });
+
+    // Workers (S33): the protocol and client the main thread uses, plus the offline registration state machine. The
+    // worker file itself is loaded by the browser as a module worker, not imported here.
+    const workerProtocol = await import("./workers/worker-protocol.mjs");
+    const workerClient = await import("./workers/worker-client.mjs");
+    const swRegistration = await import("./pwa/register-service-worker.mjs");
+    Object.defineProperty(window, "QGA_WORKERS", {
+      value: Object.freeze({
+        WORKER_SCHEMA: workerProtocol.WORKER_SCHEMA, JOB_KINDS: workerProtocol.JOB_KINDS,
+        JOB_LIMITS: workerProtocol.JOB_LIMITS, shouldOffloadCausalSet: workerProtocol.shouldOffloadCausalSet,
+        validateJob: workerProtocol.validateJob, causalSetWork: workerProtocol.causalSetWork,
+        createChannelTracker: workerProtocol.createChannelTracker,
+        createWorkerClient: () => workerClient.createWorkerClient({
+          url: new URL("./workers/simulation-worker.mjs", import.meta.url).href,
+        }),
+        prefersWorker: workerClient.prefersWorker,
+      }),
+      configurable: true,
+    });
+    Object.defineProperty(window, "QGA_PWA", {
+      value: Object.freeze({
+        SW_STATE: swRegistration.SW_STATE,
+        createController: () => swRegistration.createServiceWorkerController({
+          url: new URL("../service-worker.js", import.meta.url).href,
+          listen: !swRegistration.workerDisabledByUrl(location.search),
+        }),
+        workerDisabledByUrl: swRegistration.workerDisabledByUrl,
+        updateNoticeText: swRegistration.updateNoticeText,
       }),
       configurable: true,
     });
@@ -439,34 +499,55 @@ async function bootstrap() {
     });
     void cinematicRuntime.prewarmTransition();
 
-    const scripts = [...document.querySelectorAll('script[type="application/x-qga-jsx"]')];
-    const sources = await Promise.all(scripts.map(async (script) => {
-      const response = await fetch(script.src);
-      if (!response.ok) throw new Error(`Cannot load ${script.getAttribute("src")}: HTTP ${response.status}`);
-      return response.text();
-    }));
+    // Production has already transpiled the 58 JSX entry points (scripts/compile-jsx.mjs) and index.html loads the
+    // results as deferred classic scripts, so this block only has to run in development. `?dev=1` keeps the
+    // in-browser path, where editing a .jsx file and reloading is the whole workflow.
+    const dev = window.__QGA_DEV__ === true;
+    document.documentElement.dataset.qgaRuntime = dev ? "dev" : "production";
     performance.mark("qga:babel:start");
-    const compiled = sources.map((source, i) => Babel.transform(source, {
-      presets: ["react", "env"],
-      filename: scripts[i].getAttribute("src"),
-      sourceMaps: "inline",
-    }).code);
+    const compiled = dev ? await transpileInBrowser() : null;
     performance.mark("qga:babel:end");
-
-    // Classic scripts share lexical/global bindings, exactly as the Babel tag loader did.
-    // Evaluate as one script so a synchronous error aborts before app.jsx can mount.
-    const entry = document.createElement("script");
-    entry.textContent = compiled.join("\n;\n");
-    let evaluationError;
-    const onError = (event) => { evaluationError = event.error ?? new Error(event.message); };
-    window.addEventListener("error", onError);
-    try {
-      document.head.appendChild(entry);
-    } finally {
-      window.removeEventListener("error", onError);
-      entry.remove();
+    if (!dev) {
+      // The compiled files are listed in index.html with a private type so the browser keeps them inert and in order;
+      // they must run after this module has exposed QGA_TOKENS, QGA_PHYSICS and the rest, exactly as the JSX used to.
+      const tags = [...document.querySelectorAll('script[type="application/x-qga-compiled"]')];
+      const texts = await Promise.all(tags.map(async (tag) => {
+        const response = await fetch(tag.getAttribute("src"));
+        if (!response.ok) throw new Error(`Cannot load ${tag.getAttribute("src")}: HTTP ${response.status}`);
+        return response.text();
+      }));
+      const entry = document.createElement("script");
+      entry.textContent = texts.join("\n;\n");
+      let evaluationError;
+      const onError = (event) => { evaluationError = event.error ?? new Error(event.message); };
+      window.addEventListener("error", onError);
+      try { document.head.appendChild(entry); } finally {
+        window.removeEventListener("error", onError);
+        entry.remove();
+      }
+      if (evaluationError) throw evaluationError;
+      window.__QGA_COMPILE__ = { runtime: "production", babelMs: 0, sources: texts.length };
     }
-    if (evaluationError) throw evaluationError;
+
+    if (dev) {
+      // Classic scripts share lexical/global bindings, exactly as the Babel tag loader did.
+      // Evaluate as one script so a synchronous error aborts before app.jsx can mount.
+      const entry = document.createElement("script");
+      entry.textContent = compiled.join("\n;\n");
+      let evaluationError;
+      const onError = (event) => { evaluationError = event.error ?? new Error(event.message); };
+      window.addEventListener("error", onError);
+      try {
+        document.head.appendChild(entry);
+      } finally {
+        window.removeEventListener("error", onError);
+        entry.remove();
+      }
+      if (evaluationError) throw evaluationError;
+      const end = performance.getEntriesByName("qga:babel:end")[0];
+      const start = performance.getEntriesByName("qga:babel:start")[0];
+      window.__QGA_COMPILE__ = { runtime: "dev", babelMs: end && start ? end.startTime - start.startTime : 0, sources: compiled.length };
+    }
   } catch (error) {
     console.error("HORIZON initialization failed:", error);
     const message = document.createElement("p");

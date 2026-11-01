@@ -1,0 +1,98 @@
+/* Compiled from js/mod-rg-stage3.jsx by scripts/compile-jsx.mjs. Do not edit; run `npm run compile:jsx`. */
+"use strict";
+
+// Stage 3 composition for the RG flow landscape. The three-dimensional field lives in js/labs/rg-flow-field-lab.jsx (S18).
+
+function ModuleRGStage3(_ref) {
+  var go = _ref.go;
+  return /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement(ModuleHeader, {
+    num: "03",
+    kicker: "Scale & symmetry",
+    title: "Gauge Theory and Renormalization",
+    lede: "Local symmetry organizes interactions; renormalization-group flow makes their scale dependence quantitative. This module separates perturbative QED and QCD results (and the two-loop running of all three Standard-Model gauge couplings) from numerical presentation, pedagogical fixed-point toys, and conjectural quantum-gravity ideas.",
+    target: "#rg-gravity-flow, .rg-flow-landscape"
+  }), /*#__PURE__*/React.createElement(Section, {
+    title: "Local gauge invariance"
+  }, /*#__PURE__*/React.createElement("p", null, "A global symmetry rotates a field by the same amount everywhere. Promoting it to a ", /*#__PURE__*/React.createElement("em", null, "local"), " symmetry \u2014 an independent rotation at every spacetime point \u2014 breaks derivative terms unless a compensating gauge field is introduced. Electromagnetism, the weak force, and the strong force all arise from this principle."), /*#__PURE__*/React.createElement("p", null, "In non-Abelian theories, gauge bosons carry the charge they mediate. Gluon self-interaction contributes anti-screening in QCD, enabling asymptotic freedom when the one-loop coefficient b", /*#__PURE__*/React.createElement("sub", null, "0"), " is positive.")), /*#__PURE__*/React.createElement(Section, {
+    title: "Renormalisation-group flow landscape"
+  }, /*#__PURE__*/React.createElement("p", null, "Select a documented flow, vary its inputs, and compare the running coupling with the beta function that generates it. The scale graph and phase line share one coupling axis, so ultraviolet and infrared stability can be read directly rather than inferred from visual motion."), /*#__PURE__*/React.createElement(RGFlowLandscape, null)), /*#__PURE__*/React.createElement(Section, {
+    title: "Do the couplings meet?"
+  }, /*#__PURE__*/React.createElement("p", null, "The three Standard-Model gauge couplings, measured at the Z mass, run with the scale. Plotted as inverse couplings they are nearly straight lines that almost, but not quite, meet near 10", /*#__PURE__*/React.createElement("sup", null, "14"), " to 10", /*#__PURE__*/React.createElement("sup", null, "17"), " GeV; with superpartners at 1 TeV they come far closer. Run them yourself, and focus a term of the formula to see which line it is."), /*#__PURE__*/React.createElement(UnificationLab, null)), /*#__PURE__*/React.createElement(Section, {
+    title: "Does gravity flow to a fixed point?"
+  }, /*#__PURE__*/React.createElement("p", null, "Newton's constant is not dimensionless in four dimensions, so the question of quantum gravity becomes a question about the flow of its dimensionless version ", /*#__PURE__*/React.createElement(Eq, {
+    tex: "g=k^2G_k"
+  }), " and of the dimensionless cosmological constant ", /*#__PURE__*/React.createElement(Eq, {
+    tex: "\\lambda=\\bar\\lambda_k/k^2"
+  }), ". Asymptotic safety proposes that this flow has a non-Gaussian ultraviolet fixed point, so that gravity stays predictive to arbitrarily high scales. Below is the Einstein\u2013Hilbert truncation of that flow \u2014 two couplings kept out of an infinite tower \u2014 drawn as a line integral convolution of its direction, with the fixed points, the separatrix and the region where the truncation breaks down."), /*#__PURE__*/React.createElement(GravityFlowLab, null)), /*#__PURE__*/React.createElement(Section, {
+    title: "The flow field in three dimensions"
+  }, /*#__PURE__*/React.createElement("p", null, "A beta function is a vector field, so the landscape's curves are really projections of a flow in", /*#__PURE__*/React.createElement("em", null, "theory space"), ". This lab renders that flow in three dimensions: the coupling g and a mass-like coupling r span the horizontal plane, and the vertical axis is the log energy scale t = ln \u03BC that the shared numerics already use. Streamlines are integrated with the same RK4 stepper as every other RG computation on the site, seeded deterministically, and they stop \u2014 visibly \u2014 at the perturbative validity wall. Change the model with the buttons above the field: the Einstein\u2013Hilbert mode swaps the mass-like coupling for the cosmological constant and draws the plane where the truncation is singular. The parameters of the one-coupling models come from the landscape above."), /*#__PURE__*/React.createElement(RgFlowFieldLab, null)), /*#__PURE__*/React.createElement(Section, {
+    title: "Mathematical formulation"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "formula-grid"
+  }, /*#__PURE__*/React.createElement(FormulaCard, {
+    title: "Covariant derivative",
+    status: "established",
+    formulaId: "gauge-covariant-derivative",
+    symbols: [{
+      s: "A_\\mu^a",
+      d: "Gauge field components, one per group generator."
+    }, {
+      s: "T^a",
+      d: "Generators acting in the matter field representation."
+    }, {
+      s: "g",
+      d: "Gauge coupling for the selected group factor."
+    }],
+    meaning: "Replacing the ordinary derivative by a covariant derivative restores local gauge covariance and fixes the form of matter\u2013gauge interactions.",
+    limits: "Shown for one group factor; quantization also requires gauge fixing and ghost structure."
+  }), /*#__PURE__*/React.createElement(FormulaCard, {
+    title: "QCD beta function \xB7 one loop",
+    status: "effective",
+    formulaId: "qcd-beta-one-loop",
+    symbols: [{
+      s: "\\mu",
+      d: "Renormalization scale; $t=\\ln\\mu$ increases toward the ultraviolet."
+    }, {
+      s: "n_f",
+      d: "Number of active quark flavours in the one-loop SU(3) coefficient."
+    }],
+    meaning: "For $n_f<16.5$, $b_0$ is positive and the QCD coupling decreases toward high scales.",
+    limits: "Thresholds and higher loops are omitted. The one-loop curve is not valid in the infrared strong-coupling regime."
+  }), /*#__PURE__*/React.createElement(FormulaCard, {
+    title: "QED convention \xB7 one loop",
+    status: "effective",
+    formulaId: "qed-beta-one-loop",
+    symbols: [{
+      s: "n_f",
+      d: "Active unit-charge Dirac fermions in the simplified displayed convention."
+    }, {
+      s: "\\alpha",
+      d: "Dimensionless coupling associated with the displayed gauge coupling e."
+    }],
+    meaning: "Vacuum polarization screens electric charge, so the one-loop QED coupling grows toward the ultraviolet.",
+    limits: "Unequal charges and thresholds are omitted. The formal Landau pole is an extrapolation, not an observation."
+  }), /*#__PURE__*/React.createElement(FormulaCard, {
+    title: "Fixed-point linearization",
+    status: "effective",
+    formulaId: "rg-fixed-point-linearization",
+    symbols: [{
+      s: "\\beta'(g_*)<0",
+      d: "UV-attractive for $t=\\ln\\mu$ increasing toward the ultraviolet."
+    }, {
+      s: "\\beta'(g_*)>0",
+      d: "IR-attractive because trajectories approach the point as t decreases."
+    }],
+    meaning: "The local slope classifies attraction in a one-coupling flow. A vanishing slope is marginal at linear order.",
+    limits: "Multi-coupling theories require the eigenvalues of a stability matrix, not a single derivative."
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "Why this matters for gravity"
+  }, /*#__PURE__*/React.createElement("p", null, "Standard Model gauge couplings are dimensionless. Newton's constant instead has mass dimension \u22122 in four dimensions, so the associated dimensionless strength grows approximately as ", /*#__PURE__*/React.createElement(Eq, {
+    tex: "G E^2"
+  }), ". A non-Gaussian ultraviolet fixed point is the central conjecture of asymptotic safety, but the polynomial preset above only illustrates the required phase-line geometry; it supplies no evidence that gravity realizes that flow.")), /*#__PURE__*/React.createElement(Misconception, {
+    title: "Couplings do not change with ordinary time."
+  }, "A running coupling varies with the energy scale of a measurement. Probing the same vacuum at shorter distances resolves quantum fluctuations differently; the horizontal axis is resolution scale \u03BC, not cosmic evolution."), /*#__PURE__*/React.createElement(ConceptBridge, {
+    id: "rg-gr",
+    go: go
+  }));
+}
+window.ModuleRG = ModuleRGStage3;

@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-10-31",
+  "updated": "2026-11-01",
   "statuses": [
     "todo",
     "claimed",
@@ -1852,17 +1852,39 @@
         "F-01",
         "F-18"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "perf/s33-production-runtime",
+      "pr": 132,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-01",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "node --test test/*.test.mjs — 1267 tests, 1266 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1250 pass, 1 skip; +17 new in test/production-runtime.test.mjs)",
+          "node --test test/production-runtime.test.mjs — 17 pass: the committed js/compiled tree equals a fresh compile; index.html lists one tag per source in compiler order with no JSX and no Babel in production; the vendored React builds are 18.3.1 and carry no development warnings; the compiler is deterministic and names the file on a syntax error; the worker protocol declares five kinds, its limits and the N=2000 causal-set threshold, and refuses bad shapes and sizes; backpressure refuses a second job on a busy channel; every handler answers from the science modules with a seed and stops on cancellation; the client releases channels on result, cancel and dispose; the service worker never caches GWOSC and never calls skipWaiting at install; the offline controller reports unsupported/insecure/disabled/failed honestly and refuses an update with nothing waiting",
+          "npm run validate — repository valid · compiled JSX current (59 sources, no drift) · formula audit 65/77/6 · provenance 89 · cover index matches",
+          "npm run qa:verify — 74 captures, schema-conformant, README-consistent",
+          "npm run perf:audit — exit 0",
+          "npx playwright test qa/specs/production-runtime.spec.mjs — 10 pass: no Babel request is made in production and __QGA_COMPILE__ reports babelMs 0 with 59 sources; ?dev=1 still transpiles in the browser (babelMs > 0); the compiled tags are ordered with tweaks-panel first and app.js last; a real causal-set job answers through a module worker; a 1200-point job leaves the main thread free (a 50 ms timeout fires on time) and cancels; a busy channel is refused; an offline reload boots the atlas from cache with 15 views; ?dev=1 and ?nosw=1 disable the worker; the worker never caches GWOSC; the update text asks the reader to reload at a stopping point",
+          "npx playwright test qa/specs/{smoke,esm-runtime,render-contracts,export-studio,tours}.spec.mjs — 56 pass, 2 fail, both fixed in this prompt: the esm-runtime spec still routed js/physics.jsx (a path production no longer loads) and the tours a11y spec expected focus on the heading rather than on the focus sink S31 introduced. Both now assert the shipping behaviour and pass."
+        ],
+        "screenshots": [
+          "docs/screenshots/s33-offline-notice.png"
+        ],
+        "measurements": [
+          "babelMs: 3987 ms (S01) → 4014 ms (S05) → 0 ms; production records zero because the timed region contains no transform",
+          "JS transferred, overview: 10687611 B (S01) → 10845431 B (S05) → 8386181 B, a 21.5 % reduction",
+          "JS transferred, black hole: 10801325 B (S01) → 10959986 B (S05) → 8386181 B, a 22.4 % reduction",
+          "First frame, overview: 5293 ms (S01) → 5343 ms (S05) → 519 ms, a 90.2 % reduction",
+          "First frame, black hole: 5320 ms (S01) → 6275 ms (S05) → 2235 ms, a 58.0 % reduction; the remainder is four WebGL2 renderers and 46 programs on the software adapter",
+          "Babel requests in production: 0 (asserted by intercepting every request whose URL contains 'babel')",
+          "Compiled output: 59 sources, 1141568 B of JSX → 1748990 B of JavaScript. The compiled tree is larger than its input because the env preset targets ES5; the payload is smaller because the 3.0 MB Babel runtime is gone",
+          "Offline: after one online visit the worker controls the page and holds horizon-qga-v1-shell and horizon-qga-v1-runtime; with the context offline the reload reaches 15 views and the production runtime",
+          "Worker: a 1200-point causal-set job leaves a 50 ms main-thread timeout firing at under 600 ms, and cancel reports 'cancelled'"
+        ],
+        "decisions": [],
+        "notes": "Production now loads compiled JSX and minified React with no Babel; expensive science runs in a module worker behind a one-job-per-channel protocol; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own."
       },
       "blockers": [],
       "notes": ""
@@ -3274,6 +3296,34 @@
       "prompt": "S32",
       "decision": "The animation-settled readiness probe was rewritten to a synchronous frame counter.",
       "rationale": "The old predicate returned a Promise from inside `page.waitForFunction`. Playwright does not await a returned promise — it treats the object as truthy — and the inner promise could fail to settle when the page's rAF loop was busy. One run in three stalled for fifteen minutes and reported a 45 s predicate timeout, intermittently failing unrelated browser specs. The replacement records frames on `window` and the predicate reads that counter, so every wait terminates on an observable value; five consecutive runs then settled in 7.7–9.0 s."
+    },
+    {
+      "id": "D-191",
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "decision": "Compiled JSX is committed to js/compiled/ and evaluated by the module bootstrap, rather than shipped as `<script src>` tags the browser runs directly.",
+      "rationale": "The classic scripts share lexical bindings with the module bootstrap (they read QGA_TOKENS, QGA_PHYSICS and a dozen others that the ESM bootstrap defines). A `defer` tag runs before the module, which was observed as 'QGA_TOKENS is not defined' when the switch was first attempted. The tags therefore carry a private type, stay inert and in document order, and the bootstrap evaluates them once its setup is done. The cost is one extra fetch per file; the benefit is that production and development use one evaluation path with one error surface."
+    },
+    {
+      "id": "D-192",
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "decision": "The worker protocol refuses a second job on a busy channel instead of queueing it.",
+      "rationale": "The prompt asks for backpressure of at most one pending frame or result per simulation channel. A queue would let a fast control surface outrun a slow computation and grow without bound; refusing the request makes the pressure visible to the caller, which can drop the stale one. A channel is released on result, cancel, error and dispose, so a leaked job cannot silently stop a simulation."
+    },
+    {
+      "id": "D-193",
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "decision": "The service worker never caches gwosc.org responses and never calls clients.skipWaiting at install.",
+      "rationale": "Strain data carries provenance — a detector, a GPS start and a retrieval date — and a cached copy would let the atlas present yesterday's download as today's measurement, which is the one thing the project forbids. An automatic update would also drop an in-progress tour step or annotation; the update is announced, and the reload is the reader's click. Activation deletes only horizon-qga-* caches so the shared Pages origin keeps a neighbour's storage intact."
+    },
+    {
+      "id": "D-194",
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "decision": "The vendored React production builds were taken from the official npm 18.3.1 tarballs, whose sha512 digests were checked against the registry's dist.integrity before use.",
+      "rationale": "The prompt requires the pinned version with SRI. Obtaining the files any other way would have meant trusting an unverified mirror, which is exactly what the self-hosting rule exists to prevent. The tarball hashes matched the registry exactly, and the SRI values in index.html are computed from the vendored bytes."
     }
   ],
   "log": [
@@ -4039,6 +4089,20 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #130 as 44efa46. The publishing studio is live: stills rendered at the target size, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards and print-ready lab reports. F-01 stays open: it spans S33, S34 and S36 as well."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on perf/s33-production-runtime from main at 844e180."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "Production loads 59 committed compiled JSX files and minified React with zero Babel; a module worker with a one-job-per-channel protocol carries the heavy science; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own. babelMs 3987 -> 0, first frame 5293 -> 519 ms. 17 new Node tests and 10 browser specs pass; 1266 of 1267 repository tests pass with one pre-existing skip. PR #132."
     }
   ]
 }
