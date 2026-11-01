@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { checkCompiled, listJsxSources } from "./compile-jsx.mjs";
 import { inspectThreeVendor } from "./lib/three-vendor.mjs";
 import { lintTokenLiterals } from "./lib/token-lint.mjs";
 
@@ -132,7 +133,10 @@ for (const htmlFile of ["index.html"]) {
     ...html.matchAll(/<script[^>]+src="([^"]+)"/g),
     ...html.matchAll(/<link[^>]+href="([^"]+)"/g),
     ...html.matchAll(/<img[^>]+src="([^"]+)"/g)
-  ].map((match) => match[1]);
+  ].map((match) => match[1])
+    // A path assembled at run time (the runtime chooser in index.html) is not a literal asset reference; the files it
+    // names are checked below by name.
+    .filter((ref) => !ref.includes("' + ") && !ref.includes('" + '));
 
   const metadataLinks = new Set(
     [...html.matchAll(/<link[^>]+href="([^"]+)"[^>]*>/g)]
@@ -158,6 +162,8 @@ for (const file of [
   "vendor/katex/katex.min.js",
   "vendor/react/react.development.js",
   "vendor/react/react-dom.development.js",
+  "vendor/react/react.production.min.js",
+  "vendor/react/react-dom.production.min.js",
   "vendor/babel/babel.min.js",
   "js/bootstrap.mjs",
   "js/render/three-runtime.mjs"
@@ -166,6 +172,34 @@ for (const file of [
 }
 
 failures.push(...inspectThreeVendor(root));
+
+// Committed compiled JSX (S33): production no longer transpiles in the browser, so a stale js/compiled/ tree would
+// ship code nobody wrote. Drift is a failure, not a warning.
+{
+  let compiled = null;
+  try {
+    compiled = checkCompiled({ root });
+  } catch (error) {
+    fail(`JSX compilation failed: ${error.message}`);
+  }
+  if (compiled) {
+    for (const file of compiled.missing) fail(`js/compiled is missing ${file}; run npm run compile:jsx`);
+    for (const file of compiled.stale) fail(`js/compiled has a stale ${file}; run npm run compile:jsx`);
+    for (const file of compiled.extra) fail(`js/compiled has ${file}, which no source compiles to`);
+    const expected = compiled.sources.map((relativeSource) => {
+      const withoutExt = relativeSource.replace(/^\.\//, "").replace(/\.jsx$/, "");
+      return `js/compiled/${withoutExt}.js`;
+    });
+    const listed = [...read("index.html").matchAll(/<script type="application\/x-qga-compiled" src="([^"]+)">/g)].map((m) => m[1]);
+    if (listed.length !== expected.length) {
+      fail(`index.html lists ${listed.length} compiled script(s); the compiler produced ${expected.length}`);
+    } else {
+      expected.forEach((file, i) => {
+        if (listed[i] !== file) fail(`index.html compiled script ${i} is ${listed[i]}, expected ${file} (order matters)`);
+      });
+    }
+  }
+}
 failures.push(...lintTokenLiterals(root));
 
 for (const cssFile of ["vendor/fonts/fonts.css", "vendor/katex/katex.min.css"]) {

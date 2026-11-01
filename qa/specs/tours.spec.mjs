@@ -140,12 +140,13 @@ test.describe("accessibility", () => {
   test("the tour panel is keyboard operable and announces each step", async ({ page }) => {
     await gotoReady(page, `/?tour=${TOURS[0].id}&step=1`);
     const panel = page.locator(".tour-surface");
-    // The step heading takes focus, so a screen reader hears the new step rather than a silent repaint.
+    // Focus lands on the panel's focus sink, so a screen reader hears the new step rather than a silent repaint while
+    // no visible control is ringed (a ring around a title reads as "the title is a button", which it is not).
     const focused = await page.evaluate(() => {
       const el = document.activeElement;
       return el ? el.className : null;
     });
-    expect(focused).toContain("tour-reader-title");
+    expect(focused).toContain("tour-focus-sink");
 
     // Keyboard: Tab reaches a control and Enter advances.
     await page.locator(".tour-surface .tour-controls .btn.primary").focus();

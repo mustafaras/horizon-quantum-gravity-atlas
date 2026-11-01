@@ -45,14 +45,22 @@ test("vendor validation rejects mismatched versions, missing imports, CDN and le
   }
 });
 
-test("JSX evaluation is owned only by the module bootstrap", () => {
+test("application script evaluation is owned only by the module bootstrap", () => {
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
   assert.doesNotMatch(html, /type="text\/babel"/);
   assert.match(html, /type="module" src="js\/bootstrap\.mjs"/);
-  const sources = [...html.matchAll(/type="application\/x-qga-jsx" src="([^"]+)"/g)].map((m) => m[1]);
-  assert.equal(sources.at(-1), "js/app.jsx");
-  assert.equal(sources.filter((s) => s === "js/app.jsx").length, 1);
-  for (const src of sources) assert.ok(fs.existsSync(path.join(root, src)), src);
+  // S33: production lists one inert tag per compiled file. They are evaluated by the bootstrap, in this order, after
+  // the module scope has exposed QGA_TOKENS and the rest, so the entry point is still js/app.
+  const compiled = [...html.matchAll(/<script type="application\/x-qga-compiled" src="([^"]+)">/g)].map((m) => m[1]);
+  assert.ok(compiled.length > 0, "index.html must list the compiled application scripts");
+  assert.equal(compiled.at(-1), "js/compiled/js/app.js");
+  assert.equal(compiled.filter((src) => src === "js/compiled/js/app.js").length, 1);
+  for (const src of compiled) assert.ok(fs.existsSync(path.join(root, src)), src);
+  // No .jsx path is loaded in production: ?dev=1 resolves them from the compiler's manifest instead.
+  assert.equal([...html.matchAll(/type="application\/x-qga-jsx"/g)].length, 0);
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "js/compiled/.manifest.json"), "utf8"));
+  assert.equal(Object.keys(manifest.sources).at(-1), "js/app.jsx");
+  assert.equal(Object.keys(manifest.sources).length, compiled.length);
 });
 
 test("the engraved-line addons are vendored with integrity metadata and reach the import graph through the backend loader", () => {

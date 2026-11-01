@@ -246,6 +246,48 @@ function collectPageFormulas() {
   }).filter(Boolean).slice(0, 24);
 }
 
+
+/**
+ * The offline/update notice (S33).
+ *
+ * Two states are worth showing: "ready offline" once, so a reader learns the atlas works without a network, and "a new
+ * version is waiting", which offers a reload and does nothing until it is clicked.
+ */
+function OfflineNotice() {
+  const [state, setState] = useState(null);
+  const [dismissed, setDismissed] = useState(new Set());
+  const controllerRef = useRef(null);
+
+  useEffect(() => {
+    const PWA = window.QGA_PWA;
+    if (!PWA) return undefined;
+    const controller = PWA.createController();
+    controllerRef.current = controller;
+    if (!controller.supported) return undefined;
+    const off = controller.subscribe(({ state: next }) => setState(next));
+    void controller.register();
+    return () => { off(); controllerRef.current = null; };
+  }, []);
+
+  if (!state || dismissed.has(state)) return null;
+  if (state !== "offline-ready" && state !== "update-available") return null;
+  const isUpdate = state === "update-available";
+  return (
+    <div className="offline-notice" role={isUpdate ? "alert" : "status"}>
+      <span>
+        {isUpdate
+          ? window.QGA_PWA.updateNoticeText()
+          : "The atlas is cached and will open without a network."}
+      </span>
+      {isUpdate ? (
+        <button className="btn" onClick={() => controllerRef.current?.applyUpdate()}>Reload now</button>
+      ) : null}
+      <button className="btn" aria-label="Dismiss this notice"
+        onClick={() => setDismissed((current) => new Set(current).add(state))}>Dismiss</button>
+    </div>
+  );
+}
+
 function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
   const [atlasState, setAtlasState] = useQGAState();
@@ -511,6 +553,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         </main>
       </div>
       <CinemaBar reducedMotion={prm}></CinemaBar>
+      <OfflineNotice></OfflineNotice>
       <TransitionNotice></TransitionNotice>
       {menuOpen ? (
         <div className="mobile-menu" role="dialog" aria-label="Navigation menu">

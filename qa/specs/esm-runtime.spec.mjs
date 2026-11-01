@@ -151,11 +151,21 @@ test("all import-map entrypoints load locally without enabling a new backend", a
   expect(observed).toEqual({ errors: [], failed: [] });
 });
 
-test("a missing JSX source shows an actionable error without mounting React", async ({ page }) => {
-  await page.route("**/js/physics.jsx", (route) => route.fulfill({ status: 404, body: "missing" }));
+test("a missing compiled script shows an actionable error without mounting React", async ({ page }) => {
+  // S33: production loads js/compiled/, so that is the file whose absence has to be reported. A missing compiled file
+  // means the deploy is incomplete, and the message must say which file and what to check.
+  await page.route("**/js/compiled/js/physics.js", (route) => route.fulfill({ status: 404, body: "missing" }));
   await page.goto("/?view=overview");
-  await expect(page.getByRole("alert")).toContainText("Cannot load js/physics.jsx: HTTP 404");
+  await expect(page.getByRole("alert")).toContainText("Cannot load js/compiled/js/physics.js: HTTP 404");
   await expect(page.getByRole("alert")).toContainText("self-hosted assets");
+  await expect(page.locator("#root > .shell")).toHaveCount(0);
+});
+
+test("a stale compiled tree is reported the same way, not silently half-loaded", async ({ page }) => {
+  // The compile check is what catches drift before a deploy; this proves the runtime side degrades visibly if it slips.
+  await page.route("**/js/compiled/js/core.js", (route) => route.fulfill({ status: 404, body: "missing" }));
+  await page.goto("/?view=overview");
+  await expect(page.getByRole("alert")).toContainText("Cannot load js/compiled/js/core.js: HTTP 404");
   await expect(page.locator("#root > .shell")).toHaveCount(0);
 });
 

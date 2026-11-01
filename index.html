@@ -80,68 +80,85 @@ body { background: var(--surface-0); color: var(--ink); overflow: hidden; }
   }
 }
 </script>
-<script src="vendor/react/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="vendor/react/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="vendor/babel/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="application/x-qga-jsx" src="tweaks-panel.jsx"></script>
-<script type="application/x-qga-jsx" src="js/physics.jsx"></script>
-<script type="application/x-qga-jsx" src="js/state.jsx"></script>
-<script type="application/x-qga-jsx" src="js/state-runtime.jsx"></script>
-<script type="application/x-qga-jsx" src="js/core.jsx"></script>
-<script type="application/x-qga-jsx" src="js/figure/katex-overlay.jsx"></script>
-<script type="application/x-qga-jsx" src="js/figure/Figure.jsx"></script>
-<script type="application/x-qga-jsx" src="js/scene3d.jsx"></script>
-<script type="application/x-qga-jsx" src="js/search/command-palette.jsx"></script>
-<script type="application/x-qga-jsx" src="js/compare/compare-view.jsx"></script>
-<script type="application/x-qga-jsx" src="js/snapshots/snapshot-panel.jsx"></script>
-<script type="application/x-qga-jsx" src="js/annotations/annotation-layer.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/ads-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/collider-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/lens-cards.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/derivation-stepper.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/provenance-drawer.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/neutrino-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/higgs-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/causal-spacetime-model.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/null-geodesic-panel.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/field-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/amplitude-room.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/lattice-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/qft-compute-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/casimir-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/feynman-diagram.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/unification-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/gravity-flow-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/rg-flow-field-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/penrose-atlas.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/curvature-engine-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/tidal-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/gr-tests-panel.jsx"></script>
-<script type="application/x-qga-jsx" src="js/atlas-stage.jsx"></script>
-<script type="application/x-qga-jsx" src="js/data.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-standard-model.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-qft.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-gauge-rg.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-rg-stage3.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-gr.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/planck-labs.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/constraint-plane.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/causal-set-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/spectral-dimension-chart.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/kerr-shadow-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/pn-waveform-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/matched-filter-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/observational-net-lab.jsx"></script>
-<script type="application/x-qga-jsx" src="js/labs/atlas-map.jsx"></script>
-<script type="application/x-qga-jsx" src="js/tours/tour-panel.jsx"></script>
-<script type="application/x-qga-jsx" src="js/export/export-studio.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-planck.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-approaches.jsx"></script>
-<script type="application/x-qga-jsx" src="js/visualizations/kerr/kerr-controls.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-blackholes.jsx"></script>
-<script type="application/x-qga-jsx" src="js/mod-experiments.jsx"></script>
-<script type="application/x-qga-jsx" src="js/extras.jsx"></script>
-<script type="application/x-qga-jsx" src="js/app.jsx"></script>
+<!-- Runtime selection (S33). Production loads the minified React and no Babel at all; ?dev=1 loads the
+     development builds and the in-browser transpiler so a .jsx edit runs without a compile step. The choice runs
+     synchronously here, before any application script, because React has to exist by the time they evaluate. -->
+<script>
+  (function () {
+    var dev = new URLSearchParams(location.search).get("dev") === "1";
+    window.__QGA_DEV__ = dev;
+    var files = dev
+      ? [["vendor/react/react.development.js", "sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"],
+         ["vendor/react/react-dom.development.js", "sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"],
+         ["vendor/babel/babel.min.js", "sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"]]
+      : [["vendor/react/react.production.min.js", "sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"],
+         ["vendor/react/react-dom.production.min.js", "sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"]];
+    window.__QGA_RUNTIME__ = files.map(function (pair) { return pair[0]; });
+    // A synchronous document.write keeps the script order the application depends on without a second loader.
+    for (var i = 0; i < files.length; i += 1) {
+      document.write('<script src="' + files[i][0] + '" integrity="' + files[i][1] + '" crossorigin="anonymous"><\/script>');
+    }
+  })();
+</script>
+<script type="application/x-qga-compiled" src="js/compiled/tweaks-panel.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/physics.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/state.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/state-runtime.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/core.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/figure/katex-overlay.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/figure/Figure.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/scene3d.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/search/command-palette.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/compare/compare-view.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/snapshots/snapshot-panel.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/annotations/annotation-layer.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/ads-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/collider-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/lens-cards.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/derivation-stepper.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/provenance-drawer.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/neutrino-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/higgs-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/causal-spacetime-model.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/null-geodesic-panel.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/field-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/amplitude-room.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/lattice-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/qft-compute-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/casimir-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/feynman-diagram.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/unification-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/gravity-flow-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/rg-flow-field-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/penrose-atlas.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/curvature-engine-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/tidal-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/gr-tests-panel.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/atlas-stage.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/data.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-standard-model.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-qft.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-gauge-rg.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-rg-stage3.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-gr.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/planck-labs.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/constraint-plane.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/causal-set-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/spectral-dimension-chart.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/kerr-shadow-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/pn-waveform-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/matched-filter-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/observational-net-lab.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/labs/atlas-map.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/tours/tour-panel.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/export/export-studio.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-planck.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-approaches.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/visualizations/kerr/kerr-controls.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-blackholes.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/mod-experiments.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/extras.js"></script>
+<script type="application/x-qga-compiled" src="js/compiled/js/app.js"></script>
 <script type="module" src="js/bootstrap.mjs"></script>
 </body>
 </html>

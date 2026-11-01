@@ -1,0 +1,251 @@
+{
+  "generator": "scripts/compile-jsx.mjs",
+  "babelOptions": {
+    "presets": [
+      "react",
+      "env"
+    ],
+    "sourceMaps": false,
+    "compact": false,
+    "comments": true
+  },
+  "sourceCount": 59,
+  "sources": {
+    "tweaks-panel.jsx": {
+      "output": "js/compiled/tweaks-panel.js",
+      "bytes": 32828
+    },
+    "js/physics.jsx": {
+      "output": "js/compiled/js/physics.js",
+      "bytes": 117694
+    },
+    "js/state.jsx": {
+      "output": "js/compiled/js/state.js",
+      "bytes": 28529
+    },
+    "js/state-runtime.jsx": {
+      "output": "js/compiled/js/state-runtime.js",
+      "bytes": 28041
+    },
+    "js/core.jsx": {
+      "output": "js/compiled/js/core.js",
+      "bytes": 34511
+    },
+    "js/figure/katex-overlay.jsx": {
+      "output": "js/compiled/js/figure/katex-overlay.js",
+      "bytes": 1699
+    },
+    "js/figure/Figure.jsx": {
+      "output": "js/compiled/js/figure/Figure.js",
+      "bytes": 15298
+    },
+    "js/scene3d.jsx": {
+      "output": "js/compiled/js/scene3d.js",
+      "bytes": 80350
+    },
+    "js/search/command-palette.jsx": {
+      "output": "js/compiled/js/search/command-palette.js",
+      "bytes": 22353
+    },
+    "js/compare/compare-view.jsx": {
+      "output": "js/compiled/js/compare/compare-view.js",
+      "bytes": 25916
+    },
+    "js/snapshots/snapshot-panel.jsx": {
+      "output": "js/compiled/js/snapshots/snapshot-panel.js",
+      "bytes": 28526
+    },
+    "js/annotations/annotation-layer.jsx": {
+      "output": "js/compiled/js/annotations/annotation-layer.js",
+      "bytes": 24495
+    },
+    "js/labs/ads-lab.jsx": {
+      "output": "js/compiled/js/labs/ads-lab.js",
+      "bytes": 13306
+    },
+    "js/labs/collider-lab.jsx": {
+      "output": "js/compiled/js/labs/collider-lab.js",
+      "bytes": 15167
+    },
+    "js/labs/lens-cards.jsx": {
+      "output": "js/compiled/js/labs/lens-cards.js",
+      "bytes": 1472
+    },
+    "js/labs/derivation-stepper.jsx": {
+      "output": "js/compiled/js/labs/derivation-stepper.js",
+      "bytes": 9390
+    },
+    "js/labs/provenance-drawer.jsx": {
+      "output": "js/compiled/js/labs/provenance-drawer.js",
+      "bytes": 5224
+    },
+    "js/labs/neutrino-lab.jsx": {
+      "output": "js/compiled/js/labs/neutrino-lab.js",
+      "bytes": 21677
+    },
+    "js/labs/higgs-lab.jsx": {
+      "output": "js/compiled/js/labs/higgs-lab.js",
+      "bytes": 18880
+    },
+    "js/labs/causal-spacetime-model.jsx": {
+      "output": "js/compiled/js/labs/causal-spacetime-model.js",
+      "bytes": 6183
+    },
+    "js/labs/null-geodesic-panel.jsx": {
+      "output": "js/compiled/js/labs/null-geodesic-panel.js",
+      "bytes": 10403
+    },
+    "js/labs/field-lab.jsx": {
+      "output": "js/compiled/js/labs/field-lab.js",
+      "bytes": 10134
+    },
+    "js/labs/amplitude-room.jsx": {
+      "output": "js/compiled/js/labs/amplitude-room.js",
+      "bytes": 34959
+    },
+    "js/labs/lattice-lab.jsx": {
+      "output": "js/compiled/js/labs/lattice-lab.js",
+      "bytes": 20406
+    },
+    "js/labs/qft-compute-lab.jsx": {
+      "output": "js/compiled/js/labs/qft-compute-lab.js",
+      "bytes": 14228
+    },
+    "js/labs/casimir-lab.jsx": {
+      "output": "js/compiled/js/labs/casimir-lab.js",
+      "bytes": 20319
+    },
+    "js/labs/feynman-diagram.jsx": {
+      "output": "js/compiled/js/labs/feynman-diagram.js",
+      "bytes": 8018
+    },
+    "js/labs/unification-lab.jsx": {
+      "output": "js/compiled/js/labs/unification-lab.js",
+      "bytes": 19659
+    },
+    "js/labs/gravity-flow-lab.jsx": {
+      "output": "js/compiled/js/labs/gravity-flow-lab.js",
+      "bytes": 22982
+    },
+    "js/labs/rg-flow-field-lab.jsx": {
+      "output": "js/compiled/js/labs/rg-flow-field-lab.js",
+      "bytes": 16082
+    },
+    "js/labs/penrose-atlas.jsx": {
+      "output": "js/compiled/js/labs/penrose-atlas.js",
+      "bytes": 35398
+    },
+    "js/labs/curvature-engine-lab.jsx": {
+      "output": "js/compiled/js/labs/curvature-engine-lab.js",
+      "bytes": 24879
+    },
+    "js/labs/tidal-lab.jsx": {
+      "output": "js/compiled/js/labs/tidal-lab.js",
+      "bytes": 13255
+    },
+    "js/labs/gr-tests-panel.jsx": {
+      "output": "js/compiled/js/labs/gr-tests-panel.js",
+      "bytes": 3277
+    },
+    "js/atlas-stage.jsx": {
+      "output": "js/compiled/js/atlas-stage.js",
+      "bytes": 32692
+    },
+    "js/data.jsx": {
+      "output": "js/compiled/js/data.js",
+      "bytes": 91560
+    },
+    "js/mod-standard-model.jsx": {
+      "output": "js/compiled/js/mod-standard-model.js",
+      "bytes": 42769
+    },
+    "js/mod-qft.jsx": {
+      "output": "js/compiled/js/mod-qft.js",
+      "bytes": 40695
+    },
+    "js/mod-gauge-rg.jsx": {
+      "output": "js/compiled/js/mod-gauge-rg.js",
+      "bytes": 38526
+    },
+    "js/mod-rg-stage3.jsx": {
+      "output": "js/compiled/js/mod-rg-stage3.js",
+      "bytes": 8686
+    },
+    "js/mod-gr.jsx": {
+      "output": "js/compiled/js/mod-gr.js",
+      "bytes": 70928
+    },
+    "js/labs/planck-labs.jsx": {
+      "output": "js/compiled/js/labs/planck-labs.js",
+      "bytes": 36364
+    },
+    "js/labs/constraint-plane.jsx": {
+      "output": "js/compiled/js/labs/constraint-plane.js",
+      "bytes": 11892
+    },
+    "js/labs/causal-set-lab.jsx": {
+      "output": "js/compiled/js/labs/causal-set-lab.js",
+      "bytes": 17473
+    },
+    "js/labs/spectral-dimension-chart.jsx": {
+      "output": "js/compiled/js/labs/spectral-dimension-chart.js",
+      "bytes": 22183
+    },
+    "js/labs/kerr-shadow-lab.jsx": {
+      "output": "js/compiled/js/labs/kerr-shadow-lab.js",
+      "bytes": 10335
+    },
+    "js/labs/pn-waveform-lab.jsx": {
+      "output": "js/compiled/js/labs/pn-waveform-lab.js",
+      "bytes": 7138
+    },
+    "js/labs/matched-filter-lab.jsx": {
+      "output": "js/compiled/js/labs/matched-filter-lab.js",
+      "bytes": 9239
+    },
+    "js/labs/observational-net-lab.jsx": {
+      "output": "js/compiled/js/labs/observational-net-lab.js",
+      "bytes": 7191
+    },
+    "js/labs/atlas-map.jsx": {
+      "output": "js/compiled/js/labs/atlas-map.js",
+      "bytes": 37984
+    },
+    "js/tours/tour-panel.jsx": {
+      "output": "js/compiled/js/tours/tour-panel.js",
+      "bytes": 18384
+    },
+    "js/export/export-studio.jsx": {
+      "output": "js/compiled/js/export/export-studio.js",
+      "bytes": 41360
+    },
+    "js/mod-planck.jsx": {
+      "output": "js/compiled/js/mod-planck.js",
+      "bytes": 8108
+    },
+    "js/mod-approaches.jsx": {
+      "output": "js/compiled/js/mod-approaches.js",
+      "bytes": 34845
+    },
+    "js/visualizations/kerr/kerr-controls.jsx": {
+      "output": "js/compiled/js/visualizations/kerr/kerr-controls.js",
+      "bytes": 24582
+    },
+    "js/mod-blackholes.jsx": {
+      "output": "js/compiled/js/mod-blackholes.js",
+      "bytes": 88120
+    },
+    "js/mod-experiments.jsx": {
+      "output": "js/compiled/js/mod-experiments.js",
+      "bytes": 105608
+    },
+    "js/extras.jsx": {
+      "output": "js/compiled/js/extras.js",
+      "bytes": 101757
+    },
+    "js/app.jsx": {
+      "output": "js/compiled/js/app.js",
+      "bytes": 55033
+    }
+  }
+}
