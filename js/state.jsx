@@ -17,6 +17,7 @@ const QGA_DEFAULT_STATE = {
   tour: "",
   tourStep: 1,
   tourPrint: "",
+  studio: "",
 };
 const QGA_STATE_KEYS = {
   view: "view", pathway: "pathway", bhMass: "bhm", bhSpin: "bhs",
@@ -39,6 +40,8 @@ const QGA_STATE_KEYS = {
   tour: "tour",
   tourStep: "step",
   tourPrint: "print",
+  // Publishing studio (S32): `?export=1` opens the drawer, so a capture, a worksheet or a link can name it.
+  studio: "export",
 };
 const qgaClamp = (value, min, max) => Math.min(max, Math.max(min, value));
 // Closure-tracked pending state: the last state written (or silently applied)
@@ -83,6 +86,7 @@ function qgaReadState(search = window.location.search) {
     else if (key === "tour") state[key] = raw;
     else if (key === "tourStep" && Number.isFinite(Number(raw))) state[key] = Number(raw);
     else if (key === "tourPrint") state[key] = raw;
+    else if (key === "studio") state[key] = raw;
     else if (key === "bhAnnotations" || key === "bhCorona" || key === "bhJets" || key === "gwLoop") {
       if (raw === "true" || raw === "false") state[key] = raw === "true";
     }
@@ -130,6 +134,9 @@ function qgaReadState(search = window.location.search) {
   state.tour = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.tour) && state.tour.length <= 48 ? state.tour : "";
   state.tourStep = state.tour ? qgaClamp(Math.trunc(state.tourStep) || 1, 1, 999) : 1;
   state.tourPrint = state.tour && (state.tourPrint === "1" || state.tourPrint === "true") ? "1" : "";
+  // `1`/`true` opens the drawer; `report` opens the print view; anything else means "no studio".
+  state.studio = state.studio === "1" || state.studio === "true" ? "1"
+    : state.studio === "report" ? "report" : "";
   // GW instrument (Prompt 06): playback-shaping keys, additive with safe
   // defaults; audio is never enabled by a URL, only by an in-page gesture.
   state.gwPitch = qgaClamp(state.gwPitch, 0.25, 4);

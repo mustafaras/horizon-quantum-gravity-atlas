@@ -119,6 +119,7 @@ function CommandPalette({ go }) {
     const actions = [
       { id: "save-snapshot", title: "Save snapshot", subtitle: "Capture the current state", keywords: ["camera", "state", "store"], run: () => window.QGA_OPEN_SNAPSHOTS?.() },
       { id: "guided-tours", title: "Guided tours", subtitle: "Learning paths and teacher worksheets", keywords: ["tour", "lesson", "worksheet", "teacher", "path"], run: () => window.QGA_OPEN_TOURS?.() },
+      { id: "publishing-studio", title: "Publishing studio", subtitle: "PNG, figure SVG, WebM and lab report", keywords: ["export", "png", "svg", "webm", "report", "pdf", "download", "figure"], run: () => window.QGA_OPEN_EXPORT?.() },
       { id: "open-compare", title: "Open compare view", subtitle: "A/B comparison of two states", keywords: ["ab", "side", "swipe", "diff"], run: () => goRef.current("compare") },
       { id: "add-annotation", title: "Add annotation", subtitle: "Place a pin on the current view", keywords: ["pin", "note", "mark"], run: () => window.QGA_ARM_ANNOTATION?.() },
       { id: "copy-link", title: "Copy link", subtitle: "Shareable URL for this state", keywords: ["share", "url"], run: () => { try { window.QGA_COPY_LINK(window.QGA_READ_STATE()); } catch (e) {} } },

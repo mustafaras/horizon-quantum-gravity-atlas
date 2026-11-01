@@ -64,7 +64,8 @@
       "shot": "shot",
       "tour": "tour",
       "tourStep": "step",
-      "tourPrint": "print"
+      "tourPrint": "print",
+      "studio": "export"
     }
   },
   "defaults": {
@@ -2265,6 +2266,70 @@
         "maxDiffPixelRatio": 0.02,
         "note": "DOM and KaTeX text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
       }
+    },
+    {
+      "id": "s32-export-studio",
+      "file": "docs/screenshots/s32-export-studio.png",
+      "description": "The publishing studio open over the black-hole view: the four artefact sections, the still-size preset, the journal widths, the share-card limitation and the recording codec the browser actually supports.",
+      "view": "bh",
+      "url": "?view=bh&bhm=6.5&bhs=0.7&export=1",
+      "viewport": {
+        "width": 1600,
+        "height": 1200,
+        "deviceScaleFactor": 1,
+        "label": "desktop-hi"
+      },
+      "scope": "element",
+      "target": ".export-panel",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".export-panel",
+          "state": "visible"
+        }
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A screenshot of the export drawer; every file it produces carries a provenance envelope built by js/export/export-service.mjs and asserted in test/export-metadata.test.mjs.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "DOM text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
+      },
+      "settleMs": 4000
+    },
+    {
+      "id": "s32-lab-report",
+      "file": "docs/screenshots/s32-lab-report.png",
+      "description": "The print view of a lab report: the state table, the model and validity section with its assumptions and limits, and the numerical readouts with their status labels.",
+      "view": "bh",
+      "url": "?view=bh&bhm=6.5&bhs=0.7&export=report",
+      "viewport": {
+        "width": 1400,
+        "height": 1800,
+        "deviceScaleFactor": 1,
+        "label": "desktop-tall"
+      },
+      "scope": "element",
+      "target": ".report-sheet",
+      "readiness": [
+        "fonts",
+        "network-idle",
+        "view-mounted",
+        {
+          "selector": ".report-sheet",
+          "state": "visible"
+        }
+      ],
+      "scientificStatus": "generated",
+      "statusNote": "A screenshot of the report the studio prints; the numbers are the rendered readouts, not a second calculation, and each carries the status of the view it came from.",
+      "readme": false,
+      "baseline": {
+        "maxDiffPixelRatio": 0.02,
+        "note": "DOM text at a fixed viewport; only font rasterisation may differ, so 2% tolerance."
+      },
+      "settleMs": 4000
     }
   ]
 }

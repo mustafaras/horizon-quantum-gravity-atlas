@@ -223,6 +223,29 @@ function TransitionNotice() {
   );
 }
 
+
+/** The readouts the page is showing, as the studio and the report route both read them. */
+function collectPageReadouts() {
+  const out = [];
+  for (const node of document.querySelectorAll(".readout, .fc-readout")) {
+    const label = (node.querySelector(".readout-label, .fc-readout-label")?.textContent ?? "").trim();
+    const value = (node.querySelector(".readout-value, .fc-readout-value")?.textContent ?? "").trim();
+    const unit = (node.querySelector(".unit")?.textContent ?? "").trim();
+    if (label) out.push({ label, value: value || null, unit: unit || null, status: null });
+  }
+  return out.slice(0, 40);
+}
+
+/** The formula cards the page is showing, in document order. */
+function collectPageFormulas() {
+  return [...document.querySelectorAll(".formula-card")].map((card) => {
+    const title = (card.querySelector(".fc-title")?.textContent ?? "").trim();
+    const tex = card.querySelector(".fc-eq .katex-mathml annotation")?.textContent?.trim() ?? null;
+    const status = (card.querySelector(".badge")?.textContent ?? "").trim().toLowerCase() || null;
+    return title || tex ? { id: null, title: title || null, tex, status } : null;
+  }).filter(Boolean).slice(0, 24);
+}
+
 function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const prm = usePRM();
   const [atlasState, setAtlasState] = useQGAState();
@@ -242,21 +265,66 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   const [menuOpen, setMenuOpen] = useState(false);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [toursOpen, setToursOpen] = useState(false);
+  // `?export=1` opens the studio on mount, so a capture or a shared link can name the drawer.
+  const [studioOpen, setStudioOpen] = useState(() => atlasState.studio === "1");
+  const [report, setReport] = useState(null);
   const contentRef = useRef(null);
   const openRenderingSettings = () => window.postMessage({ type: "__activate_edit_mode" }, location.origin);
   // Formula linking + palette navigation read the live view id.
   useEffect(() => { window.__qgaCurrentView = view; }, [view]);
+  // The publishing studio names the view it exports; the shell is the one place that knows both the id and the title.
+  useEffect(() => {
+    window.__qgaCurrentViewTitle = QGA_VIEWS[view]?.label ?? QGA_MODULES.find((m) => m.id === view)?.title ?? view;
+  }, [view]);
   // Palette action hook: "Save snapshot" opens this panel from ⌘K.
   useEffect(() => {
     window.QGA_OPEN_SNAPSHOTS = () => setSnapshotsOpen(true);
     // Guided tours (S31): the palette's "Guided tours" entry uses the same
     // hook shape as snapshots, so a reader can reach the launcher from ⌘K.
     window.QGA_OPEN_TOURS = () => setToursOpen(true);
+    // Publishing studio (S32): the palette and the sidebar both open the same drawer.
+    window.QGA_OPEN_EXPORT = () => setStudioOpen(true);
     return () => {
       if (window.QGA_OPEN_SNAPSHOTS) delete window.QGA_OPEN_SNAPSHOTS;
       if (window.QGA_OPEN_TOURS) delete window.QGA_OPEN_TOURS;
+      if (window.QGA_OPEN_EXPORT) delete window.QGA_OPEN_EXPORT;
     };
   }, []);
+
+  // `?export=report` opens the print view directly: a report is a document a reader can link to, not only a button
+  // inside a drawer. It is built from the rendered page, which is what the report is supposed to document.
+  useEffect(() => {
+    if (atlasState.studio !== "report" || report) return;
+    const timer = setTimeout(() => {
+      if (!window.QGA_EXPORT) return;
+      try {
+        const built = window.QGA_EXPORT.buildLabReport({
+          view, viewTitle: window.__qgaCurrentViewTitle ?? view, state: atlasState,
+          settings, backend: settings.renderBackend ?? "auto", quality: settings.detail3d ?? "medium",
+          readouts: window.__qgaReportReadouts ? window.__qgaReportReadouts() : collectPageReadouts(),
+          formulas: window.__qgaReportFormulas ? window.__qgaReportFormulas() : collectPageFormulas(),
+          seed: atlasState.seed ?? 42, commitHash: window.QGA_COMMIT ?? null,
+        });
+        window.dispatchEvent(new CustomEvent("qga-open-report", { detail: { report: built } }));
+      } catch (error) {
+        console.warn("[report] could not build from the page:", error.message);
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [atlasState.studio, report, view, atlasState]);
+
+  // The studio builds the report; the shell shows it. A report is a navigation like a view, so it clears the tour.
+  useEffect(() => {
+    const onReport = (event) => {
+      setStudioOpen(false);
+      setReport(event.detail?.report ?? null);
+      setAtlasState({ tour: "", tourStep: 1, tourPrint: "" }, { replace: false });
+      if (contentRef.current) contentRef.current.scrollTop = 0;
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("qga-open-report", onReport);
+    return () => window.removeEventListener("qga-open-report", onReport);
+  }, [setAtlasState]);
 
   // ---- cinematic direction (Prompt 09) ----
   const shotRef = useRef(atlasState.shot); shotRef.current = atlasState.shot;
@@ -410,6 +478,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
             <button className="sidebar-tool-btn" onClick={() => go("compare")} aria-label="Open the A/B compare view">⇄ Compare</button>
             <button className="sidebar-tool-btn" onClick={() => setSnapshotsOpen(true)} aria-label="Open the snapshots panel">◆ Snapshots</button>
             <button className="sidebar-tool-btn" onClick={() => setToursOpen(true)} aria-label="Open the guided tours">▶ Tours</button>
+            <button className="sidebar-tool-btn" onClick={() => setStudioOpen(true)} aria-label="Open the publishing studio">⇩ Export</button>
             <button className="sidebar-tool-btn" onClick={() => window.QGA_ARM_ANNOTATION?.()} aria-label="Place an annotation pin on the current view">✎ Annotate</button>
           </div>
           <div className="sidebar-foot">
@@ -428,6 +497,9 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         </div>
         <main className="content" id="main-content" tabIndex={-1} ref={contentRef}>
           <div className="content-inner" key={view}>
+            {report ? (
+              <ReportSheet report={report} onClose={() => setReport(null)}></ReportSheet>
+            ) : null}
             {tourId || toursOpen ? (
               <TourSurface tourId={tourId} step={tourStepNumber} print={tourPrint}
                 onNavigate={openTour}
@@ -448,10 +520,18 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
           </div>
           <NavList view={view} go={go}></NavList>
           <PathwaySelector value={atlasState.pathway} onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></PathwaySelector>
+          {/* The sidebar's tools live behind this menu on a phone, so the studio is reachable there too. */}
+          <div className="sidebar-tools" aria-label="Atlas tools">
+            <button className="sidebar-tool-btn" onClick={() => { setMenuOpen(false); setStudioOpen(true); }}
+              aria-label="Open the publishing studio">⇩ Export</button>
+            <button className="sidebar-tool-btn" onClick={() => { setMenuOpen(false); setToursOpen(true); }}
+              aria-label="Open the guided tours">▶ Tours</button>
+          </div>
         </div>
       ) : null}
       <CommandPalette go={go}></CommandPalette>
       <SnapshotPanel open={snapshotsOpen} onClose={() => setSnapshotsOpen(false)}></SnapshotPanel>
+      <ExportStudio open={studioOpen} onClose={() => setStudioOpen(false)}></ExportStudio>
       <TweaksPanel>
         <TweakSection label="Visualization"></TweakSection>
         <RenderSetting label="Mode" value={t.vizMode}
