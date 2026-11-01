@@ -1,0 +1,67 @@
+/* styles/themes/blueprint.css — Prussian-blue surface, white engraved linework, a measured grid, no glow.
+   Every colour below was checked by test/theme-tokens.test.mjs: ink ≥ 4.5:1 and status ≥ 4.5:1 on all three surfaces,
+   status colours pairwise ΔE00 ≥ 12 and neighbouring categorical colours ≥ 10 for normal, protan, deutan and tritan
+   vision. The status and categorical hues were searched with a seeded hill climb that holds each hue within 30° of
+   the Observatory value; see docs/design/themes.md. Three.js scenes follow through the `qga:theme` handler in
+   js/render/theme-materials.mjs, which swaps colour nodes and never rebuilds geometry. */
+
+:root[data-theme="blueprint"] {
+  color-scheme: dark;
+  --decor: 0;
+  --glow: 0;
+
+  --surface-0: #002b4a;
+  --surface-1: #003153;
+  --surface-2: #08395f;
+  --surface-glass: rgba(0, 49, 83, 0.82);
+  --surface-glass-thin: rgba(0, 43, 74, 0.64);
+  --surface-glass-strong: rgba(0, 38, 66, 0.9);
+
+  --ink-strong: #ffffff;
+  --ink: #eef5fb;
+  --ink-dim: #b4cde4;
+  --ink-faint: #5d86ad;
+
+  --rule: rgba(255, 255, 255, 0.2);
+  --rule-strong: rgba(255, 255, 255, 0.38);
+  --edge: rgba(255, 255, 255, 0.22);
+  --edge-bright: rgba(255, 255, 255, 0.45);
+
+  --accent: #dcecff;
+  --accent-2: #9fd0ff;
+  --accent-soft: rgba(220, 236, 255, 0.16);
+  --signal-warm: #ffd27a;
+  --signal-danger: #ffa093;
+
+  --status-established: oklch(0.960 0.080 134.3);
+  --status-effective: oklch(0.835 0.109 191.1);
+  --status-schematic: oklch(0.966 0.203 109.3);
+  --status-conjectural: oklch(0.725 0.159 298.7);
+  --status-open: oklch(0.732 0.159 3.3);
+  --status-heuristic: oklch(0.703 0.162 117.4);
+
+  --cat-1: oklch(0.753 0.158 76.8);
+  --cat-2: oklch(0.612 0.109 276.2);
+  --cat-3: oklch(0.917 0.103 189.1);
+  --cat-4: oklch(0.953 0.199 108.6);
+  --cat-5: oklch(0.761 0.123 257.8);
+  --cat-6: oklch(0.636 0.246 30.2);
+  --cat-7: oklch(0.645 0.209 306.3);
+  --cat-8: oklch(0.936 0.031 249.1);
+}
+
+/* Measured grid on the page, drawn once behind everything; it replaces the starfield. */
+:root[data-theme="blueprint"] body {
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+:root[data-theme="blueprint"] .starfield-canvas,
+:root[data-theme="blueprint"] .horizon-intro { display: none; }
+
+/* No glow: shadows and halos off, except the ring that shows keyboard focus. */
+:root[data-theme="blueprint"] *:not(:focus-visible) { box-shadow: none !important; }
+:root[data-theme="blueprint"] * { text-shadow: none !important; }

@@ -37,6 +37,21 @@
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <script defer src="vendor/katex/katex.min.js"></script>
 <link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes/observatory.css">
+<link rel="stylesheet" href="styles/themes/blueprint.css">
+<link rel="stylesheet" href="styles/themes/print.css">
+<script>
+  // Apply the saved theme before first paint so a Blueprint or Print reader never sees a flash of Observatory.
+  // The same choice is made, with validation, by js/design/theme.mjs once the application loads.
+  (function () {
+    try {
+      var saved = localStorage.getItem("qga-theme");
+      var fromUrl = new URLSearchParams(location.search).get("theme");
+      var id = fromUrl || saved;
+      if (id === "blueprint" || id === "print") document.documentElement.setAttribute("data-theme", id);
+    } catch (e) { /* storage blocked: Observatory */ }
+  })();
+</script>
 <style>
 /* Critical first-paint guard (<4 KB): the dark canvas, no scrollbars, the full-height root.
    Everything else is in styles/*.css, linked below in original cascade order. */

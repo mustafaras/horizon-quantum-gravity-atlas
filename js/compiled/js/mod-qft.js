@@ -547,7 +547,7 @@ function FeynmanCollision3D(_ref) {
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      borderBottom: "1px solid var(--line)"
+      borderBottom: "1px solid var(--rule)"
     }
   }, /*#__PURE__*/React.createElement(Scene3D, {
     animated: "motion",

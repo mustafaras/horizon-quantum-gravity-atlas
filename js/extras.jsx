@@ -414,17 +414,17 @@ function ViewOverview({ go }) {
           {QGA_MODULES.map((m) => {
             const meta = OVERVIEW_MODULE_META[m.id];
             return (
-              <button key={m.id} className="ov-card gauge-sector" style={{ "--sector-color": "var(--acc)", position: "relative", overflow: "hidden" }}
+              <button key={m.id} className="ov-card gauge-sector" style={{ "--sector-color": "var(--accent)", position: "relative", overflow: "hidden" }}
                 onClick={() => go(m.id)}>
-                <span aria-hidden="true" style={{ position: "absolute", right: 10, top: -14, fontFamily: "var(--font-head)", fontSize: 64, fontWeight: 700, color: "var(--head)", opacity: 0.05, lineHeight: 1 }}>{m.num}</span>
+                <span aria-hidden="true" style={{ position: "absolute", right: 10, top: -14, fontFamily: "var(--font-head)", fontSize: 64, fontWeight: 700, color: "var(--ink-strong)", opacity: 0.05, lineHeight: 1 }}>{m.num}</span>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                  <div className="gs-name" style={{ color: "var(--acc)" }}>Module {m.num}</div>
+                  <div className="gs-name" style={{ color: "var(--accent)" }}>Module {m.num}</div>
                   <Badge kind={meta.statusKind}></Badge>
                 </div>
                 <div className="gs-group" style={{ fontSize: 17, marginTop: 4 }}>{m.title}</div>
                 <ChapterStatusBar id={m.id}></ChapterStatusBar>
                 <p className="small dim" style={{ margin: "8px 0 0 0" }}>{MODULE_BLURBS[m.id]}</p>
-                <div className="ov-card-meta" style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+                <div className="ov-card-meta" style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--rule)" }}>
                   <span className="ov-cue mono">{meta.cue}</span>
                   <span className="ov-scale mono">{meta.scale}</span>
                 </div>
@@ -494,7 +494,7 @@ function ViewGlossary() {
                 <p style={{ marginBottom: 0 }}><RichText text={g.def}></RichText></p>
                 <div className="gloss-sub">Advanced</div>
                 <p style={{ marginBottom: 0 }}><RichText text={g.adv}></RichText></p>
-                <div className="gloss-sub" style={{ color: "var(--gold)" }}>Common misconception</div>
+                <div className="gloss-sub" style={{ color: "var(--signal-warm)" }}>Common misconception</div>
                 <p style={{ marginBottom: 0 }}><RichText text={g.misc}></RichText></p>
               </div>
               {open !== g.term ? <div className="gloss-body"><p className="dim small" style={{ marginBottom: 0 }}><RichText text={g.def}></RichText></p></div> : null}

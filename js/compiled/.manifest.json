@@ -29,7 +29,7 @@
     },
     "js/core.jsx": {
       "output": "js/compiled/js/core.js",
-      "bytes": 34511
+      "bytes": 34510
     },
     "js/figure/katex-overlay.jsx": {
       "output": "js/compiled/js/figure/katex-overlay.js",
@@ -209,7 +209,7 @@
     },
     "js/labs/atlas-map.jsx": {
       "output": "js/compiled/js/labs/atlas-map.js",
-      "bytes": 37984
+      "bytes": 37990
     },
     "js/tours/tour-panel.jsx": {
       "output": "js/compiled/js/tours/tour-panel.js",
@@ -241,11 +241,11 @@
     },
     "js/extras.jsx": {
       "output": "js/compiled/js/extras.js",
-      "bytes": 101757
+      "bytes": 101776
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",
-      "bytes": 55033
+      "bytes": 55769
     }
   }
 }

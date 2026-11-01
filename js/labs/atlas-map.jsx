@@ -38,7 +38,7 @@ function AtlasMap({ go }) {
       edge: Object.fromEntries(["bridge", "result", "blocks"].map((k) => [k, window.QGA_TOKENS.css("ink-dim")])),
       ink: window.QGA_TOKENS.css("ink"),
       inkDim: window.QGA_TOKENS.css("ink-dim"),
-      head: window.QGA_TOKENS.css("head"),
+      head: window.QGA_TOKENS.css("ink-strong"),
       paper: window.QGA_TOKENS.css("surface-1"),
     };
   }, [theme]);

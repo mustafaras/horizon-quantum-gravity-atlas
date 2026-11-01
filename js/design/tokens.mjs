@@ -14,8 +14,9 @@
 // `parseTokensCss` + `buildTokens`, or install them with `setTokenSource`.
 
 import { parseCssColor, cssColorToLinear, linearToSrgb, linearToHex } from "./color.mjs";
+import { THEME_IDS, DEFAULT_THEME, themePigment } from "./theme-pigments.mjs";
 
-export { cssColorToLinear };
+export { cssColorToLinear, THEME_IDS, DEFAULT_THEME };
 
 export const TYPE_STEPS = Object.freeze([-2, -1, 0, 1, 2, 3, 4, 5]);
 
@@ -40,15 +41,27 @@ function resolveVars(name, raw, values, trail) {
   });
 }
 
-/** Parse every `:root { … }` block of a stylesheet into `{ "--name": resolvedValue }` (var() aliases resolved). */
-export function parseTokensCss(cssText) {
+function collectDeclarations(cssText, blockPattern, into) {
   const text = cssText.replace(/\/\*[\s\S]*?\*\//g, "");
-  const raw = {};
-  for (const block of text.matchAll(/:root\s*\{([^}]*)\}/g)) {
+  for (const block of text.matchAll(blockPattern)) {
     for (const decl of block[1].split(";")) {
       const m = /^\s*(--[\w-]+)\s*:\s*([\s\S]+?)\s*$/.exec(decl);
-      if (m) raw[m[1]] = m[2];
+      if (m) into[m[1]] = m[2];
     }
+  }
+  return into;
+}
+
+/**
+ * Parse every `:root { … }` block of a stylesheet into `{ "--name": resolvedValue }` (var() aliases resolved).
+ * With `{ theme, themeCss }` the `:root[data-theme="<theme>"] { … }` blocks of `themeCss` are laid over the base
+ * first, exactly as the cascade does, so Node tests see the values a themed page computes.
+ */
+export function parseTokensCss(cssText, { theme = null, themeCss = "" } = {}) {
+  const raw = collectDeclarations(cssText, /:root\s*\{([^}]*)\}/g, {});
+  if (theme) {
+    if (!THEME_IDS.includes(theme)) throw new RangeError(`tokens: unknown theme "${theme}" (${THEME_IDS.join(", ")})`);
+    collectDeclarations(themeCss, new RegExp(`:root\\[data-theme=["']${theme}["']\\]\\s*\\{([^}]*)\\}`, "g"), raw);
   }
   const out = {};
   for (const [name, value] of Object.entries(raw)) out[name] = resolveVars(name, value, raw, [name]);
@@ -98,7 +111,8 @@ function makeFont(family, steps) {
  * Build the frozen token object from `{ "--name": "value" }` (values already var()-resolved).
  * Colours are every property whose value is a hex, rgb[a]() or oklch() colour.
  */
-export function buildTokens(values) {
+export function buildTokens(values, theme = DEFAULT_THEME) {
+  if (!THEME_IDS.includes(theme)) throw new RangeError(`tokens: unknown theme "${theme}" (${THEME_IDS.join(", ")})`);
   const color = {};
   const dur = {};
   const ease = {};
@@ -106,8 +120,10 @@ export function buildTokens(values) {
   const family = {};
   const length = {};
   const tintParts = {};
-  for (const [prop, value] of Object.entries(values)) {
+  for (const [prop, rawValue] of Object.entries(values)) {
     const name = prop.slice(2);
+    // Scene pigments are not themed one by one: they follow the theme through one lightness/chroma rule.
+    const value = name.startsWith("pigment-") ? themePigment(rawValue, theme) : rawValue;
     const parsed = parseCssColor(value);
     if (parsed) {
       color[name] = {
@@ -142,7 +158,7 @@ export function buildTokens(values) {
   for (const key of ["head", "body", "mono"]) {
     if (!family[key]) throw new Error(`tokens: --font-${key} is not defined`);
   }
-  return deepFreeze({ color, font: makeFont(family, step), dur, ease, step, length, tint });
+  return deepFreeze({ theme, color, font: makeFont(family, step), dur, ease, step, length, tint });
 }
 
 // ---- live document ---------------------------------------------------------------------------
@@ -175,7 +191,8 @@ export function readTokens(root = document.documentElement) {
     const v = style.getPropertyValue(prop).trim();
     if (v) values[prop] = v;
   }
-  return buildTokens(values);
+  const theme = root.getAttribute?.("data-theme");
+  return buildTokens(values, THEME_IDS.includes(theme) ? theme : DEFAULT_THEME);
 }
 
 /** Install a token object for environments without a stylesheet (Node tests); pass null to clear. */
@@ -195,6 +212,12 @@ export function current() {
     live.set(document.documentElement, tokens);
   }
   return tokens;
+}
+
+// The cache must drop on every theme change, whoever else is listening. This listener is registered at import,
+// before any scene subscribes, so subscribers always read the new theme.
+if (typeof document !== "undefined") {
+  document.addEventListener("qga:theme", () => live.delete(document.documentElement));
 }
 
 /** Subscribe to `qga:theme` (dispatched on `document` after the root tokens change). Returns unsubscribe. */

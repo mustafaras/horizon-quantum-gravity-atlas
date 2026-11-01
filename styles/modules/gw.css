@@ -3,13 +3,13 @@
 /* ---------- GW signal analysis theatre ---------- */
 .gw-theatre { display: flex; flex-direction: column; gap: 10px; }
 .gw-panel {
-  margin: 0; border: 1px solid var(--line); border-radius: 10px;
+  margin: 0; border: 1px solid var(--rule); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
   overflow: hidden;
 }
 .gw-panel figcaption {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  padding: 8px 12px; border-bottom: 1px solid var(--rule);
   background: rgba(9,15,26,0.6);
 }
 .gw-panel-title {
@@ -23,7 +23,7 @@
 .gw-panel canvas { background: rgba(5,8,14,0.55); cursor: crosshair; }
 .gw-transport {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; border: 1px solid var(--rule); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
 }
 .gw-play-btn {
@@ -38,10 +38,10 @@
 .gw-play-btn:active { transform: scale(0.94); }
 .gw-replay-btn {
   width: 28px; height: 28px; flex: none; border-radius: 50%;
-  border: 1px solid var(--line); background: rgba(9,15,26,0.8);
+  border: 1px solid var(--rule); background: rgba(9,15,26,0.8);
   color: rgba(170,195,230,0.9); font-size: 13px; line-height: 1; cursor: pointer;
 }
-.gw-replay-btn:hover { color: var(--text); border-color: rgba(148,176,224,0.42); }
+.gw-replay-btn:hover { color: var(--ink); border-color: rgba(148,176,224,0.42); }
 .gw-progress {
   flex: 1; height: 10px; border-radius: 5px; cursor: pointer; touch-action: none;
   background: rgba(148,176,224,0.12); overflow: hidden;
@@ -60,7 +60,7 @@
 .gw-speed { flex: none; display: flex; gap: 4px; }
 .gw-speed .kerr-chip { padding: 3px 8px; font-size: 10px; }
 .gw-event-input {
-  width: 128px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+  width: 128px; padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px;
   background: rgba(9,15,26,0.8); color: var(--ink);
   font: 500 11px/1.2 var(--font-mono); letter-spacing: 0.04em;
 }
@@ -71,7 +71,7 @@
    Colour + label transitions are GPU-cheap (opacity/colour/box-shadow only). */
 .gw-state-pill {
   display: flex; align-items: center; gap: 9px;
-  padding: 7px 12px; border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 12px; border: 1px solid var(--rule); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
   font: 400 10.5px/1.4 var(--font-mono); letter-spacing: 0.03em;
   color: rgba(170,195,230,0.85);

@@ -769,7 +769,7 @@ function ViewOverview(_ref2) {
       key: m.id,
       className: "ov-card gauge-sector",
       style: {
-        "--sector-color": "var(--acc)",
+        "--sector-color": "var(--accent)",
         position: "relative",
         overflow: "hidden"
       },
@@ -785,7 +785,7 @@ function ViewOverview(_ref2) {
         fontFamily: "var(--font-head)",
         fontSize: 64,
         fontWeight: 700,
-        color: "var(--head)",
+        color: "var(--ink-strong)",
         opacity: 0.05,
         lineHeight: 1
       }
@@ -800,7 +800,7 @@ function ViewOverview(_ref2) {
     }, /*#__PURE__*/React.createElement("div", {
       className: "gs-name",
       style: {
-        color: "var(--acc)"
+        color: "var(--accent)"
       }
     }, "Module ", m.num), /*#__PURE__*/React.createElement(Badge, {
       kind: meta.statusKind
@@ -822,7 +822,7 @@ function ViewOverview(_ref2) {
       style: {
         marginTop: 12,
         paddingTop: 10,
-        borderTop: "1px solid var(--line)"
+        borderTop: "1px solid var(--rule)"
       }
     }, /*#__PURE__*/React.createElement("span", {
       className: "ov-cue mono"
@@ -923,7 +923,7 @@ function ViewGlossary() {
     })), /*#__PURE__*/React.createElement("div", {
       className: "gloss-sub",
       style: {
-        color: "var(--gold)"
+        color: "var(--signal-warm)"
       }
     }, "Common misconception"), /*#__PURE__*/React.createElement("p", {
       style: {
