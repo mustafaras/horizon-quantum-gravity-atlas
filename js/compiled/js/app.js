@@ -929,6 +929,21 @@ function App() {
       return document.removeEventListener("qga:theme", apply);
     };
   }, [t.accent]);
+  var _useState29 = useState(function () {
+      return window.QGA_THEME.get();
+    }),
+    _useState30 = _slicedToArray(_useState29, 2),
+    themeId = _useState30[0],
+    setThemeId = _useState30[1];
+  useEffect(function () {
+    var sync = function sync() {
+      return setThemeId(window.QGA_THEME.get());
+    };
+    document.addEventListener("qga:theme", sync);
+    return function () {
+      return document.removeEventListener("qga:theme", sync);
+    };
+  }, []);
   var starfieldOn = !!t.starfield && t.vizMode !== "minimal";
   var motionScale = effMotion === "reduced" ? 0 : effMotion === "balanced" ? 0.55 : 1;
   var Comp = QGA_VIEWS[view].comp();
@@ -1248,6 +1263,13 @@ function App() {
     }
   }), /*#__PURE__*/React.createElement(TweakSection, {
     label: "Theme"
+  }), /*#__PURE__*/React.createElement(RenderSetting, {
+    label: "Colour theme",
+    value: themeId,
+    options: window.QGA_THEME.ids,
+    onChange: function onChange(v) {
+      return window.QGA_THEME.set(v);
+    }
   }), /*#__PURE__*/React.createElement(TweakColor, {
     label: "Accent",
     value: t.accent,

@@ -37,11 +37,11 @@
     },
     "js/figure/Figure.jsx": {
       "output": "js/compiled/js/figure/Figure.js",
-      "bytes": 15298
+      "bytes": 18263
     },
     "js/scene3d.jsx": {
       "output": "js/compiled/js/scene3d.js",
-      "bytes": 80350
+      "bytes": 82767
     },
     "js/search/command-palette.jsx": {
       "output": "js/compiled/js/search/command-palette.js",
@@ -137,7 +137,7 @@
     },
     "js/labs/curvature-engine-lab.jsx": {
       "output": "js/compiled/js/labs/curvature-engine-lab.js",
-      "bytes": 24879
+      "bytes": 24941
     },
     "js/labs/tidal-lab.jsx": {
       "output": "js/compiled/js/labs/tidal-lab.js",
@@ -233,7 +233,7 @@
     },
     "js/mod-blackholes.jsx": {
       "output": "js/compiled/js/mod-blackholes.js",
-      "bytes": 88120
+      "bytes": 88183
     },
     "js/mod-experiments.jsx": {
       "output": "js/compiled/js/mod-experiments.js",
@@ -245,7 +245,7 @@
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",
-      "bytes": 55769
+      "bytes": 56458
     }
   }
 }

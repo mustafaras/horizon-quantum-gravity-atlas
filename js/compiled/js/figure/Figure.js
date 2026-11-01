@@ -174,12 +174,73 @@ function Figure(_ref) {
   var table = useMemo(function () {
     return tableOpen ? F.dataTable(spec) : null;
   }, [spec, tableOpen]);
+
+  // Hearing the figure (S34): pitch follows y along x, a quieter steady tone marks a labelled reference level. The audio
+  // context is created inside toggleSound, i.e. only from a click or the P key; nothing ever plays by itself.
+  var soundPlan = useMemo(function () {
+    return F.sonificationPlan(spec);
+  }, [spec]);
+  var _useState11 = useState("stopped"),
+    _useState12 = _slicedToArray(_useState11, 2),
+    soundState = _useState12[0],
+    setSoundState = _useState12[1];
+  var _useState13 = useState(""),
+    _useState14 = _slicedToArray(_useState13, 2),
+    soundNote = _useState14[0],
+    setSoundNote = _useState14[1];
+  var sonifier = useRef(null);
+  useEffect(function () {
+    return function () {
+      if (sonifier.current) sonifier.current.dispose();
+    };
+  }, []);
+  useEffect(function () {
+    if (sonifier.current) sonifier.current.stop();
+  }, [spec.id]);
+  var toggleSound = function toggleSound() {
+    if (!soundPlan) return;
+    if (!sonifier.current) sonifier.current = F.createFigureSonifier({
+      onState: setSoundState
+    });
+    setSoundNote("");
+    sonifier.current.toggle(soundPlan)["catch"](function (error) {
+      return setSoundNote(error.message);
+    });
+  };
+
+  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from.
+  var _useState15 = useState(""),
+    _useState16 = _slicedToArray(_useState15, 2),
+    liveText = _useState16[0],
+    setLiveText = _useState16[1];
+  var announcer = useRef(null);
+  var seenSpec = useRef(false);
+  useEffect(function () {
+    announcer.current = F.createDebouncedAnnouncer({
+      announce: setLiveText
+    });
+    return function () {
+      return announcer.current.dispose();
+    };
+  }, []);
+  useEffect(function () {
+    if (!seenSpec.current) {
+      seenSpec.current = true;
+      return;
+    }
+    announcer.current.push(F.announcementFor(spec));
+  }, [spec]);
   var focal = scene && scene.focal;
   var n = focal ? focal.x.length : 0;
   var clampIndex = function clampIndex(i) {
     return Math.max(0, Math.min(n - 1, i));
   };
   var onKeyDown = function onKeyDown(e) {
+    if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      toggleSound();
+      return;
+    }
     if (onNudge) {
       var dir = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : e.key === "End" ? Infinity : e.key === "Home" ? -Infinity : 0;
       if (dir) {
@@ -295,7 +356,28 @@ function Figure(_ref) {
     className: "fig-readout",
     role: "status",
     "aria-live": "polite"
-  }, readout), /*#__PURE__*/React.createElement("p", {
+  }, readout), /*#__PURE__*/React.createElement("div", {
+    className: "fig-sr",
+    role: "status",
+    "aria-live": "polite",
+    "aria-atomic": "true",
+    "data-figure-live": spec.id
+  }, liveText), soundPlan ? /*#__PURE__*/React.createElement("div", {
+    className: "fig-tools"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "fig-sound",
+    "aria-pressed": soundState === "playing",
+    "aria-keyshortcuts": "P",
+    "aria-describedby": uid + "-sound",
+    onClick: toggleSound
+  }, soundState === "playing" ? "Pause sound" : soundState === "paused" ? "Resume sound" : "Play sound"), /*#__PURE__*/React.createElement("span", {
+    className: "fig-note",
+    role: "status"
+  }, soundNote), /*#__PURE__*/React.createElement("span", {
+    id: uid + "-sound",
+    className: "fig-sr"
+  }, soundPlan.description, " Press P with the plot focused to play or pause.")) : null, /*#__PURE__*/React.createElement("p", {
     id: uid + "-summary",
     className: "fig-summary"
   }, summary), /*#__PURE__*/React.createElement("details", {

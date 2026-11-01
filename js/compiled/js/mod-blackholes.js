@@ -1161,6 +1161,9 @@ function BlackHoleLab3D() {
     animated: true,
     height: 460,
     shotSpace: "bh-kerr",
+    describe: {
+      formulaId: "schwarzschild-radius"
+    },
     aria: "Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it.",
     initial: _objectSpread(_objectSpread({}, kerrCameraGoal(atlasState.bhInclination, atlasState.bhObserverDistance, 0.35)), {}, {
       fov: 40,

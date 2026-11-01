@@ -6,6 +6,8 @@ import { createQualityGovernor } from "./quality-governor.mjs";
 import { prewarmShaders, abortIfNeeded, materialSignature } from "./shader-prewarm.mjs";
 import { renderDiagnostics } from "./error-overlay.mjs";
 import { softwareRendererClamp } from "./software-renderer.mjs";
+import { applySceneTheme, bindSceneTheme, loadColorNodeFactory } from "./theme-materials.mjs";
+import { readTokens } from "../design/tokens.mjs";
 
 export async function initializeRenderSession({
   scene, camera, mount, settings, view, signal, diagnosticId, onError, onReady, onPhase,
@@ -42,6 +44,25 @@ export async function initializeRenderSession({
     }
   });
   const totalParticles = [...ranges.values()].reduce((total, range) => total + range.count, 0);
+  // Themes (S34): Blueprint and Print restyle the scene's colour nodes in place and follow `qga:theme`; geometry is never rebuilt.
+  let unbindTheme = null;
+  async function bindTheme() {
+    const doc = globalThis.document;
+    if (!doc?.documentElement) return;
+    try {
+      const colorNodeFactory = await loadColorNodeFactory();
+      const root = doc.documentElement;
+      const readNow = () => readTokens(root);
+      const current = () => root.getAttribute("data-theme") || "observatory";
+      if (current() !== "observatory") applySceneTheme(scene, current(), { tokens: readNow(), colorNodeFactory });
+      unbindTheme = bindSceneTheme(scene, {
+        target: doc, readTheme: current, readTokens: readNow, colorNodeFactory,
+        onApplied: () => stageView?.invalidate({ input: false }),
+      });
+    } catch (error) {
+      messages(`Scene theme unavailable: ${error.message}. The scene keeps its Observatory colours.`);
+    }
+  }
   function applyBudgets(value) {
     for (const [geometry, original] of ranges) {
       geometry.setDrawRange(original.start, Math.floor(original.count * Math.min(1, value.particleBudget / Math.max(1, totalParticles))));
@@ -95,6 +116,7 @@ export async function initializeRenderSession({
   function dispose() {
     if (disposal) return disposal;
     disposed = true;
+    unbindTheme?.();
     disposal = (async () => {
       try { await pendingChange; }
       finally {
@@ -416,6 +438,7 @@ export async function initializeRenderSession({
   }
 
   try {
+    await bindTheme();
     if (softwareRenderer) messages(`Software rasterizer detected (${softwareRenderer}); using the low-cost tier without optional post effects.`);
     if (stageKind === "webgl2") {
       stageView = acquireStage({ backend: "webgl2" }).attachContext({ label: diagnosticId, onError, suspend: suspendGPU, resume: resumeGPU });

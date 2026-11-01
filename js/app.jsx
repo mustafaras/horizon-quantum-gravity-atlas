@@ -493,6 +493,13 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
     return () => document.removeEventListener("qga:theme", apply);
   }, [t.accent]);
 
+  const [themeId, setThemeId] = useState(() => window.QGA_THEME.get());
+  useEffect(() => {
+    const sync = () => setThemeId(window.QGA_THEME.get());
+    document.addEventListener("qga:theme", sync);
+    return () => document.removeEventListener("qga:theme", sync);
+  }, []);
+
   const starfieldOn = !!t.starfield && t.vizMode !== "minimal";
   const motionScale = effMotion === "reduced" ? 0 : effMotion === "balanced" ? 0.55 : 1;
 
@@ -622,6 +629,9 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
           options={["beginner", "student", "advanced"]}
           onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></TweakRadio>
         <TweakSection label="Theme"></TweakSection>
+        <RenderSetting label="Colour theme" value={themeId}
+          options={window.QGA_THEME.ids}
+          onChange={(v) => window.QGA_THEME.set(v)}></RenderSetting>
         <TweakColor label="Accent" value={t.accent}
           options={[QGA_TOKENS.css("accent"), QGA_TOKENS.css("accent-2"), QGA_TOKENS.css("signal-danger"), QGA_TOKENS.css("signal-warm")]}
           onChange={(v) => setTweak("accent", v)}></TweakColor>
