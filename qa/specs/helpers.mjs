@@ -16,9 +16,12 @@ export async function gotoReady(page, url, readiness = DEFAULT_READINESS, opts =
   page.on("console", onConsole);
   page.on("pageerror", onPageError);
   // Requests in flight, by URL, so a network-idle timeout can say what kept the page busy (qa/lib/readiness.mjs).
+  // Tracked as request objects, not URLs: the same URL is loaded by the page and by each embedded copy of it, and one of
+  // them finishing must not hide another still open.
   const inflight = new Set();
-  const opened = (request) => inflight.add(request.url());
-  const closed = (request) => inflight.delete(request.url());
+  const opened = (request) => inflight.add(request);
+  const closed = (request) => inflight.delete(request);
+  page.__qgaInflightUrls = () => [...inflight].map((r) => `${r.resourceType()} ${r.url().replace(/^https?:\/\/[^/]+/, "")}`);
   page.on("request", opened);
   page.on("requestfinished", closed);
   page.on("requestfailed", closed);

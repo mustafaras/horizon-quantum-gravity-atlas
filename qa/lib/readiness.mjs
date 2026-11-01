@@ -13,7 +13,7 @@ async function probeNetworkIdle(page, timeout) {
     await page.waitForLoadState("networkidle", { timeout });
   } catch (error) {
     // A page that never goes quiet is a finding, not just a timeout: name the requests that were still open.
-    const open = page.__qgaInflight ? [...page.__qgaInflight].slice(0, 12) : [];
+    const open = page.__qgaInflightUrls ? page.__qgaInflightUrls().slice(0, 12) : [];
     error.message += `\nrequests still open (${open.length}): ${JSON.stringify(open)}`;
     throw error;
   }
