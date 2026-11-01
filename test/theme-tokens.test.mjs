@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { contrastRatio, deltaE2000Linear, linearToOklab, relativeLuminance } from "../js/design/color.mjs";
+import { contrastRatio, deltaE2000Linear, linearToOklab, relativeLuminance, cssColorToLinear } from "../js/design/color.mjs";
 import { simulateCvd, CVD_TYPES } from "../js/design/cvd.mjs";
 import { parseTokensCss, buildTokens, THEME_IDS, DEFAULT_THEME } from "../js/design/tokens.mjs";
 import { themePigment } from "../js/design/theme-pigments.mjs";
@@ -19,6 +19,8 @@ const themed = (id) => buildTokens(parseTokensCss(baseCss, { theme: id, themeCss
 const TOKENS = Object.fromEntries(THEME_IDS.map((id) => [id, themed(id)]));
 
 const SURFACES = ["surface-0", "surface-1", "surface-2"];
+// What the generated stylesheets turn the dark panel washes into: oklch(0.90 0.01 260) on Print, oklch(0.42 0.05 240) on Blueprint.
+const PANEL_REFERENCE = { observatory: null, blueprint: "#335166", print: "#dadee5" };
 const STATUS = ["established", "effective", "schematic", "conjectural", "open", "heuristic"].map((s) => `status-${s}`);
 const VISIONS = ["normal", ...CVD_TYPES];
 const see = (rgb, vision) => (vision === "normal" ? rgb : simulateCvd(rgb, vision));
@@ -102,6 +104,19 @@ for (const id of THEME_IDS) {
       assert.ok(lightness(-1) > lightness(-0.5) && lightness(-0.5) > lightness(0) && lightness(1) > lightness(0.5) && lightness(0.5) > lightness(0), "lightness rises away from zero");
     }
     for (const vision of VISIONS) assert.ok(deltaE2000Linear(see(neg, vision), see(pos, vision)) >= 30, `${id}: ends under ${vision}`);
+  });
+
+  test(`${id}: the same text and signal colours hold on the panel the generated stylesheets produce`, () => {
+    // Panels are the mapped dark washes of the module stylesheets: lighter than --surface-2 on Print's paper and the
+    // lightest thing Blueprint draws text on. Measured on a real page (CI): status text fell to 4.3:1 on them.
+    const panel = PANEL_REFERENCE[id];
+    if (!panel) return;
+    const ref = cssColorToLinear(panel);
+    for (const name of ["ink-strong", "ink", "ink-dim", "accent", "accent-2", "signal-warm", "signal-danger", ...STATUS]) {
+      const ratio = contrastRatio(lin(name), ref);
+      assert.ok(ratio >= 4.5, `${id}: --${name} on the panel ${panel}: ${ratio.toFixed(2)}:1`);
+    }
+    for (const c of categorical(T)) assert.ok(contrastRatio(c.linear, ref) >= 3, `${id}: ${c.name} on the panel ${panel}`);
   });
 
   test(`${id}: gridlines are visible but never text (--ink-faint is not asked to reach 4.5:1)`, () => {

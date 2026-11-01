@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { parseCss, parseDeclarations, splitTop, colourLiterals, mapColourLiterals, stripComments } from "../scripts/lib/css-rules.mjs";
 import { buildThemeSurfaces, themedSelector, linkedSheets, readSources, OUTPUT, GENERATED_THEMES } from "../scripts/build-theme-surfaces.mjs";
 import { parseCssColor, relativeLuminance } from "../js/design/color.mjs";
-import { themeColor } from "../js/design/theme-pigments.mjs";
+import { themeColor, legibleText, textContrastOnPanel } from "../js/design/theme-pigments.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const built = buildThemeSurfaces(readSources(root));
@@ -154,6 +154,40 @@ test("Blueprint keeps text legible on its Prussian surface: dim text only on a l
     if (t.L < surface * 3) assert.ok((b && b.alpha >= 0.5 && b.L > 0.1) || TOKEN_FILL.has(name), `Blueprint: ${name} has dim text ${color.value} without a light fill`);
   }
   assert.ok(texts > 80, `expected many text rules, saw ${texts}`);
+});
+
+test("every text colour drawn on the panel clears 4.5:1 on the panel the theme produces, and the sources' oklch colours are mapped too", () => {
+  for (const theme of GENERATED_THEMES) {
+    let checked = 0;
+    for (const rule of themedRules(theme)) {
+      const color = rule.declarations.find((d) => d.prop === "color");
+      if (!color || rule.declarations.some((d) => /^background/.test(d.prop))) continue;
+      if (TOKEN_FILL.has(rule.selectors[0].replace(/^:root\[data-theme="[a-z]+"\] /, ""))) continue; // its fill is a token, so the pair is mapped, not clamped
+      const literal = /^oklch\([^()]*\)$/.exec(color.value.trim());
+      if (!literal) continue;
+      checked++;
+      const ratio = textContrastOnPanel(literal[0], theme);
+      assert.ok(ratio >= 4.5, `${theme}: ${rule.selectors[0]} text ${color.value} is ${ratio.toFixed(2)}:1 on the panel`);
+    }
+    assert.ok(checked > 60, `${theme}: only ${checked} panel text colours were checked`);
+  }
+  // The badges name their colours in oklch(); before the reader understood that, Print kept them pale on light panels.
+  const badge = themedRules("print").find((r) => r.selectors[0].endsWith(".badge-established"));
+  assert.ok(badge, "the established badge is restated under Print");
+  assert.notEqual(badge.declarations.find((d) => d.prop === "color").value, "oklch(0.78 0.1 160)");
+});
+
+test("legibleText leaves a colour that already clears the target, and otherwise opaques then darkens (Print) or lightens (Blueprint)", () => {
+  assert.equal(legibleText("oklch(0.20 0.02 260)", "print"), "oklch(0.200 0.020 260.0)", "an ink that already clears the target is only reformatted");
+  const faint = "oklch(0.75 0.03 260 / 0.5)";
+  const printText = legibleText(faint, "print");
+  assert.ok(textContrastOnPanel(printText, "print") >= 4.7, printText);
+  const blueprintText = legibleText("oklch(0.55 0.03 250 / 0.4)", "blueprint");
+  assert.ok(textContrastOnPanel(blueprintText, "blueprint") >= 4.7, blueprintText);
+  assert.ok(parseCssColor(blueprintText).alpha > 0.4, "opacity is raised before lightness is touched");
+  assert.equal(legibleText("not a colour", "print"), "not a colour");
+  assert.equal(legibleText("oklch(0.5 0.1 100)", "observatory"), "oklch(0.5 0.1 100)", "Observatory has no panel to measure against");
+  assert.ok(Number.isNaN(textContrastOnPanel("oklch(0.5 0.1 100)", "observatory")));
 });
 
 test("the generated colours are the same rule as scene pigments, with alpha kept", () => {

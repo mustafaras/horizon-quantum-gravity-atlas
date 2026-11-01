@@ -6,7 +6,7 @@
 //   blueprint    luminance kept, mapped onto a Prussian-blue-to-white ramp, chroma almost removed: engraved linework.
 //   print        lightness inverted onto paper: light tints become dark ink, near-black backdrops become paper.
 
-import { parseCssColor, linearToOklch, oklchToLinear } from "./color.mjs";
+import { parseCssColor, linearToOklch, oklchToLinear, linearToSrgb, srgbToLinear, contrastRatio } from "./color.mjs";
 
 export const THEME_IDS = Object.freeze(["observatory", "blueprint", "print"]);
 export const DEFAULT_THEME = "observatory";
@@ -48,3 +48,41 @@ export function themeColor(css, theme) {
 
 /** The pigment `css` as drawn in `theme` (opaque pigments, so the alpha form never appears). */
 export const themePigment = themeColor;
+
+// ---- legible text -------------------------------------------------------------------------------------------------
+// Mapping lightness is not enough for text: the pale, half-transparent greys the module stylesheets use on a near-black
+// page lose contrast on a lighter surface. A text colour is therefore also measured against the panel colour the
+// generated stylesheets produce, and pushed until it clears the target. Print's panels are the mapped dark washes
+// (about oklch 0.90); Blueprint's lightest text ground is its mapped wash (about oklch 0.42). Both are tested.
+
+export const TEXT_PANEL = Object.freeze({ blueprint: "#335166", print: "#dadee5" });
+export const TEXT_CONTRAST_TARGET = 4.7;
+const ALPHA_STEP = 0.05;
+const LIGHTNESS_STEP = 0.01;
+
+const toSrgb = (linear) => linear.map((v) => linearToSrgb(Math.min(1, Math.max(0, v))));
+
+/** Contrast of `css` (alpha blended in sRGB, as the browser does) over the theme's panel reference. */
+export function textContrastOnPanel(css, theme) {
+  const panel = parseCssColor(TEXT_PANEL[theme]);
+  const text = parseCssColor(css);
+  if (!panel || !text) return NaN;
+  const bg = toSrgb(panel.linear);
+  const fg = toSrgb(text.linear);
+  const blended = fg.map((v, k) => v * text.alpha + bg[k] * (1 - text.alpha));
+  return contrastRatio(blended.map(srgbToLinear), panel.linear);
+}
+
+/** `css` made to clear TEXT_CONTRAST_TARGET on the theme's panel: first more opaque, then lighter (Blueprint) or darker (Print). */
+export function legibleText(css, theme, target = TEXT_CONTRAST_TARGET) {
+  if (!(theme in TEXT_PANEL)) return css;
+  const parsed = parseCssColor(css);
+  if (!parsed) return css;
+  let [l, c, h] = linearToOklch(parsed.linear);
+  let alpha = parsed.alpha;
+  const current = () => textContrastOnPanel(formatOklch(l, c, h, alpha), theme);
+  const direction = theme === "print" ? -1 : 1;
+  while (current() < target && alpha < 1) alpha = Math.min(1, alpha + ALPHA_STEP);
+  while (current() < target && l > 0.02 && l < 0.995) l += direction * LIGHTNESS_STEP;
+  return formatOklch(l, c, h, alpha);
+}

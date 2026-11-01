@@ -88,7 +88,7 @@ export function parseCss(css) {
 /** Colour literals of a declaration value, in order, ignoring anything inside url(...). */
 export function colourLiterals(value) {
   const masked = value.replace(/url\([^)]*\)/gi, (m) => " ".repeat(m.length));
-  return [...masked.matchAll(/#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3,4}\b|rgba?\([^()]*\)|hsla?\([^()]*\)/g)]
+  return [...masked.matchAll(/#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3,4}\b|rgba?\([^()]*\)|hsla?\([^()]*\)|oklch\([^()]*\)/g)]
     .map((m) => ({ text: m[0], index: m.index }));
 }
 

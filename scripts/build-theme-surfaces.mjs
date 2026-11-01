@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCss, colourLiterals, mapColourLiterals } from "./lib/css-rules.mjs";
-import { themeColor } from "../js/design/theme-pigments.mjs";
+import { themeColor, legibleText } from "../js/design/theme-pigments.mjs";
 import { parseCssColor } from "../js/design/color.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -47,6 +47,9 @@ function overridesFor(nodes, theme, stats) {
       continue;
     }
     const pageOnly = node.selectors.every((s) => PAGE_ELEMENTS.has(s));
+    // Text that sits on a fill of its own (a button, a chip) is mapped together with that fill; only text drawn on the
+    // surrounding panel is held to the contrast target.
+    const ownsFill = node.declarations.some((d) => /^background/.test(d.prop) && !/^(none|transparent|inherit|initial|unset)$/i.test(d.value.trim()));
     const lines = [];
     for (const { prop, value } of node.declarations) {
       if (SKIPPED_PROPERTIES.has(prop)) continue;
@@ -54,10 +57,12 @@ function overridesFor(nodes, theme, stats) {
       const literals = colourLiterals(value);
       if (!literals.length) continue;
       stats.declarations += 1;
+      const isText = prop === "color" && !ownsFill && literals.length === 1 && value.trim() === literals[0].text;
       const mapped = mapColourLiterals(value, (literal) => {
         stats.literals += 1;
         if (!parseCssColor(literal)) { stats.unmapped.push(literal); return literal; }
-        return themeColor(literal, theme);
+        const themed = themeColor(literal, theme);
+        return isText ? legibleText(themed, theme) : themed;
       });
       lines.push(`${prop}: ${mapped} !important;`);
     }
