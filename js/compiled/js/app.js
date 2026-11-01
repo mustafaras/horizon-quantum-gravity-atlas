@@ -36,14 +36,14 @@ function HorizonMark(_ref) {
     cx: "20",
     cy: "20",
     r: "18",
-    stroke: "var(--acc)",
+    stroke: "var(--accent)",
     strokeWidth: "0.8",
     opacity: "0.28"
   }), /*#__PURE__*/React.createElement("circle", {
     cx: "20",
     cy: "20",
     r: "12.5",
-    stroke: "var(--acc)",
+    stroke: "var(--accent)",
     strokeWidth: "1",
     opacity: "0.55"
   }), /*#__PURE__*/React.createElement("circle", {
@@ -55,13 +55,13 @@ function HorizonMark(_ref) {
     cx: "20",
     cy: "20",
     r: "6.6",
-    stroke: "var(--gold)",
+    stroke: "var(--signal-warm)",
     strokeWidth: "1.4"
   }), /*#__PURE__*/React.createElement("circle", {
     cx: "20",
     cy: "20",
     r: "6.6",
-    stroke: "var(--gold)",
+    stroke: "var(--signal-warm)",
     strokeWidth: "3",
     opacity: "0.18"
   }), /*#__PURE__*/React.createElement("g", {
@@ -70,7 +70,7 @@ function HorizonMark(_ref) {
     cx: "32.5",
     cy: "20",
     r: "2.1",
-    fill: "var(--acc)"
+    fill: "var(--accent)"
   }), /*#__PURE__*/React.createElement("circle", {
     cx: "7.5",
     cy: "20",
@@ -905,12 +905,45 @@ function App() {
   // apply tweaks to CSS custom properties + motion attribute
   useEffect(function () {
     var root = document.documentElement;
-    root.style.setProperty("--acc", t.accent);
-    root.style.setProperty("--acc-soft", t.accent + "24");
     root.style.setProperty("font-size", t.uiScale + "px");
     document.body.style.fontSize = t.uiScale + "px";
     root.setAttribute("data-motion", effMotion);
-  }, [t.accent, t.uiScale, effMotion]);
+  }, [t.uiScale, effMotion]);
+
+  // The accent tweak belongs to the Observatory theme only: Blueprint and Print carry accents whose contrast was
+  // checked on their own surfaces, so an inline override is removed while one of them is active.
+  useEffect(function () {
+    var root = document.documentElement;
+    var apply = function apply() {
+      if ((root.getAttribute("data-theme") || "observatory") === "observatory") {
+        root.style.setProperty("--accent", t.accent);
+        root.style.setProperty("--accent-soft", t.accent + "24");
+      } else {
+        root.style.removeProperty("--accent");
+        root.style.removeProperty("--accent-soft");
+      }
+    };
+    apply();
+    document.addEventListener("qga:theme", apply);
+    return function () {
+      return document.removeEventListener("qga:theme", apply);
+    };
+  }, [t.accent]);
+  var _useState29 = useState(function () {
+      return window.QGA_THEME.get();
+    }),
+    _useState30 = _slicedToArray(_useState29, 2),
+    themeId = _useState30[0],
+    setThemeId = _useState30[1];
+  useEffect(function () {
+    var sync = function sync() {
+      return setThemeId(window.QGA_THEME.get());
+    };
+    document.addEventListener("qga:theme", sync);
+    return function () {
+      return document.removeEventListener("qga:theme", sync);
+    };
+  }, []);
   var starfieldOn = !!t.starfield && t.vizMode !== "minimal";
   var motionScale = effMotion === "reduced" ? 0 : effMotion === "balanced" ? 0.55 : 1;
   var Comp = QGA_VIEWS[view].comp();
@@ -1106,7 +1139,7 @@ function App() {
     className: "brand-title",
     style: {
       fontFamily: "var(--font-head)",
-      color: "var(--head)",
+      color: "var(--ink-strong)",
       fontWeight: 700,
       letterSpacing: "0.2em"
     }
@@ -1230,6 +1263,13 @@ function App() {
     }
   }), /*#__PURE__*/React.createElement(TweakSection, {
     label: "Theme"
+  }), /*#__PURE__*/React.createElement(RenderSetting, {
+    label: "Colour theme",
+    value: themeId,
+    options: window.QGA_THEME.ids,
+    onChange: function onChange(v) {
+      return window.QGA_THEME.set(v);
+    }
   }), /*#__PURE__*/React.createElement(TweakColor, {
     label: "Accent",
     value: t.accent,

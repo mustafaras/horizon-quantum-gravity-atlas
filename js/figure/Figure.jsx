@@ -80,10 +80,39 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
   const summary = useMemo(() => F.figureSummary(spec), [spec]);
   const table = useMemo(() => (tableOpen ? F.dataTable(spec) : null), [spec, tableOpen]);
 
+  // Hearing the figure (S34): pitch follows y along x, a quieter steady tone marks a labelled reference level. The audio
+  // context is created inside toggleSound, i.e. only from a click or the P key; nothing ever plays by itself.
+  const soundPlan = useMemo(() => F.sonificationPlan(spec), [spec]);
+  const [soundState, setSoundState] = useState("stopped");
+  const [soundNote, setSoundNote] = useState("");
+  const sonifier = useRef(null);
+  useEffect(() => () => { if (sonifier.current) sonifier.current.dispose(); }, []);
+  useEffect(() => { if (sonifier.current) sonifier.current.stop(); }, [spec.id]);
+  const toggleSound = () => {
+    if (!soundPlan) return;
+    if (!sonifier.current) sonifier.current = F.createFigureSonifier({ onState: setSoundState });
+    setSoundNote("");
+    sonifier.current.toggle(soundPlan).catch((error) => setSoundNote(error.message));
+  };
+
+  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from.
+  const [liveText, setLiveText] = useState("");
+  const announcer = useRef(null);
+  const seenSpec = useRef(false);
+  useEffect(() => {
+    announcer.current = F.createDebouncedAnnouncer({ announce: setLiveText });
+    return () => announcer.current.dispose();
+  }, []);
+  useEffect(() => {
+    if (!seenSpec.current) { seenSpec.current = true; return; }
+    announcer.current.push(F.announcementFor(spec));
+  }, [spec]);
+
   const focal = scene && scene.focal;
   const n = focal ? focal.x.length : 0;
   const clampIndex = (i) => Math.max(0, Math.min(n - 1, i));
   const onKeyDown = (e) => {
+    if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); toggleSound(); return; }
     if (onNudge) {
       const dir = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1
         : e.key === "End" ? Infinity : e.key === "Home" ? -Infinity : 0;
@@ -149,6 +178,17 @@ function Figure({ spec, children, className = "", onHover, onSelect, onNudge, sl
         ) : null}
       </div>
       <div className="fig-readout" role="status" aria-live="polite">{readout}</div>
+      <div className="fig-sr" role="status" aria-live="polite" aria-atomic="true" data-figure-live={spec.id}>{liveText}</div>
+      {soundPlan ? (
+        <div className="fig-tools">
+          <button type="button" className="fig-sound" aria-pressed={soundState === "playing"} aria-keyshortcuts="P"
+            aria-describedby={uid + "-sound"} onClick={toggleSound}>
+            {soundState === "playing" ? "Pause sound" : soundState === "paused" ? "Resume sound" : "Play sound"}
+          </button>
+          <span className="fig-note" role="status">{soundNote}</span>
+          <span id={uid + "-sound"} className="fig-sr">{soundPlan.description} Press P with the plot focused to play or pause.</span>
+        </div>
+      ) : null}
       <p id={uid + "-summary"} className="fig-summary">{summary}</p>
       <details className="fig-data" onToggle={(e) => setTableOpen(e.currentTarget.open)}>
         <summary>Data</summary>

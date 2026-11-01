@@ -602,7 +602,7 @@ function Toggle(_ref9) {
   })), /*#__PURE__*/React.createElement("span", {
     className: "ctl-label",
     style: {
-      color: checked ? "var(--text)" : undefined
+      color: checked ? "var(--ink)" : undefined
     }
   }, label));
 }

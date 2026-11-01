@@ -152,7 +152,7 @@ function CurvatureEngine3D() {
         )}
       </div>
       <div className="gr-well-stage"><div className="gr-geometry-label" aria-live="polite">{geometry === "flamm" ? "EXACT · Schwarzschild equatorial spatial slice" : "SCHEMATIC · Newtonian potential"}</div>
-      <Scene3D animated nodeKit height={480} shotSpace="gr-curvature" aria="Three-dimensional gravity well: selectable exact Flamm spatial embedding or schematic potential surface with separately modelled orbits and light rays"
+      <Scene3D animated nodeKit height={480} shotSpace="gr-curvature" describe={{ formulaId: "newtonian-potential" }} aria="Three-dimensional gravity well: selectable exact Flamm spatial embedding or schematic potential surface with separately modelled orbits and light rays"
         initial={{ radius: 17, theta: 0.4, phi: 1.08, target: [0, -1.2, 0], minR: 8, maxR: 38, bloom: { strength: 1.12, radius: 0.66, threshold: 0.1 } }}
         cameraGoal={cameraGoal}
         build={build} fallback={<CurvatureEngine></CurvatureEngine>}></Scene3D></div>

@@ -3,8 +3,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--surface-0);
+  color: var(--ink);
   font-family: var(--font-body);
   font-size: 15.5px;
   line-height: 1.62;

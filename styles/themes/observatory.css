@@ -1,0 +1,10 @@
+/* styles/themes/observatory.css — the default theme. Its colours are the base of styles/tokens.css; this file only
+   declares what a theme adds on top of the tokens: the colour scheme and the two decoration switches.
+   Select a theme with <html data-theme="observatory|blueprint|print"> (js/design/theme.mjs). */
+
+:root,
+:root[data-theme="observatory"] {
+  color-scheme: dark;
+  --decor: 1;
+  --glow: 1;
+}

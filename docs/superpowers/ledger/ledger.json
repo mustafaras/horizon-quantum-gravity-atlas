@@ -278,11 +278,11 @@
       "id": "F-18",
       "title": "Production ships React development builds and transpiles JSX in the browser with Babel (3.0 MB)",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S33"
       ],
-      "closedIn": null
+      "closedIn": "c933e5811f3c72f10d4c52d0d9d2f87054484d55"
     },
     {
       "id": "F-19",
@@ -1852,13 +1852,15 @@
         "F-01",
         "F-18"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Copilot for mustafaras",
       "branch": "perf/s33-production-runtime",
       "pr": 132,
-      "commits": [],
+      "commits": [
+        "c933e58"
+      ],
       "startedAt": "2026-11-01",
-      "completedAt": null,
+      "completedAt": "2026-11-01",
       "evidence": {
         "tests": [
           "node --test test/*.test.mjs — 1267 tests, 1266 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1250 pass, 1 skip; +17 new in test/production-runtime.test.mjs)",
@@ -1900,20 +1902,32 @@
         "F-01",
         "F-05"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "blocked",
+      "owner": "local: Claude Code for mustafaras",
+      "branch": "feat/s34-themes-a11y",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-01",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 1330 pass, 0 fail, 1 pre-existing skip (1267 passing before S34, 63 more now)",
+          "npm run validate: passed (65 formula cards, 89 provenance entries, cover index 8 sidecars)",
+          "npm run perf:audit: exit 0",
+          "npm run compile:jsx:check: 59 sources, no drift"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "status colours pairwise delta E00 minimum: Blueprint 18.7, Print 13.6, Observatory unchanged, against the limit 12 (normal, protan, deutan, tritan)",
+          "categorical neighbours delta E00 minimum: Blueprint 31.1, Print 34.8, against the limit 10",
+          "compatibility aliases remaining: 0 of 17 (about 540 uses moved); a repository grep finds none"
+        ]
       },
-      "blockers": [],
-      "notes": ""
+      "blockers": [
+        "Browser QA needs a local server: Playwright's globalSetup calls listen on 127.0.0.1, which this session's sandbox refuses (EPERM). Needed from the user: run `npm run qa:test:themes` and `node qa/capture.mjs --only=<ids> --update` (Blueprint and Print baselines, one figure per module) locally, or allow local port binding for the session (sandbox.network.allowLocalBinding).",
+        "Pushing the branch and opening the pull request needs network access to github.com, which the session sandbox also refuses."
+      ],
+      "notes": "Implemented and unit-tested: three theme token sets, theme runtime and switcher, pigment mapping, in-place scene restyling, S02 alias removal, figure sonification, 500 ms live summaries, 3D text alternatives. Not yet run in a browser: qa/specs/themes.spec.mjs (new), a11y.spec.mjs in three themes (QGA_QA_THEME), visual baselines. See D-195 to D-199."
     },
     {
       "id": "S35",
@@ -3324,6 +3338,41 @@
       "prompt": "S33",
       "decision": "The vendored React production builds were taken from the official npm 18.3.1 tarballs, whose sha512 digests were checked against the registry's dist.integrity before use.",
       "rationale": "The prompt requires the pinned version with SRI. Obtaining the files any other way would have meant trusting an unverified mirror, which is exactly what the self-hosting rule exists to prevent. The tarball hashes matched the registry exactly, and the SRI values in index.html are computed from the vendored bytes."
+    },
+    {
+      "id": "D-195",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "S34 does not close F-01 and does not touch F-05. F-05 was already closed in S02 (closedIn 5b8850c); F-01 stays open for S36, which is the last prompt in its closedBy list.",
+      "rationale": "The prompt header lists both findings, but F-01 covers v1 prompts 11 to 13 (export, PWA, workers, themes, release gate) and the release gate is S36. Closing it here would claim work that has not happened. S33 recorded the same reading."
+    },
+    {
+      "id": "D-196",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "The Blueprint and Print status and categorical colours were found with a seeded hill climb over OKLCH, not chosen by hand: each hue stays within 30 degrees of its Observatory value, status chroma is at least 0.08, and the S02 contrast and CVD limits are constraints. The search scripts are scratch tools and are not committed; the method and the achieved minima are in docs/design/themes.md and every limit is asserted by test/theme-tokens.test.mjs for all three themes.",
+      "rationale": "The S02 limits (status pairwise delta E00 at least 12 under four visions, 4.5:1 on three surfaces) leave little room, and the Observatory values do not satisfy them on a pale or Prussian-blue surface. A constrained search that keeps the hue identity of each status found sets with margin (Blueprint 18.7, Print 13.6 against 12); the committed test, not the tool, is what keeps them valid."
+    },
+    {
+      "id": "D-197",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "The 17 S02 compatibility aliases were removed by per-file Edit calls with replace_all, one alias at a time, across 28 stylesheets and sources (about 540 uses), followed by a repository-wide grep that finds none left, and by regenerating js/compiled. No script rewrote repository files. The one JavaScript use of an alias as a token name (QGA_TOKENS.css(\"head\") in atlas-map.jsx) was found by the token test and moved to ink-strong. The accent tweak in app.jsx now writes --accent and --accent-soft and is removed while Blueprint or Print is active.",
+      "rationale": "The user chose file-by-file edits over a rename script, to keep the Fact-Forcing Gate in the path. replace_all keeps each change exact and reviewable. The tweak must not override the accent of a theme whose contrast was checked on its own surfaces."
+    },
+    {
+      "id": "D-198",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "A 3D scene's text alternative always gains Model, Status and layer counts from the registered provenance of the nearest caption, but Formula Core key values appear only for scenes that name a bound formula through describe={{ formulaId }}: the Kerr observatory (schwarzschild-radius) and the gravity well (newtonian-potential), the two scenes whose terms are bound in the lens registry today. The other scenes have no Formula Core binding to read.",
+      "rationale": "The prompt asks for current key values from Formula Core readouts. A scene with no bound formula has no such readout, and inventing one from its parameters would put an unregistered number on screen. Binding more scenes is a lens task (S10 pattern), not an accessibility one."
+    },
+    {
+      "id": "D-199",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "Browser verification of S34 is not done: the a11y spec in the three themes, qa/specs/themes.spec.mjs and the Blueprint and Print visual baselines. The prompt is therefore blocked, not in review, and no screenshot is claimed.",
+      "rationale": "Playwright starts its verified server with listen on 127.0.0.1, which the session sandbox refuses (listen EPERM). Running it outside the sandbox was declined by the permission gate and was not retried. Node tests (1330 passing) cover the token, theme, scene-material, sonification, announcement and alternative-text logic; nothing in them proves the pages render."
     }
   ],
   "log": [
@@ -4103,6 +4152,27 @@
       "agent": "local: Copilot for mustafaras",
       "event": "review",
       "note": "Production loads 59 committed compiled JSX files and minified React with zero Babel; a module worker with a one-job-per-channel protocol carries the heavy science; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own. babelMs 3987 -> 0, first frame 5293 -> 519 ms. 17 new Node tests and 10 browser specs pass; 1266 of 1267 repository tests pass with one pre-existing skip. PR #132."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S33",
+      "agent": "local: Copilot for mustafaras",
+      "event": "done",
+      "detail": "Merged PR #132 as c933e58. Production loads 59 committed compiled JSX files and the React 18.3.1 production build with no Babel; the module worker carries the heavy science behind a one-job-per-channel protocol; the service worker precaches a subpath-scoped shell and never caches GWOSC. babelMs 3987 -> 0 ms, first frame 5293 -> 519 ms. F-18 closed; F-01 stays open for S34 and S36."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on feat/s34-themes-a11y from the S33 ledger-close commit 9ee9306 (main plus the S33 done entry). Baseline before the change: npm test 1267/1268 with one pre-existing skip, npm run validate green."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "blocked",
+      "detail": "Implementation and Node tests are done (npm test 1330 pass, validate green); browser QA and the Blueprint and Print baselines could not run because the sandbox refuses a local listen, and the branch could not be pushed. F-01 stays open for S36, F-05 was closed in S02 (D-195). Blockers and what is needed are in the S34 entry."
     }
   ]
 }

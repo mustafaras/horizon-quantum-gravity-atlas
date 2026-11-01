@@ -274,7 +274,7 @@ function FeynmanCollision3D({ proc, procKey }) {
   };
 
   return (
-    <div style={{ borderBottom: "1px solid var(--line)" }}>
+    <div style={{ borderBottom: "1px solid var(--rule)" }}>
       <Scene3D animated="motion" height={360}
         aria={"Cinematic three-dimensional animation of the collision " + procKey}
         initial={{ radius: 15, theta: 0.62, phi: 1.04, minR: 8, maxR: 30, fov: 42,

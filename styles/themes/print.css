@@ -1,0 +1,64 @@
+/* styles/themes/print.css — white surface, black ink, status colours re-validated on white, decoration off.
+   It is also what the browser prints with: js/design/theme.mjs switches to it on `beforeprint` and back on `afterprint`.
+   Verified by test/theme-tokens.test.mjs on all three surfaces (ink and status ≥ 4.5:1, categorical ≥ 3:1) and for
+   normal, protan, deutan and tritan vision (status ΔE00 ≥ 12, categorical neighbours ≥ 10). See docs/design/themes.md. */
+
+:root[data-theme="print"] {
+  color-scheme: light;
+  --decor: 0;
+  --glow: 0;
+
+  --surface-0: #ffffff;
+  --surface-1: #f6f7f9;
+  --surface-2: #eceff3;
+  --surface-glass: rgba(255, 255, 255, 0.92);
+  --surface-glass-thin: rgba(255, 255, 255, 0.78);
+  --surface-glass-strong: rgba(255, 255, 255, 0.97);
+
+  --ink-strong: #000000;
+  --ink: #101418;
+  --ink-dim: #4a5260;
+  --ink-faint: #aeb6c2;
+
+  --rule: rgba(16, 20, 24, 0.16);
+  --rule-strong: rgba(16, 20, 24, 0.34);
+  --edge: rgba(16, 20, 24, 0.2);
+  --edge-bright: rgba(16, 20, 24, 0.42);
+
+  --accent: #0b5cad;
+  --accent-2: #00707a;
+  --accent-soft: rgba(11, 92, 173, 0.12);
+  --signal-warm: #8a4b00;
+  --signal-danger: #b3261e;
+
+  --status-established: oklch(0.395 0.080 167.9);
+  --status-effective: oklch(0.519 0.088 202.7);
+  --status-schematic: oklch(0.390 0.082 113.0);
+  --status-conjectural: oklch(0.538 0.149 288.6);
+  --status-open: oklch(0.504 0.178 6.6);
+  --status-heuristic: oklch(0.525 0.111 108.0);
+
+  --cat-1: oklch(0.555 0.127 62.5);
+  --cat-2: oklch(0.621 0.129 244.2);
+  --cat-3: oklch(0.308 0.036 190.2);
+  --cat-4: oklch(0.620 0.123 104.9);
+  --cat-5: oklch(0.425 0.108 260.1);
+  --cat-6: oklch(0.595 0.244 29.2);
+  --cat-7: oklch(0.520 0.221 307.0);
+  --cat-8: oklch(0.124 0.033 245.9);
+
+  /* Diverging on paper: the neutral is light and darkness grows away from zero. */
+  --div-neg-2: oklch(0.42 0.12 250);
+  --div-neg-1: oklch(0.62 0.11 245);
+  --div-mid: oklch(0.93 0.005 260);
+  --div-pos-1: oklch(0.66 0.13 55);
+  --div-pos-2: oklch(0.47 0.14 45);
+}
+
+:root[data-theme="print"] .starfield-canvas,
+:root[data-theme="print"] .horizon-intro,
+:root[data-theme="print"] .atlas-stage { display: none; }
+
+:root[data-theme="print"] *:not(:focus-visible) { box-shadow: none !important; }
+:root[data-theme="print"] * { text-shadow: none !important; }
+:root[data-theme="print"] body { background-image: none; }
