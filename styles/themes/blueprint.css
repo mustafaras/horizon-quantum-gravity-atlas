@@ -50,6 +50,7 @@
   --cat-8: oklch(0.938 0.030 254.0);
   --ink-cat-1: oklch(0.82 0.13 76);
   --ink-cat-2: oklch(0.84 0.09 285);
+  --chip-data: oklch(0.36 0.09 250);
 }
 
 /* Measured grid on the page, drawn once behind everything; it replaces the starfield. */

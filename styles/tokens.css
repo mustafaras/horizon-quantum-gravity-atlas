@@ -68,6 +68,9 @@
      4.5:1, so text asks for these: the categorical colour itself in Observatory, a text-safe one in Blueprint and Print. */
   --ink-cat-1: var(--cat-1);
   --ink-cat-2: var(--cat-2);
+  /* Fill of data-driven chips (the mixing-matrix cells): opacity follows a value, the label is chosen by contrast on it.
+     Same colour as the pigment it replaces in Observatory; Blueprint and Print restate it where the ramp needs it. */
+  --chip-data: oklch(0.48 0.13 250);
   /* Diverging (signed quantities): blue ← dark neutral → orange, lightness rising away from zero. */
   --div-neg-2: oklch(0.78 0.12 235);
   --div-neg-1: oklch(0.56 0.11 250);
@@ -247,7 +250,6 @@
   --pigment-azure-66: #5a96dc;
   --pigment-azure-64: #5f8fc8;
   --pigment-azure-60: oklch(0.6 0.07 230);
-  --pigment-azure-48: oklch(0.48 0.13 250);
   /* blue */
   --pigment-blue-94: #dfeaff;
   --pigment-blue-93: #dce8ff;

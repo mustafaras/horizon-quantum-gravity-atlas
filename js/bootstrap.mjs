@@ -43,7 +43,7 @@ async function bootstrap() {
         readTokens: tokens.readTokens, onThemeChange: tokens.onThemeChange, cssColorToLinear: tokens.cssColorToLinear,
         current: tokens.current, css: tokens.css, alpha: tokens.alpha, hex: tokens.hex, hexString: tokens.hexString,
         linear: tokens.linear, linearRef: tokens.linearRef, rgb255: tokens.rgb255, tint: tokens.tint, hueTint: tokens.hueTint,
-        monoPx: tokens.monoPx, bodyPx: tokens.bodyPx, headPx: tokens.headPx,
+        monoPx: tokens.monoPx, bodyPx: tokens.bodyPx, headPx: tokens.headPx, readableText: tokens.readableText,
         palettes: Object.freeze({ ...palettes }),
       }),
       configurable: true,

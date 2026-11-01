@@ -176,9 +176,9 @@ test.describe("bypass blocks", () => {
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
       const el = document.activeElement;
-      return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim() };
+      return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim(), tag: el?.tagName || "", id: el?.id || "" };
     });
-    expect(first.cls, "first Tab stop is not the skip link").toContain("skip-link");
+    expect(first.cls, `first Tab stop is not the skip link (it is <${first.tag.toLowerCase()} id="${first.id}"> "${first.text.slice(0, 40)}")`).toContain("skip-link");
     expect(first.text.length).toBeGreaterThan(0);
 
     // The reveal is a 0.16s transform transition; wait for it to land rather
