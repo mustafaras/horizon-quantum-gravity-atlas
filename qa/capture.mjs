@@ -49,8 +49,10 @@ async function captureOne(browser, baseUrl, capture, outFile) {
     if (capture.scope === "element") {
       const locator = page.locator(capture.target).first();
       await locator.scrollIntoViewIfNeeded({ timeout: capture.timeoutMs });
-      await runReadiness(page, ["animation-settled"], { timeoutMs: capture.timeoutMs, settleMs: capture.settleMs });
-      shot = await locator.screenshot({ timeout: capture.timeoutMs });
+      // The readiness list above already waited for the animation to settle. A second settle window here would demand
+      // two more quiet frames from a page whose rAF loop may be throttled once it is scrolled into view; the element
+      // screenshot itself waits for the element to be stable.
+      shot = await locator.screenshot({ timeout: capture.timeoutMs, animations: "disabled" });
     } else {
       if (capture.target) {
         await page.locator(capture.target).first().scrollIntoViewIfNeeded({ timeout: capture.timeoutMs }).catch(() => {});

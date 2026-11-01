@@ -1804,17 +1804,37 @@
       "findings": [
         "F-01"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Copilot for mustafaras",
+      "branch": "feat/s32-publishing-studio",
+      "pr": 130,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-10-31",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "node --test test/*.test.mjs — 1251 tests, 1250 pass, 0 fail, 1 pre-existing skip (baseline before this prompt: 1226 pass, 1 skip; +24 new in test/export-metadata.test.mjs)",
+          "node --test test/export-metadata.test.mjs — 24 pass: the envelope carries every disclosure and refuses one without a status; file names are deterministic and portable; SHA-256 agrees between the WebCrypto and node:crypto paths; the figure SVG states a physical width in millimetres, contains no raster and no foreignObject, and its sidecar hash equals a SHA-256 of the CSV's own bytes (and changes when one byte of the CSV changes); CSV quoting follows RFC 4180; the still memory guard refuses before allocating; a tainted canvas reports canvas-tainted; the recorder chooses only codecs isTypeSupported accepts and stops its tracks on failure; a share card is deterministic and differs between states; a lab report refuses to be blank and leads with the view's own parameters",
+          "npm run validate — repository valid · formula audit 65 cards, 77 definitions, 6 derivations · provenance 89 entries · cover index matches 8 sidecars",
+          "npm run qa:verify — 73 captures, schema-conformant, README-consistent",
+          "npm run perf:audit — exit 0",
+          "npx playwright test qa/specs/export-studio.spec.mjs — 15 pass: the studio opens from the sidebar, the palette and ?export=1 and states the static-hosting limitation; Escape and Close both dismiss it; a 2K still really renders at 2560x1440 and the downloaded PNG carries the PNG signature and those dimensions; the renderer settings are identical before and after a capture; the page never overflows at 390 px; every control meets 44 px; the report route renders the state, the KaTeX formulas and the readouts and hides the shell under print media; a 1 s recording produces 24 frames whose first four bytes are the EBML magic 1a45dfa3 under video/webm; cancelling returns the panel to its idle state"
+        ],
+        "screenshots": [
+          "docs/screenshots/s32-export-studio.png",
+          "docs/screenshots/s32-lab-report.png"
+        ],
+        "measurements": [
+          "2K still: 2560x1440, 213811200 bytes of capture memory (204 MiB) against the 2 GiB guard; 8K would need 1924300800 bytes (1.79 GiB) and is refused only when the guard is lowered, which is what the guard is for",
+          "A 1 s recording at 24 fps yields exactly 24 frames and 177001 bytes; the container starts with the EBML signature 1a45dfa3",
+          "Figure export: 85 mm and 174 mm widths render as width=\"85.00mm\" and width=\"174.00mm\" with the viewBox geometry untouched; the seven vendored KaTeX faces resolve at the site root",
+          "CSV and sidecar: the sidecar's sha256 equals a SHA-256 over the CSV's exact bytes, and a one-character edit to the CSV changes it — the pair is verifiable rather than merely consistent",
+          "Share card: 1200x630, vector only, no <image> element, and two different states produce different facts and different SVG",
+          "Tour/studio page cost: the closed studio mounts nothing, so opening a view costs the same as before it existed (view-mounted 6.0 s before and after the change)",
+          "Readiness fix: the animation-settled probe returned a Promise from inside waitForFunction, which Playwright treats as truthy without awaiting it. Replaced with a synchronous frame counter: 5 consecutive runs settled in 7.7–9.0 s where the old probe stalled 1 run in 3 for 15 minutes"
+        ],
+        "decisions": [],
+        "notes": "The publishing studio: one provenance envelope for every artefact, a real render-target still, a vector figure with the CSV and a hash-bound sidecar, a deterministic WebM, a share card with its limitation stated, and a print-ready lab report."
       },
       "blockers": [],
       "notes": ""
@@ -3210,6 +3230,48 @@
       "prompt": "S31",
       "decision": "Accept F-20 (\"English only; no localisation\") as a limitation: the atlas ships in English, and no Turkish or other localisation will be added.",
       "rationale": "S31 specified a Turkish dictionary over UI chrome, module headers, captions, tours and the glossary, with ?lang= resolution and an English fallback for missing keys. The user withdrew that requirement outright — first for S31 and then permanently. Shipping tours and worksheets that exist only in English does not close a finding about localisation, so the finding is marked accepted rather than closed: nothing was built, and the ledger should say that plainly instead of leaving an open item that no remaining prompt covers. README.md states the scope in the section that describes the tours."
+    },
+    {
+      "id": "D-185",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "Export KaTeX mathematics in the figure SVG through an @font-face block naming the vendored woff2 faces, rather than converting KaTeX output to SVG paths through MathML.",
+      "rationale": "The prompt allows either. Path conversion would make every symbol an unselectable outline and lose the accessible text, and it would need a MathML-to-path converter the repository does not have and would not be allowed to fetch. The @font-face route keeps the text editable in a vector editor and readable to a screen reader; the cost is that a moved SVG falls back to a serif face, which changes the layout but not the data."
+    },
+    {
+      "id": "D-186",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "A still above the viewport is a real render at the target size (`captureAt` in js/render/render-session.mjs), not an upscale of a viewport screenshot.",
+      "rationale": "An upscaled screenshot of a ray-traced scene invents pixels the renderer never computed, which is exactly the failure the S29 cover work fixed by refusing to upscale. The surface is therefore resized, drawn, copied and restored inside one task, because the drawing buffer is not preserved (F-22). The cost is that a large still briefly resizes the canvas; the previous size is restored in a finally and the spec proves the renderer settings are identical before and after."
+    },
+    {
+      "id": "D-187",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "The studio writes a WebM only, and refuses to promise MP4.",
+      "rationale": "MediaRecorder's container support is a browser question. Chromium records VP9 or VP8 WebM; Firefox records WebM too. The panel names the codec it found through isTypeSupported and disables the button when it finds none, which is more useful than a button that fails after a click. MP4 would need a WASM encoder — a new runtime dependency the project's rules forbid."
+    },
+    {
+      "id": "D-188",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "A share card is generated in the page and downloaded by the reader; link previews keep the single static docs/social/og-image.png.",
+      "rationale": "This is a static GitHub Pages deployment. A crawler asking for a view receives index.html and the fixed og:image; generating a per-view card would need prebuilt routes or a server/edge function, neither of which this project has. The prompt asks for the limitation to be stated plainly, so it is: in SHARE_CARD_LIMITATION, in the studio panel, and in README.md."
+    },
+    {
+      "id": "D-189",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "The lab report is printed by the browser through a dedicated stylesheet and a ?export=report route, not by a bundled PDF writer.",
+      "rationale": "The prompt prefers this and allows a PDF dependency only when demonstrably required. It is not required: the browser's print pipeline produces a selectable, searchable PDF with real text at no dependency cost, and the report route makes the same document linkable. A bundled writer would add megabytes to a site whose whole constraint is self-hosted static files."
+    },
+    {
+      "id": "D-190",
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "decision": "The animation-settled readiness probe was rewritten to a synchronous frame counter.",
+      "rationale": "The old predicate returned a Promise from inside `page.waitForFunction`. Playwright does not await a returned promise — it treats the object as truthy — and the inner promise could fail to settle when the page's rAF loop was busy. One run in three stalled for fifteen minutes and reported a 45 s predicate timeout, intermittently failing unrelated browser specs. The replacement records frames on `window` and the predicate reads that counter, so every wait terminates on an observable value; five consecutive runs then settled in 7.7–9.0 s."
     }
   ],
   "log": [
@@ -3954,6 +4016,20 @@
       "agent": "local: Copilot for mustafaras",
       "event": "accept",
       "detail": "F-20 accepted as a limitation by user decision (D-184). The atlas, including the S31 tours and worksheets, is English-only; no localisation is planned."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "agent": "local: Copilot for mustafaras",
+      "event": "claim",
+      "detail": "Claimed on feat/s32-publishing-studio from main at c675fc8."
+    },
+    {
+      "date": "2026-10-31",
+      "prompt": "S32",
+      "agent": "local: Copilot for mustafaras",
+      "event": "review",
+      "note": "Publishing studio: export envelope, real render-target stills, vector figures with hash-bound CSV sidecars, deterministic WebM, share cards with the static-hosting limitation stated, and a print-ready lab report. 24 new Node tests and 15 Playwright specs pass; 1250 of 1251 repository tests pass with one pre-existing skip. PR #130."
     }
   ]
 }

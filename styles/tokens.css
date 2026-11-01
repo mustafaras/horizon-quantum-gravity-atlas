@@ -17,6 +17,12 @@
   --surface-glass: rgba(16, 22, 38, 0.72);
   --surface-glass-thin: rgba(11, 16, 27, 0.55);
   --surface-glass-strong: rgba(9, 13, 22, 0.8);
+  /* Paper: the print/export surface. A figure exported for a journal is placed on paper, so its background and ink are
+     tokens of their own rather than an opacity trick on the dark surfaces. S34 turns these into a full theme. */
+  --surface-paper: #ffffff;
+  --ink-paper: #101418;
+  --ink-paper-dim: #4a5260;
+  --rule-paper: #c8ced8;
 
   /* 2. Ink ----------------------------------------------------------------- */
   --ink-strong: #f3f7fe;

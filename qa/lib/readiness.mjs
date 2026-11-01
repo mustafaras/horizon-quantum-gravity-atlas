@@ -52,14 +52,25 @@ async function probeCanvasNonblank(page, timeout) {
 }
 
 async function probeAnimationSettled(page, timeout, settleMs) {
-  await page.waitForFunction(() => {
-    if (document.querySelector(".settling, .animating, [data-animating]")) return false;
-    return new Promise((resolve) => {
-      let frames = 0;
-      const tick = () => (++frames >= 3 ? resolve(true) : requestAnimationFrame(tick));
-      requestAnimationFrame(tick);
-    });
-  }, null, { timeout: Math.min(timeout, settleMs) });
+  // A predicate that returns a Promise is not awaited by `waitForFunction`: it is treated as truthy, so the probe
+  // would silently pass. It is also fragile — a page whose rAF loop is busy can make the inner promise never settle
+  // while the outer poll keeps re-arming. The predicate below is synchronous and self-contained: it counts frames
+  // into a page-level counter that `evaluate` then reads, so every wait terminates on an observable value.
+  await page.evaluate(() => {
+    window.__qgaSettle = { frames: 0, blocked: null };
+    const tick = () => {
+      const hit = document.querySelector(".settling, .animating, [data-animating]");
+      if (hit) window.__qgaSettle.blocked = hit.className || hit.className === "" ? hit.tagName : hit.className;
+      window.__qgaSettle.frames += 1;
+      if (window.__qgaSettle.frames < 60) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.waitForFunction(
+    () => window.__qgaSettle && window.__qgaSettle.frames >= 3 && !window.__qgaSettle.blocked,
+    null,
+    { timeout: Math.min(timeout, settleMs), polling: 50 },
+  );
 }
 
 /**

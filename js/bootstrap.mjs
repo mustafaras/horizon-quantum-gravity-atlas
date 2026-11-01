@@ -181,6 +181,37 @@ async function bootstrap() {
       configurable: true,
     });
 
+    // Publishing studio (S32): the export contract, the four artefact builders and the pure helpers behind them.
+    // Every module here is DOM-free; the studio's own JSX calls them, and the print view reads a report object.
+    const exportService = await import("./export/export-service.mjs");
+    const imageExport = await import("./export/image-export.mjs");
+    const videoExport = await import("./export/video-export.mjs");
+    const figureExport = await import("./export/figure-export.mjs");
+    const shareCard = await import("./export/share-card.mjs");
+    const labReport = await import("./export/lab-report.mjs");
+    Object.defineProperty(window, "QGA_EXPORT", {
+      value: Object.freeze({
+        EXPORT_SCHEMA: exportService.EXPORT_SCHEMA, EXPORT_VERSION: exportService.EXPORT_VERSION,
+        DISPLAY_AMPLIFICATIONS: exportService.DISPLAY_AMPLIFICATIONS, EXPORT_ERROR_CODES: exportService.EXPORT_ERROR_CODES,
+        ExportError: exportService.ExportError,
+        buildExportEnvelope: exportService.buildExportEnvelope, exportFileName: exportService.exportFileName,
+        utcTimestamp: exportService.utcTimestamp, sha256Hex: exportService.sha256Hex,
+        sidecarJson: exportService.sidecarJson, buildFigureSidecar: exportService.buildFigureSidecar,
+        STILL_PRESETS: imageExport.STILL_PRESETS, planStillCapture: imageExport.planStillCapture,
+        captureStill: imageExport.captureStill, canvasToPngBytes: imageExport.canvasToPngBytes,
+        RECORDING_PRESETS: videoExport.RECORDING_PRESETS, recordingSupport: videoExport.recordingSupport,
+        recordCanvas: videoExport.recordCanvas, recordingPlan: videoExport.recordingPlan,
+        FIGURE_WIDTHS_MM: figureExport.FIGURE_WIDTHS_MM, FIGURE_STYLES: figureExport.FIGURE_STYLES,
+        buildFigureExport: figureExport.buildFigureExport, dataTableCsv: figureExport.dataTableCsv,
+        SHARE_CARD_SIZE: shareCard.SHARE_CARD_SIZE, SHARE_CARD_LIMITATION: shareCard.SHARE_CARD_LIMITATION,
+        shareCardScene: shareCard.shareCardScene, shareCardSvg: shareCard.shareCardSvg,
+        shareCardSidecar: shareCard.shareCardSidecar,
+        buildLabReport: labReport.buildLabReport, reportPlainText: labReport.reportPlainText,
+        reportStateRows: labReport.reportStateRows, REPORT_PRIMARY_KEYS: labReport.REPORT_PRIMARY_KEYS,
+      }),
+      configurable: true,
+    });
+
     // Guided tours (S31): the manifests, their validator, the step runner and the worksheet builder. Exposed before
     // the classic scripts are evaluated, because js/state.jsx validates `?tour=` and `?step=` on first read.
     const tours = await import("./tours/tour-schema.mjs");

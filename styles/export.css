@@ -1,0 +1,92 @@
+/* styles/export.css — the publishing studio panel, the print view and the report sheet.
+   The panel is a right-hand drawer like the snapshots panel; the report is a document that must survive a printer. */
+
+/* ---------- studio panel ---------- */
+.export-backdrop {
+  position: fixed; inset: 0; z-index: 90; background: rgba(3, 6, 12, 0.52);
+  display: flex; justify-content: flex-end;
+  animation: export-fade 0.18s ease both;
+}
+@keyframes export-fade { from { opacity: 0; } to { opacity: 1; } }
+.export-panel {
+  width: min(520px, 100vw); height: 100%; overflow-y: auto;
+  background: rgba(9, 13, 22, 0.98); border-left: 1px solid var(--line);
+  padding: 22px 22px 48px 22px;
+  animation: export-slide 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes export-slide { from { transform: translateX(36px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.export-panel:focus { outline: none; }
+.export-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+/* Every control in the drawer is a touch target, including Close. */
+.export-panel .btn { min-height: 44px; }
+.export-panel .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.export-head h2 { margin: 4px 0 0 0; font-size: 20px; }
+.export-kicker {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--acc);
+}
+.export-lede { margin: 10px 0 16px 0; max-width: 62ch; }
+
+.export-section { border-top: 1px solid var(--line); padding: 14px 0 4px 0; margin-top: 6px; }
+.export-section h3 { font-size: 15px; margin: 0 0 4px 0; }
+.export-note { margin: 0 0 10px 0; max-width: 66ch; line-height: 1.5; }
+.export-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.export-row label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.export-row .btn { min-height: 44px; }
+.export-row .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.export-notice {
+  font-size: 12.5px; border-radius: 8px; padding: 9px 11px; margin: 0 0 12px 0; line-height: 1.5;
+}
+.export-notice.ok { color: oklch(0.82 0.09 150); background: rgba(60, 160, 90, 0.10); border: 1px solid rgba(60, 160, 90, 0.30); }
+.export-notice.error { color: oklch(0.82 0.10 25); background: rgba(200, 70, 50, 0.10); border: 1px solid rgba(200, 70, 50, 0.32); }
+
+/* While a report is open the cinema transport has nothing to drive, so it does not sit on top of the document. */
+body:has(.report-sheet) .cinema-bar { display: none; }
+
+/* ---------- print view ---------- */
+.report-sheet { margin: 0 auto; max-width: 210mm; }
+.report-head { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 20px; }
+.report-head h1 { font-size: 26px; margin: 6px 0 8px 0; }
+.report-meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); line-height: 1.7; }
+.report-section { margin-top: 22px; break-inside: avoid; }
+.report-section h2 { font-size: 16px; margin: 0 0 8px 0; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
+/* The state table is reference material, so it is dense and capped: a 60-row table at full leading would push the
+   numbers and the references off the page. */
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table.compact td, .report-table.compact th { padding: 2px 8px; font-size: 11px; }
+/* The full parameter dump is behind a disclosure: it is reference material, not the result. */
+.report-rest { margin-top: 10px; }
+.report-rest summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-dim); min-height: 24px;
+}
+.report-rest summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+@media print { .report-rest { display: none; } }
+.report-table th, .report-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+.report-table th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.report-table td.mono { font-family: var(--font-mono); font-size: 11.5px; }
+.report-list { margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; }
+.report-list li { margin-bottom: 5px; }
+.report-foot { margin-top: 26px; font-size: 10.5px; color: var(--text-dim); border-top: 1px solid var(--line); padding-top: 10px; }
+
+@media print {
+  .export-backdrop, .export-panel, .sidebar, .topbar, .atlas-stage, .starfield-canvas,
+  .horizon-intro, .cinema-bar, .tour-surface { display: none !important; }
+  .content, .content-inner { overflow: visible !important; height: auto !important; max-width: none !important; padding: 0 !important; }
+  .report-sheet { max-width: none; }
+  .report-table th, .report-table td { border-bottom: 1px solid var(--line); }
+  a[href]::after { content: ""; }
+}
+
+@media (max-width: 760px) {
+  .export-panel { padding: 16px 14px 40px 14px; }
+  .export-head h2 { font-size: 17px; }
+}
+
+html[data-motion="reduced"] .export-backdrop,
+html[data-motion="reduced"] .export-panel { animation: none; }

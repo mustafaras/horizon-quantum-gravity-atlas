@@ -338,6 +338,49 @@ export async function initializeRenderSession({
         stageView?.markRendered();
         return canvasOf();
       },
+      /**
+       * Render at a target size and return a detached copy of the pixels (S32).
+       *
+       * A viewport screenshot cannot be upscaled into a publication still: the rays have to be traced at the target
+       * resolution, so the surface really is resized, drawn, and copied before the size is put back. The copy is a
+       * separate canvas because the drawing buffer is not preserved (F-22) — returning the live canvas would hand back
+       * an already-cleared buffer as soon as the size was restored.
+       *
+       * The caller is responsible for the memory guard; this only refuses a size the GPU cannot hold.
+       */
+      captureAt({ width, height } = {}) {
+        if (disposed || suspended || changing || !pipeline) return null;
+        const w = Math.round(Number(width));
+        const h = Math.round(Number(height));
+        if (!Number.isFinite(w) || !Number.isFinite(h) || w < 2 || h < 2) return null;
+        const [restoreW, restoreH] = dimensions();
+        const target = surface();
+        try {
+          activate();
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          target.setSize(w, h, false);
+          pipeline.resize(w, h);
+          pipeline.render(0);
+          stageView?.markRendered();
+          const source = canvasOf();
+          if (!source || !source.width) return null;
+          const copy = document.createElement("canvas");
+          copy.width = w;
+          copy.height = h;
+          const context = copy.getContext("2d");
+          if (!context) return null;
+          // drawImage from the just-rendered buffer, still inside this task: the only moment the pixels exist.
+          context.drawImage(source, 0, 0, w, h);
+          return copy;
+        } finally {
+          camera.aspect = restoreW / restoreH;
+          camera.updateProjectionMatrix();
+          target.setSize(restoreW, restoreH, false);
+          pipeline.resize(restoreW, restoreH);
+          stageView?.invalidate({ input: false });
+        }
+      },
       render(delta = 0, now = performance.now(), sample = true, frameMs = delta * 1000) {
         if (disposed || changing || suspended) return;
         if (materialSignature(scene) !== warmedSignature) {

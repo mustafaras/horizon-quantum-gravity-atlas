@@ -649,6 +649,9 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
       element: mount,
       cameraSpace: "orbit",
       capture: () => session.capture(),
+      // S32: a real render at a target size, copied before the surface is restored. The export studio applies the
+      // memory guard before it asks for this, so a size the GPU cannot hold is never requested.
+      captureAt: (size) => session.captureAt(size),
       // A scene may expose a small QA readout (live uniforms, counts) through `state` in the object it returns from build.
       state: () => built.state?.() ?? null,
       getPose: hudStateRef.current.getPose,
