@@ -61,7 +61,7 @@
     flex-wrap: wrap; gap: 6px 8px;
     position: sticky; top: 0; z-index: 40;
     padding: 12px 16px; border-bottom: 1px solid var(--rule);
-    background: rgba(5,8,14,0.88); backdrop-filter: blur(14px);
+    background: var(--surface-glass-strong); backdrop-filter: blur(14px);
   }
   .topbar-title { font-family: var(--font-head); font-weight: 600; font-size: 15px; color: var(--ink-strong); }
   .content-inner { padding: 26px 18px 90px 18px; }

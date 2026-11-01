@@ -379,11 +379,33 @@ function RenderDiagnosticsDrawer() {
     }));
   }));
 }
-function RenderSetting(_ref4) {
-  var label = _ref4.label,
-    value = _ref4.value,
-    options = _ref4.options,
-    _onChange = _ref4.onChange;
+
+// The visible way to change theme (S34): one button that steps Observatory, Blueprint, Print and names both the current
+// theme and the one it switches to. The Tweaks panel only opens from a host toolbar, so it is not a way in on the live site.
+function ThemeButton(_ref4) {
+  var className = _ref4.className,
+    themeId = _ref4.themeId;
+  var _window$QGA_THEME = window.QGA_THEME,
+    ids = _window$QGA_THEME.ids,
+    labels = _window$QGA_THEME.labels;
+  var next = ids[(ids.indexOf(themeId) + 1) % ids.length];
+  return /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: className,
+    onClick: function onClick() {
+      return window.QGA_THEME.cycle();
+    },
+    "data-theme-button": "",
+    "aria-label": "Colour theme: " + labels[themeId] + ". Switch to " + labels[next]
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\u25D0"), " ", labels[themeId]);
+}
+function RenderSetting(_ref5) {
+  var label = _ref5.label,
+    value = _ref5.value,
+    options = _ref5.options,
+    _onChange = _ref5.onChange;
   return /*#__PURE__*/React.createElement("label", {
     className: "twk-row"
   }, /*#__PURE__*/React.createElement("span", {
@@ -410,8 +432,8 @@ function RenderSetting(_ref4) {
    the director), and this bar reflects it. Under reduced motion the tour
    does not interpolate the camera: play is disabled and only explicit
    deep links / scroll place the camera instantly. */
-function CinemaBar(_ref5) {
-  var reducedMotion = _ref5.reducedMotion;
+function CinemaBar(_ref6) {
+  var reducedMotion = _ref6.reducedMotion;
   var C = window.QGA_CINEMATIC;
   var _useState7 = useState(function () {
       return C ? C.state : null;
@@ -576,8 +598,8 @@ function OfflineNotice() {
     var controller = PWA.createController();
     controllerRef.current = controller;
     if (!controller.supported) return undefined;
-    var off = controller.subscribe(function (_ref6) {
-      var next = _ref6.state;
+    var off = controller.subscribe(function (_ref7) {
+      var next = _ref7.state;
       return setState(next);
     });
     void controller.register();
@@ -672,10 +694,10 @@ function App() {
   }, [view]);
   // The publishing studio names the view it exports; the shell is the one place that knows both the id and the title.
   useEffect(function () {
-    var _ref7, _QGA_VIEWS$view$label, _QGA_VIEWS$view, _QGA_MODULES$find;
-    window.__qgaCurrentViewTitle = (_ref7 = (_QGA_VIEWS$view$label = (_QGA_VIEWS$view = QGA_VIEWS[view]) === null || _QGA_VIEWS$view === void 0 ? void 0 : _QGA_VIEWS$view.label) !== null && _QGA_VIEWS$view$label !== void 0 ? _QGA_VIEWS$view$label : (_QGA_MODULES$find = QGA_MODULES.find(function (m) {
+    var _ref8, _QGA_VIEWS$view$label, _QGA_VIEWS$view, _QGA_MODULES$find;
+    window.__qgaCurrentViewTitle = (_ref8 = (_QGA_VIEWS$view$label = (_QGA_VIEWS$view = QGA_VIEWS[view]) === null || _QGA_VIEWS$view === void 0 ? void 0 : _QGA_VIEWS$view.label) !== null && _QGA_VIEWS$view$label !== void 0 ? _QGA_VIEWS$view$label : (_QGA_MODULES$find = QGA_MODULES.find(function (m) {
       return m.id === view;
-    })) === null || _QGA_MODULES$find === void 0 ? void 0 : _QGA_MODULES$find.title) !== null && _ref7 !== void 0 ? _ref7 : view;
+    })) === null || _QGA_MODULES$find === void 0 ? void 0 : _QGA_MODULES$find.title) !== null && _ref8 !== void 0 ? _ref8 : view;
   }, [view]);
   // Palette action hook: "Save snapshot" opens this panel from ⌘K.
   useEffect(function () {
@@ -1037,7 +1059,10 @@ function App() {
       return setStudioOpen(true);
     },
     "aria-label": "Open the publishing studio"
-  }, "\u21E9 Export"), /*#__PURE__*/React.createElement("button", {
+  }, "\u21E9 Export"), /*#__PURE__*/React.createElement(ThemeButton, {
+    className: "sidebar-tool-btn",
+    themeId: themeId
+  }), /*#__PURE__*/React.createElement("button", {
     className: "sidebar-tool-btn",
     onClick: function onClick() {
       var _window$QGA_ARM_ANNOT, _window3;
@@ -1060,7 +1085,10 @@ function App() {
       return (_window$QGA_OPEN_PALE2 = (_window4 = window).QGA_OPEN_PALETTE) === null || _window$QGA_OPEN_PALE2 === void 0 ? void 0 : _window$QGA_OPEN_PALE2.call(_window4);
     },
     "aria-label": "Open search and command palette"
-  }, "Search \u2318K"), /*#__PURE__*/React.createElement("button", {
+  }, "Search \u2318K"), /*#__PURE__*/React.createElement(ThemeButton, {
+    className: "btn",
+    themeId: themeId
+  }), /*#__PURE__*/React.createElement("button", {
     className: "btn render-settings-btn",
     onClick: openRenderingSettings
   }, "Rendering settings"), /*#__PURE__*/React.createElement("button", {

@@ -149,6 +149,19 @@ function RenderDiagnosticsDrawer() {
   </details>;
 }
 
+// The visible way to change theme (S34): one button that steps Observatory, Blueprint, Print and names both the current
+// theme and the one it switches to. The Tweaks panel only opens from a host toolbar, so it is not a way in on the live site.
+function ThemeButton({ className, themeId }) {
+  const { ids, labels } = window.QGA_THEME;
+  const next = ids[(ids.indexOf(themeId) + 1) % ids.length];
+  return (
+    <button type="button" className={className} onClick={() => window.QGA_THEME.cycle()} data-theme-button=""
+      aria-label={"Colour theme: " + labels[themeId] + ". Switch to " + labels[next]}>
+      <span aria-hidden="true">◐</span> {labels[themeId]}
+    </button>
+  );
+}
+
 function RenderSetting({ label, value, options, onChange }) {
   return <label className="twk-row">
     <span className="twk-lbl">{label}</span>
@@ -544,6 +557,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
             <button className="sidebar-tool-btn" onClick={() => setSnapshotsOpen(true)} aria-label="Open the snapshots panel">◆ Snapshots</button>
             <button className="sidebar-tool-btn" onClick={() => setToursOpen(true)} aria-label="Open the guided tours">▶ Tours</button>
             <button className="sidebar-tool-btn" onClick={() => setStudioOpen(true)} aria-label="Open the publishing studio">⇩ Export</button>
+            <ThemeButton className="sidebar-tool-btn" themeId={themeId}></ThemeButton>
             <button className="sidebar-tool-btn" onClick={() => window.QGA_ARM_ANNOTATION?.()} aria-label="Place an annotation pin on the current view">✎ Annotate</button>
           </div>
           <div className="sidebar-foot">
@@ -555,6 +569,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
         <div className="topbar">
           <span className="topbar-title">HORIZON</span>
           <button className="btn" onClick={() => window.QGA_OPEN_PALETTE?.()} aria-label="Open search and command palette">Search ⌘K</button>
+          <ThemeButton className="btn" themeId={themeId}></ThemeButton>
           <button className="btn render-settings-btn" onClick={openRenderingSettings}>Rendering settings</button>
           <button className="btn" onClick={async () => { try { await QGA_COPY_LINK(qgaReadState()); } catch (e) {} }}>Copy link</button>
           <button className="btn" onClick={() => QGA_EXPORT_JSON(qgaReadState())}>Export JSON</button>

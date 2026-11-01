@@ -159,6 +159,8 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
   border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: all 0.15s;
 }
 .btn:hover { border-color: var(--accent); color: var(--ink-strong); }
+[data-theme-button] { min-height: 44px; min-width: 44px; }
+[data-theme-button]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn.primary { background: var(--accent-soft); border-color: var(--accent); color: var(--ink-strong); }
 .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; }
 .seg .btn { border: none; border-radius: 0; }

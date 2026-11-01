@@ -1905,7 +1905,7 @@
       "status": "blocked",
       "owner": "local: Claude Code for mustafaras",
       "branch": "feat/s34-themes-a11y",
-      "pr": null,
+      "pr": 134,
       "commits": [],
       "startedAt": "2026-11-01",
       "completedAt": null,
@@ -1925,7 +1925,7 @@
       },
       "blockers": [
         "Browser QA needs a local server: Playwright's globalSetup calls listen on 127.0.0.1, which this session's sandbox refuses (EPERM). Needed from the user: run `npm run qa:test:themes` and `node qa/capture.mjs --only=<ids> --update` (Blueprint and Print baselines, one figure per module) locally, or allow local port binding for the session (sandbox.network.allowLocalBinding).",
-        "Pushing the branch and opening the pull request needs network access to github.com, which the session sandbox also refuses."
+        "The acceptance (a11y spec in all three themes, visual baselines for Blueprint and Print) has not run anywhere: CI runs only qa:critical, so PR 134 merged with 25 critical specs passing (1 flaky, passed on retry) and no theme spec. qa/specs/themes.spec.mjs is added to qa:critical in the follow-up PR so CI runs it for the first time."
       ],
       "notes": "Implemented and unit-tested: three theme token sets, theme runtime and switcher, pigment mapping, in-place scene restyling, S02 alias removal, figure sonification, 500 ms live summaries, 3D text alternatives. Not yet run in a browser: qa/specs/themes.spec.mjs (new), a11y.spec.mjs in three themes (QGA_QA_THEME), visual baselines. See D-195 to D-199."
     },
@@ -3373,6 +3373,20 @@
       "prompt": "S34",
       "decision": "Browser verification of S34 is not done: the a11y spec in the three themes, qa/specs/themes.spec.mjs and the Blueprint and Print visual baselines. The prompt is therefore blocked, not in review, and no screenshot is claimed.",
       "rationale": "Playwright starts its verified server with listen on 127.0.0.1, which the session sandbox refuses (listen EPERM). Running it outside the sandbox was declined by the permission gate and was not retried. Node tests (1330 passing) cover the token, theme, scene-material, sonification, announcement and alternative-text logic; nothing in them proves the pages render."
+    },
+    {
+      "id": "D-200",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "PR 134 was merged (1c08f24) while S34 stays blocked. What CI ran on it: Browser QA with qa:critical only (smoke, esm-runtime, render-contracts), 25 passed and 1 flaky that passed on retry, plus the README/metadata validation. A statement made after the merge, that CI had also run themes.spec.mjs and a11y.spec.mjs, was wrong and is withdrawn here.",
+      "rationale": "The CI log shows the critical subset only. Neither the new theme spec nor the a11y spec in three themes nor any Blueprint or Print baseline has run on any machine, so the S34 acceptance is not met and S35 must not start. The merge was explicitly requested by the user; the live site carries unverified Blueprint and Print renders."
+    },
+    {
+      "id": "D-201",
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "decision": "Known gap in Print: about 90 stylesheet declarations hard-code dark rgba() backgrounds (panels, scene frames, readouts: rg-flow 8, kerr 13, gw 11, workbench 12, qft 7, shell 6, causal 8 and others), which do not follow the theme. On a light Print surface their text, now dark ink, can sit on a dark panel. Only the top bar was moved to a token in the follow-up. Blueprint is unaffected because its ink is light.",
+      "rationale": "Found by grep, not by looking at a page. Moving them to surface tokens is a mechanical but large edit that cannot be verified without a browser, so it is recorded as the next task rather than done blind."
     }
   ],
   "log": [
@@ -4173,6 +4187,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "blocked",
       "detail": "Implementation and Node tests are done (npm test 1330 pass, validate green); browser QA and the Blueprint and Print baselines could not run because the sandbox refuses a local listen, and the branch could not be pushed. F-01 stays open for S36, F-05 was closed in S02 (D-195). Blockers and what is needed are in the S34 entry."
+    },
+    {
+      "date": "2026-11-01",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "note",
+      "detail": "PR 134 merged as 1c08f24 and deployed to GitHub Pages (blueprint.css served, HTTP 200). S34 stays blocked: CI ran only qa:critical, so no theme spec has run (D-200); Print has a known dark-panel gap (D-201). A visible theme button (sidebar on desktop, top bar on a phone) and themes.spec.mjs in qa:critical follow in a new PR."
     }
   ]
 }

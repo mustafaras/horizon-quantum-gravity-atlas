@@ -158,6 +158,28 @@ test("a parameter change is announced once, 500 ms after the last change", async
   expect(Date.now() - t0).toBeGreaterThanOrEqual(ANNOUNCE_DELAY_MS);
 });
 
+test("a visible button steps through the themes: in the sidebar on a desktop and in the top bar on a phone", async ({ page, context }) => {
+  await open(page, context, "/?view=gr");
+  const side = page.locator(".sidebar [data-theme-button]");
+  await expect(side).toBeVisible();
+  expect((await side.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  const order = ["observatory", "blueprint", "print", "observatory"];
+  const names = { observatory: "Observatory", blueprint: "Blueprint", print: "Print" };
+  for (let i = 0; i < order.length - 1; i++) {
+    await expect(side).toHaveAccessibleName(`Colour theme: ${names[order[i]]}. Switch to ${names[order[i + 1]]}`);
+    await side.click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme"))).toBe(order[i + 1]);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const top = page.locator(".topbar [data-theme-button]");
+  await expect(top).toBeVisible();
+  expect((await top.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await top.click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme"))).toBe("blueprint");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
 test("a 3D scene's accessible name carries its registered model and status", async ({ page, context }) => {
   await open(page, context, "/?view=bh");
   const stage = page.locator(".s3d-stage").first();
