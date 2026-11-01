@@ -48,7 +48,7 @@ function KerrShadowLab() {
       </div>
       <div className="kerr-eht-block">
         <div className="kerr-eht-head">
-          <h4>The shadow, measured</h4>
+          <h3>The shadow, measured</h3>
           <span className="seg" role="group" aria-label="EHT target">
             {E.EHT_TARGETS.map((t) => (
               <button key={t.id} type="button" className={"btn" + (t.id === target ? " on" : "")}
