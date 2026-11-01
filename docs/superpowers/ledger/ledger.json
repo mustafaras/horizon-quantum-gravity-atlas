@@ -1855,7 +1855,7 @@
       "status": "review",
       "owner": "local: Copilot for mustafaras",
       "branch": "perf/s33-production-runtime",
-      "pr": null,
+      "pr": 132,
       "commits": [],
       "startedAt": "2026-11-01",
       "completedAt": null,
@@ -4102,7 +4102,7 @@
       "prompt": "S33",
       "agent": "local: Copilot for mustafaras",
       "event": "review",
-      "note": "Production loads 59 committed compiled JSX files and minified React with zero Babel; a module worker with a one-job-per-channel protocol carries the heavy science; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own. babelMs 3987 -> 0, first frame 5293 -> 519 ms. 17 new Node tests and 10 browser specs pass; 1266 of 1267 repository tests pass with one pre-existing skip. PR open."
+      "note": "Production loads 59 committed compiled JSX files and minified React with zero Babel; a module worker with a one-job-per-channel protocol carries the heavy science; the service worker precaches a subpath-scoped shell, never caches GWOSC and never reloads on its own. babelMs 3987 -> 0, first frame 5293 -> 519 ms. 17 new Node tests and 10 browser specs pass; 1266 of 1267 repository tests pass with one pre-existing skip. PR #132."
     }
   ]
 }
