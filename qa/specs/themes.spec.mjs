@@ -154,17 +154,24 @@ test("a parameter change is announced once, 500 ms after the last change", async
   const live = page.locator(`${COUPLINGS} [data-figure-live]`);
   await expect(live).toHaveText("");
   await page.locator(`${COUPLINGS} .fig-plot`).focus();
-  // Four presses in one task: a loaded CI page can take longer than the delay between two awaited presses, and a debounce
-  // that fires between two slow presses is correct behaviour, not what this test is about.
-  const t0 = Date.now();
-  await page.evaluate(() => {
-    const plot = document.querySelector('.fig[data-figure="rg-unification-couplings"] .fig-plot');
+  // The timing is read on the page's own clock. A loaded CI page can stall its main thread for longer than the delay, and
+  // then a Node-side wait says nothing about when the timer was set; performance.now() inside the page does. Four presses
+  // go in one task so a stall cannot split them either.
+  const result = await page.evaluate(({ selector }) => new Promise((resolve) => {
+    const region = document.querySelector(`${selector} [data-figure-live]`);
+    const plot = document.querySelector(`${selector} .fig-plot`);
+    const changes = [];
+    const observer = new MutationObserver(() => { if (region.textContent) changes.push({ at: performance.now(), text: region.textContent }); });
+    observer.observe(region, { childList: true, characterData: true, subtree: true });
+    const pressedAt = performance.now();
     for (let i = 0; i < 4; i++) plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
-  });
-  await page.waitForTimeout(ANNOUNCE_DELAY_MS * 0.5);
-  expect(await live.textContent(), "still quiet halfway through the delay").toBe("");
-  await expect(live).toHaveText(/^Updated: /, { timeout: 5_000 });
-  expect(Date.now() - t0).toBeGreaterThanOrEqual(ANNOUNCE_DELAY_MS);
+    // Let it settle well past the delay, then report every announcement seen.
+    setTimeout(() => { observer.disconnect(); resolve({ pressedAt, changes }); }, 4_000);
+  }), { selector: COUPLINGS });
+  expect(result.changes.length, "four presses are one announcement").toBe(1);
+  expect(result.changes[0].text).toMatch(/^Updated: /);
+  expect(result.changes[0].at - result.pressedAt, "spoken no earlier than the debounce delay after the last change").toBeGreaterThanOrEqual(ANNOUNCE_DELAY_MS - 5);
+  await expect(live).toHaveText(/^Updated: /);
 });
 
 test("a visible button steps through the themes: in the sidebar on a desktop and in the top bar on a phone", async ({ page, context }) => {

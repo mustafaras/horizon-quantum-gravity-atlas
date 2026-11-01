@@ -16,6 +16,8 @@ export const SONIFY_RANGE = Object.freeze({ lowHz: 220, highHz: 880, seconds: 6,
 const SERIES = ["line", "step", "points"];
 const fmt = (v) => Number(v.toPrecision(4)).toString();
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
+/** A fire-and-forget audio call: a rejected promise from a context that cannot resume is not an application error. */
+const settle = (maybePromise) => { Promise.resolve(maybePromise).catch(() => {}); };
 
 /** Frequency in Hz for a value on `axis`: log-frequency is linear in the axis position, so equal steps sound equal. */
 export function pitchFor(value, axis, range = SONIFY_RANGE) {
@@ -130,9 +132,12 @@ export function createFigureSonifier({ AudioContextCtor = null, onState = () => 
       if (!Ctor) throw new Error("Web Audio is unavailable in this browser; the sound cannot play.");
       if (!plan) throw new TypeError("toggle needs a plan from sonificationPlan()");
       if (!ctx) ctx = new Ctor();
-      if (state === "playing") { await ctx.suspend(); setState("paused"); return state; }
-      if (state === "paused") { await ctx.resume(); setState("playing"); return state; }
-      if (ctx.state === "suspended") await ctx.resume();
+      // The button answers at once. Whether the audio device has woken is the browser's business: oscillators started on a
+      // suspended context begin when it resumes, and a context that never resumes (no output device) must not leave the
+      // control looking dead.
+      if (state === "playing") { settle(ctx.suspend()); setState("paused"); return state; }
+      if (state === "paused") { settle(ctx.resume()); setState("playing"); return state; }
+      if (ctx.state === "suspended") settle(ctx.resume());
       start(plan);
       return state;
     },
