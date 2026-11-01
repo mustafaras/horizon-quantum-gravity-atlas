@@ -61,7 +61,8 @@
 }
 
 :root[data-theme="blueprint"] .starfield-canvas,
-:root[data-theme="blueprint"] .horizon-intro { display: none; }
+:root[data-theme="blueprint"] .horizon-intro,
+:root[data-theme="blueprint"] .atlas-stage { display: none; }
 
 /* No glow: shadows and halos off, except the ring that shows keyboard focus. */
 :root[data-theme="blueprint"] *:not(:focus-visible) { box-shadow: none !important; }

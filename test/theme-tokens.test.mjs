@@ -161,7 +161,7 @@ test("scene pigments follow the theme: print inverts onto paper, blueprint stays
   }
   const bp = themePigment("#ff9a4a", "blueprint");
   const chroma = Number(/oklch\([\d.]+ ([\d.]+)/.exec(bp)[1]);
-  assert.ok(chroma < 0.05, `blueprint removes nearly all chroma (${bp})`);
+  assert.ok(chroma < 0.075 && chroma > 0.03, `blueprint keeps a faint Prussian tint and little else (${bp})`);
   assert.equal(themePigment("not a colour", "print"), "not a colour");
   assert.throws(() => themePigment("#fff", "sepia"), /unknown theme/);
   // The mapping is monotone in lightness, so tonal order inside a scene survives the theme.

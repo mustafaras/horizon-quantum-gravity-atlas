@@ -24,6 +24,7 @@ export const GENERATED_THEMES = Object.freeze(["blueprint", "print"]);
 export const OUTPUT = Object.freeze(Object.fromEntries(GENERATED_THEMES.map((t) => [t, `styles/themes/${t}-surfaces.css`])));
 const SKIPPED_PROPERTIES = new Set(["box-shadow", "text-shadow", "filter", "backdrop-filter", "-webkit-backdrop-filter"]);
 const PAGE_ELEMENTS = new Set(["html", "body", ":root"]);
+const BACKGROUND_LONGHANDS = /^(-webkit-)?background-(clip|size|position|repeat|origin|attachment)$/;
 
 /** `html …` and `:root …` merge into the theme root; every other selector sits below it. */
 export function themedSelector(selector, theme) {
@@ -51,11 +52,17 @@ function overridesFor(nodes, theme, stats) {
     // surrounding panel is held to the contrast target.
     const ownsFill = node.declarations.some((d) => /^background/.test(d.prop) && !/^(none|transparent|inherit|initial|unset)$/i.test(d.value.trim()));
     const lines = [];
-    for (const { prop, value } of node.declarations) {
+    // A `background` shorthand restated here resets every background longhand, so the longhands the source sets after it
+    // (a gradient clipped to text, a size, a repeat) must be restated too or the override changes the shape of the element.
+    const shorthandAt = node.declarations.findIndex((d) => d.prop === "background" && colourLiterals(d.value).length > 0);
+    for (const [index, { prop, value }] of node.declarations.entries()) {
       if (SKIPPED_PROPERTIES.has(prop)) continue;
       if (pageOnly && /^background/.test(prop)) continue;
       const literals = colourLiterals(value);
-      if (!literals.length) continue;
+      if (!literals.length) {
+        if (shorthandAt !== -1 && index > shorthandAt && BACKGROUND_LONGHANDS.test(prop)) lines.push(`${prop}: ${value} !important;`);
+        continue;
+      }
       stats.declarations += 1;
       const isText = prop === "color" && !ownsFill && literals.length === 1 && value.trim() === literals[0].text;
       const mapped = mapColourLiterals(value, (literal) => {

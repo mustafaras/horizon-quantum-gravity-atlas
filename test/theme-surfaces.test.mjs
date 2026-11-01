@@ -177,6 +177,20 @@ test("every text colour drawn on the panel clears 4.5:1 on the panel the theme p
   assert.notEqual(badge.declarations.find((d) => d.prop === "color").value, "oklch(0.78 0.1 160)");
 });
 
+test("a background shorthand restated in a theme keeps the longhands the source sets after it (a gradient clipped to text)", () => {
+  const css = ".brand { background: linear-gradient(90deg, #05080f, #ffffff); -webkit-background-clip: text; background-clip: text; color: transparent; }\n.plain { background: #05080f; background-size: cover; }\n.early { background-size: cover; background: #05080f; }";
+  for (const theme of GENERATED_THEMES) {
+    const out = buildThemeSurfaces([{ file: "x.css", css }])[theme].css;
+    const brand = out.split("\n").find((l) => l.includes(".brand"));
+    assert.match(brand, /background: linear-gradient\(90deg, oklch\(/);
+    assert.match(brand, /-webkit-background-clip: text !important;/);
+    assert.match(brand, /(?<!-webkit-)background-clip: text !important;/);
+    assert.ok(!/color: transparent/.test(brand), "a declaration without a colour literal is not restated unless it is a background longhand");
+    assert.match(out.split("\n").find((l) => l.includes(".plain")), /background-size: cover !important;/);
+    assert.ok(!/background-size/.test(out.split("\n").find((l) => l.includes(".early"))), "a longhand written before the shorthand was reset by it in the source too");
+  }
+});
+
 test("legibleText leaves a colour that already clears the target, and otherwise opaques then darkens (Print) or lightens (Blueprint)", () => {
   assert.equal(legibleText("oklch(0.20 0.02 260)", "print"), "oklch(0.200 0.020 260.0)", "an ink that already clears the target is only reformatted");
   const faint = "oklch(0.75 0.03 260 / 0.5)";

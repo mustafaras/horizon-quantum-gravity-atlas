@@ -206,7 +206,7 @@
 
 /* styles/shell.css */
 :root[data-theme="print"] .sidebar { background: linear-gradient(180deg, oklch(0.896 0.018 265.1 / 0.86), oklch(0.912 0.016 262.2 / 0.62)) !important; }
-:root[data-theme="print"] .brand-title { background: linear-gradient(180deg, oklch(0.120 0.000 89.9), oklch(0.165 0.038 264.3)) !important; }
+:root[data-theme="print"] .brand-title { background: linear-gradient(180deg, oklch(0.120 0.000 89.9), oklch(0.165 0.038 264.3)) !important; -webkit-background-clip: text !important; background-clip: text !important; }
 :root[data-theme="print"] .content-inner { background: linear-gradient(180deg,
     oklch(0.913 0.014 259.3 / 0) 0px,
     oklch(0.913 0.014 259.3 / 0.4) 150px,
@@ -216,7 +216,7 @@
 :root[data-theme="print"] .s3d-stage { background: radial-gradient(125% 100% at 50% -6%, oklch(0.832 0.044 265.7 / 0.66), oklch(0.917 0.014 257.8 / 0.96) 78%) !important; }
 :root[data-theme="print"] .s3d-stage.s3d-full { background: radial-gradient(120% 100% at 50% 0%, oklch(0.854 0.041 267.3 / 0.88), oklch(0.927 0.014 261.3 / 0.98) 78%), oklch(0.927 0.014 261.3) !important; }
 :root[data-theme="print"] .horizon-intro { background: radial-gradient(120% 100% at 50% 38%, oklch(0.887 0.028 265.2 / 0.62), oklch(0.927 0.014 261.3 / 0.92) 78%) !important; }
-:root[data-theme="print"] .intro-word { background: linear-gradient(180deg, oklch(0.120 0.000 89.9), oklch(0.238 0.056 263.2)) !important; }
+:root[data-theme="print"] .intro-word { background: linear-gradient(180deg, oklch(0.120 0.000 89.9), oklch(0.238 0.056 263.2)) !important; -webkit-background-clip: text !important; background-clip: text !important; }
 :root[data-theme="print"] .ov-card:hover .gs-group { color: oklch(0.120 0.000 0.0) !important; }
 
 /* styles/modules/causal.css */

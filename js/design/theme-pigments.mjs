@@ -11,7 +11,8 @@ import { parseCssColor, linearToOklch, oklchToLinear, linearToSrgb, srgbToLinear
 export const THEME_IDS = Object.freeze(["observatory", "blueprint", "print"]);
 export const DEFAULT_THEME = "observatory";
 
-const BLUEPRINT = Object.freeze({ lightFloor: 0.3, lightSpan: 0.68, chromaScale: 0.18, hue: 240, hueKeep: 0.1 });
+// Blueprint keeps a floor of blue chroma so near-black washes and pale inks read as Prussian blue and blue-white, not grey.
+const BLUEPRINT = Object.freeze({ lightFloor: 0.3, lightSpan: 0.68, chromaFloor: 0.035, chromaScale: 0.12, hue: 240, hueKeep: 0.1 });
 // L' = top - slope * L^gamma: a power curve keeps near-black backdrops near paper while mid tones stay dark enough for 3:1.
 const PRINT = Object.freeze({ lightTop: 0.99, lightSlope: 1.06, lightGamma: 1.3, lightFloor: 0.12, chromaScale: 0.9 });
 const GAMUT_STEPS = 24;
@@ -43,7 +44,7 @@ export function themeColor(css, theme) {
     return formatOklch(Math.min(PRINT.lightTop, Math.max(PRINT.lightFloor, inverted)), c * PRINT.chromaScale, h, parsed.alpha);
   }
   const hue = BLUEPRINT.hue + (((h - BLUEPRINT.hue + 540) % 360) - 180) * BLUEPRINT.hueKeep;
-  return formatOklch(BLUEPRINT.lightFloor + BLUEPRINT.lightSpan * l, c * BLUEPRINT.chromaScale, hue, parsed.alpha);
+  return formatOklch(BLUEPRINT.lightFloor + BLUEPRINT.lightSpan * l, BLUEPRINT.chromaFloor + c * BLUEPRINT.chromaScale, hue, parsed.alpha);
 }
 
 /** The pigment `css` as drawn in `theme` (opaque pigments, so the alpha form never appears). */
