@@ -154,8 +154,13 @@ test("a parameter change is announced once, 500 ms after the last change", async
   const live = page.locator(`${COUPLINGS} [data-figure-live]`);
   await expect(live).toHaveText("");
   await page.locator(`${COUPLINGS} .fig-plot`).focus();
+  // Four presses in one task: a loaded CI page can take longer than the delay between two awaited presses, and a debounce
+  // that fires between two slow presses is correct behaviour, not what this test is about.
   const t0 = Date.now();
-  for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight");
+  await page.evaluate(() => {
+    const plot = document.querySelector('.fig[data-figure="rg-unification-couplings"] .fig-plot');
+    for (let i = 0; i < 4; i++) plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+  });
   await page.waitForTimeout(ANNOUNCE_DELAY_MS * 0.5);
   expect(await live.textContent(), "still quiet halfway through the delay").toBe("");
   await expect(live).toHaveText(/^Updated: /, { timeout: 5_000 });
