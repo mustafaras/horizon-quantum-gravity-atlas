@@ -87,14 +87,14 @@
       "id": "F-01",
       "title": "v1 prompts 11–13 never executed (export, PWA/workers/themes, release gate)",
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S32",
         "S33",
         "S34",
         "S36"
       ],
-      "closedIn": null
+      "closedIn": "80ff4781af9207108a5d46677acbc5b6a756a9d6"
     },
     {
       "id": "F-02",
@@ -1993,13 +1993,15 @@
       "findings": [
         "F-01"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code for mustafaras",
       "branch": "feat/s36-release-gate",
       "pr": 142,
-      "commits": [],
+      "commits": [
+        "80ff4781af9207108a5d46677acbc5b6a756a9d6"
+      ],
       "startedAt": "2026-11-02",
-      "completedAt": null,
+      "completedAt": "2026-11-02",
       "evidence": {
         "tests": [
           "npm test: 1394 pass, 0 fail, 1 pre-existing skip (1382 before S36; new: art-direction 5, render-lifecycle-audit 3, release-verification 4)",
@@ -4422,6 +4424,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "review",
       "detail": "PR 142 in review. Art-direction and render-lifecycle audits in validate (seven sub-10 px canvas labels fixed); the S03-S28 record re-measured (49/49 within precision) in docs/release-verification.md; release-gate spec 2/2 locally and in qa:critical; performance against S01/S05 (first frame 5293 -> 516 ms on the overview); manual review of 74 captures; version 2.0.0. npm test 1394/0/1 skip, validate and perf:audit green. F-17 and F-27 accepted (D-216, D-217); F-01 closes with the merge. Decisions D-215 to D-219."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "done",
+      "detail": "PR 142 merged as 80ff478 on the owner's instruction; PR CI green (validation; Browser QA with qa:critical, which now runs the release-gate spec). GitHub Pages deployed 80ff478: the live package.json reads 2.0.0, the README states the release and docs/release-verification.md answers 200. F-01 closed. All 36 prompts of the v2 pack are done; every finding is closed or accepted with a decision."
     }
   ]
 }
