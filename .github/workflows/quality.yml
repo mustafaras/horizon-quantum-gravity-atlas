@@ -23,6 +23,10 @@ on:
         description: With themes, regenerate the Blueprint and Print baselines and upload them (never commits them)
         type: boolean
         default: false
+      record_loop:
+        description: Record the README WebM loop through the publishing studio and upload it (never commits it)
+        type: boolean
+        default: false
   schedule:
     - cron: "0 3 * * 1"
 
@@ -202,4 +206,38 @@ jobs:
           path: |
             qa/output/themes/
             qa/test-results/
+          retention-days: 14
+
+  # S35: the README loop, recorded with the publishing studio's own recorder on this platform's pinned Chromium.
+  # Manual only (workflow_dispatch with record_loop=true). The file is uploaded for a person to look at before it is
+  # committed; the job never commits it, and a failure to record is reported, not papered over with a still.
+  loop:
+    name: Record the README loop
+    if: github.event_name == 'workflow_dispatch' && inputs.record_loop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Record 24 s at 30 fps
+        run: npm run qa:record-loop
+
+      - name: Upload the loop
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-loop
+          path: qa/output/loop/
           retention-days: 14

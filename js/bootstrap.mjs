@@ -156,6 +156,10 @@ async function bootstrap() {
     // sidecars, and without them it claimed 1200w/2400w for 794 and 950 px files.
     const covers = await import("./science/data/cover-index.mjs");
     Object.defineProperty(window, "QGA_COVERS", { value: covers.COVER_INDEX, configurable: true });
+    // S35: the whitepaper's version-2 section, generated from the ledger by scripts/build-whitepaper.mjs, so the paper
+    // view and docs/whitepaper.md print the same record.
+    const whitepaper = await import("./whitepaper/whitepaper-v2-data.mjs");
+    Object.defineProperty(window, "QGA_WHITEPAPER", { value: whitepaper.WHITEPAPER_V2, configurable: true });
     adsGeometry.registerAdsLabProvenance();
     collider.registerColliderLabProvenance();
     spinNetworks.registerSpinFoamLabProvenance();

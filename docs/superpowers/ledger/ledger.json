@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-11-01",
+  "updated": "2026-11-02",
   "statuses": [
     "todo",
     "claimed",
@@ -1950,20 +1950,36 @@
       "findings": [
         "F-19"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code for mustafaras",
+      "branch": "feat/s35-scholarly-release",
+      "pr": 139,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-02",
       "completedAt": null,
       "evidence": {
-        "tests": [],
+        "tests": [
+          "npm test: 1382 pass, 0 fail, 1 pre-existing skip (1359 before S35; new: link-check 7, citation 8, whitepaper 6, video-export 2)",
+          "npm run validate: passed, including the internal link checker, the cover/screenshot/diagram rules and build-whitepaper --check",
+          "npm run perf:audit: exit 0",
+          "npm run qa:verify: 74 captures, schema-conformant, README and docs/guide consistent",
+          "CI run 41410773252 on 37760f9 (workflow_dispatch, record_loop): validation pass, Browser QA (qa:critical) pass, Record the README loop pass"
+        ],
         "screenshots": [],
-        "measurements": []
+        "measurements": [
+          "README length: 2625 -> 397 lines and 145592 -> 17478 bytes, against the prompt's ~400 lines",
+          "moved README sections: 23, each with a heading stub linking to its new home; largest new guide/science page 575 lines against the 600-line rule",
+          "verbatim move check: diff of each moved block against the old README shows only re-relativised paths and README-specific sentences",
+          "internal link checker: 80 Markdown files, 205 local links and images, 0 broken; a planted broken link and an unreferenced diagram each fail validate",
+          "README images: 1 hero + 8 chapter covers + 1 diagram; README + docs/guide reference 26 screenshots (rule >= 9) and all 11 diagrams",
+          "whitepaper v2 record: 155 measurements from 26 prompts (S03-S28), equal to the ledger count by test; provenance 89 entries (11 established, 35 effective, 31 schematic, 12 conjectural); Formula Core 77 definitions",
+          "paper/paper.md: 1120 words against JOSS 750-1750; paper.bib 11 entries, 9 checked against Crossref and 2 against the projects' sites",
+          ".zenodo.json: 0 DOI-shaped strings, 0 affiliation fields, ORCID 0009-0001-4809-3950 equal to CITATION.cff and paper.md with a valid ISO 7064 check digit (D-213); title, abstract, author, keywords and version equal to CITATION.cff and package.json by test",
+          "README loop: 24 s at 30 fps, 720 frames, VP9 at 1.5 Mbit/s = 3.81 MiB against the 6 MB budget (first attempt at the studio's 8 Mbit/s: 14.47 MiB, run 41409504598); recorded canvas 922 x 420; not committed (D-211)"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "README cut to 397 lines; long sections moved to docs/guide and docs/science with stubs; link checker in validate; .zenodo.json with no DOI; whitepaper v2 generated from one source with the S03-S28 record; JOSS-style paper draft. The README loop records on CI but does not match the page and is not committed (D-211). The maintainer must add the paper's affiliation and mint the DOI. See D-207 to D-212."
     },
     {
       "id": "S36",
@@ -3433,6 +3449,55 @@
       "prompt": "S34",
       "decision": "S34 is done with one known intermittent test: in the Print theme the skip-link test (a11y.spec.mjs, 'skip link is the first Tab stop') failed in three full Theme QA runs (41308877271, 41329350871, 41331577416) and passed in others (41316341191, 41326940080, 41350760937); run alone it passed in all three themes (41333763539). It never failed in Observatory or Blueprint. The first Tab stop was <body>. A wait for page focus was added and the failure message now reports the skip link's computed state and the first tabbable elements, but the root cause was not found.",
       "rationale": "A test that passes alone and fails only inside the long Print run, with nothing in the skip link's CSS that touches focus (the generated Print sheet changes its colour only), is not shown to be a theme defect, and it is also known from S17 as a test that fails under load. Holding the prompt open for it would have blocked S35 without evidence of a defect. It is recorded so the next failure comes with data instead of a guess."
+    },
+    {
+      "id": "D-207",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "The README image rules move with the images. validate-repo no longer asks the README for >= 9 screenshots and >= 11 diagrams; it asks the README to show every chapter cover in docs/covers, the README plus docs/guide and docs/science to reference >= 9 screenshots, and every docs/diagrams/*.svg to be referenced somewhere. qa/verify-manifest.mjs reads README.md and docs/guide/*.md (both docs/screenshots/ and ../screenshots/ paths), so a capture's readme:true now means shown in the README or the guide; the schema description says so.",
+      "rationale": "A ~400-line README with one cover per chapter cannot hold 26 screenshots and 11 diagrams, and keeping dead images in it to satisfy a count would defeat the prompt. The new rules are stricter where it matters: every diagram must be used, and every cover must be on the front page."
+    },
+    {
+      "id": "D-208",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "Whitepaper v2 has one source, js/whitepaper/whitepaper-v2.mjs, for the new section 9 only. scripts/build-whitepaper.mjs reads the ledger, the provenance registry and the Formula Core library and writes js/whitepaper/whitepaper-v2-data.mjs (rendered by the paper view through window.QGA_WHITEPAPER) and the block between the whitepaper-v2 markers in docs/whitepaper.md; npm run validate runs it with --check. Sections 1 to 8 stay as two hand-kept copies (the JSX view and the Markdown), corrected by hand where S35 made them wrong (6.3 and the Kerr spine card).",
+      "rationale": "The record is 155 measurements; retyping them twice would invite transcription errors, and a test now holds the record equal to the ledger. Converting the 559-line JSX paper to rendered Markdown would change a mounted view that only CI can check, for prose that changes rarely. The generator writes into a marked block of an existing file as an output, like js/compiled; the file's other text is edited by hand through the editor."
+    },
+    {
+      "id": "D-209",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "scripts/perf/static-audit.mjs leaves js/whitepaper/whitepaper-v2-data.mjs out of its code counters (ShaderMaterial, Math.random, colour literals and the rest), by one named entry in QUOTED_TEXT_FILES; the file still counts for the long-file list.",
+      "rationale": "The module quotes ledger measurements verbatim, and those strings name ShaderMaterial and Math.random as text. Counting them made the S07 'no ShaderMaterial outside Kerr and the GW twin' test fail on a data file. The exemption names one generated file and says why, rather than weakening the pattern for all code."
+    },
+    {
+      "id": "D-210",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "CITATION.cff is unchanged; .zenodo.json carries the Zenodo metadata (title, upload_type software, description = the CFF abstract, creators [{name: 'Raşit, Mustafa'}], access_right open, license 'mit', keywords, version 1.1.0, related identifiers for the repository and the live site) with no doi, no prereserve_doi, no publication_date, no ORCID and no affiliation.",
+      "rationale": "Zenodo's GitHub help (read 2026-11-02) says it uses only .zenodo.json when both files exist, so the CFF needs no new fields; tests keep the two in agreement. The licence id 'mit' is from Zenodo's licence vocabulary. Without publication_date Zenodo uses the release date. The maintainer mints the DOI and supplies any ORCID or affiliation; none was invented."
+    },
+    {
+      "id": "D-211",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "No WebM loop is committed. qa/record-loop.mjs and a manual record_loop job in quality.yml record through QGA_EXPORT.recordCanvas on CI's pinned Chromium; run 41410773252 produced 720 frames (24 s at 30 fps, VP9, 1.5 Mbit/s, 3.81 MiB) after run 41409504598 showed the studio's 8 Mbit/s gives 14.47 MiB (recordCanvas gained an optional bitsPerSecond; the studio's default is unchanged). Looking at frames 0, 8, 16 and 23 s against the poster screenshot of the same canvas: the recording is of the horizon-geometry scene, not the ray-traced hero, its translucent and additive layers are washed out against what the page shows, and the camera is still in its intro move. The README keeps the hero still and no loop.",
+      "rationale": "The prompt's rule is never to substitute a visual that misrepresents the app. The canvas stream carries the scene's transparent buffer without the page's backdrop compositing, so the file is not a faithful record of the page, and picking the largest canvas did not select the observatory. Fixing that (an opaque capture path, an explicit scene choice, a settled camera) is work on the recorder, not on documentation, and is left with the script and the job in place for the next attempt."
+    },
+    {
+      "id": "D-212",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "paper/paper.md is a JOSS-style draft with TODOs for what only the author can give: an affiliation (JOSS requires one), an ORCID if wanted, funding, and a state-of-the-field comparison with checked references. paper.bib holds only entries checked on 2026-11-02 (9 articles against Crossref, three.js and KaTeX against their sites); Reuter and Saueressig 2012, which the module notes cite, was not checked and is not in the bibliography. The AI disclosure gives the agents per prompt from the ledger's owner field (Claude Code 20, Copilot 13, Codex 2).",
+      "rationale": "The prompt forbids inventing identifiers or personal details and requires every citation to be checked against its primary source; a draft with named gaps is honest, a complete-looking one would not be."
+    },
+    {
+      "id": "D-213",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "The maintainer gave the ORCID 0009-0001-4809-3950. Its public record (pub.orcid.org, read 2026-11-02) names given 'Mustafa Raşit', family 'Şahin', where CITATION.cff had given 'Mustafa', family 'Raşit'; asked which to use, the maintainer chose the ORCID name. CITATION.cff, .zenodo.json, paper/paper.md and the README BibTeX now use it with the ORCID. This supersedes the 'no ORCID' parts of D-210 and D-212; the affiliation is still missing.",
+      "rationale": "A citation whose name does not match its ORCID record splits the author's citations. The ORCID's check digit is verified and a test holds it equal across the three files."
     }
   ],
   "log": [
@@ -4254,6 +4319,20 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "done",
       "detail": "Merged PR 134 as 1c08f24 and PR 135 as 1205f6a; GitHub Pages deployed 1205f6a and the live site serves the generated Blueprint and Print stylesheets, the theme button and the new index.html links. Last full Theme QA (41350760937): a11y 67/67 in Observatory, Blueprint and Print, theme specs 11/11, evidence 18/18, baselines matching. One intermittent test is recorded in D-206. F-01 stays open for S36; F-05 was closed in S02. PR 136 (a revert of 134, opened when the owner first said the themes were unwanted) was closed unmerged."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "claimed",
+      "detail": "Claimed on feat/s35-scholarly-release from main c0f933a. Pre-flight: npm test 1359 pass, 0 fail, 1 skipped; npm run validate passed (formula audit, provenance 89 entries, cover index 8 sidecars, theme sheets current)."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "review",
+      "detail": "PR 139 in review. README 2625 -> 397 lines with stubs; docs/guide and docs/science; link checker (80 files, 205 links, 0 broken); .zenodo.json with no DOI; whitepaper v2 generated (155 S03-S28 measurements); JOSS-style paper draft. npm test 1381/0/1 skip, validate, perf:audit and CI run 41410773252 green. The README loop records but is not faithful to the page and is not committed (D-211). F-19 stays open until the merge. Decisions D-207 to D-212."
     }
   ]
 }

@@ -738,6 +738,38 @@ function PaperSub({ index, title, children }) {
   );
 }
 
+// Backticks in the generated paragraphs mark code, as they do in docs/whitepaper.md.
+function PaperCodeText({ text }) {
+  return text.split("`").map((part, i) => (i % 2 ? <span key={i} className="mono">{part}</span> : <React.Fragment key={i}>{part}</React.Fragment>));
+}
+
+// S35: the version-2 section, rendered from the data scripts/build-whitepaper.mjs generates from the ledger, the
+// provenance registry and Formula Core (js/whitepaper/), the same data that writes the block in docs/whitepaper.md.
+function PaperV2() {
+  const v2 = window.QGA_WHITEPAPER;
+  if (!v2) return null;
+  return (
+    <PaperSection id={v2.id} index={v2.index} title={v2.title}>
+      <p>{v2.intro}</p>
+      {v2.sections.map((s) => (
+        <PaperSub key={s.id} index={s.index} title={s.title}>
+          {s.paragraphs.map((p, i) => <p key={i}><PaperCodeText text={p}></PaperCodeText></p>)}
+        </PaperSub>
+      ))}
+      <div className="paper-record">
+        {v2.record.prompts.map((p) => (
+          <details key={p.id} className="paper-record-prompt">
+            <summary><span className="mono">{p.id}</span> {p.title} · {p.measurements.length}</summary>
+            {p.measurements.length
+              ? <ul className="paper-list">{p.measurements.map((m, i) => <li key={i}>{m}</li>)}</ul>
+              : <p className="dim">no measurement recorded</p>}
+          </details>
+        ))}
+      </div>
+    </PaperSection>
+  );
+}
+
 const PAPER_TOC = [
   ["intro", "1", "Introduction"],
   ["epistemic", "2", "Epistemic framework"],
@@ -747,6 +779,7 @@ const PAPER_TOC = [
   ["verification", "6", "Verification and validation"],
   ["limits", "7", "Limitations"],
   ["conclusion", "8", "Conclusion"],
+  ["v2", "9", "Version 2 and verification record"],
   ["spine", "A", "Formulation spine"],
   ["refs", "R", "References"],
 ];
@@ -1138,7 +1171,9 @@ function ViewWhitepaper() {
         <PaperSub index="6.3" title="Repository-presentation guardrails">
           <p>
             A validation suite (<span className="mono">npm run validate</span>) enforces the academic packaging itself:
-            README image paths exist, screenshot and diagram counts are met, Open Graph and manifest metadata are present
+            every relative link and image in the README, <span className="mono">docs/</span> and <span className="mono">paper/</span> resolves
+            to a file, the README shows every chapter cover, every committed diagram is referenced, the generated parts
+            of this paper are current, Open Graph and manifest metadata are present
             and point to real assets, PNGs have expected dimensions, diagram SVGs are structurally complete, and every
             asset the entry document and the vendored stylesheets reference resolves to a real local file with no
             third-party host in the request path. A schema-validated <span className="mono">CITATION.cff</span> (CFF
@@ -1169,6 +1204,8 @@ function ViewWhitepaper() {
           edge is the appropriate instrument for studying it.
         </p>
       </PaperSection>
+
+      <PaperV2></PaperV2>
 
       <PaperSection id="spine" index="A" title="Formulation spine">
         <p>
@@ -1313,7 +1350,7 @@ function ViewWhitepaper() {
             formulaId="bh-kerr-horizons"
               symbols={[{ s: "a_\\star", d: "dimensionless spin $cJ/GM^2$" }, { s: "\\kappa", d: "surface gravity" }]}
               meaning="The Kerr Observatory prints exact coordinate radii and the live formulation panel substitutes the current parameters into these relations; the surface gravity — hence the temperature — tends to zero in the extremal limit."
-              limits="The rendered image beside the map is a Schwarzschild-based geodesic raymarch with visual spin cues only — frame dragging is not integrated."></FormulaCard>
+              limits="The image beside the map integrates Carter's Kerr null geodesics per pixel, so frame dragging and the spin-dependent shadow are computed; the thin disk, its display-scaled colour and the corona and jets are models (see docs/science/kerr-observatory.md)."></FormulaCard>
             <FormulaCard title="Ryu–Takayanagi formula" status="conjectural"
             formulaId="bh-ryu-takayanagi"
               symbols={[{ s: "\\gamma_A", d: "extremal bulk surface anchored to boundary region A" }]}
