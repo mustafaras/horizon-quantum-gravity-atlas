@@ -349,6 +349,8 @@ on (test counts, measurements, screenshots), the decisions taken on the way, and
 
 This repository carries a [CITATION.cff](./CITATION.cff) (CFF 1.2.0, validated against the official schema). GitHub surfaces it automatically as a "Cite this repository" button, and tools like `cffconvert` can convert it to BibTeX, RIS, or EndNote. The file deliberately contains no DOI or identifier block: those fields stay empty until a genuinely registered identifier exists.
 
+For archiving, [`.zenodo.json`](./.zenodo.json) carries the same title, author, abstract, keywords, licence and version for Zenodo's GitHub release integration (which reads it in preference to `CITATION.cff`). It also carries no DOI: Zenodo mints one when the maintainer publishes a release, and only then is it added here. `npm test` keeps the two files in agreement.
+
 Suggested software citation:
 
 ```bibtex

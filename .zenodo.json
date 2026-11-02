@@ -1,0 +1,33 @@
+{
+  "title": "HORIZON — Quantum Gravity Atlas",
+  "upload_type": "software",
+  "description": "An interactive, cinematic atlas of modern physics tracing the path from the Standard Model to the open frontier of quantum gravity. Eight modules pair rigorous explanation with real-time 3D simulation and live formulas, with an honest accounting of what is established, what is an effective model, and what remains conjecture. Includes a symbol atlas of notation conventions, an interactive glossary, verified classic references, and reproducible visual QA.",
+  "creators": [
+    { "name": "Raşit, Mustafa" }
+  ],
+  "access_right": "open",
+  "license": "mit",
+  "version": "1.1.0",
+  "keywords": [
+    "quantum-gravity",
+    "physics-education",
+    "interactive-visualization",
+    "general-relativity",
+    "quantum-field-theory",
+    "renormalization-group",
+    "black-holes",
+    "gravitational-waves"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/mustafaras/horizon-quantum-gravity-atlas",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/",
+      "relation": "isDocumentedBy",
+      "resource_type": "other"
+    }
+  ]
+}

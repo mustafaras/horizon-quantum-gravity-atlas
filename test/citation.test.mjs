@@ -98,3 +98,46 @@ test("CITATION.cff keywords are non-empty and lowercase-kebab", () => {
 test("CITATION.cff abstract is a substantive paragraph", () => {
   assert.ok((c.abstract || "").length > 120, "abstract should describe the software meaningfully");
 });
+
+// .zenodo.json (S35). Zenodo reads it in preference to CITATION.cff when archiving a GitHub release, so the two must
+// say the same thing. Keys and vocabularies follow https://developers.zenodo.org/ (deposition metadata) and the
+// licence id from https://zenodo.org/api/vocabularies/licenses/mit, both read on 2026-11-02.
+const zenodoText = await readFile(path.join(root, ".zenodo.json"), "utf8");
+const zenodo = JSON.parse(zenodoText);
+
+test(".zenodo.json carries Zenodo's required deposition keys for software", () => {
+  for (const key of ["upload_type", "title", "creators", "description", "access_right", "license"]) {
+    assert.ok(zenodo[key], `missing ${key}`);
+  }
+  assert.equal(zenodo.upload_type, "software");
+  assert.equal(zenodo.access_right, "open");
+  assert.equal(zenodo.license, "mit");
+});
+
+test(".zenodo.json contains no DOI of any kind (the maintainer mints it)", () => {
+  assert.equal(zenodo.doi, undefined);
+  assert.equal(zenodo.prereserve_doi, undefined);
+  assert.ok(!/10\.\d{4,9}\//.test(zenodoText), "no DOI-shaped string may appear in .zenodo.json");
+});
+
+test(".zenodo.json agrees with CITATION.cff and package.json", async () => {
+  const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+  assert.equal(zenodo.title, c.title);
+  assert.equal(zenodo.description, c.abstract);
+  assert.equal(zenodo.version, pkg.version);
+  assert.deepEqual(zenodo.keywords, c.keywords);
+  const family = cff.match(/family-names:\s*"([^"]+)"/)[1];
+  const given = cff.match(/given-names:\s*"([^"]+)"/)[1];
+  assert.deepEqual(zenodo.creators, [{ name: `${family}, ${given}` }]);
+});
+
+test(".zenodo.json relates the record to the repository and the live site", () => {
+  const ids = Object.fromEntries(zenodo.related_identifiers.map((r) => [r.identifier, r]));
+  assert.equal(ids[c["repository-code"]]?.relation, "isSupplementTo");
+  assert.equal(ids[c.url]?.relation, "isDocumentedBy");
+  for (const r of zenodo.related_identifiers) assert.ok(r.resource_type, `${r.identifier} needs a resource_type`);
+});
+
+test(".zenodo.json adds no personal details the maintainer has not given (no ORCID or affiliation)", () => {
+  for (const creator of zenodo.creators) assert.deepEqual(Object.keys(creator), ["name"]);
+});
