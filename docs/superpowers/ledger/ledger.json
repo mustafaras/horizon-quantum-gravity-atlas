@@ -3500,6 +3500,13 @@
       "prompt": "S35",
       "decision": "The maintainer gave the ORCID 0009-0001-4809-3950. Its public record (pub.orcid.org, read 2026-11-02) names given 'Mustafa Raşit', family 'Şahin', where CITATION.cff had given 'Mustafa', family 'Raşit'; asked which to use, the maintainer chose the ORCID name. CITATION.cff, .zenodo.json, paper/paper.md and the README BibTeX now use it with the ORCID. This supersedes the 'no ORCID' parts of D-210 and D-212; the affiliation is still missing.",
       "rationale": "A citation whose name does not match its ORCID record splits the author's citations. The ORCID's check digit is verified and a test holds it equal across the three files."
+    },
+    {
+      "id": "D-214",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "The owner closed development after S35. S36 (release gate) is not run and stays todo. Findings still open at closure: F-01 (closedBy S32-S34 and S36; the S36 part is not done), F-17 (closedBy S25, Bardeen-curve overlay and EHT comparison on the Kerr observatory) and F-27 (closedBy S08, about 38 CPU per-frame needsUpdate sites); they are left open rather than marked accepted, because no one has checked them against the code since. The JOSS-style paper/paper.md is kept as a description of the software and will not be submitted; the README WebM loop stays uncommitted (D-211). The README's Roadmap section states the closure.",
+      "rationale": "The ledger should say where the work stopped and what was left, so that anyone resuming starts from the record instead of from memory. Accepting the open findings would need the evidence S36 was meant to gather."
     }
   ],
   "log": [
@@ -4342,6 +4349,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "done",
       "detail": "PR 139 merged as a850102 on the owner's instruction; PR CI on 3e9e393 green (validation, Browser QA). GitHub Pages deployed a850102: the site, README.md, docs/guide/visual-atlas.md and js/whitepaper/whitepaper-v2-data.mjs answer 200 and the live bootstrap defines QGA_WHITEPAPER (.zenodo.json is a dotfile Pages does not serve; Zenodo reads it from the repository). The author's ORCID and ORCID name were added in review (D-213). F-19 closed: the README, Roadmap and archival metadata are done; the DOI itself is minted by Zenodo when the maintainer publishes a release. Open after S35: the README loop (D-211), the paper's affiliation, and F-17 and F-27, still open although S25 and S08 are done, for S36 to close or accept."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "note",
+      "detail": "Development closed by the owner after S35 (D-214). S36 not run; F-01, F-17 and F-27 left open; the paper draft will not be submitted. PR 138 (the S35 starter) closed unmerged: its numbers described the tree before S35 and the ledger now holds the record. Remote and local main synchronised; local branches already merged into main removed (their commits are on main or kept on origin)."
     }
   ]
 }
