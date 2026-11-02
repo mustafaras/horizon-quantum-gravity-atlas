@@ -1245,7 +1245,61 @@ function PaperSub(_ref7) {
     className: "paper-sub-num"
   }, index), " ", title), children);
 }
-var PAPER_TOC = [["intro", "1", "Introduction"], ["epistemic", "2", "Epistemic framework"], ["chain", "3", "The chain of reasoning"], ["design", "4", "Design methodology"], ["architecture", "5", "Software architecture"], ["verification", "6", "Verification and validation"], ["limits", "7", "Limitations"], ["conclusion", "8", "Conclusion"], ["spine", "A", "Formulation spine"], ["refs", "R", "References"]];
+
+// Backticks in the generated paragraphs mark code, as they do in docs/whitepaper.md.
+function PaperCodeText(_ref8) {
+  var text = _ref8.text;
+  return text.split("`").map(function (part, i) {
+    return i % 2 ? /*#__PURE__*/React.createElement("span", {
+      key: i,
+      className: "mono"
+    }, part) : /*#__PURE__*/React.createElement(React.Fragment, {
+      key: i
+    }, part);
+  });
+}
+
+// S35: the version-2 section, rendered from the data scripts/build-whitepaper.mjs generates from the ledger, the
+// provenance registry and Formula Core (js/whitepaper/), the same data that writes the block in docs/whitepaper.md.
+function PaperV2() {
+  var v2 = window.QGA_WHITEPAPER;
+  if (!v2) return null;
+  return /*#__PURE__*/React.createElement(PaperSection, {
+    id: v2.id,
+    index: v2.index,
+    title: v2.title
+  }, /*#__PURE__*/React.createElement("p", null, v2.intro), v2.sections.map(function (s) {
+    return /*#__PURE__*/React.createElement(PaperSub, {
+      key: s.id,
+      index: s.index,
+      title: s.title
+    }, s.paragraphs.map(function (p, i) {
+      return /*#__PURE__*/React.createElement("p", {
+        key: i
+      }, /*#__PURE__*/React.createElement(PaperCodeText, {
+        text: p
+      }));
+    }));
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "paper-record"
+  }, v2.record.prompts.map(function (p) {
+    return /*#__PURE__*/React.createElement("details", {
+      key: p.id,
+      className: "paper-record-prompt"
+    }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", {
+      className: "mono"
+    }, p.id), " ", p.title, " \xB7 ", p.measurements.length), p.measurements.length ? /*#__PURE__*/React.createElement("ul", {
+      className: "paper-list"
+    }, p.measurements.map(function (m, i) {
+      return /*#__PURE__*/React.createElement("li", {
+        key: i
+      }, m);
+    })) : /*#__PURE__*/React.createElement("p", {
+      className: "dim"
+    }, "no measurement recorded"));
+  })));
+}
+var PAPER_TOC = [["intro", "1", "Introduction"], ["epistemic", "2", "Epistemic framework"], ["chain", "3", "The chain of reasoning"], ["design", "4", "Design methodology"], ["architecture", "5", "Software architecture"], ["verification", "6", "Verification and validation"], ["limits", "7", "Limitations"], ["conclusion", "8", "Conclusion"], ["v2", "9", "Version 2 and verification record"], ["spine", "A", "Formulation spine"], ["refs", "R", "References"]];
 var PAPER_STATUSES = [["established", "Experimentally confirmed, or a measurement-grade theory.", "QFT as the framework of the Standard Model; classical general relativity; the Higgs boson; GW150914; the M87* horizon-scale image."], ["effective", "Rigorous within a stated energy or coupling domain, with known limits.", "Low-energy quantum gravity as an effective field theory; the one-loop running of the QED and QCD couplings."], ["schematic", "A deliberately simplified illustration — not a measurement.", "The collider event display; the Planck-foam scene; the scattering-plane animation."], ["conjectural", "A mathematically serious research program, experimentally unconfirmed.", "String theory; loop quantum gravity; asymptotic safety; causal sets; holography."], ["open", "No confirmed answer exists.", "The information paradox; the ultraviolet completion of quantum gravity."]];
 var PAPER_REFS = ["A. Einstein, “Die Feldgleichungen der Gravitation,” Sitzungsberichte der Preussischen Akademie der Wissenschaften, 1915.", "P. A. M. Dirac, “The Quantum Theory of the Electron,” Proceedings of the Royal Society A, 1928.", "R. P. Feynman, “Space-Time Approach to Non-Relativistic Quantum Mechanics,” Reviews of Modern Physics, 1948.", "C. N. Yang and R. L. Mills, “Conservation of Isotopic Spin and Isotopic Gauge Invariance,” Physical Review, 1954.", "S. Weinberg, “A Model of Leptons,” Physical Review Letters, 1967.", "D. J. Gross and F. Wilczek, “Ultraviolet Behavior of Non-Abelian Gauge Theories,” Physical Review Letters, 1973.", "H. D. Politzer, “Reliable Perturbative Results for Strong Interactions?,” Physical Review Letters, 1973.", "J. D. Bekenstein, “Black Holes and Entropy,” Physical Review D, 1973.", "S. W. Hawking, “Particle Creation by Black Holes,” Communications in Mathematical Physics, 1975.", "G. ’t Hooft and M. Veltman, “One-loop divergencies in the theory of gravitation,” Annales de l’Institut Henri Poincaré A, 1974.", "S. Weinberg, “Ultraviolet divergences in quantum theories of gravitation,” in General Relativity: An Einstein Centenary Survey, 1979.", "M. H. Goroff and A. Sagnotti, “The ultraviolet behavior of Einstein gravity,” Nuclear Physics B, 1986.", "A. Ashtekar, “New Variables for Classical and Quantum Gravity,” Physical Review Letters, 1986.", "G. ’t Hooft, “Dimensional Reduction in Quantum Gravity,” arXiv:gr-qc/9310026, 1993.", "L. Susskind, “The World as a Hologram,” Journal of Mathematical Physics, 1995.", "A. Strominger and C. Vafa, “Microscopic Origin of the Bekenstein-Hawking Entropy,” Physics Letters B, 1996.", "J. Maldacena, “The Large N Limit of Superconformal Field Theories and Supergravity,” Advances in Theoretical and Mathematical Physics, 1998.", "J. F. Donoghue, “General relativity as an effective field theory: The leading quantum corrections,” Physical Review D, 1994.", "S. Ryu and T. Takayanagi, “Holographic Derivation of Entanglement Entropy from AdS/CFT,” Physical Review Letters, 2006.", "ATLAS and CMS Collaborations, Higgs boson discovery papers, Physics Letters B, 2012.", "LIGO Scientific and Virgo Collaborations, “Observation of Gravitational Waves from a Binary Black Hole Merger,” Physical Review Letters, 2016.", "Event Horizon Telescope Collaboration, “First M87 Event Horizon Telescope Results,” Astrophysical Journal Letters, 2019.", "G. Penington, “Entanglement Wedge Reconstruction and the Information Paradox,” JHEP, 2020.", "A. Almheiri, N. Engelhardt, D. Marolf, and H. Maxfield, “The entropy of bulk quantum fields and the entanglement wedge of an evaporating black hole,” JHEP, 2019.", "M. E. Peskin and D. V. Schroeder, An Introduction to Quantum Field Theory, 1995.", "S. Weinberg, The Quantum Theory of Fields, Vols. I–II, 1995–1996.", "C. W. Misner, K. S. Thorne, and J. A. Wheeler, Gravitation, 1973.", "R. M. Wald, General Relativity, 1984.", "J. Polchinski, String Theory, Vols. I–II, 1998.", "C. Rovelli, Quantum Gravity, 2004.", "M. Gell-Mann and F. E. Low, “Quantum Electrodynamics at Small Distances,” Physical Review 95, 1300–1312 (1954).", "M. Reuter, “Nonperturbative Evolution Equation for Quantum Gravity,” Physical Review D 57, 971–985 (1998)."];
 function ViewWhitepaper() {
@@ -1314,11 +1368,11 @@ function ViewWhitepaper() {
     className: "paper-toc-label"
   }, "Contents"), /*#__PURE__*/React.createElement("div", {
     className: "paper-toc-grid"
-  }, PAPER_TOC.map(function (_ref8) {
-    var _ref9 = _slicedToArray(_ref8, 3),
-      id = _ref9[0],
-      num = _ref9[1],
-      title = _ref9[2];
+  }, PAPER_TOC.map(function (_ref9) {
+    var _ref0 = _slicedToArray(_ref9, 3),
+      id = _ref0[0],
+      num = _ref0[1],
+      title = _ref0[2];
     return /*#__PURE__*/React.createElement("button", {
       key: id,
       className: "paper-toc-item",
@@ -1356,11 +1410,11 @@ function ViewWhitepaper() {
     title: "The five status labels"
   }, /*#__PURE__*/React.createElement("p", null, "Every major panel carries exactly one of five labels, ordered by evidential strength. The labels are not decorative: they are the same tokens the test suite and the capture manifest assert against."), /*#__PURE__*/React.createElement("div", {
     className: "paper-status-table"
-  }, PAPER_STATUSES.map(function (_ref0) {
-    var _ref1 = _slicedToArray(_ref0, 3),
-      kind = _ref1[0],
-      meaning = _ref1[1],
-      example = _ref1[2];
+  }, PAPER_STATUSES.map(function (_ref1) {
+    var _ref10 = _slicedToArray(_ref1, 3),
+      kind = _ref10[0],
+      meaning = _ref10[1],
+      example = _ref10[2];
     return /*#__PURE__*/React.createElement("div", {
       key: kind,
       className: "paper-status-row"
@@ -1487,10 +1541,10 @@ function ViewWhitepaper() {
     className: "paper-anchor-table"
   }, /*#__PURE__*/React.createElement("div", {
     className: "paper-anchor-head"
-  }, /*#__PURE__*/React.createElement("span", null, "Observable"), /*#__PURE__*/React.createElement("span", null, "Literature anchor")), [["Mercury perihelion advance", "42.98″ per century"], ["Solar-limb light deflection", "1.75″"], ["Planck units", "CODATA values"], ["Solar-mass evaporation timescale", "$\\approx 2.1\\times10^{67}$ yr"], ["Hawking spectrum Wien peak", "$u \\approx 2.8214$"], ["RG: QED UV growth, QCD asymptotic freedom, $b_0 = 0$ at $n_f = 16.5$", "standard one-loop results"]].map(function (_ref10) {
-    var _ref11 = _slicedToArray(_ref10, 2),
-      obs = _ref11[0],
-      anchor = _ref11[1];
+  }, /*#__PURE__*/React.createElement("span", null, "Observable"), /*#__PURE__*/React.createElement("span", null, "Literature anchor")), [["Mercury perihelion advance", "42.98″ per century"], ["Solar-limb light deflection", "1.75″"], ["Planck units", "CODATA values"], ["Solar-mass evaporation timescale", "$\\approx 2.1\\times10^{67}$ yr"], ["Hawking spectrum Wien peak", "$u \\approx 2.8214$"], ["RG: QED UV growth, QCD asymptotic freedom, $b_0 = 0$ at $n_f = 16.5$", "standard one-loop results"]].map(function (_ref11) {
+    var _ref12 = _slicedToArray(_ref11, 2),
+      obs = _ref12[0],
+      anchor = _ref12[1];
     return /*#__PURE__*/React.createElement("div", {
       key: obs,
       className: "paper-anchor-row"
@@ -1511,7 +1565,11 @@ function ViewWhitepaper() {
     title: "Repository-presentation guardrails"
   }, /*#__PURE__*/React.createElement("p", null, "A validation suite (", /*#__PURE__*/React.createElement("span", {
     className: "mono"
-  }, "npm run validate"), ") enforces the academic packaging itself: README image paths exist, screenshot and diagram counts are met, Open Graph and manifest metadata are present and point to real assets, PNGs have expected dimensions, diagram SVGs are structurally complete, and every asset the entry document and the vendored stylesheets reference resolves to a real local file with no third-party host in the request path. A schema-validated ", /*#__PURE__*/React.createElement("span", {
+  }, "npm run validate"), ") enforces the academic packaging itself: every relative link and image in the README, ", /*#__PURE__*/React.createElement("span", {
+    className: "mono"
+  }, "docs/"), " and ", /*#__PURE__*/React.createElement("span", {
+    className: "mono"
+  }, "paper/"), " resolves to a file, the README shows every chapter cover, every committed diagram is referenced, the generated parts of this paper are current, Open Graph and manifest metadata are present and point to real assets, PNGs have expected dimensions, diagram SVGs are structurally complete, and every asset the entry document and the vendored stylesheets reference resolves to a real local file with no third-party host in the request path. A schema-validated ", /*#__PURE__*/React.createElement("span", {
     className: "mono"
   }, "CITATION.cff"), " (CFF 1.2.0, no unverified identifiers) is kept consistent with ", /*#__PURE__*/React.createElement("span", {
     className: "mono"
@@ -1525,7 +1583,7 @@ function ViewWhitepaper() {
     id: "conclusion",
     index: "8",
     title: "Conclusion"
-  }, /*#__PURE__*/React.createElement("p", null, "HORIZON demonstrates that the boundary between established physics, effective theory, schematic modeling, and conjecture can be made a first-class object of interactive study. Its contribution is not a new physical result but a discipline: an atlas in which every claim is labeled, every equation is an interface object, every laboratory is reproducible from its URL, and every visual regression is pinned to a justified tolerance. The quantum-gravity problem is hard precisely because it sits at the edge of what is known; an honest atlas of that edge is the appropriate instrument for studying it.")), /*#__PURE__*/React.createElement(PaperSection, {
+  }, /*#__PURE__*/React.createElement("p", null, "HORIZON demonstrates that the boundary between established physics, effective theory, schematic modeling, and conjecture can be made a first-class object of interactive study. Its contribution is not a new physical result but a discipline: an atlas in which every claim is labeled, every equation is an interface object, every laboratory is reproducible from its URL, and every visual regression is pinned to a justified tolerance. The quantum-gravity problem is hard precisely because it sits at the edge of what is known; an honest atlas of that edge is the appropriate instrument for studying it.")), /*#__PURE__*/React.createElement(PaperV2, null), /*#__PURE__*/React.createElement(PaperSection, {
     id: "spine",
     index: "A",
     title: "Formulation spine"
@@ -1861,7 +1919,7 @@ function ViewWhitepaper() {
       d: "surface gravity"
     }],
     meaning: "The Kerr Observatory prints exact coordinate radii and the live formulation panel substitutes the current parameters into these relations; the surface gravity \u2014 hence the temperature \u2014 tends to zero in the extremal limit.",
-    limits: "The rendered image beside the map is a Schwarzschild-based geodesic raymarch with visual spin cues only \u2014 frame dragging is not integrated."
+    limits: "The image beside the map integrates Carter's Kerr null geodesics per pixel, so frame dragging and the spin-dependent shadow are computed; the thin disk, its display-scaled colour and the corona and jets are models (see docs/science/kerr-observatory.md)."
   }), /*#__PURE__*/React.createElement(FormulaCard, {
     title: "Ryu\u2013Takayanagi formula",
     status: "conjectural",

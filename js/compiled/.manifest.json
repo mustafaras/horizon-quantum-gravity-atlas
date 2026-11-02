@@ -241,7 +241,7 @@
     },
     "js/extras.jsx": {
       "output": "js/compiled/js/extras.js",
-      "bytes": 101776
+      "bytes": 104278
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",

@@ -20,6 +20,9 @@ const SKIP_DIRS = new Set(["node_modules", ".git", "vendor", "test-results", "pl
 const SKIP_PREFIXES = ["docs/audit/"];
 const LINE_LIMIT = 800;
 const PRODUCT_ROOT_FILE = "tweaks-panel.jsx";
+// Generated data that quotes the ledger's measurements verbatim (S35, ledger D-209). Its strings name ShaderMaterial,
+// Math.random and colour values as text, not as code, so it is kept out of the code counters (not the long-file list).
+const QUOTED_TEXT_FILES = new Set(["js/whitepaper/whitepaper-v2-data.mjs"]);
 
 const HEX = /(?<![\w&#])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})(?![\w-])/g;
 const COLOR_FUNCTIONS = [["rgb(", /\brgb\(/g], ["rgba(", /\brgba\(/g], ["oklch(", /\boklch\(/g], ["0xRRGGBB", /\b0x[0-9a-fA-F]{6}\b/g]];
@@ -83,7 +86,7 @@ export async function runAudit(root) {
     const text = await readFile(path.join(root, file), "utf8");
     const lines = lineCount(text);
     if (SIZE_EXT.has(ext) && lines > LINE_LIMIT) audit.longFiles.push({ file, lines });
-    if (!SCRIPT_EXT.has(ext) || !(inJs || file === PRODUCT_ROOT_FILE)) continue;
+    if (!SCRIPT_EXT.has(ext) || !(inJs || file === PRODUCT_ROOT_FILE) || QUOTED_TEXT_FILES.has(file)) continue;
 
     const code = codeLines(text);
     let captions = 0, needsUpdate = 0;
