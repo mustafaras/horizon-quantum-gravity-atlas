@@ -11,6 +11,18 @@ on:
         description: Run the full browser QA suite
         type: boolean
         default: true
+      themes:
+        description: Run the three-theme QA (a11y in each theme, theme specs, evidence screenshots)
+        type: boolean
+        default: false
+      a11y_grep:
+        description: With themes, run only the accessibility tests whose title matches this text (for example "compare")
+        type: string
+        default: ""
+      theme_baselines:
+        description: With themes, regenerate the Blueprint and Print baselines and upload them (never commits them)
+        type: boolean
+        default: false
   schedule:
     - cron: "0 3 * * 1"
 
@@ -110,3 +122,84 @@ jobs:
             qa/test-results/
             qa/output/
           retention-days: 7
+
+  # S34: the same accessibility spec in every theme, the theme specs, and a picture of each module in Blueprint and
+  # Print. Manual only (workflow_dispatch with themes=true); every step runs so one red theme does not hide another.
+  themes:
+    name: Theme QA (Observatory, Blueprint, Print)
+    if: github.event_name == 'workflow_dispatch' && inputs.themes
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Accessibility spec, Observatory
+        if: always()
+        env:
+          QGA_QA_THEME: observatory
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
+
+      - name: Accessibility spec, Blueprint
+        if: always()
+        env:
+          QGA_QA_THEME: blueprint
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
+
+      - name: Accessibility spec, Print
+        if: always()
+        env:
+          QGA_QA_THEME: print
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs ${{ inputs.a11y_grep && format('--grep "{0}"', inputs.a11y_grep) || '' }}
+
+      - name: Theme specs
+        if: always()
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/themes.spec.mjs
+
+      - name: Evidence screenshots, Blueprint and Print
+        if: always()
+        env:
+          QGA_THEME_SHOTS: evidence
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/themes-visual.spec.mjs
+
+      # Baselines are made on this platform (Linux, pinned Chromium) and compared on it, so they are generated here and
+      # downloaded by a person who has looked at the evidence images first; the workflow never commits them.
+      - name: Regenerate theme baselines
+        if: always() && inputs.theme_baselines
+        env:
+          QGA_THEME_SHOTS: compare
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/themes-visual.spec.mjs --update-snapshots
+
+      - name: Compare with the committed theme baselines
+        if: always() && !inputs.theme_baselines && hashFiles('qa/baselines/theme-*.png') != ''
+        env:
+          QGA_THEME_SHOTS: compare
+        run: npx playwright test --config qa/playwright.config.mjs qa/specs/themes-visual.spec.mjs
+
+      - name: Upload regenerated baselines
+        if: always() && inputs.theme_baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-baselines
+          path: qa/baselines/theme-*.png
+          retention-days: 14
+
+      - name: Upload theme evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-evidence
+          path: |
+            qa/output/themes/
+            qa/test-results/
+          retention-days: 14

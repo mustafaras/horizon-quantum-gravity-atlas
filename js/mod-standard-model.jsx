@@ -448,13 +448,12 @@ function MixingGrid({ title, rows, cols, mat, sub }) {
           <div key={"r" + i} style={{ color: "var(--dim)", alignSelf: "center" }}>{r}</div>,
           ...mat[i].map((v, j) => {
             const a = 0.1 + 0.85 * v; // magnitude → opacity
-            // Chip lightness is held at 0.48 so the light label clears 4.5:1 at
-            // every opacity in the ramp; a lighter chip would need dark text in
-            // the mid range, where neither label colour reaches the floor.
+            // The chip's opacity follows the value, so its label is chosen by the contrast it really has on the chip: the
+            // light label where it clears 4.5:1 (every opacity in Observatory), the dark one where a theme lightens the chip.
             return <div key={i + "-" + j} style={{
               textAlign: "center", padding: "8px 2px", borderRadius: 5,
-              background: QGA_TOKENS.alpha("pigment-azure-48", a.toFixed(2)),
-              color: QGA_TOKENS.css("pigment-blue-88-c03"), fontWeight: v > 0.4 ? 600 : 400,
+              background: QGA_TOKENS.alpha("chip-data", a.toFixed(2)),
+              color: QGA_TOKENS.readableText("chip-data", Number(a.toFixed(2)), "surface-1", ["pigment-blue-88-c03", "surface-0"]), fontWeight: v > 0.4 ? 600 : 400,
             }}>{v < 0.01 ? v.toExponential(1) : v.toFixed(3)}</div>;
           }),
         ])}

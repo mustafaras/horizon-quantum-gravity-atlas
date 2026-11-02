@@ -118,7 +118,7 @@ function KerrShadowLab() {
     className: "kerr-eht-block"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kerr-eht-head"
-  }, /*#__PURE__*/React.createElement("h4", null, "The shadow, measured"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("h3", null, "The shadow, measured"), /*#__PURE__*/React.createElement("span", {
     className: "seg",
     role: "group",
     "aria-label": "EHT target"

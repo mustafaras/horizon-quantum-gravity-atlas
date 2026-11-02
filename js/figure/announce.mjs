@@ -15,10 +15,15 @@ function extent(values) {
   return lo <= hi ? [lo, hi] : [NaN, NaN];
 }
 
-/** `Updated: <title>, <status>. <series>: y from A to B over x from C to D.` */
-export function announcementFor(spec) {
+/**
+ * `Updated: <title>, <status>. <detail>. <series>: y from A to B over x from C to D.`
+ * `detail` is what the reader just changed (a slider's value text), so a control that moves a marker without changing the
+ * series still produces a different sentence.
+ */
+export function announcementFor(spec, detail = "") {
   const mark = spec.marks.find((m) => m.focal && SERIES.includes(m.type)) ?? spec.marks.find((m) => SERIES.includes(m.type));
-  const head = `Updated: ${spec.title}, status ${spec.status}.`;
+  const said = String(detail ?? "").trim().replace(/[.\s]+$/, "");
+  const head = `Updated: ${spec.title}, status ${spec.status}.${said ? ` ${said}.` : ""}`;
   if (!mark) return head;
   const [xLo, xHi] = extent(mark.x);
   const [yLo, yHi] = extent(mark.y);
@@ -26,6 +31,23 @@ export function announcementFor(spec) {
   const xLabel = spec.x.label?.plain ?? "x";
   const yLabel = spec.y.label?.plain ?? "y";
   return `${head} ${name}: ${yLabel} from ${fmt(yLo)} to ${fmt(yHi)} over ${xLabel} from ${fmt(xLo)} to ${fmt(xHi)}.`;
+}
+
+/**
+ * Whether the reader did something just now. A figure re-renders by itself while a page loads (fonts, data, layout);
+ * only a change that follows a key press, a click, a touch or an input event within `windowMs` is the reader's
+ * parameter change and worth speaking. `recent()` is true for `windowMs` after the last such event.
+ */
+export function createInteractionGate({ target, windowMs = 2000, now = () => Date.now() } = {}) {
+  if (!target?.addEventListener) throw new TypeError("createInteractionGate needs an event target");
+  const EVENTS = ["keydown", "pointerdown", "input", "change", "wheel"];
+  let last = -Infinity;
+  const mark = () => { last = now(); };
+  for (const name of EVENTS) target.addEventListener(name, mark, { capture: true, passive: true });
+  return Object.freeze({
+    recent: () => now() - last <= windowMs,
+    dispose() { for (const name of EVENTS) target.removeEventListener(name, mark, { capture: true }); },
+  });
 }
 
 /**

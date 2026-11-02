@@ -208,19 +208,27 @@ function Figure(_ref) {
     });
   };
 
-  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from.
+  // A parameter change is announced once, 500 ms after the last change, from the same spec the plot is drawn from and
+  // with the control's own value text. Only a change that follows something the reader did is spoken: a figure also
+  // re-renders by itself while the page loads, and that must stay silent.
   var _useState15 = useState(""),
     _useState16 = _slicedToArray(_useState15, 2),
     liveText = _useState16[0],
     setLiveText = _useState16[1];
   var announcer = useRef(null);
+  var interaction = useRef(null);
   var seenSpec = useRef(false);
+  var liveDetail = slider && slider.text || readoutOverride || "";
   useEffect(function () {
     announcer.current = F.createDebouncedAnnouncer({
       announce: setLiveText
     });
+    interaction.current = F.createInteractionGate({
+      target: document
+    });
     return function () {
-      return announcer.current.dispose();
+      announcer.current.dispose();
+      interaction.current.dispose();
     };
   }, []);
   useEffect(function () {
@@ -228,8 +236,9 @@ function Figure(_ref) {
       seenSpec.current = true;
       return;
     }
-    announcer.current.push(F.announcementFor(spec));
-  }, [spec]);
+    if (!interaction.current.recent()) return;
+    announcer.current.push(F.announcementFor(spec, liveDetail));
+  }, [spec, liveDetail]);
   var focal = scene && scene.focal;
   var n = focal ? focal.x.length : 0;
   var clampIndex = function clampIndex(i) {

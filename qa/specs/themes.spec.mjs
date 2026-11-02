@@ -85,16 +85,20 @@ test("a theme change repaints canvas figures and keeps the page alive, with no c
   const errors = await open(page, context, "/?view=rg&seed=42");
   await page.locator(".ug-lab").scrollIntoViewIfNeeded();
   await expect(page.locator(COUPLINGS)).toBeVisible();
+  // The canvas is transparent where nothing is drawn, so one pixel proves nothing: sum the colour of every drawn pixel.
   const paint = () => page.evaluate(() => {
     const canvas = document.querySelector('.fig[data-figure="rg-unification-couplings"] canvas');
-    const d = canvas.getContext("2d").getImageData(Math.floor(canvas.width / 2), 2, 1, 1).data;
-    return [d[0], d[1], d[2], d[3]].join(",");
+    const d = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+    let drawn = 0, sum = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 0) { drawn += 1; sum += d[i] + d[i + 1] + d[i + 2]; }
+    return drawn > 0 ? `${drawn}:${Math.round(sum / drawn)}` : "empty";
   });
   for (const theme of ["blueprint", "print", "observatory"]) {
     await page.evaluate((id) => window.QGA_THEME.set(id), theme);
     await expect.poll(() => page.evaluate(() => window.QGA_TOKENS.current().theme)).toBe(theme);
   }
   const dark = await paint();
+  expect(dark, "the figure drew something in Observatory").not.toBe("empty");
   await page.evaluate(() => window.QGA_THEME.set("print"));
   await expect.poll(paint).not.toBe(dark);
   expect(errors).toEqual([]);
@@ -150,12 +154,46 @@ test("a parameter change is announced once, 500 ms after the last change", async
   const live = page.locator(`${COUPLINGS} [data-figure-live]`);
   await expect(live).toHaveText("");
   await page.locator(`${COUPLINGS} .fig-plot`).focus();
-  const t0 = Date.now();
-  for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(ANNOUNCE_DELAY_MS * 0.5);
-  expect(await live.textContent(), "still quiet halfway through the delay").toBe("");
-  await expect(live).toHaveText(/^Updated: /, { timeout: 5_000 });
-  expect(Date.now() - t0).toBeGreaterThanOrEqual(ANNOUNCE_DELAY_MS);
+  // The timing is read on the page's own clock. A loaded CI page can stall its main thread for longer than the delay, and
+  // then a Node-side wait says nothing about when the timer was set; performance.now() inside the page does. Four presses
+  // go in one task so a stall cannot split them either.
+  const result = await page.evaluate(({ selector }) => new Promise((resolve) => {
+    const region = document.querySelector(`${selector} [data-figure-live]`);
+    const plot = document.querySelector(`${selector} .fig-plot`);
+    const changes = [];
+    const observer = new MutationObserver(() => { if (region.textContent) changes.push({ at: performance.now(), text: region.textContent }); });
+    observer.observe(region, { childList: true, characterData: true, subtree: true });
+    const pressedAt = performance.now();
+    for (let i = 0; i < 4; i++) plot.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    // Let it settle well past the delay, then report every announcement seen.
+    setTimeout(() => { observer.disconnect(); resolve({ pressedAt, changes }); }, 4_000);
+  }), { selector: COUPLINGS });
+  expect(result.changes.length, "four presses are one announcement").toBe(1);
+  expect(result.changes[0].text).toMatch(/^Updated: /);
+  expect(result.changes[0].at - result.pressedAt, "spoken no earlier than the debounce delay after the last change").toBeGreaterThanOrEqual(ANNOUNCE_DELAY_MS - 5);
+  await expect(live).toHaveText(/^Updated: /);
+});
+
+test("a visible button steps through the themes: in the sidebar on a desktop and in the top bar on a phone", async ({ page, context }) => {
+  await open(page, context, "/?view=gr");
+  const side = page.locator(".sidebar [data-theme-button]");
+  await expect(side).toBeVisible();
+  expect((await side.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  const order = ["observatory", "blueprint", "print", "observatory"];
+  const names = { observatory: "Observatory", blueprint: "Blueprint", print: "Print" };
+  for (let i = 0; i < order.length - 1; i++) {
+    await expect(side).toHaveAccessibleName(`Colour theme: ${names[order[i]]}. Switch to ${names[order[i + 1]]}`);
+    await side.click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme"))).toBe(order[i + 1]);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const top = page.locator(".topbar [data-theme-button]");
+  await expect(top).toBeVisible();
+  expect((await top.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await top.click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme"))).toBe("blueprint");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
 test("a 3D scene's accessible name carries its registered model and status", async ({ page, context }) => {

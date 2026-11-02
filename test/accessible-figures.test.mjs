@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { figure, axis, line, rule, points } from "../js/figure/spec.mjs";
-import { announcementFor, createDebouncedAnnouncer, ANNOUNCE_DELAY_MS } from "../js/figure/announce.mjs";
+import { announcementFor, createDebouncedAnnouncer, createInteractionGate, ANNOUNCE_DELAY_MS } from "../js/figure/announce.mjs";
 import { SONIFY_RANGE, pitchFor, referenceLevel, sonificationPlan, createFigureSonifier } from "../js/figure/sonify.mjs";
 import { createLensRegistry, termLabel } from "../js/formula/lens.mjs";
 import { layerCounts, formatReadout, lensReadouts, sceneAltText, nearestProvenanceId } from "../js/render/scene-alt-text.mjs";
@@ -80,6 +80,38 @@ test("the announcement names the figure, its status and the focal series' range 
   assert.equal(announcementFor(mk([rule({ axis: "y", value: 0, layer: "model", text: { text: "zero" } })])), "Updated: A wave, status established.");
   const changed = announcementFor(mk([line({ x: xs, y: xs.map(() => 0.5), layer: "model", focal: true, label: { text: "flat" } })]));
   assert.notEqual(changed, text, "a parameter change changes the sentence");
+});
+
+test("the announcement carries what the reader changed, so a moved marker is a different sentence", () => {
+  const spec = mk([wave]);
+  const a = announcementFor(spec, "Scale 3.2 decades. ");
+  assert.match(a, /^Updated: A wave, status established\. Scale 3\.2 decades\. sine:/);
+  assert.notEqual(a, announcementFor(spec, "Scale 4.1 decades"));
+  assert.equal(announcementFor(spec, ""), announcementFor(spec), "no detail is the plain sentence");
+  assert.equal(announcementFor(spec, null), announcementFor(spec));
+});
+
+test("the interaction gate is open for two seconds after a key, pointer or input event and closed on its own", () => {
+  const target = new EventTarget();
+  let t = 1000;
+  const gate = createInteractionGate({ target, now: () => t });
+  assert.equal(gate.recent(), false, "a page that loads untouched is not interaction");
+  target.dispatchEvent(new Event("keydown"));
+  assert.equal(gate.recent(), true);
+  t += 1999;
+  assert.equal(gate.recent(), true);
+  t += 2;
+  assert.equal(gate.recent(), false);
+  for (const name of ["pointerdown", "input", "change", "wheel"]) {
+    t += 5000;
+    target.dispatchEvent(new Event(name));
+    assert.equal(gate.recent(), true, name);
+  }
+  gate.dispose();
+  t += 5000;
+  target.dispatchEvent(new Event("keydown"));
+  assert.equal(gate.recent(), false, "a disposed gate hears nothing");
+  assert.throws(() => createInteractionGate({}), TypeError);
 });
 
 // ---- sonification plan -----------------------------------------------------------------------------------------

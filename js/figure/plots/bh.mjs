@@ -52,7 +52,7 @@ export function pageCurveSpec({ height = 190 } = {}) {
     y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { tex: "S/S_0" } }),
     marks: [
       line({ x: f, y: bh, layer: "model", color: "pigment-blue-64", label: { text: "black hole entropy" } }),
-      line({ x: f, y: rad, layer: "model", dash: "4 4", color: "pigment-red-65", label: { tex: "\beta(S_0-S_{BH}),\ \beta=1.4847" } }),
+      line({ x: f, y: rad, layer: "model", dash: "4 4", color: "pigment-red-65", label: { tex: "\\beta(S_0-S_{BH}),\\ \\beta=1.4847" } }),
       line({ x: f, y: page, layer: "model", focal: true, color: "pigment-azure-82", label: { text: "Page curve" } }),
       rule({ axis: "x", value: summary.timeFraction, layer: "model", color: "pigment-amber-79-c12", text: { text: "t/tau = 0.5381" } }),
     ],
@@ -76,7 +76,7 @@ export function greybodySpectrumSpec({ temperature = 0.15, height = 200, highlig
     id: "bh-greybody-spectrum", title: "Hawking spectrum with greybody factors", status: "effective",
     provenanceId: "bh-greybody", height,
     legend: true,
-    x: axis({ scale: { type: "linear", domain: [0, 2] }, label: { tex: "\omega\,(\hbar=c=1)" } }),
+    x: axis({ scale: { type: "linear", domain: [0, 2] }, label: { tex: "\\omega\\,(\\hbar=c=1)" } }),
     y: axis({ scale: { type: "linear", domain: [0, 1.05] }, label: { text: "dN/domega dt (norm.)" } }),
     marks: [
       line({ x: spec.omega, y: spec.blackbody.map((v) => v / peak(spec.blackbody)), layer: "model", dash: "4 4",

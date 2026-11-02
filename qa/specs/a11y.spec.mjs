@@ -8,7 +8,18 @@ import { gotoReady as gotoReadyBase } from "./helpers.mjs";
 // URL as `?theme=`; `npm run qa:test:themes` runs the three in turn. Only the colours differ, so any structural,
 // focus or target-size failure that appears in one theme alone is a theme bug.
 const THEME = process.env.QGA_QA_THEME || "observatory";
-const gotoReady = (page, url, ...rest) => gotoReadyBase(page, `${url}${url.includes("?") ? "&" : "?"}theme=${THEME}`, ...rest);
+// The compare view embeds two complete copies of the atlas. Its network is quiet for seconds at a time in every theme
+// (measured in CI: open requests 0 from about 12 s), yet Playwright's `networkidle` lifecycle event did not fire within 45 s,
+// in Observatory as well as Blueprint and Print. Fonts and the mounted view are the readiness that matters for what
+// these tests measure (the parent document; they never look inside the iframes), so that view waits for those two.
+const EMBEDDING_VIEW = /[?&]view=compare\b/;
+const EMBEDDING_READINESS = ["fonts", "view-mounted"];
+const gotoReady = (page, url, readiness, ...rest) => gotoReadyBase(
+  page,
+  `${url}${url.includes("?") ? "&" : "?"}theme=${THEME}`,
+  readiness ?? (EMBEDDING_VIEW.test(url) ? EMBEDDING_READINESS : undefined),
+  ...rest,
+);
 
 const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper", "compare"];
 
@@ -172,13 +183,32 @@ test.describe("bypass blocks", () => {
     // after 3s; drop it so the skip link is unambiguously the first stop.
     await page.evaluate(() => document.querySelector(".horizon-intro")?.remove());
     await page.evaluate(() => document.activeElement?.blur?.());
+    // A Tab pressed while the page does not have focus lands on <body>, which is what CI showed on a loaded runner (in
+    // Print only, twice). The assertion below is about where the first Tab goes in a focused page, so make it one.
+    await page.bringToFront();
+    await page.waitForFunction(() => document.hasFocus(), null, { timeout: 5000 }).catch(() => {});
+
+    // What the page looked like just before the Tab, kept for the failure message: a first stop that is <body> says
+    // nothing about why, and this test failed in Print only.
+    const before = await page.evaluate(() => {
+      const link = document.querySelector(".skip-link");
+      const cs = link ? getComputedStyle(link) : null;
+      const r = link?.getBoundingClientRect();
+      const tabbable = [...document.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")]
+        .filter((e) => e.getClientRects().length > 0).slice(0, 4).map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 24)}`);
+      return JSON.stringify({
+        theme: document.documentElement.getAttribute("data-theme"), hasFocus: document.hasFocus(), active: document.activeElement?.tagName,
+        link: link ? { display: cs.display, visibility: cs.visibility, opacity: cs.opacity, transform: cs.transform, tabIndex: link.tabIndex, top: Math.round(r.top), height: Math.round(r.height), inert: !!link.closest("[inert]"), hidden: !!link.closest("[aria-hidden='true']") } : null,
+        introPresent: !!document.querySelector(".horizon-intro"), tabbable,
+      });
+    });
 
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
       const el = document.activeElement;
-      return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim() };
+      return { cls: el?.getAttribute?.("class") || "", text: (el?.textContent || "").trim(), tag: el?.tagName || "", id: el?.id || "" };
     });
-    expect(first.cls, "first Tab stop is not the skip link").toContain("skip-link");
+    expect(first.cls, `first Tab stop is not the skip link (it is <${first.tag.toLowerCase()} id="${first.id}"> "${first.text.slice(0, 40)}"); page before Tab: ${before}`).toContain("skip-link");
     expect(first.text.length).toBeGreaterThan(0);
 
     // The reveal is a 0.16s transform transition; wait for it to land rather
@@ -291,6 +321,9 @@ test.describe("contrast", () => {
         out.push({
           text: el.textContent.trim().slice(0, 48),
           cls: (typeof el.className === "string" ? el.className : el.getAttribute("class") || "").slice(0, 48),
+          // Where an element without a class of its own lives: its tag and the nearest ancestor that has a class.
+          tag: el.tagName.toLowerCase(),
+          within: (() => { for (let p = el.parentElement; p; p = p.parentElement) { const c = typeof p.className === "string" ? p.className : ""; if (c) return c.slice(0, 40); } return ""; })(),
           got: Math.round(got * 100) / 100,
           need,
         });

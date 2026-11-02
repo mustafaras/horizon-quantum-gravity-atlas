@@ -15,6 +15,7 @@
 
 import { parseCssColor, cssColorToLinear, linearToSrgb, linearToHex } from "./color.mjs";
 import { THEME_IDS, DEFAULT_THEME, themePigment } from "./theme-pigments.mjs";
+import { blendOver, pickReadable } from "./readable.mjs";
 
 export { cssColorToLinear, THEME_IDS, DEFAULT_THEME };
 
@@ -291,6 +292,17 @@ export const tint = (name) => tintEntry(name);
 export function hueTint(name, hueDeg, a = 1) {
   const { sPct, lPct } = tintEntry(name);
   return `hsla(${Math.round(hueDeg)}, ${sPct}%, ${lPct}%, ${a})`;
+}
+
+/**
+ * The CSS colour of the first token in `labels` that is readable (≥ 4.5:1) on a chip filled with token `fill` at `alpha`
+ * over token `ground`; when none is, the best of them. For cells whose fill is data (opacity follows a value), where one
+ * fixed label colour cannot work in every theme.
+ */
+export function readableText(fill, alpha, ground, labels, min = 4.5) {
+  const background = blendOver(linearRef(fill), alpha, linearRef(ground));
+  const chosen = pickReadable(background, labels.map((name) => linearRef(name)), min);
+  return css(labels[chosen]);
 }
 
 export const monoPx = (px, weight) => current().font.monoPx(px, weight);

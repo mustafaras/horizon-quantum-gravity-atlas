@@ -100,7 +100,7 @@ body { background:
 .s3d-fs-open .content-inner { animation: none !important; transform: none !important; }
 
 /* ---- mobile topbar branding ---- */
-.topbar { background: rgba(5,8,14,0.82); backdrop-filter: blur(20px); }
+.topbar { background: var(--surface-glass-strong); backdrop-filter: blur(20px); }
 .topbar-title { letter-spacing: 0.2em; font-weight: 700; }
 
 /* ============================================================

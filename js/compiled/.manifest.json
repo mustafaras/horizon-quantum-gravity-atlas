@@ -37,7 +37,7 @@
     },
     "js/figure/Figure.jsx": {
       "output": "js/compiled/js/figure/Figure.js",
-      "bytes": 18263
+      "bytes": 18743
     },
     "js/scene3d.jsx": {
       "output": "js/compiled/js/scene3d.js",
@@ -157,7 +157,7 @@
     },
     "js/mod-standard-model.jsx": {
       "output": "js/compiled/js/mod-standard-model.js",
-      "bytes": 42769
+      "bytes": 42852
     },
     "js/mod-qft.jsx": {
       "output": "js/compiled/js/mod-qft.js",
@@ -245,7 +245,7 @@
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",
-      "bytes": 56458
+      "bytes": 57591
     }
   }
 }

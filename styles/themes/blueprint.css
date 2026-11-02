@@ -31,27 +31,31 @@
   --accent-2: #9fd0ff;
   --accent-soft: rgba(220, 236, 255, 0.16);
   --signal-warm: #ffd27a;
-  --signal-danger: #ffa093;
+  --signal-danger: #ffbdb2;
 
-  --status-established: oklch(0.960 0.080 134.3);
-  --status-effective: oklch(0.835 0.109 191.1);
-  --status-schematic: oklch(0.966 0.203 109.3);
-  --status-conjectural: oklch(0.725 0.159 298.7);
-  --status-open: oklch(0.732 0.159 3.3);
-  --status-heuristic: oklch(0.703 0.162 117.4);
+  --status-established: oklch(0.963 0.079 132.0);
+  --status-effective: oklch(0.940 0.090 193.5);
+  --status-schematic: oklch(0.965 0.205 110.7);
+  --status-conjectural: oklch(0.812 0.099 289.3);
+  --status-open: oklch(0.819 0.109 1.5);
+  --status-heuristic: oklch(0.802 0.117 103.4);
 
-  --cat-1: oklch(0.753 0.158 76.8);
-  --cat-2: oklch(0.612 0.109 276.2);
-  --cat-3: oklch(0.917 0.103 189.1);
+  --cat-1: oklch(0.753 0.158 76.7);
+  --cat-2: oklch(0.729 0.125 285.0);
+  --cat-3: oklch(0.904 0.121 177.6);
   --cat-4: oklch(0.953 0.199 108.6);
   --cat-5: oklch(0.761 0.123 257.8);
-  --cat-6: oklch(0.636 0.246 30.2);
-  --cat-7: oklch(0.645 0.209 306.3);
-  --cat-8: oklch(0.936 0.031 249.1);
+  --cat-6: oklch(0.723 0.182 48.8);
+  --cat-7: oklch(0.725 0.180 305.8);
+  --cat-8: oklch(0.938 0.030 254.0);
+  --ink-cat-1: oklch(0.82 0.13 76);
+  --ink-cat-2: oklch(0.84 0.09 285);
+  --chip-data: oklch(0.36 0.09 250);
 }
 
 /* Measured grid on the page, drawn once behind everything; it replaces the starfield. */
 :root[data-theme="blueprint"] body {
+  background-color: var(--surface-0);
   background-image:
     linear-gradient(var(--rule) 1px, transparent 1px),
     linear-gradient(90deg, var(--rule) 1px, transparent 1px);
@@ -60,7 +64,8 @@
 }
 
 :root[data-theme="blueprint"] .starfield-canvas,
-:root[data-theme="blueprint"] .horizon-intro { display: none; }
+:root[data-theme="blueprint"] .horizon-intro,
+:root[data-theme="blueprint"] .atlas-stage { display: none; }
 
 /* No glow: shadows and halos off, except the ring that shows keyboard focus. */
 :root[data-theme="blueprint"] *:not(:focus-visible) { box-shadow: none !important; }

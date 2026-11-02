@@ -1,0 +1,139 @@
+// Generates styles/themes/blueprint-surfaces.css and print-surfaces.css (S34).
+//
+// The module stylesheets were written for one dark theme and carry ~500 colour literals: dark washes behind panels,
+// pale text, pale rules. A theme cannot reach them through tokens alone, so every declaration that holds a colour literal
+// is restated here under `:root[data-theme="<theme>"]` with each literal passed through the one rule that already maps
+// scene pigments (js/design/theme-pigments.mjs `themeColor`): Blueprint keeps lightness on a Prussian-to-white ramp with
+// almost no chroma, Print inverts lightness onto paper. Observatory is not touched, so it stays byte for byte as authored.
+//
+//   node scripts/build-theme-surfaces.mjs           write the two files
+//   node scripts/build-theme-surfaces.mjs --check   exit 1 if a committed file is stale (run by `npm run validate`)
+//
+// Left alone on purpose: shadows, glows and filters (the themes switch them off), @keyframes (not overridable by a
+// selector prefix), and the page background of html and body (the theme files own it).
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseCss, colourLiterals, mapColourLiterals } from "./lib/css-rules.mjs";
+import { themeColor, legibleText } from "../js/design/theme-pigments.mjs";
+import { parseCssColor } from "../js/design/color.mjs";
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+export const GENERATED_THEMES = Object.freeze(["blueprint", "print"]);
+export const OUTPUT = Object.freeze(Object.fromEntries(GENERATED_THEMES.map((t) => [t, `styles/themes/${t}-surfaces.css`])));
+const SKIPPED_PROPERTIES = new Set(["box-shadow", "text-shadow", "filter", "backdrop-filter", "-webkit-backdrop-filter"]);
+const PAGE_ELEMENTS = new Set(["html", "body", ":root"]);
+const BACKGROUND_LONGHANDS = /^(-webkit-)?background-(clip|size|position|repeat|origin|attachment)$/;
+
+const FILL_MIN_ALPHA = 0.5;
+
+/**
+ * Whether a declaration gives its element a fill of its own that the text on it is judged against. A wash of alpha 0.08
+ * (the tinted chips) is not one: the text is really on the panel behind it. `none`, `transparent` and longhands such as
+ * background-size are not fills; a token or a gradient with an opaque stop is.
+ */
+export function paintsAFill({ prop, value }) {
+  if (!/^background(-color|-image)?$/.test(prop)) return false;
+  const v = value.trim();
+  if (/^(none|transparent|inherit|initial|unset)$/i.test(v)) return false;
+  const literals = colourLiterals(v);
+  if (!literals.length) return true;
+  return literals.some(({ text }) => (parseCssColor(text)?.alpha ?? 1) >= FILL_MIN_ALPHA);
+}
+
+/** `html …` and `:root …` merge into the theme root; every other selector sits below it. */
+export function themedSelector(selector, theme) {
+  const root = `:root[data-theme="${theme}"]`;
+  const lead = /^(html|:root)(?![\w-])/.exec(selector);
+  return lead ? root + selector.slice(lead[0].length) : `${root} ${selector}`;
+}
+
+/** The stylesheets index.html links after the tokens and the themes, in cascade order. */
+export function linkedSheets(indexHtml) {
+  return [...indexHtml.matchAll(/<link rel="stylesheet" href="(styles\/[^"]+\.css)"/g)].map((m) => m[1])
+    .filter((href) => href !== "styles/tokens.css" && !href.startsWith("styles/themes/"));
+}
+
+function overridesFor(nodes, theme, stats) {
+  let out = "";
+  for (const node of nodes) {
+    if (node.type === "at") {
+      const inner = overridesFor(node.children, theme, stats);
+      if (inner) out += `${node.prelude} {\n${inner.replace(/^(?=.)/gm, "  ")}}\n`; // one rule per line keeps each sheet under 600 lines
+      continue;
+    }
+    const pageOnly = node.selectors.every((s) => PAGE_ELEMENTS.has(s));
+    // Text that sits on a fill of its own (a button, a chip) is mapped together with that fill; only text drawn on the
+    // surrounding panel is held to the contrast target.
+    const ownsFill = node.declarations.some(paintsAFill);
+    const lines = [];
+    // A `background` shorthand restated here resets every background longhand, so the longhands the source sets after it
+    // (a gradient clipped to text, a size, a repeat) must be restated too or the override changes the shape of the element.
+    const shorthandAt = node.declarations.findIndex((d) => d.prop === "background" && colourLiterals(d.value).length > 0);
+    for (const [index, { prop, value }] of node.declarations.entries()) {
+      if (SKIPPED_PROPERTIES.has(prop)) continue;
+      if (pageOnly && /^background/.test(prop)) continue;
+      const literals = colourLiterals(value);
+      if (!literals.length) {
+        if (shorthandAt !== -1 && index > shorthandAt && BACKGROUND_LONGHANDS.test(prop)) lines.push(`${prop}: ${value} !important;`);
+        continue;
+      }
+      stats.declarations += 1;
+      const isText = prop === "color" && !ownsFill && literals.length === 1 && value.trim() === literals[0].text;
+      const mapped = mapColourLiterals(value, (literal) => {
+        stats.literals += 1;
+        if (!parseCssColor(literal)) { stats.unmapped.push(literal); return literal; }
+        const themed = themeColor(literal, theme);
+        return isText ? legibleText(themed, theme) : themed;
+      });
+      lines.push(`${prop}: ${mapped} !important;`);
+    }
+    if (!lines.length) continue;
+    stats.rules += 1;
+    out += `${node.selectors.map((s) => themedSelector(s, theme)).join(", ")} { ${lines.join(" ")} }\n`;
+  }
+  return out;
+}
+
+/** `{ blueprint, print }` stylesheet texts and the counts behind them, from `[{ file, css }]` in cascade order. */
+export function buildThemeSurfaces(sources) {
+  const result = {};
+  for (const theme of GENERATED_THEMES) {
+    const stats = { files: sources.length, rules: 0, declarations: 0, literals: 0, unmapped: [] };
+    const body = sources.map(({ file, css }) => {
+      const text = overridesFor(parseCss(css), theme, stats);
+      return text ? `/* ${file} */\n${text}` : "";
+    }).filter(Boolean).join("\n");
+    const header = `/* GENERATED by scripts/build-theme-surfaces.mjs from the stylesheets linked in index.html. Do not edit: change the\n   source stylesheet or the rule in js/design/theme-pigments.mjs and run \`npm run build:themes\`.\n   ${theme}: ${stats.rules} rules, ${stats.declarations} declarations, ${stats.literals} colour literals. */\n\n`;
+    result[theme] = { css: header + body, stats };
+  }
+  return result;
+}
+
+export function readSources(root = ROOT) {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  return linkedSheets(html).map((file) => ({ file, css: fs.readFileSync(path.join(root, file), "utf8") }));
+}
+
+function main(argv) {
+  const check = argv.includes("--check");
+  const built = buildThemeSurfaces(readSources());
+  let stale = false;
+  for (const theme of GENERATED_THEMES) {
+    const target = path.join(ROOT, OUTPUT[theme]);
+    const { css, stats } = built[theme];
+    if (stats.unmapped.length) throw new Error(`${theme}: colour literals that did not parse: ${[...new Set(stats.unmapped)].join(", ")}`);
+    if (check) {
+      const current = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null;
+      if (current !== css) { stale = true; console.error(`${OUTPUT[theme]} is stale: run npm run build:themes`); }
+      else console.log(`✓ ${OUTPUT[theme]} is current (${stats.rules} rules, ${stats.literals} literals)`);
+    } else {
+      fs.writeFileSync(target, css);
+      console.log(`wrote ${OUTPUT[theme]}: ${stats.rules} rules, ${stats.declarations} declarations, ${stats.literals} literals, ${(css.length / 1024).toFixed(1)} KiB`);
+    }
+  }
+  if (stale) process.exit(1);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
