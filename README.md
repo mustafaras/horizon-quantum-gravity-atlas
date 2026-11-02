@@ -356,7 +356,7 @@ Suggested software citation:
 ```bibtex
 @software{horizon_quantum_gravity_atlas_2026,
   title        = {HORIZON: Quantum Gravity Atlas},
-  author       = {Ra{\c{s}}it, Mustafa},
+  author       = {{\c{S}}ahin, Mustafa Ra{\c{s}}it},
   year         = {2026},
   license      = {MIT},
   note         = {Interactive static-web atlas of quantum gravity concepts, black-hole thermodynamics, and experimental constraints}

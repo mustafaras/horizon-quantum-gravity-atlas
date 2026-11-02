@@ -1959,7 +1959,7 @@
       "completedAt": null,
       "evidence": {
         "tests": [
-          "npm test: 1381 pass, 0 fail, 1 pre-existing skip (1359 before S35; new: link-check 7, citation 7, whitepaper 6, video-export 2)",
+          "npm test: 1382 pass, 0 fail, 1 pre-existing skip (1359 before S35; new: link-check 7, citation 8, whitepaper 6, video-export 2)",
           "npm run validate: passed, including the internal link checker, the cover/screenshot/diagram rules and build-whitepaper --check",
           "npm run perf:audit: exit 0",
           "npm run qa:verify: 74 captures, schema-conformant, README and docs/guide consistent",
@@ -1974,7 +1974,7 @@
           "README images: 1 hero + 8 chapter covers + 1 diagram; README + docs/guide reference 26 screenshots (rule >= 9) and all 11 diagrams",
           "whitepaper v2 record: 155 measurements from 26 prompts (S03-S28), equal to the ledger count by test; provenance 89 entries (11 established, 35 effective, 31 schematic, 12 conjectural); Formula Core 77 definitions",
           "paper/paper.md: 1120 words against JOSS 750-1750; paper.bib 11 entries, 9 checked against Crossref and 2 against the projects' sites",
-          ".zenodo.json: 0 DOI-shaped strings, 0 ORCID or affiliation fields; title, abstract, author, keywords and version equal to CITATION.cff and package.json by test",
+          ".zenodo.json: 0 DOI-shaped strings, 0 affiliation fields, ORCID 0009-0001-4809-3950 equal to CITATION.cff and paper.md with a valid ISO 7064 check digit (D-213); title, abstract, author, keywords and version equal to CITATION.cff and package.json by test",
           "README loop: 24 s at 30 fps, 720 frames, VP9 at 1.5 Mbit/s = 3.81 MiB against the 6 MB budget (first attempt at the studio's 8 Mbit/s: 14.47 MiB, run 41409504598); recorded canvas 922 x 420; not committed (D-211)"
         ]
       },
@@ -3491,6 +3491,13 @@
       "prompt": "S35",
       "decision": "paper/paper.md is a JOSS-style draft with TODOs for what only the author can give: an affiliation (JOSS requires one), an ORCID if wanted, funding, and a state-of-the-field comparison with checked references. paper.bib holds only entries checked on 2026-11-02 (9 articles against Crossref, three.js and KaTeX against their sites); Reuter and Saueressig 2012, which the module notes cite, was not checked and is not in the bibliography. The AI disclosure gives the agents per prompt from the ledger's owner field (Claude Code 20, Copilot 13, Codex 2).",
       "rationale": "The prompt forbids inventing identifiers or personal details and requires every citation to be checked against its primary source; a draft with named gaps is honest, a complete-looking one would not be."
+    },
+    {
+      "id": "D-213",
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "decision": "The maintainer gave the ORCID 0009-0001-4809-3950. Its public record (pub.orcid.org, read 2026-11-02) names given 'Mustafa Raşit', family 'Şahin', where CITATION.cff had given 'Mustafa', family 'Raşit'; asked which to use, the maintainer chose the ORCID name. CITATION.cff, .zenodo.json, paper/paper.md and the README BibTeX now use it with the ORCID. This supersedes the 'no ORCID' parts of D-210 and D-212; the affiliation is still missing.",
+      "rationale": "A citation whose name does not match its ORCID record splits the author's citations. The ORCID's check digit is verified and a test holds it equal across the three files."
     }
   ],
   "log": [

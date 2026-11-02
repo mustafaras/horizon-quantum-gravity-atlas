@@ -128,7 +128,25 @@ test(".zenodo.json agrees with CITATION.cff and package.json", async () => {
   assert.deepEqual(zenodo.keywords, c.keywords);
   const family = cff.match(/family-names:\s*"([^"]+)"/)[1];
   const given = cff.match(/given-names:\s*"([^"]+)"/)[1];
-  assert.deepEqual(zenodo.creators, [{ name: `${family}, ${given}` }]);
+  assert.deepEqual(zenodo.creators, [{ name: `${family}, ${given}`, orcid: cffOrcid }]);
+});
+
+// The author's ORCID, given by the maintainer on 2026-11-02 and read from pub.orcid.org that day: the record's name
+// (given "Mustafa Raşit", family "Şahin") is the one the citation files use.
+const cffOrcidUrl = cff.match(/orcid:\s*"([^"]+)"/)?.[1];
+const cffOrcid = cffOrcidUrl?.replace("https://orcid.org/", "");
+
+function orcidChecksumOk(id) {
+  const digits = id.replace(/-/g, "");
+  let total = 0;
+  for (const ch of digits.slice(0, 15)) total = (total + Number(ch)) * 2;
+  const remainder = (12 - (total % 11)) % 11;
+  return (remainder === 10 ? "X" : String(remainder)) === digits[15];
+}
+
+test("CITATION.cff carries a well-formed ORCID URL with a valid ISO 7064 check digit", () => {
+  assert.match(cffOrcidUrl ?? "", /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/);
+  assert.ok(orcidChecksumOk(cffOrcid), "ORCID check digit");
 });
 
 test(".zenodo.json relates the record to the repository and the live site", () => {
@@ -138,8 +156,8 @@ test(".zenodo.json relates the record to the repository and the live site", () =
   for (const r of zenodo.related_identifiers) assert.ok(r.resource_type, `${r.identifier} needs a resource_type`);
 });
 
-test(".zenodo.json adds no personal details the maintainer has not given (no ORCID or affiliation)", () => {
-  for (const creator of zenodo.creators) assert.deepEqual(Object.keys(creator), ["name"]);
+test(".zenodo.json adds no personal details the maintainer has not given (no affiliation)", () => {
+  for (const creator of zenodo.creators) assert.deepEqual(Object.keys(creator), ["name", "orcid"]);
 });
 
 // paper/ (S35): a JOSS-style draft. Every citation key must resolve, and every entry must carry the DOI or URL it was
@@ -158,6 +176,7 @@ test("paper/paper.md cites only keys that paper/paper.bib defines, and uses ever
 test("every paper.bib entry carries a DOI or a URL, and the paper invents no author identifiers", () => {
   assert.ok(bibEntries.length >= 5);
   for (const { key, body } of bibEntries) assert.match(body, /\b(doi|url)\s*=/, `${key} needs a doi or url`);
-  assert.ok(!/^\s*orcid:/m.test(paper), "no ORCID may be added that the author has not given");
+  assert.equal(paper.match(/^\s*orcid:\s*(\S+)/m)?.[1], cffOrcid, "the paper's ORCID is the CITATION.cff one");
+  assert.match(paper, /^\s*-\s*name:\s*Mustafa Raşit Şahin\s*$/m);
   assert.ok(!/^\s*affiliation:/m.test(paper), "no affiliation may be added that the author has not given");
 });

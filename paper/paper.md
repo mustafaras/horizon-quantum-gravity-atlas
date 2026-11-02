@@ -8,8 +8,9 @@ tags:
   - quantum field theory
   - scientific visualization
 authors:
-  - name: Mustafa Raşit
-    # ORCID and affiliation: to be supplied by the author. They were not given to the S35 work and are not invented.
+  - name: Mustafa Raşit Şahin
+    orcid: 0009-0001-4809-3950
+    # Affiliation: to be supplied by the author (JOSS requires one). It was not given to the S35 work and is not invented.
 date: 2 November 2026
 bibliography: paper.bib
 ---

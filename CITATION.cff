@@ -3,9 +3,10 @@ message: "If you use HORIZON — Quantum Gravity Atlas in your work, please cite
 title: "HORIZON — Quantum Gravity Atlas"
 type: software
 authors:
-  - family-names: "Raşit"
-    given-names: "Mustafa"
+  - family-names: "Şahin"
+    given-names: "Mustafa Raşit"
     email: "mustafarasit@hotmail.com"
+    orcid: "https://orcid.org/0009-0001-4809-3950"
 repository-code: "https://github.com/mustafaras/horizon-quantum-gravity-atlas"
 url: "https://mustafaras.github.io/horizon-quantum-gravity-atlas/"
 abstract: >-
