@@ -4355,7 +4355,7 @@
       "prompt": "S35",
       "agent": "local: Claude Code for mustafaras",
       "event": "note",
-      "detail": "Development closed by the owner after S35 (D-214). S36 not run; F-01, F-17 and F-27 left open; the paper draft will not be submitted. PR 138 (the S35 starter) closed unmerged: its numbers described the tree before S35 and the ledger now holds the record. Remote and local main synchronised; local branches already merged into main removed (their commits are on main or kept on origin)."
+      "detail": "Development closed by the owner after S35 (D-214). S36 not run; F-01, F-17 and F-27 left open; the paper draft will not be submitted. PR 138 (the S35 starter) is left open for the owner to close: its numbers describe the tree before S35 and the ledger now holds the record. Remote and local main synchronised; local branches already merged into main removed (their commits are on main or kept on origin)."
     }
   ]
 }
