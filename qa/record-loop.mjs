@@ -25,13 +25,15 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = path.join(root, "qa/output/loop");
 const HERO_CAPTURE = "bh-kerr-hero";
 const MAX_BYTES = 6 * 1024 * 1024;
+// The studio's 8 Mbit/s made a 24 s loop 14.47 MiB on CI (run 41409504598); 1.5 Mbit/s budgets about 4.3 MiB.
+const BITS_PER_SECOND = 1_500_000;
 const VIEWPORT = { width: 1280, height: 720 };
 const SEED = 42;
 
 const opt = (name, fallback) => Number(process.argv.slice(2).find((a) => a.startsWith(`--${name}=`))?.split("=")[1] ?? fallback);
 
 /** Runs in the page: records the largest live scene canvas and returns the WebM as base64 with its clip rectangle. */
-async function recordInPage({ seconds, fps }) {
+async function recordInPage({ seconds, fps, bitsPerSecond }) {
   const EXPORT = window.QGA_EXPORT;
   if (!EXPORT) return { error: "window.QGA_EXPORT is not loaded" };
   const support = EXPORT.recordingSupport(window);
@@ -45,7 +47,7 @@ async function recordInPage({ seconds, fps }) {
   canvas.scrollIntoView({ block: "center" });
   const rect = canvas.getBoundingClientRect();
   try {
-    const result = await EXPORT.recordCanvas({ canvas, seconds, fps, draw: handle.capture ? () => handle.capture() : null });
+    const result = await EXPORT.recordCanvas({ canvas, seconds, fps, bitsPerSecond, draw: handle.capture ? () => handle.capture() : null });
     const bytes = new Uint8Array(await result.blob.arrayBuffer());
     let binary = "";
     for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -81,7 +83,7 @@ async function main() {
     // A long software-rasterised recording: allow two seconds a frame before giving up.
     page.setDefaultTimeout(seconds * fps * 2000);
     const started = Date.now();
-    const result = await page.evaluate(recordInPage, { seconds, fps });
+    const result = await page.evaluate(recordInPage, { seconds, fps, bitsPerSecond: BITS_PER_SECOND });
     const wallSeconds = (Date.now() - started) / 1000;
     if (result.error) throw new Error(result.error);
     if (result.bytes > MAX_BYTES) throw new Error(`recording is ${(result.bytes / 1024 ** 2).toFixed(2)} MiB, over the 6 MB budget`);
@@ -90,7 +92,7 @@ async function main() {
     await writeFile(path.join(OUT_DIR, "horizon-loop.webm"), Buffer.from(result.base64, "base64"));
     await writeFile(path.join(OUT_DIR, "horizon-loop-poster.png"), await page.screenshot({ clip: result.clip }));
     const sidecar = {
-      kind: "readme-loop", url, viewport: VIEWPORT, seconds, fps, frames: result.frames, mime: result.mime,
+      kind: "readme-loop", url, viewport: VIEWPORT, seconds, fps, bitsPerSecond: BITS_PER_SECOND, frames: result.frames, mime: result.mime,
       bytes: result.bytes, perFrameCapture: result.hasCapture, wallSeconds, browser: browser.version(),
       commit: process.env.GITHUB_SHA ?? null, provenance: HERO_CAPTURE, status: hero.scientificStatus, statusNote: hero.statusNote,
       consoleErrors,

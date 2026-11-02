@@ -73,7 +73,7 @@ export function recordingPlan({ seconds = 6, fps = 30, bitsPerSecond = 8_000_000
  * come back as `ExportError`, and the stream's tracks are stopped in every path — a retained recorder track keeps the
  * camera/GPU awake and shows the recording indicator forever, which is a bug the user sees.
  */
-export async function recordCanvas({ canvas, seconds = 6, fps = 30, onProgress = null, signal = null, audioTracks = [], draw = null } = {}) {
+export async function recordCanvas({ canvas, seconds = 6, fps = 30, bitsPerSecond, onProgress = null, signal = null, audioTracks = [], draw = null } = {}) {
   if (!canvas || typeof canvas.captureStream !== "function") {
     throw new ExportError("not-supported", "This scene's canvas cannot be captured as a stream.");
   }
@@ -82,7 +82,8 @@ export async function recordCanvas({ canvas, seconds = 6, fps = 30, onProgress =
     throw new ExportError("not-supported", "This browser has no MediaRecorder, so it cannot record WebM.");
   }
   const mime = chooseWebmMime((type) => MediaRecorderCtor.isTypeSupported(type));
-  const plan = recordingPlan({ seconds, fps });
+  // The studio leaves bitsPerSecond unset (the plan's 8 Mbit/s); the README loop asks for less to fit its 6 MB budget.
+  const plan = recordingPlan({ seconds, fps, bitsPerSecond });
 
   const stream = canvas.captureStream(fps);
   for (const track of audioTracks) if (track) stream.addTrack(track);
