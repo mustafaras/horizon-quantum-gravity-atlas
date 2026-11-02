@@ -22,6 +22,7 @@
     "perf:audit": "node scripts/perf/static-audit.mjs",
     "qa:verify": "node qa/verify-manifest.mjs",
     "qa:capture": "node qa/capture.mjs",
+    "qa:record-loop": "node qa/record-loop.mjs",
     "qa:update": "node qa/capture.mjs --update",
     "qa:test": "playwright test --config qa/playwright.config.mjs",
     "qa:critical": "playwright test --config qa/playwright.config.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs qa/specs/render-contracts.spec.mjs qa/specs/themes.spec.mjs",
