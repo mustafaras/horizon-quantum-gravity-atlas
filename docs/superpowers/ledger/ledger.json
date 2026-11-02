@@ -288,11 +288,11 @@
       "id": "F-19",
       "title": "README 2,500+ lines, stale Roadmap, no archival DOI",
       "severity": "low",
-      "status": "open",
+      "status": "closed",
       "closedBy": [
         "S35"
       ],
-      "closedIn": null
+      "closedIn": "a85010283cb31e3b74bc91ba9c1fd907747be09d"
     },
     {
       "id": "F-20",
@@ -1950,13 +1950,15 @@
       "findings": [
         "F-19"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code for mustafaras",
       "branch": "feat/s35-scholarly-release",
       "pr": 139,
-      "commits": [],
+      "commits": [
+        "a85010283cb31e3b74bc91ba9c1fd907747be09d"
+      ],
       "startedAt": "2026-11-02",
-      "completedAt": null,
+      "completedAt": "2026-11-02",
       "evidence": {
         "tests": [
           "npm test: 1382 pass, 0 fail, 1 pre-existing skip (1359 before S35; new: link-check 7, citation 8, whitepaper 6, video-export 2)",
@@ -4333,6 +4335,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "review",
       "detail": "PR 139 in review. README 2625 -> 397 lines with stubs; docs/guide and docs/science; link checker (80 files, 205 links, 0 broken); .zenodo.json with no DOI; whitepaper v2 generated (155 S03-S28 measurements); JOSS-style paper draft. npm test 1381/0/1 skip, validate, perf:audit and CI run 41410773252 green. The README loop records but is not faithful to the page and is not committed (D-211). F-19 stays open until the merge. Decisions D-207 to D-212."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "done",
+      "detail": "PR 139 merged as a850102 on the owner's instruction; PR CI on 3e9e393 green (validation, Browser QA). GitHub Pages deployed a850102: the site, README.md, docs/guide/visual-atlas.md and js/whitepaper/whitepaper-v2-data.mjs answer 200 and the live bootstrap defines QGA_WHITEPAPER (.zenodo.json is a dotfile Pages does not serve; Zenodo reads it from the repository). The author's ORCID and ORCID name were added in review (D-213). F-19 closed: the README, Roadmap and archival metadata are done; the DOI itself is minted by Zenodo when the maintainer publishes a release. Open after S35: the README loop (D-211), the paper's affiliation, and F-17 and F-27, still open although S25 and S08 are done, for S36 to close or accept."
     }
   ]
 }
