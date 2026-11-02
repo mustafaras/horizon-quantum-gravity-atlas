@@ -1,6 +1,6 @@
 {
   "name": "horizon-quantum-gravity-atlas",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "An interactive, scientifically rigorous atlas of quantum gravity \u2014 live simulations and cinematic 3D scenes from the Standard Model to the Planck frontier.",
   "homepage": "https://mustafaras.github.io/horizon-quantum-gravity-atlas/",
   "repository": {
@@ -13,7 +13,7 @@
     "dev": "npx --yes serve .",
     "serve": "python3 -m http.server 8000",
     "test": "node --test test/*.test.mjs",
-    "validate": "node scripts/validate-repo.mjs && node scripts/audit-formulas.mjs && node scripts/audit-provenance.mjs && node scripts/audit-render-lifecycle.mjs && node scripts/build-cover-index.mjs --check && node scripts/build-theme-surfaces.mjs --check && node scripts/build-whitepaper.mjs --check",
+    "validate": "node scripts/validate-repo.mjs && node scripts/audit-formulas.mjs && node scripts/audit-provenance.mjs && node scripts/audit-render-lifecycle.mjs && node scripts/build-cover-index.mjs --check && node scripts/build-theme-surfaces.mjs --check && node scripts/build-whitepaper.mjs --check && node scripts/build-release-verification.mjs --check",
     "build:themes": "node scripts/build-theme-surfaces.mjs",
     "build:whitepaper": "node scripts/build-whitepaper.mjs",
     "check": "npm run validate",
@@ -25,7 +25,7 @@
     "qa:record-loop": "node qa/record-loop.mjs",
     "qa:update": "node qa/capture.mjs --update",
     "qa:test": "playwright test --config qa/playwright.config.mjs",
-    "qa:critical": "playwright test --config qa/playwright.config.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs qa/specs/render-contracts.spec.mjs qa/specs/themes.spec.mjs",
+    "qa:critical": "playwright test --config qa/playwright.config.mjs qa/specs/smoke.spec.mjs qa/specs/esm-runtime.spec.mjs qa/specs/render-contracts.spec.mjs qa/specs/themes.spec.mjs qa/specs/release-gate.spec.mjs",
     "qa:test:themes": "for t in observatory blueprint print; do QGA_QA_THEME=$t playwright test --config qa/playwright.config.mjs qa/specs/a11y.spec.mjs || exit 1; done && playwright test --config qa/playwright.config.mjs qa/specs/themes.spec.mjs",
     "qa:test:live":"QGA_QA_LIVE=1 playwright test --config qa/playwright.config.mjs qa/specs/live.spec.mjs",
     "compile:jsx": "node scripts/compile-jsx.mjs",

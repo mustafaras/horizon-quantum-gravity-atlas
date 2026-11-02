@@ -63,6 +63,9 @@ The validation currently enforces:
 - every relative Markdown link and image in `README.md`, `docs/**/*.md` and `paper/**/*.md` resolves to a file (`scripts/lib/link-check.mjs`, S35);
 - the README shows every chapter cover in `docs/covers/`;
 - the README and the guide together reference at least nine cinematic screenshots, and every static SVG diagram in `docs/diagrams/` is referenced at least once;
+- the art-direction rules hold: a 10 px text floor, no blurred text-shadow on figure text, and every canvas 2D context on an allowlist (`scripts/lib/art-direction.mjs`, S36);
+- every worker, audio context, observer, listener, animation frame, interval, render target and media stream acquired in `js/` is released (`scripts/audit-render-lifecycle.mjs`, S36);
+- the re-measured S03–S28 verification record in `docs/release-verification.md` is current and within the ledger's precision (S36);
 - Open Graph and Twitter card metadata exists in the HTML entry file;
 - `manifest.webmanifest` is valid JSON and points to real icons;
 - PNG assets have the expected dimensions;
