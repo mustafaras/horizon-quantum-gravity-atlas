@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkCompiled, listJsxSources } from "./compile-jsx.mjs";
+import { checkLinks, listDocFiles } from "./lib/link-check.mjs";
 import { inspectThreeVendor } from "./lib/three-vendor.mjs";
 import { lintTokenLiterals } from "./lib/token-lint.mjs";
 
@@ -87,6 +88,10 @@ if (screenshotRefs.length < 9) {
 const diagramRefs = localImageRefs.filter((src) => src.includes("docs/diagrams/"));
 if (diagramRefs.length < 11) {
   fail(`README should reference at least 11 static diagrams; found ${diagramRefs.length}`);
+}
+
+for (const broken of checkLinks(root, listDocFiles(root))) {
+  fail(`${broken.file}:${broken.line} links to a missing file: ${broken.target}`);
 }
 
 for (const file of fs.readdirSync(path.join(root, "docs", "diagrams")).filter((name) => name.endsWith(".svg"))) {
