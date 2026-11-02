@@ -141,3 +141,23 @@ test(".zenodo.json relates the record to the repository and the live site", () =
 test(".zenodo.json adds no personal details the maintainer has not given (no ORCID or affiliation)", () => {
   for (const creator of zenodo.creators) assert.deepEqual(Object.keys(creator), ["name"]);
 });
+
+// paper/ (S35): a JOSS-style draft. Every citation key must resolve, and every entry must carry the DOI or URL it was
+// checked against.
+const paper = await readFile(path.join(root, "paper", "paper.md"), "utf8");
+const bib = await readFile(path.join(root, "paper", "paper.bib"), "utf8");
+const bibEntries = [...bib.matchAll(/^@\w+\{([^,]+),([\s\S]*?)^\}/gm)].map((m) => ({ key: m[1], body: m[2] }));
+
+test("paper/paper.md cites only keys that paper/paper.bib defines, and uses every entry", () => {
+  const cited = new Set([...paper.matchAll(/@([A-Za-z][\w-]*)/g)].map((m) => m[1]));
+  const keys = new Set(bibEntries.map((e) => e.key));
+  for (const key of cited) assert.ok(keys.has(key), `[@${key}] has no entry in paper.bib`);
+  for (const key of keys) assert.ok(cited.has(key), `paper.bib entry ${key} is never cited`);
+});
+
+test("every paper.bib entry carries a DOI or a URL, and the paper invents no author identifiers", () => {
+  assert.ok(bibEntries.length >= 5);
+  for (const { key, body } of bibEntries) assert.match(body, /\b(doi|url)\s*=/, `${key} needs a doi or url`);
+  assert.ok(!/^\s*orcid:/m.test(paper), "no ORCID may be added that the author has not given");
+  assert.ok(!/^\s*affiliation:/m.test(paper), "no affiliation may be added that the author has not given");
+});
