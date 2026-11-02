@@ -2,7 +2,7 @@
   "schema": "horizon-ledger/v2",
   "pack": "docs/superpowers/plans/horizon-v2/README.md",
   "auditedCommit": "9013fba",
-  "updated": "2026-11-01",
+  "updated": "2026-11-02",
   "statuses": [
     "todo",
     "claimed",
@@ -1950,12 +1950,12 @@
       "findings": [
         "F-19"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code for mustafaras",
+      "branch": "feat/s35-scholarly-release",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-02",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -4254,6 +4254,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "done",
       "detail": "Merged PR 134 as 1c08f24 and PR 135 as 1205f6a; GitHub Pages deployed 1205f6a and the live site serves the generated Blueprint and Print stylesheets, the theme button and the new index.html links. Last full Theme QA (41350760937): a11y 67/67 in Observatory, Blueprint and Print, theme specs 11/11, evidence 18/18, baselines matching. One intermittent test is recorded in D-206. F-01 stays open for S36; F-05 was closed in S02. PR 136 (a revert of 134, opened when the owner first said the themes were unwanted) was closed unmerged."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S35",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "claimed",
+      "detail": "Claimed on feat/s35-scholarly-release from main c0f933a. Pre-flight: npm test 1359 pass, 0 fail, 1 skipped; npm run validate passed (formula audit, provenance 89 entries, cover index 8 sidecars, theme sheets current)."
     }
   ]
 }
