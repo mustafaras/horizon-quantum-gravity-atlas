@@ -101,7 +101,7 @@
     },
     "js/labs/amplitude-room.jsx": {
       "output": "js/compiled/js/labs/amplitude-room.js",
-      "bytes": 34959
+      "bytes": 34958
     },
     "js/labs/lattice-lab.jsx": {
       "output": "js/compiled/js/labs/lattice-lab.js",
@@ -225,7 +225,7 @@
     },
     "js/mod-approaches.jsx": {
       "output": "js/compiled/js/mod-approaches.js",
-      "bytes": 34845
+      "bytes": 34844
     },
     "js/visualizations/kerr/kerr-controls.jsx": {
       "output": "js/compiled/js/visualizations/kerr/kerr-controls.js",
@@ -241,7 +241,7 @@
     },
     "js/extras.jsx": {
       "output": "js/compiled/js/extras.js",
-      "bytes": 104278
+      "bytes": 104281
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",

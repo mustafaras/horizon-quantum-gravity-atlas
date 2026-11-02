@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkCompiled, listJsxSources } from "./compile-jsx.mjs";
+import { lintArtDirection } from "./lib/art-direction.mjs";
 import { checkLinks, extractLinks, listDocFiles } from "./lib/link-check.mjs";
 import { inspectThreeVendor } from "./lib/three-vendor.mjs";
 import { lintTokenLiterals } from "./lib/token-lint.mjs";
@@ -223,6 +224,7 @@ failures.push(...inspectThreeVendor(root));
   }
 }
 failures.push(...lintTokenLiterals(root));
+failures.push(...lintArtDirection(root));
 
 for (const cssFile of ["vendor/fonts/fonts.css", "vendor/katex/katex.min.css"]) {
   if (!exists(cssFile)) continue;

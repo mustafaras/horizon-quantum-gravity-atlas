@@ -72,7 +72,7 @@ function ColliderEvent() {
       [0.82, "HCAL", QGA_TOKENS.alpha("pigment-blue-67", 0.16)],
       [1.0, "muon system", QGA_TOKENS.alpha("pigment-blue-67", 0.12)],
     ];
-    ctx.font = QGA_TOKENS.monoPx(9);
+    ctx.font = QGA_TOKENS.monoPx(10);
     for (const [rr, name, col] of rings) {
       ctx.strokeStyle = col; ctx.lineWidth = rr === 1.0 ? 1.5 : 1;
       ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, R * rr), 0, Math.PI * 2); ctx.stroke();
@@ -232,7 +232,7 @@ function GWInspiral() {
     const py0 = h - plotH - 16;
     ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.2);
     ctx.strokeRect(40, py0, w - 60, plotH);
-    ctx.font = QGA_TOKENS.monoPx(9.5); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);
+    ctx.font = QGA_TOKENS.monoPx(10); ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);
     ctx.fillText("strain h(t) — schematic chirp", 46, py0 - 6);
     ctx.strokeStyle = QGA_TOKENS.css("pigment-cyan-78"); ctx.lineWidth = 1.4; ctx.beginPath();
     st.wave.forEach((v, i) => {

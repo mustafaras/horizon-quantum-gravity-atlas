@@ -234,6 +234,7 @@ npm run validate    # repository rules, internal links, formula and provenance a
 | [docs/guide/](docs/guide/README.md) | Visual Atlas, architecture, development and quality gates, design principles, the A–Z appendix |
 | [docs/science/](docs/science/mathematical-formulations.md) | mathematical formulations, module notes, references, and the Kerr and GR science specifications |
 | [docs/whitepaper.md](docs/whitepaper.md) | the companion paper, also in the app at `?view=paper` |
+| [docs/release-verification.md](docs/release-verification.md) | the 2.0.0 release gate: audits, re-measured numbers, performance, known limits |
 | [docs/superpowers/ledger/](docs/superpowers/ledger/README.md) | the project ledger: every change with its evidence, decisions and dated log |
 
 ### Moved sections
@@ -343,8 +344,9 @@ prompts of the [v2 prompt pack](docs/superpowers/plans/horizon-v2/README.md), it
 on (test counts, measurements, screenshots), the decisions taken on the way, and a dated log. Its
 [README](docs/superpowers/ledger/README.md) explains how to read it, and `npm test` rejects an inconsistent ledger.
 
-**Status:** development closed on 2 November 2026 after prompt S35. The last prompt of the pack, S36 (release gate),
-was not run, and the findings still open at that point are listed in the ledger (decision D-214).
+**Status:** all thirty-six prompts are done. Version 2.0.0 passed the release gate (S36) on 2 November 2026; what was
+checked, the re-measured verification record and the known limits are in
+[docs/release-verification.md](docs/release-verification.md).
 
 ---
 

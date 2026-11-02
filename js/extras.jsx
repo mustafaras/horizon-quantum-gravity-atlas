@@ -42,7 +42,7 @@ function OverviewEnergyLadder() {
       const midY = h * 0.52;
       ctx.clearRect(0, 0, w, h);
       // decade ticks: 62 decades, minor labels every 10
-      ctx.font = QGA_TOKENS.monoPx(9);
+      ctx.font = QGA_TOKENS.monoPx(10);
       for (let e = Math.ceil(OVERVIEW_L_MIN / 5) * 5; e <= OVERVIEW_L_MAX; e += 5) {
         const x = xOf(e);
         const major = e % 10 === 0;
@@ -95,11 +95,11 @@ function OverviewEnergyLadder() {
         ctx.arc(x, midY - (i % 2 === 0 ? 0 : 0), 0, 0, Math.PI * 2); ctx.stroke();
         if (below) {
           ctx.fillStyle = QGA_TOKENS.alpha("accent-2", 0.75);
-          ctx.font = QGA_TOKENS.monoPx(9);
+          ctx.font = QGA_TOKENS.monoPx(10);
           ctx.fillText(stop.tag, x, y + 15);
         } else {
           ctx.fillStyle = QGA_TOKENS.alpha("accent-2", 0.75);
-          ctx.font = QGA_TOKENS.monoPx(9);
+          ctx.font = QGA_TOKENS.monoPx(10);
           ctx.fillText(stop.tag, x, y - 22);
         }
         ctx.textAlign = "start";

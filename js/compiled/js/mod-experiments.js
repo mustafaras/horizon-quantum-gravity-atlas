@@ -133,7 +133,7 @@ function ColliderEvent() {
       R = Math.min(w, h) * 0.46;
     // detector rings: tracker, ECAL, HCAL, muon system
     var rings = [[0.55, "tracker", QGA_TOKENS.alpha("pigment-blue-67", 0.25)], [0.68, "ECAL", QGA_TOKENS.alpha("pigment-blue-67", 0.2)], [0.82, "HCAL", QGA_TOKENS.alpha("pigment-blue-67", 0.16)], [1.0, "muon system", QGA_TOKENS.alpha("pigment-blue-67", 0.12)]];
-    ctx.font = QGA_TOKENS.monoPx(9);
+    ctx.font = QGA_TOKENS.monoPx(10);
     for (var _i3 = 0, _rings = rings; _i3 < _rings.length; _i3++) {
       var _rings$_i = _slicedToArray(_rings[_i3], 3),
         rr = _rings$_i[0],
@@ -396,7 +396,7 @@ function GWInspiral() {
     var py0 = h - plotH - 16;
     ctx.strokeStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.2);
     ctx.strokeRect(40, py0, w - 60, plotH);
-    ctx.font = QGA_TOKENS.monoPx(9.5);
+    ctx.font = QGA_TOKENS.monoPx(10);
     ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.5);
     ctx.fillText("strain h(t) — schematic chirp", 46, py0 - 6);
     ctx.strokeStyle = QGA_TOKENS.css("pigment-cyan-78");

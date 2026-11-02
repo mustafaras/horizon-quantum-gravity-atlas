@@ -390,7 +390,7 @@ function MicrostructureViz() {
       var px = function px(q) {
         return [q.x * w, q.y * h];
       };
-      ctx.font = QGA_TOKENS.monoPx(9.5);
+      ctx.font = QGA_TOKENS.monoPx(10);
       var _iterator2 = _createForOfIteratorHelper(_edges),
         _step2;
       try {

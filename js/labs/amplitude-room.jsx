@@ -213,7 +213,7 @@ function QFTScatterCanvas({ process, sqrtS, cosTheta, photonX, tau, fontsReady }
     ctx.fillText("θ = " + (th * 180 / Math.PI).toFixed(0) + "°",
     cx + R * 0.44 * Math.cos(th / 2) - 14, cy - R * 0.44 * Math.sin(th / 2) + 3);
 
-    ctx.font = QGA_TOKENS.monoPx(9.5);
+    ctx.font = QGA_TOKENS.monoPx(10);
     ctx.fillStyle = QGA_TOKENS.alpha("pigment-blue-75-c08", 0.55);
     ctx.fillText("incoming", 8, cy - 8);
     ctx.fillText("forward", cx + R * 1.18 - 42, cy - 8);

@@ -262,7 +262,7 @@
       "id": "F-17",
       "title": "Kerr observatory lacks the Bardeen-curve overlay and an EHT comparison",
       "severity": "medium",
-      "status": "open",
+      "status": "accepted",
       "closedBy": [
         "S25"
       ],
@@ -370,7 +370,7 @@
       "id": "F-27",
       "title": "CPU per-frame buffer uploads (needsUpdate) at ~38 sites in 15 files",
       "severity": "medium",
-      "status": "open",
+      "status": "accepted",
       "closedBy": [
         "S08"
       ],
@@ -1993,20 +1993,37 @@
       "findings": [
         "F-01"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
-      "pr": null,
+      "status": "review",
+      "owner": "local: Claude Code for mustafaras",
+      "branch": "feat/s36-release-gate",
+      "pr": 142,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-02",
       "completedAt": null,
       "evidence": {
-        "tests": [],
-        "screenshots": [],
-        "measurements": []
+        "tests": [
+          "npm test: 1394 pass, 0 fail, 1 pre-existing skip (1382 before S36; new: art-direction 5, render-lifecycle-audit 3, release-verification 4)",
+          "npm run validate: passed, now including the art-direction lint, the render-lifecycle audit and build-release-verification --check",
+          "npm run perf:audit: exit 0; npm run qa:verify: 74 captures, consistent",
+          "qa/specs/release-gate.spec.mjs locally on the pinned Chromium (WebGPU disabled): 2/2 (two laps through nine modules 1.8 min; keyboard focus over 40 Tabs)",
+          "node scripts/perf/collect.mjs --views=overview,qft,bh --viewports=desktop (S05 configuration): written to docs/audit/s36-release.json, no page errors"
+        ],
+        "screenshots": [
+          "docs/audit/s36-release.json"
+        ],
+        "measurements": [
+          "S03-S28 verification record: 155 ledger measurements classed (24 recomputed, 66 node:test, 33 browser/GPU spec, 8 timing, 19 static count, 5 source reading); 49 values recomputed from the science modules, 49/49 within the ledger's quoted precision",
+          "first frame, desktop, software rasteriser: overview 5293 (S01) / 5343 (S05) -> 516 ms; qft 4732 / 5860 -> 705 ms; bh 5320 / 6275 -> 2275 ms",
+          "CPU frame p50 / p95: overview 199.9 / 233.3 -> 99.9 / 115.9 ms; qft 216.6 / 250.1 -> 99.0 / 117.6 ms; bh 583.2 / 683.3 -> 100.0 / 183.4 ms (S01 -> 2.0.0, same machine)",
+          "JS shipped 10.69-10.80 MB -> 8.47 MB; Babel in production 3251-3987 ms -> 0; idle frames with scenes paused 0/s in all three views; live renderers unchanged (2, 4, 4)",
+          "art direction: canvas labels below the 10 px floor 7 -> 0; blurred text-shadow on .axis/.label/.readout 0; canvas 2D contexts outside the allowlist 0 (20 sites in 13 files allowlisted with reasons)",
+          "render lifecycle: unpaired acquisitions 0 (1 worker, 2 audio contexts, 12 observers, 44 listeners, 38 animation frames, 7 intervals, 4 render targets, 1 media stream), 5 documented exceptions",
+          "release-gate spec: renderers and scenes on lap 2 <= lap 1 for all nine modules; live renderers <= 4; console and page errors 0; >= 15 distinct focus stops in 40 Tabs",
+          "manual review: 74 of 74 captures looked at; 3 low-severity observations (gr-flamm labels cut at the edge, approaches-cdt shows the 2-D fallback, bh-page-curve legend label), 0 blank"
+        ]
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Release gate done for 2.0.0: art-direction and lifecycle audits in validate, the S03-S28 record re-measured and documented in docs/release-verification.md, a browser release-gate spec in qa:critical, performance against S01 and S05, a manual review of all captures, version 2.0.0. F-01 closes with the merge; F-17 and F-27 are accepted (D-216, D-217). See D-215 to D-219."
     }
   ],
   "decisions": [
@@ -3507,6 +3524,41 @@
       "prompt": "S35",
       "decision": "The owner closed development after S35. S36 (release gate) is not run and stays todo. Findings still open at closure: F-01 (closedBy S32-S34 and S36; the S36 part is not done), F-17 (closedBy S25, Bardeen-curve overlay and EHT comparison on the Kerr observatory) and F-27 (closedBy S08, about 38 CPU per-frame needsUpdate sites); they are left open rather than marked accepted, because no one has checked them against the code since. The JOSS-style paper/paper.md is kept as a description of the software and will not be submitted; the README WebM loop stays uncommitted (D-211). The README's Roadmap section states the closure.",
       "rationale": "The ledger should say where the work stopped and what was left, so that anyone resuming starts from the record instead of from memory. Accepting the open findings would need the evidence S36 was meant to gather."
+    },
+    {
+      "id": "D-215",
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "decision": "The owner reopened the work the same day and asked for S36 in full; this supersedes D-214's 'S36 is not run' and its leaving F-01, F-17 and F-27 open. PR 138 was closed unmerged on the owner's instruction. The project closure note in the README is replaced by the release status.",
+      "rationale": "D-214 recorded a stop the owner then reversed; the ledger keeps both rather than rewriting the first."
+    },
+    {
+      "id": "D-216",
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "decision": "F-17 is accepted, not closed. S25 delivered the Bardeen critical curve (tested against sqrt(27) M and the a = 0.998 flattening) and the EHT comparison with its calibration caveat. Not delivered: the screen-space overlay aligned to the ray-traced shadow edge, and the Kerr Formula Lens over the image.",
+      "rationale": "Both need the closest-approach radius per pixel from the TSL integrator, which runs only with WebGPU; CI runs Chromium with WebGPU disabled, so neither could be verified, and v1 Prompt 13 forbids adding a feature at the release gate. The science they would display is already on screen beside the image."
+    },
+    {
+      "id": "D-217",
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "decision": "F-27 is accepted, not closed. S08 brought the large per-frame uploads to zero (backdrop, Hawking particles, RG tracers, collider towers). Of today's needsUpdate sites in js/ (19 in source; perf:audit counts 38 because it also reads js/compiled), most are one-off texture builds or uploads on a parameter change; eight still upload every frame, in four small schematic meshes: the gravitational-wave sheet (js/mod-experiments.jsx, 3), the QFT field-lab surface (js/visualizations/qft/field-lab.mjs, 3, kept by S08), the Planck lattice (js/labs/planck-labs.jsx, 1) and the overview dust (js/extras.jsx, 1).",
+      "rationale": "Moving them to GPU compute is new rendering work for the release gate, which v1 Prompt 13 rules out; the measured CPU frame at release (p95 116-183 ms on the software rasteriser against 233-683 ms at S01) shows them off the critical path."
+    },
+    {
+      "id": "D-218",
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "decision": "The art-direction checks are automated in scripts/lib/art-direction.mjs (in validate): the 10 px floor covers CSS and the token font helpers; the text-shadow rule applies to .axis, .label and .readout as the prompt names them, so the 3-D scene labels (.s3d-label, .s3d-hint) keep their legibility halo; Figure Kit coverage is enforced as an allowlist of canvas 2D contexts with a reason each. The check found seven canvas labels at 9 and 9.5 px, raised to 10 px. One focal mark per figure and layer tags stay with figure() and qa/specs/provenance-layers.spec.mjs. The render-lifecycle audit is static (scripts/audit-render-lifecycle.mjs); its browser half is qa/specs/release-gate.spec.mjs, added to qa:critical.",
+      "rationale": "A rule that only a reviewer remembers decays; each check now fails validation, with a synthetic tree in its test proving that it would."
+    },
+    {
+      "id": "D-219",
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "decision": "Re-measuring the S03-S28 record: each of the 155 measurements is classed by how it is re-measured (scripts/release/remeasure.mjs, a test holds the classes to the ledger's counts); the 24 entries the science modules compute in Node are recomputed as 49 values, compared at the precision the ledger quotes, and written into docs/release-verification.md by a generator that validate checks. Browser and GPU entries are re-run by their named specs in CI, timings by perf:collect (run locally with the S05 configuration), static counts by perf:audit (expected to have moved), and the five source readings are not repeated. The manual review looked at all 74 captures as contact sheets and recorded three low-severity observations without refreshing a baseline. Version 2.0.0, date-released 2026-11-02.",
+      "rationale": "Retyping or re-reading 155 numbers by hand would add transcription error to a verification step; recomputing what can be recomputed and naming where the rest is re-run makes the check repeatable."
     }
   ],
   "log": [
@@ -4356,6 +4408,20 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "note",
       "detail": "Development closed by the owner after S35 (D-214). S36 not run; F-01, F-17 and F-27 left open; the paper draft will not be submitted. PR 138 (the S35 starter) is left open for the owner to close: its numbers describe the tree before S35 and the ledger now holds the record. Remote and local main synchronised; local branches already merged into main removed (their commits are on main or kept on origin)."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "claimed",
+      "detail": "The owner reopened the work the same day and asked for S36 to be done in full ('kendin yap herşeyi sıradakini de uygula'); this supersedes the 'S36 not run' part of D-214. Claimed on feat/s36-release-gate from main 9097a95, where npm test (1382 pass, 0 fail, 1 skipped), npm run validate and perf:audit are green. PR 138 closed unmerged on the owner's instruction."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "review",
+      "detail": "PR 142 in review. Art-direction and render-lifecycle audits in validate (seven sub-10 px canvas labels fixed); the S03-S28 record re-measured (49/49 within precision) in docs/release-verification.md; release-gate spec 2/2 locally and in qa:critical; performance against S01/S05 (first frame 5293 -> 516 ms on the overview); manual review of 74 captures; version 2.0.0. npm test 1394/0/1 skip, validate and perf:audit green. F-17 and F-27 accepted (D-216, D-217); F-01 closes with the merge. Decisions D-215 to D-219."
     }
   ]
 }
