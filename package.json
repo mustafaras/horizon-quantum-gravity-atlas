@@ -13,7 +13,7 @@
     "dev": "npx --yes serve .",
     "serve": "python3 -m http.server 8000",
     "test": "node --test test/*.test.mjs",
-    "validate": "node scripts/validate-repo.mjs && node scripts/audit-formulas.mjs && node scripts/audit-provenance.mjs && node scripts/build-cover-index.mjs --check && node scripts/build-theme-surfaces.mjs --check && node scripts/build-whitepaper.mjs --check",
+    "validate": "node scripts/validate-repo.mjs && node scripts/audit-formulas.mjs && node scripts/audit-provenance.mjs && node scripts/audit-render-lifecycle.mjs && node scripts/build-cover-index.mjs --check && node scripts/build-theme-surfaces.mjs --check && node scripts/build-whitepaper.mjs --check",
     "build:themes": "node scripts/build-theme-surfaces.mjs",
     "build:whitepaper": "node scripts/build-whitepaper.mjs",
     "check": "npm run validate",

@@ -195,7 +195,7 @@ function MicrostructureViz() {
     } else {
       const { nodes, edges } = netRef.current;
       const px = (q) => [q.x * w, q.y * h];
-      ctx.font = QGA_TOKENS.monoPx(9.5);
+      ctx.font = QGA_TOKENS.monoPx(10);
       for (const e of edges) {
         const [x1, y1] = px(nodes[e.a]), [x2, y2] = px(nodes[e.b]);
         const pulse = prm ? 0.5 : 0.4 + 0.25 * Math.sin(tt * 1.4 + e.a + e.b);
