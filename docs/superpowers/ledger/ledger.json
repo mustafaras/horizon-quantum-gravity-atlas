@@ -1902,13 +1902,16 @@
         "F-01",
         "F-05"
       ],
-      "status": "review",
+      "status": "done",
       "owner": "local: Claude Code for mustafaras",
       "branch": "feat/s34-theme-button",
       "pr": 135,
-      "commits": [],
+      "commits": [
+        "1c08f24ba53a7353ec76aca450b379cd8d18ee06",
+        "1205f6a5f30ec425cf177adbaa667e29e3899de4"
+      ],
       "startedAt": "2026-11-01",
-      "completedAt": null,
+      "completedAt": "2026-11-02",
       "evidence": {
         "tests": [
           "npm test: 1359 pass, 0 fail, 1 pre-existing skip (1267 passing before S34, 92 more now)",
@@ -3423,6 +3426,13 @@
       "prompt": "S34",
       "decision": "Print's dark-panel gap (D-201) is closed by two generated stylesheets, styles/themes/blueprint-surfaces.css and print-surfaces.css, written by scripts/build-theme-surfaces.mjs from every colour literal in the module stylesheets through the same OKLCH rule as scene pigments, with text drawn on a panel held to 4.7:1 on the measured panel ground. npm run validate fails when they are stale and tests fail on a new categorical-colour text rule. Sixteen baselines (theme-{blueprint,print}-{approaches,bh,exp,gr,planck,qft,rg,sm}.png) were added: each is a first capture on the CI platform after its evidence image was looked at, so no earlier baseline existed and none was refreshed to make a test pass. Observatory has none of its own: its pixels are unchanged by construction.",
       "rationale": "About 530 literals cannot be moved to tokens by hand without a way to see the result; the generator keeps the sources as authored, covers every new literal, and was checked page by page in the evidence images. The generated files are an output of a committed script, like js/compiled, and were not edited by hand."
+    },
+    {
+      "id": "D-206",
+      "date": "2026-11-02",
+      "prompt": "S34",
+      "decision": "S34 is done with one known intermittent test: in the Print theme the skip-link test (a11y.spec.mjs, 'skip link is the first Tab stop') failed in three full Theme QA runs (41308877271, 41329350871, 41331577416) and passed in others (41316341191, 41326940080, 41350760937); run alone it passed in all three themes (41333763539). It never failed in Observatory or Blueprint. The first Tab stop was <body>. A wait for page focus was added and the failure message now reports the skip link's computed state and the first tabbable elements, but the root cause was not found.",
+      "rationale": "A test that passes alone and fails only inside the long Print run, with nothing in the skip link's CSS that touches focus (the generated Print sheet changes its colour only), is not shown to be a theme defect, and it is also known from S17 as a test that fails under load. Holding the prompt open for it would have blocked S35 without evidence of a defect. It is recorded so the next failure comes with data instead of a guess."
     }
   ],
   "log": [
@@ -4237,6 +4247,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "review",
       "detail": "PR 135 carries the rest of S34 and is in review. CI: a11y spec 67/67 in Observatory, Blueprint and Print; themes.spec.mjs 11/11; evidence 18/18; pull-request Browser QA pass. 16 Blueprint and Print baselines added from the CI platform after reading their evidence images. D-199 to D-201 are superseded by D-202 to D-205; known limits D-198 and D-203. F-01 stays open for S36, F-05 closed in S02."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "done",
+      "detail": "Merged PR 134 as 1c08f24 and PR 135 as 1205f6a; GitHub Pages deployed 1205f6a and the live site serves the generated Blueprint and Print stylesheets, the theme button and the new index.html links. Last full Theme QA (41350760937): a11y 67/67 in Observatory, Blueprint and Print, theme specs 11/11, evidence 18/18, baselines matching. One intermittent test is recorded in D-206. F-01 stays open for S36; F-05 was closed in S02. PR 136 (a revert of 134, opened when the owner first said the themes were unwanted) was closed unmerged."
     }
   ]
 }
