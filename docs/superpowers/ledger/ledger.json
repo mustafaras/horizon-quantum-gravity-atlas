@@ -1915,7 +1915,7 @@
         "measurements": []
       },
       "blockers": [],
-      "notes": ""
+      "notes": "Attempted and reverted at the owner's request (D-195): PR 134 (1c08f24) was merged and then undone in full. The owner does not want the themes. Open question for the owner before S35: skip S34, or re-scope it (the accessible figures were reverted with the themes)."
     },
     {
       "id": "S35",
@@ -3326,6 +3326,13 @@
       "prompt": "S33",
       "decision": "The vendored React production builds were taken from the official npm 18.3.1 tarballs, whose sha512 digests were checked against the registry's dist.integrity before use.",
       "rationale": "The prompt requires the pinned version with SRI. Obtaining the files any other way would have meant trusting an unverified mirror, which is exactly what the self-hosting rule exists to prevent. The tarball hashes matched the registry exactly, and the SRI values in index.html are computed from the vendored bytes."
+    },
+    {
+      "id": "D-195",
+      "date": "2026-11-02",
+      "prompt": "S34",
+      "decision": "S34 was reverted in full at the owner's request and stays todo. The owner does not want the themes. PR 134 was undone with a revert of its merge commit, and the S33 ledger close (9ee9306), which had reached main only inside that merge, was restored on top. PR 135 was closed without merging. Everything is still in the git history: the merge commit 1c08f24, the branch feat/s34-theme-button (a836343) and its CI runs.",
+      "rationale": "A visual feature the owner does not want should not stay on the live site. Reverting the whole merge, not just the theme files, was the owner's explicit choice over keeping the accessible figures. The work was verified in CI before it was dropped (a11y spec 67/67 in all three themes in the last full run), so it can be recovered from the branch if the decision changes."
     }
   ],
   "log": [
@@ -4112,6 +4119,13 @@
       "agent": "local: Copilot for mustafaras",
       "event": "done",
       "detail": "Merged PR #132 as c933e58. Production loads 59 committed compiled JSX files and the React 18.3.1 production build with no Babel; the module worker carries the heavy science behind a one-job-per-channel protocol; the service worker precaches a subpath-scoped shell and never caches GWOSC. babelMs 3987 -> 0 ms, first frame 5293 -> 519 ms. F-18 closed; F-01 stays open for S34 and S36."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S34",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "note",
+      "detail": "S34 was attempted and reverted at the owner's request (D-195). PR 134 (1c08f24) had put the token themes, theme runtime, scene restyling, sonification, live summaries, 3D text alternatives and the S02 alias removal on main and on GitHub Pages; the revert restores main to the S33 state plus the S33 ledger close. PR 135 (visible theme button, generated Blueprint and Print stylesheets, baselines) is closed unmerged. S34 stays todo."
     }
   ]
 }
