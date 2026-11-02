@@ -15,9 +15,9 @@ date: 2 November 2026
 bibliography: paper.bib
 ---
 
-<!-- JOSS-style DRAFT (S35). Not submitted. Before submission the author must add an affiliation (JOSS requires one),
-     an ORCID if wanted, complete the state-of-the-field comparison with references they have checked, and re-measure
-     the counts quoted below. -->
+<!-- JOSS-style DRAFT (S35), kept as a written description of the software. The owner decided on 2026-11-02 not to
+     submit it (ledger D-214). A submission would need an affiliation (JOSS requires one), a state-of-the-field
+     comparison with checked references, and the counts below re-measured. -->
 
 # Summary
 

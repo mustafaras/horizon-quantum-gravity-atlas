@@ -343,6 +343,9 @@ prompts of the [v2 prompt pack](docs/superpowers/plans/horizon-v2/README.md), it
 on (test counts, measurements, screenshots), the decisions taken on the way, and a dated log. Its
 [README](docs/superpowers/ledger/README.md) explains how to read it, and `npm test` rejects an inconsistent ledger.
 
+**Status:** development closed on 2 November 2026 after prompt S35. The last prompt of the pack, S36 (release gate),
+was not run, and the findings still open at that point are listed in the ledger (decision D-214).
+
 ---
 
 ## Citation
