@@ -12,7 +12,7 @@
 /* A 44 px target without a 44 px bar: the element is tall, the visible track stays 3 px, centred. */
 .causal-set-lab .viz-toolbar input[type="range"] {
   height: 44px;
-  background: linear-gradient(90deg, var(--accent), rgba(148,176,224,0.18)) center / 100% 3px no-repeat;
+  background: linear-gradient(90deg, var(--acc), rgba(148,176,224,0.18)) center / 100% 3px no-repeat;
   border-radius: 2px;
 }
 .causal-set-lab .causal-seed input[type="range"] { width: clamp(90px, 16vw, 160px); }

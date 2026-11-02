@@ -49,16 +49,6 @@ async function bootstrap() {
       configurable: true,
     });
 
-    // Themes (S34): Observatory, Blueprint, Print. The controller flips <html data-theme> and dispatches `qga:theme`
-    // on document, which clears the token cache and repaints canvas figures and three.js scenes.
-    const themes = await import("./design/theme.mjs");
-    let storage = null;
-    try { storage = window.localStorage; } catch { /* blocked storage: the choice lasts for this page only */ }
-    Object.defineProperty(window, "QGA_THEME", {
-      value: themes.createThemeController({ document, storage, search: window.location.search, target: window }),
-      configurable: true,
-    });
-
     // Kerr observatory (science-backed, Node-testable) exposed to the classic-script runtime.
     const kerr = await import("./visualizations/kerr/kerr-observatory.mjs");
     kerr.registerKerrObservatoryProvenance();
@@ -347,14 +337,14 @@ async function bootstrap() {
     const { library: formulaLibrary } = await import("./formula/library/index.mjs");
     const { compileTSL } = await import("./formula/to-tsl.mjs");
     const { toTeX, KATEX_OPTIONS } = await import("./formula/to-tex.mjs");
-    const { lens: formulaLens, termLabel: formulaTermLabel } = await import("./formula/lens.mjs");
+    const { lens: formulaLens } = await import("./formula/lens.mjs");
     // Derivations (S30): the six arguments the stepper walks, and the pure state machine it draws.
     const { derivations } = await import("./formula/library/derivations.mjs");
     const stepper = await import("./formula/stepper.mjs");
     const derivationById = Object.freeze(Object.fromEntries(Object.values(derivations).map((d) => [d.id, d])));
     Object.defineProperty(window, "QGA_FORMULA", {
       value: Object.freeze({
-        library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS, lens: formulaLens, termLabel: formulaTermLabel,
+        library: formulaLibrary, compileTSL, toTeX, KATEX_OPTIONS, lens: formulaLens,
         derivations, stepper, derivation: (id) => derivationById[id] ?? null,
       }),
       configurable: true,
@@ -485,10 +475,6 @@ async function bootstrap() {
       }),
       configurable: true,
     });
-
-    // Text alternatives for 3D scenes (S34): model, status and Formula Core values appended to the author's sentence.
-    const sceneAltText = await import("./render/scene-alt-text.mjs");
-    Object.defineProperty(window, "QGA_SCENE_ALT", { value: Object.freeze({ ...sceneAltText }), configurable: true });
 
     const sceneLayers = await import("./render/scene-layers.mjs");
     Object.defineProperty(window, "QGA_LAYERS", {

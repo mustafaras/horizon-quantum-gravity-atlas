@@ -29,7 +29,7 @@
     },
     "js/core.jsx": {
       "output": "js/compiled/js/core.js",
-      "bytes": 34510
+      "bytes": 34511
     },
     "js/figure/katex-overlay.jsx": {
       "output": "js/compiled/js/figure/katex-overlay.js",
@@ -37,11 +37,11 @@
     },
     "js/figure/Figure.jsx": {
       "output": "js/compiled/js/figure/Figure.js",
-      "bytes": 18263
+      "bytes": 15298
     },
     "js/scene3d.jsx": {
       "output": "js/compiled/js/scene3d.js",
-      "bytes": 82767
+      "bytes": 80350
     },
     "js/search/command-palette.jsx": {
       "output": "js/compiled/js/search/command-palette.js",
@@ -137,7 +137,7 @@
     },
     "js/labs/curvature-engine-lab.jsx": {
       "output": "js/compiled/js/labs/curvature-engine-lab.js",
-      "bytes": 24941
+      "bytes": 24879
     },
     "js/labs/tidal-lab.jsx": {
       "output": "js/compiled/js/labs/tidal-lab.js",
@@ -209,7 +209,7 @@
     },
     "js/labs/atlas-map.jsx": {
       "output": "js/compiled/js/labs/atlas-map.js",
-      "bytes": 37990
+      "bytes": 37984
     },
     "js/tours/tour-panel.jsx": {
       "output": "js/compiled/js/tours/tour-panel.js",
@@ -233,7 +233,7 @@
     },
     "js/mod-blackholes.jsx": {
       "output": "js/compiled/js/mod-blackholes.js",
-      "bytes": 88183
+      "bytes": 88120
     },
     "js/mod-experiments.jsx": {
       "output": "js/compiled/js/mod-experiments.js",
@@ -241,11 +241,11 @@
     },
     "js/extras.jsx": {
       "output": "js/compiled/js/extras.js",
-      "bytes": 101776
+      "bytes": 101757
     },
     "js/app.jsx": {
       "output": "js/compiled/js/app.js",
-      "bytes": 56458
+      "bytes": 55033
     }
   }
 }

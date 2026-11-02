@@ -156,22 +156,22 @@ test("simulateCvd: severity 0 is identity, 1 applies the matrix, intermediate se
 test("styles/tokens.css parses: one :root rule, aliases resolve, no dangling var()", () => {
   assert.equal([...tokensCss.matchAll(/:root\s*\{/g)].length, 1, "exactly one :root rule");
   for (const [name, value] of Object.entries(values)) assert.ok(!/var\(/.test(value), `${name} still has var(): ${value}`);
-  assert.equal(values["--accent-soft"], "rgba(84, 174, 255, 0.16)");
-  assert.equal(values["--ink-dim"], "#93a1ba");
+  assert.equal(values["--text"], values["--ink"]);
+  assert.equal(values["--acc"], values["--accent"]);
   assert.throws(() => parseTokensCss(":root{--a:var(--b);--b:var(--a);}"), /circular/);
   assert.throws(() => parseTokensCss(":root{--a:var(--missing);}"), /undefined/);
   assert.equal(parseTokensCss(":root{--a:var(--missing, 3px);}")["--a"], "3px");
 });
 
-test("the Observatory values of the former legacy names are unchanged under their S02 names", () => {
+test("legacy names keep their pre-S02 values exactly", () => {
   const legacy = {
-    "--surface-0": "#05080f", "--surface-1": "#080d1a", "--surface-glass": "rgba(16, 22, 38, 0.72)", "--surface-2": "#0c1322",
-    "--rule": "rgba(120, 160, 220, 0.14)", "--rule-strong": "rgba(120, 160, 220, 0.28)", "--ink": "#e8eef8",
-    "--ink-dim": "#93a1ba", "--ink-strong": "#f3f7fe", "--accent": "#54aeff", "--accent-2": "#46d4e0",
-    "--signal-warm": "#ffb454", "--accent-soft": "rgba(84, 174, 255, 0.16)", "--signal-danger": "#ff7b72",
+    "--bg": "#05080f", "--bg-2": "#080d1a", "--panel": "rgba(16, 22, 38, 0.72)", "--panel-solid": "#0c1322",
+    "--line": "rgba(120, 160, 220, 0.14)", "--line-strong": "rgba(120, 160, 220, 0.28)", "--text": "#e8eef8",
+    "--text-dim": "#93a1ba", "--head": "#f3f7fe", "--acc": "#54aeff", "--acc-2": "#46d4e0", "--cyan": "#46d4e0",
+    "--gold": "#ffb454", "--acc-soft": "rgba(84, 174, 255, 0.16)", "--danger": "#ff7b72",
     "--font-head": '"Space Grotesk", system-ui, sans-serif', "--font-body": '"Sora", system-ui, sans-serif',
     "--font-mono": '"IBM Plex Mono", monospace', "--radius": "13px", "--sidebar-w": "276px",
-    "--surface-glass-thin": "rgba(11, 16, 27, 0.55)", "--surface-glass-strong": "rgba(9, 13, 22, 0.8)",
+    "--glass": "rgba(11, 16, 27, 0.55)", "--glass-strong": "rgba(9, 13, 22, 0.8)",
     "--edge": "rgba(150, 180, 230, 0.16)", "--edge-bright": "rgba(150, 180, 230, 0.34)",
   };
   for (const [name, value] of Object.entries(legacy)) assert.equal(values[name], value, name);

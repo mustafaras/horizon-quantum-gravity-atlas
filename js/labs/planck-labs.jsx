@@ -261,7 +261,7 @@ function ScaleLadder() {
           {LADDER_STOPS.map((s) => (
             <button key={s.log} className={"ladder-stop" + (s.log === active.log ? " on" : "")}
               onClick={() => setLogL(s.log)}
-              style={{ cursor: "pointer", background: "none", border: "1px solid " + (s.log === active.log ? "var(--rule-strong)" : "transparent"), font: "inherit", color: "inherit", textAlign: "left", width: "100%" }}>
+              style={{ cursor: "pointer", background: "none", border: "1px solid " + (s.log === active.log ? "var(--line-strong)" : "transparent"), font: "inherit", color: "inherit", textAlign: "left", width: "100%" }}>
               <span className="ls-len">10{supScript(s.log)} m</span>
               <span className="ls-name">{s.name.split(" — ")[0]}</span>
             </button>

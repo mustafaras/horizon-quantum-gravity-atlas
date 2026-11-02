@@ -4,13 +4,13 @@
 function HorizonMark({ className }) {
   return (
     <svg className={className} viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <circle cx="20" cy="20" r="18" stroke="var(--accent)" strokeWidth="0.8" opacity="0.28"></circle>
-      <circle cx="20" cy="20" r="12.5" stroke="var(--accent)" strokeWidth="1" opacity="0.55"></circle>
+      <circle cx="20" cy="20" r="18" stroke="var(--acc)" strokeWidth="0.8" opacity="0.28"></circle>
+      <circle cx="20" cy="20" r="12.5" stroke="var(--acc)" strokeWidth="1" opacity="0.55"></circle>
       <circle cx="20" cy="20" r="6.6" fill={QGA_TOKENS.css("pigment-grey-11")}></circle>
-      <circle cx="20" cy="20" r="6.6" stroke="var(--signal-warm)" strokeWidth="1.4"></circle>
-      <circle cx="20" cy="20" r="6.6" stroke="var(--signal-warm)" strokeWidth="3" opacity="0.18"></circle>
+      <circle cx="20" cy="20" r="6.6" stroke="var(--gold)" strokeWidth="1.4"></circle>
+      <circle cx="20" cy="20" r="6.6" stroke="var(--gold)" strokeWidth="3" opacity="0.18"></circle>
       <g className="bm-orbit">
-        <circle cx="32.5" cy="20" r="2.1" fill="var(--accent)"></circle>
+        <circle cx="32.5" cy="20" r="2.1" fill="var(--acc)"></circle>
         <circle cx="7.5" cy="20" r="1.2" fill={QGA_TOKENS.css("pigment-blue-90")} opacity="0.7"></circle>
       </g>
     </svg>
@@ -470,35 +470,12 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
   // apply tweaks to CSS custom properties + motion attribute
   useEffect(() => {
     const root = document.documentElement;
+    root.style.setProperty("--acc", t.accent);
+    root.style.setProperty("--acc-soft", t.accent + "24");
     root.style.setProperty("font-size", t.uiScale + "px");
     document.body.style.fontSize = t.uiScale + "px";
     root.setAttribute("data-motion", effMotion);
-  }, [t.uiScale, effMotion]);
-
-  // The accent tweak belongs to the Observatory theme only: Blueprint and Print carry accents whose contrast was
-  // checked on their own surfaces, so an inline override is removed while one of them is active.
-  useEffect(() => {
-    const root = document.documentElement;
-    const apply = () => {
-      if ((root.getAttribute("data-theme") || "observatory") === "observatory") {
-        root.style.setProperty("--accent", t.accent);
-        root.style.setProperty("--accent-soft", t.accent + "24");
-      } else {
-        root.style.removeProperty("--accent");
-        root.style.removeProperty("--accent-soft");
-      }
-    };
-    apply();
-    document.addEventListener("qga:theme", apply);
-    return () => document.removeEventListener("qga:theme", apply);
-  }, [t.accent]);
-
-  const [themeId, setThemeId] = useState(() => window.QGA_THEME.get());
-  useEffect(() => {
-    const sync = () => setThemeId(window.QGA_THEME.get());
-    document.addEventListener("qga:theme", sync);
-    return () => document.removeEventListener("qga:theme", sync);
-  }, []);
+  }, [t.accent, t.uiScale, effMotion]);
 
   const starfieldOn = !!t.starfield && t.vizMode !== "minimal";
   const motionScale = effMotion === "reduced" ? 0 : effMotion === "balanced" ? 0.55 : 1;
@@ -581,7 +558,7 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
       {menuOpen ? (
         <div className="mobile-menu" role="dialog" aria-label="Navigation menu">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <span className="brand-title" style={{ fontFamily: "var(--font-head)", color: "var(--ink-strong)", fontWeight: 700, letterSpacing: "0.2em" }}>HORIZON</span>
+            <span className="brand-title" style={{ fontFamily: "var(--font-head)", color: "var(--head)", fontWeight: 700, letterSpacing: "0.2em" }}>HORIZON</span>
             <button className="menu-btn" onClick={() => setMenuOpen(false)}>CLOSE ✕</button>
           </div>
           <NavList view={view} go={go}></NavList>
@@ -629,9 +606,6 @@ function App() {  const [t, setTweak] = useTweaks(QGA_TWEAK_DEFAULTS);
           options={["beginner", "student", "advanced"]}
           onChange={(v) => setAtlasState({ pathway: v }, { replace: false })}></TweakRadio>
         <TweakSection label="Theme"></TweakSection>
-        <RenderSetting label="Colour theme" value={themeId}
-          options={window.QGA_THEME.ids}
-          onChange={(v) => window.QGA_THEME.set(v)}></RenderSetting>
         <TweakColor label="Accent" value={t.accent}
           options={[QGA_TOKENS.css("accent"), QGA_TOKENS.css("accent-2"), QGA_TOKENS.css("signal-danger"), QGA_TOKENS.css("signal-warm")]}
           onChange={(v) => setTweak("accent", v)}></TweakColor>

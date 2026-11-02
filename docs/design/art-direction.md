@@ -113,4 +113,4 @@ const material = new MeshBasicMaterial({ color: TK.hex("accent") });
 const emitter = new Color().fromArray(TK.linearRef("emit-hawking-cold"));
 ```
 
-`qga:theme` dispatched on `document` invalidates the cache; `onThemeChange(cb)` receives the fresh snapshot. Canvas figures repaint at once, and three.js scenes restyle their colour nodes in place (`js/render/theme-materials.mjs`). The three themes, their checks and the accessible-figure features are specified in [themes.md](themes.md).
+`qga:theme` dispatched on `document` invalidates the cache; `onThemeChange(cb)` receives the fresh snapshot. Scenes pick it up the next time they are built.

@@ -2,13 +2,7 @@
 // mobile overflow containment, touch-target size, horizontal chart scrolling.
 
 import { test, expect } from "playwright/test";
-import { gotoReady as gotoReadyBase } from "./helpers.mjs";
-
-// S34: the same spec runs in every theme. `QGA_QA_THEME=observatory|blueprint|print` (default observatory) is added to every
-// URL as `?theme=`; `npm run qa:test:themes` runs the three in turn. Only the colours differ, so any structural,
-// focus or target-size failure that appears in one theme alone is a theme bug.
-const THEME = process.env.QGA_QA_THEME || "observatory";
-const gotoReady = (page, url, ...rest) => gotoReadyBase(page, `${url}${url.includes("?") ? "&" : "?"}theme=${THEME}`, ...rest);
+import { gotoReady } from "./helpers.mjs";
 
 const VIEWS = ["overview", "sm", "qft", "rg", "gr", "planck", "approaches", "bh", "exp", "glossary", "symbols", "refs", "open", "paper", "compare"];
 

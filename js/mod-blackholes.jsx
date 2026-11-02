@@ -723,7 +723,7 @@ function BlackHoleLab3D() {
           ))}
         </div>
       </div>
-      <Scene3D animated height={460} shotSpace="bh-kerr" describe={{ formulaId: "schwarzschild-radius" }} aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
+      <Scene3D animated height={460} shotSpace="bh-kerr" aria="Ray-traced Kerr black hole with a lensed accretion disk, photon ring and physical readouts. Click a feature to focus it."
         initial={{ ...kerrCameraGoal(atlasState.bhInclination, atlasState.bhObserverDistance, 0.35), fov: 40, minR: 12, maxR: 120 }}
         cameraGoal={cameraGoal}
         overlay={<KerrGeometryMap geometry={eased} exact={exactGeometry} layers={layers} open={mapOpen}

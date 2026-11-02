@@ -17,7 +17,7 @@ html[data-motion="reduced"] .fc-readout { animation: none !important; }
   z-index: 60; display: flex; align-items: center; gap: 12px;
   max-width: min(720px, calc(100vw - 24px));
   padding: 8px 12px; border-radius: 12px;
-  background: rgba(6, 10, 20, 0.82); border: 1px solid var(--rule-strong);
+  background: rgba(6, 10, 20, 0.82); border: 1px solid var(--line-strong);
   backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 .cinema-play { flex: 0 0 auto; min-width: 38px; }
@@ -25,21 +25,21 @@ html[data-motion="reduced"] .fc-readout { animation: none !important; }
   flex: 1 1 120px; min-width: 90px; height: 4px; border-radius: 2px;
   background: rgba(148, 176, 224, 0.16); overflow: hidden;
 }
-.cinema-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transform-origin: left center; transition: transform 0.2s linear; }
+.cinema-progress-fill { height: 100%; background: var(--acc); border-radius: 2px; transform-origin: left center; transition: transform 0.2s linear; }
 .cinema-title { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .cinema-chapter {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--accent);
+  text-transform: uppercase; color: var(--acc);
 }
-.cinema-shot-title { font-size: 12px; color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cinema-annot { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cinema-shot-title { font-size: 12px; color: var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cinema-annot { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cinema-control { flex: 0 0 auto; white-space: nowrap; }
 .cinema-notice {
   position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%);
   z-index: 60; display: flex; align-items: center; gap: 12px;
   max-width: min(620px, calc(100vw - 24px));
   padding: 8px 12px; border-radius: 10px;
-  font-size: 12px; color: var(--ink-strong);
+  font-size: 12px; color: var(--head);
   background: rgba(30, 16, 22, 0.88); border: 1px solid rgba(255, 138, 168, 0.42);
   backdrop-filter: blur(8px);
 }

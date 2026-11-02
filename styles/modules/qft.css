@@ -19,7 +19,7 @@
 .qft-plots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .qft-panel {
   margin: 0; display: flex; flex-direction: column; position: relative; overflow: hidden;
-  border: 1px solid var(--rule); border-radius: 10px;
+  border: 1px solid var(--line); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
 }
 .qft-panel::before {
@@ -28,17 +28,17 @@
 }
 .qft-panel-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-  padding: 8px 12px; border-bottom: 1px solid var(--rule);
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
   background: rgba(10,16,28,0.72);
 }
 .qft-panel-title {
   display: flex; align-items: center; gap: 7px; flex: none;
   font: 600 10px/1 var(--font-mono); letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--ink-strong);
+  text-transform: uppercase; color: var(--head);
 }
 .qft-panel-title::before {
   content: ""; width: 5px; height: 5px; flex: none; border-radius: 1px;
-  background: var(--accent); box-shadow: 0 0 7px rgba(84,174,255,0.75);
+  background: var(--acc); box-shadow: 0 0 7px rgba(84,174,255,0.75);
 }
 .qft-panel-note {
   font: 400 10px/1.35 var(--font-mono); letter-spacing: 0.06em;
@@ -58,7 +58,7 @@
 .eq-inline .katex { font-size: 1em; }
 .qft-transport-strip {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 8px 12px; border: 1px solid var(--rule); border-radius: 10px;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.72), rgba(7,11,19,0.9));
 }
 .qft-transport-label {
@@ -68,7 +68,7 @@
 }
 .qft-transport-label::before {
   content: ""; width: 5px; height: 5px; flex: none; border-radius: 50%;
-  background: var(--accent-2); box-shadow: 0 0 8px rgba(70,212,224,0.8);
+  background: var(--cyan); box-shadow: 0 0 8px rgba(70,212,224,0.8);
 }
 .qft-transport-strip .gw-transport {
   flex: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none;
@@ -81,7 +81,7 @@
 }
 .qft-identity {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-  padding: 10px 14px; border: 1px solid var(--rule); border-left: 2px solid rgba(84,174,255,0.6);
+  padding: 10px 14px; border: 1px solid var(--line); border-left: 2px solid rgba(84,174,255,0.6);
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(13,23,39,0.6), rgba(7,11,19,0.85));
 }
@@ -115,9 +115,9 @@
 .qft-room .kerr-control-group { max-width: 100%; box-sizing: border-box; }
 .qft-room .kerr-control-group .ctl-row { max-width: 100%; box-sizing: border-box; }
 .qft-room input[type="range"] { height: 44px; background: transparent; }
-.qft-room input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--ink-faint)); }
+.qft-room input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
 .qft-room input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
-.qft-room input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--ink-faint)); }
+.qft-room input[type="range"]::-moz-range-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--acc), var(--ink-faint)); }
 .qft-room .gw-progress { position: relative; height: 44px; overflow: visible; background: none; border: 0; border-radius: 0; }
 .qft-room .gw-progress::before { content: ""; position: absolute; left: 0; right: 0; top: 17px; height: 10px; border-radius: 5px; background: var(--ink-faint); opacity: 0.45; }
 .qft-room .gw-progress-fill { position: absolute; left: 0; top: 17px; height: 10px; }

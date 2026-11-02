@@ -513,7 +513,7 @@ function ScaleLadder() {
       style: {
         cursor: "pointer",
         background: "none",
-        border: "1px solid " + (s.log === active.log ? "var(--rule-strong)" : "transparent"),
+        border: "1px solid " + (s.log === active.log ? "var(--line-strong)" : "transparent"),
         font: "inherit",
         color: "inherit",
         textAlign: "left",

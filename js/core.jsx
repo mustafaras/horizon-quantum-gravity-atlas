@@ -369,7 +369,7 @@ function Toggle({ label, checked, onChange }) {
     <span className="toggle-row" onClick={() => onChange(!checked)} role="switch" aria-checked={checked} tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChange(!checked); } }}>
       <span className={"toggle-track" + (checked ? " on" : "")}><span className="toggle-dot"></span></span>
-      <span className="ctl-label" style={{ color: checked ? "var(--ink)" : undefined }}>{label}</span>
+      <span className="ctl-label" style={{ color: checked ? "var(--text)" : undefined }}>{label}</span>
     </span>
   );
 }

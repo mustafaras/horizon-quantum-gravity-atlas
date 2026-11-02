@@ -221,91 +221,40 @@ function Scene3D(_ref) {
     _ref$nodeKit = _ref.nodeKit,
     nodeKit = _ref$nodeKit === void 0 ? false : _ref$nodeKit,
     _ref$fixedView = _ref.fixedView,
-    fixedView = _ref$fixedView === void 0 ? false : _ref$fixedView,
-    _ref$describe = _ref.describe,
-    describe = _ref$describe === void 0 ? null : _ref$describe;
+    fixedView = _ref$fixedView === void 0 ? false : _ref$fixedView;
   var settings = useAtlasSettings();
   var prm = usePRM();
   var mountRef = useRef(null);
-  // Text alternative (S34): the author's sentence plus the registered model and status of the nearest caption and, when
-  // the scene says which Formula Core formula it is bound to, that formula's current term values. Recomputed on every
-  // render of the parent (a parameter change re-renders it) and committed 500 ms after the last change; the
-  // key-values sentence is also spoken once through a polite live region.
-  var _useState = useState(aria || "Interactive 3D scientific visualization"),
-    _useState2 = _slicedToArray(_useState, 2),
-    altText = _useState2[0],
-    setAltText = _useState2[1];
-  var _useState3 = useState(""),
-    _useState4 = _slicedToArray(_useState3, 2),
-    altLive = _useState4[0],
-    setAltLive = _useState4[1];
-  var altAnnouncer = useRef(null);
-  var altLastValues = useRef(null);
-  useEffect(function () {
-    altAnnouncer.current = window.QGA_FIGURE.createDebouncedAnnouncer({
-      announce: function announce(_ref2) {
-        var text = _ref2.text,
-          values = _ref2.values;
-        setAltText(text);
-        if (altLastValues.current !== null && values && values !== altLastValues.current) setAltLive("Updated. " + values);
-        altLastValues.current = values;
-      }
-    });
-    return function () {
-      return altAnnouncer.current.dispose();
-    };
-  }, []);
-  useEffect(function () {
-    var S = window.QGA_SCENE_ALT;
-    if (!S || !altAnnouncer.current) return;
-    var id = describe && describe.provenanceId || S.nearestProvenanceId(mountRef.current);
-    var provenance = id ? window.QGA_PROVENANCE.get(id) : null;
-    var readouts = [];
-    try {
-      readouts = describe && describe.readouts ? describe.readouts() : describe && describe.formulaId ? S.lensReadouts(window.QGA_FORMULA.lens, describe.formulaId, {
-        termLabel: window.QGA_FORMULA.termLabel
-      }) : [];
-    } catch (error) {/* readouts are best-effort; the text then has no key values */}
-    var values = readouts.length ? readouts.map(S.formatReadout).join(", ") : "";
-    altAnnouncer.current.push({
-      text: S.sceneAltText({
-        base: aria,
-        provenance: provenance,
-        readouts: readouts
-      }),
-      values: values
-    });
-  });
   var hudStateRef = useRef({});
   var sessionRef = useRef(null);
-  var _useState5 = useState(false),
-    _useState6 = _slicedToArray(_useState5, 2),
-    failed = _useState6[0],
-    setFailed = _useState6[1];
-  var _useState7 = useState(0),
-    _useState8 = _slicedToArray(_useState7, 2),
-    rebuildNonce = _useState8[0],
-    setRebuildNonce = _useState8[1];
+  var _useState = useState(false),
+    _useState2 = _slicedToArray(_useState, 2),
+    failed = _useState2[0],
+    setFailed = _useState2[1];
+  var _useState3 = useState(0),
+    _useState4 = _slicedToArray(_useState3, 2),
+    rebuildNonce = _useState4[0],
+    setRebuildNonce = _useState4[1];
   // Set when the node renderer failed with node lines in the scene: the rebuild uses the classic lines (D-028).
   var classicLinesRef = useRef(false);
   var classicReasonRef = useRef("");
-  var _useState9 = useState("initializing"),
-    _useState0 = _slicedToArray(_useState9, 2),
-    phase = _useState0[0],
-    setPhase = _useState0[1];
-  var _useState1 = useState(""),
-    _useState10 = _slicedToArray(_useState1, 2),
-    errorMessage = _useState10[0],
-    setErrorMessage = _useState10[1];
+  var _useState5 = useState("initializing"),
+    _useState6 = _slicedToArray(_useState5, 2),
+    phase = _useState6[0],
+    setPhase = _useState6[1];
+  var _useState7 = useState(""),
+    _useState8 = _slicedToArray(_useState7, 2),
+    errorMessage = _useState8[0],
+    setErrorMessage = _useState8[1];
   var diagnosticRef = useRef(null);
-  var _useState11 = useState(true),
-    _useState12 = _slicedToArray(_useState11, 2),
-    playing = _useState12[0],
-    setPlaying = _useState12[1];
-  var _useState13 = useState(false),
-    _useState14 = _slicedToArray(_useState13, 2),
-    full = _useState14[0],
-    setFull = _useState14[1];
+  var _useState9 = useState(true),
+    _useState0 = _slicedToArray(_useState9, 2),
+    playing = _useState0[0],
+    setPlaying = _useState0[1];
+  var _useState1 = useState(false),
+    _useState10 = _slicedToArray(_useState1, 2),
+    full = _useState10[0],
+    setFull = _useState10[1];
   var settingsRef = useRef(settings);
   settingsRef.current = settings;
   var prmRef = useRef(prm);
@@ -402,7 +351,7 @@ function Scene3D(_ref) {
       stop();
     };
     var start = /*#__PURE__*/function () {
-      var _ref3 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+      var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
         var _initial$radius, _initial$theta, _initial$phi, _initial$minR, _initial$radius2, _initial$maxR, _initial$radius3, _built$renderCapabili, _window$QGA_CONCEPT_B2, _window$QGA_CONCEPT_B3, _window$QGA_CONCEPT_B4, _window$QGA_CONCEPT_B5, _window, _window$__qgaActiveSc;
         var fov, camera, target, renderFrame, orbit, home, motion, labelLayer, resourcesReleased, initPromise, spaceBridge, disposers, labels, makeLabel, conceptTargets, conceptPulse, startConceptPulse, stopConceptPulse, ctx, releaseResources, el, ptr, touches, markInteract, onPointerDown, onPointerMove, onPointerUp, onWheel, raycaster, ndc, pickAt, hoverThrottle, hoverCheck, onKeyDown, resetCam, offFormulaHighlight, offFormulaClear, offAnnotationHover, paletteOpen, offPalette, compareRole, lastPoseBroadcast, broadcastPose, onCompareMessage, _window$parent, maybePlaceAnnotation, registryVector, registryRay, sceneHandle, resize, ro, visible, io, raf, last, clockT, v3, _tick, released, _t, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t0, _t1, _t10, _t11, _t12, _t13, _t14, _t15, _t16, _t17;
         return _regenerator().w(function (_context) {
@@ -532,9 +481,9 @@ function Scene3D(_ref) {
               };
               startConceptPulse = function startConceptPulse(symbol, target) {
                 var _object$parent, _conceptPulse$lastInt, _session;
-                var _ref4 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
-                  _ref4$intensity = _ref4.intensity,
-                  intensity = _ref4$intensity === void 0 ? 1 : _ref4$intensity;
+                var _ref3 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+                  _ref3$intensity = _ref3.intensity,
+                  intensity = _ref3$intensity === void 0 ? 1 : _ref3$intensity;
                 var object = target.object;
                 if (!object) return;
                 conceptPulse.lastInteraction = intensity < 1 ? "preview" : "highlight";
@@ -1400,7 +1349,7 @@ function Scene3D(_ref) {
         }, _callee, null, [[15, 16], [10, 12]]);
       }));
       return function start() {
-        return _ref3.apply(this, arguments);
+        return _ref2.apply(this, arguments);
       };
     }();
     void start()["catch"](function (error) {
@@ -1461,16 +1410,11 @@ function Scene3D(_ref) {
     role: "application",
     "aria-busy": phase !== "ready",
     "data-qga-anchor": "primary-scene",
-    "aria-label": altText + (fixedView ? " Click to select; scroll to zoom, R to reset camera, F for fullscreen." : " Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen.")
+    "aria-label": (aria || "Interactive 3D scientific visualization") + (fixedView ? ". Click to select; scroll to zoom, R to reset camera, F for fullscreen." : ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen.")
   }, phase !== "ready" ? /*#__PURE__*/React.createElement("div", {
     className: "render-loading",
     role: "status"
   }, "Initializing renderer and compiling shaders\u2026") : null, /*#__PURE__*/React.createElement("div", {
-    className: "s3d-sr",
-    role: "status",
-    "aria-live": "polite",
-    "aria-atomic": "true"
-  }, altLive), /*#__PURE__*/React.createElement("div", {
     className: "s3d-hud",
     "data-omelette-chrome": ""
   }, /*#__PURE__*/React.createElement("button", {

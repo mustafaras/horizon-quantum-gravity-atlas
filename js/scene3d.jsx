@@ -131,41 +131,10 @@ const S3D_MOTION = { reduced: 0, balanced: 0.55, full: 1 };
      shared        false opts a scene out of the shared stage (it then keeps its own renderer)
      overlay       extra React overlay (legends etc.), absolutely positioned
    ========================================================================= */
-function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false, nodeKit = false, fixedView = false, describe = null }) {
+function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback = null, overlay = null, cameraGoal = null, shotSpace = null, shared = true, animated = true, invalidateKey = null, classicLines = false, nodeKit = false, fixedView = false }) {
   const settings = useAtlasSettings();
   const prm = usePRM();
   const mountRef = useRef(null);
-  // Text alternative (S34): the author's sentence plus the registered model and status of the nearest caption and, when
-  // the scene says which Formula Core formula it is bound to, that formula's current term values. Recomputed on every
-  // render of the parent (a parameter change re-renders it) and committed 500 ms after the last change; the
-  // key-values sentence is also spoken once through a polite live region.
-  const [altText, setAltText] = useState(aria || "Interactive 3D scientific visualization");
-  const [altLive, setAltLive] = useState("");
-  const altAnnouncer = useRef(null);
-  const altLastValues = useRef(null);
-  useEffect(() => {
-    altAnnouncer.current = window.QGA_FIGURE.createDebouncedAnnouncer({
-      announce: ({ text, values }) => {
-        setAltText(text);
-        if (altLastValues.current !== null && values && values !== altLastValues.current) setAltLive("Updated. " + values);
-        altLastValues.current = values;
-      },
-    });
-    return () => altAnnouncer.current.dispose();
-  }, []);
-  useEffect(() => {
-    const S = window.QGA_SCENE_ALT;
-    if (!S || !altAnnouncer.current) return;
-    const id = (describe && describe.provenanceId) || S.nearestProvenanceId(mountRef.current);
-    const provenance = id ? window.QGA_PROVENANCE.get(id) : null;
-    let readouts = [];
-    try {
-      readouts = describe && describe.readouts ? describe.readouts()
-        : describe && describe.formulaId ? S.lensReadouts(window.QGA_FORMULA.lens, describe.formulaId, { termLabel: window.QGA_FORMULA.termLabel }) : [];
-    } catch (error) { /* readouts are best-effort; the text then has no key values */ }
-    const values = readouts.length ? readouts.map(S.formatReadout).join(", ") : "";
-    altAnnouncer.current.push({ text: S.sceneAltText({ base: aria, provenance, readouts }), values });
-  });
   const hudStateRef = useRef({});
   const sessionRef = useRef(null);
   const [failed, setFailed] = useState(false);
@@ -945,12 +914,11 @@ function Scene3D({ height = 420, aria, initial = {}, build, deps = [], fallback 
   return (
     <div className={"s3d-stage" + (full ? " s3d-full" : "")} style={full ? null : { height }} ref={mountRef} tabIndex={0} role="application" aria-busy={phase !== "ready"}
       data-qga-anchor="primary-scene"
-      aria-label={altText + (fixedView ? " Click to select; scroll to zoom, R to reset camera, F for fullscreen." : " Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen.")}>
+      aria-label={(aria || "Interactive 3D scientific visualization") + (fixedView ? ". Click to select; scroll to zoom, R to reset camera, F for fullscreen." : ". Drag to orbit, scroll to zoom, arrow keys to rotate, R to reset camera, space to pause, F for fullscreen.")}>
       {/* adaptive material prewarms no longer republish "prewarming" (they keep
           the last frame on screen), so this overlay only appears for the first
           setup and true pipeline swaps */}
       {phase !== "ready" ? <div className="render-loading" role="status">Initializing renderer and compiling shaders…</div> : null}
-      <div className="s3d-sr" role="status" aria-live="polite" aria-atomic="true">{altLive}</div>
       <div className="s3d-hud" data-omelette-chrome="">
         <button className="s3d-hud-btn" title="Reset camera (R)" aria-label="Reset camera"
           onClick={() => hudStateRef.current.reset && hudStateRef.current.reset()}>⌖</button>

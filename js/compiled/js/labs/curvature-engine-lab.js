@@ -399,9 +399,6 @@ function CurvatureEngine3D() {
     nodeKit: true,
     height: 480,
     shotSpace: "gr-curvature",
-    describe: {
-      formulaId: "newtonian-potential"
-    },
     aria: "Three-dimensional gravity well: selectable exact Flamm spatial embedding or schematic potential surface with separately modelled orbits and light rays",
     initial: {
       radius: 17,

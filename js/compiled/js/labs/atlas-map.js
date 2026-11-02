@@ -91,7 +91,7 @@ function AtlasMap(_ref) {
       })),
       ink: window.QGA_TOKENS.css("ink"),
       inkDim: window.QGA_TOKENS.css("ink-dim"),
-      head: window.QGA_TOKENS.css("ink-strong"),
+      head: window.QGA_TOKENS.css("head"),
       paper: window.QGA_TOKENS.css("surface-1")
     };
   }, [theme]);
