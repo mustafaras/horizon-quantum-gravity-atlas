@@ -138,7 +138,7 @@
         },
         "readme": {
           "type": "boolean",
-          "description": "True when README.md references this file; the verifier cross-checks both directions."
+          "description": "True when README.md or a page in docs/guide/ references this file; the verifier cross-checks both directions."
         },
         "baseline": {
           "type": "object",

@@ -3,10 +3,10 @@
 //   1. JSON Schema conformance (qa/manifest.schema.json)
 //   2. state-key and view-registry parity with js/state.jsx and js/app.jsx
 //   3. every capture file exists on disk
-//   4. README.md cross-references in both directions
+//   4. README.md and docs/guide/*.md cross-references in both directions
 // Exit code 0 = valid, 1 = invalid (full error list printed).
 
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadManifest } from "./lib/manifest.mjs";
@@ -23,9 +23,13 @@ async function main() {
   }
 
   if (captures.length) {
-    const readme = await readFile(path.join(root, "README.md"), "utf8");
+    // Since S35 the README shows the chapter covers and the screenshot gallery lives in docs/guide/, which refers to
+    // the same files as ../screenshots/. `readme: true` means "shown in the README or the guide".
+    const guideDir = path.join(root, "docs", "guide");
+    const surface = ["README.md", ...(await readdir(guideDir)).filter((f) => f.endsWith(".md")).map((f) => `docs/guide/${f}`)];
+    const texts = await Promise.all(surface.map((rel) => readFile(path.join(root, rel), "utf8")));
     const readmeRefs = new Set(
-      [...readme.matchAll(/docs\/screenshots\/([\w.-]+\.png)/g)].map((m) => m[1])
+      texts.flatMap((text) => [...text.matchAll(/(?:docs\/|\.\.\/)screenshots\/([\w.-]+\.png)/g)].map((m) => m[1]))
     );
 
     for (const c of captures) {
@@ -34,10 +38,10 @@ async function main() {
       const name = path.basename(rel);
       const inReadme = readmeRefs.has(name);
       if (c.readme === true && !inReadme) {
-        errors.push(`${c.id}: readme:true but ${rel} is not referenced in README.md`);
+        errors.push(`${c.id}: readme:true but ${rel} is not referenced in README.md or docs/guide`);
       }
       if (c.readme === false && inReadme) {
-        errors.push(`${c.id}: readme:false but ${rel} is referenced in README.md`);
+        errors.push(`${c.id}: readme:false but ${rel} is referenced in README.md or docs/guide`);
       }
     }
 
@@ -45,7 +49,7 @@ async function main() {
     const manifestFiles = new Set(captures.map((c) => path.basename(c.file)));
     for (const name of readmeRefs) {
       if (!manifestFiles.has(name)) {
-        errors.push(`README.md references docs/screenshots/${name} with no manifest capture`);
+        errors.push(`README.md or docs/guide references screenshots/${name} with no manifest capture`);
       }
     }
   }

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkCompiled, listJsxSources } from "./compile-jsx.mjs";
-import { checkLinks, listDocFiles } from "./lib/link-check.mjs";
+import { checkLinks, extractLinks, listDocFiles } from "./lib/link-check.mjs";
 import { inspectThreeVendor } from "./lib/three-vendor.mjs";
 import { lintTokenLiterals } from "./lib/token-lint.mjs";
 
@@ -80,14 +80,31 @@ for (const src of localImageRefs) {
   if (!exists(asset)) fail(`README image path does not exist: ${src}`);
 }
 
-const screenshotRefs = localImageRefs.filter((src) => src.includes("docs/screenshots/"));
-if (screenshotRefs.length < 9) {
-  fail(`README should reference at least 9 cinematic screenshots; found ${screenshotRefs.length}`);
+// S35 moved the gallery and the diagram pack out of the README into docs/guide/ and docs/science/ (ledger D-207), so
+// the image rules follow the images: the README shows one cover per chapter, and the documentation surface as a whole
+// carries the screenshots and every committed diagram.
+const MIN_DOC_SCREENSHOTS = 9;
+const docSurface = ["README.md", ...listDocFiles(root).filter((file) => /^docs\/(guide|science)\//.test(file))];
+const referencedAssets = new Set(docSurface.flatMap((file) =>
+  extractLinks(read(file)).map(({ target }) => path.posix.join(path.posix.dirname(file), normalizeLocalAsset(target)))
+));
+
+for (const sidecar of fs.readdirSync(path.join(root, "docs", "covers")).filter((name) => name.endsWith(".json"))) {
+  const cover = `docs/covers/${JSON.parse(read(path.join("docs", "covers", sidecar))).sizes[0].file}`;
+  if (!localImageRefs.some((src) => normalizeLocalAsset(src) === cover)) {
+    fail(`README should show the chapter cover ${cover}`);
+  }
 }
 
-const diagramRefs = localImageRefs.filter((src) => src.includes("docs/diagrams/"));
-if (diagramRefs.length < 11) {
-  fail(`README should reference at least 11 static diagrams; found ${diagramRefs.length}`);
+const screenshotRefs = [...referencedAssets].filter((asset) => asset.startsWith("docs/screenshots/"));
+if (screenshotRefs.length < MIN_DOC_SCREENSHOTS) {
+  fail(`README and docs/guide should reference at least ${MIN_DOC_SCREENSHOTS} screenshots; found ${screenshotRefs.length}`);
+}
+
+for (const file of fs.readdirSync(path.join(root, "docs", "diagrams")).filter((name) => name.endsWith(".svg"))) {
+  if (!referencedAssets.has(`docs/diagrams/${file}`)) {
+    fail(`docs/diagrams/${file} is not referenced from the README, docs/guide or docs/science`);
+  }
 }
 
 for (const broken of checkLinks(root, listDocFiles(root))) {
