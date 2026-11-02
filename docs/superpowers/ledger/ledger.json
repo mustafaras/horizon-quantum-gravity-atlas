@@ -1993,12 +1993,12 @@
       "findings": [
         "F-01"
       ],
-      "status": "todo",
-      "owner": null,
-      "branch": null,
+      "status": "claimed",
+      "owner": "local: Claude Code for mustafaras",
+      "branch": "feat/s36-release-gate",
       "pr": null,
       "commits": [],
-      "startedAt": null,
+      "startedAt": "2026-11-02",
       "completedAt": null,
       "evidence": {
         "tests": [],
@@ -4356,6 +4356,13 @@
       "agent": "local: Claude Code for mustafaras",
       "event": "note",
       "detail": "Development closed by the owner after S35 (D-214). S36 not run; F-01, F-17 and F-27 left open; the paper draft will not be submitted. PR 138 (the S35 starter) is left open for the owner to close: its numbers describe the tree before S35 and the ledger now holds the record. Remote and local main synchronised; local branches already merged into main removed (their commits are on main or kept on origin)."
+    },
+    {
+      "date": "2026-11-02",
+      "prompt": "S36",
+      "agent": "local: Claude Code for mustafaras",
+      "event": "claimed",
+      "detail": "The owner reopened the work the same day and asked for S36 to be done in full ('kendin yap herşeyi sıradakini de uygula'); this supersedes the 'S36 not run' part of D-214. Claimed on feat/s36-release-gate from main 9097a95, where npm test (1382 pass, 0 fail, 1 skipped), npm run validate and perf:audit are green. PR 138 closed unmerged on the owner's instruction."
     }
   ]
 }
